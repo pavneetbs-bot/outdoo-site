@@ -1,17 +1,13 @@
 # Replit par update lene ka tareeka
 
-## Pehli baar (one-time, Replit Shell mein):
+Har update pe — Replit Shell mein (remote-naam ka jhanjhat nahi, seedha URL):
 ```
-git init -b main 2>/dev/null; git remote add origin https://github.com/pavneetbs-bot/outdoo-site.git 2>/dev/null
-git fetch origin main && git checkout -f FETCH_HEAD -- index.html product.html
+git fetch https://github.com/pavneetbs-bot/outdoo-site.git main && git checkout -f FETCH_HEAD -- index.html product.html && grep -c "Deal of the day" index.html
 ```
+- Aakhri number **1+** aana chahiye (latest version ka marker).
+- Phir **Deploy → Republish**.
+- Site **incognito/hard-refresh** mein check karo (5.6MB file cache hoti hai).
 
-## Har update pe (2 commands + 1 click):
-```
-git fetch origin main && git checkout -f FETCH_HEAD -- index.html product.html
-```
-Phir **Deploy → Republish**.
+Preview (Replit se pehle dekhne ke liye): https://pavneetbs-bot.github.io/outdoo-site/
 
-## Preview (Replit pe daalne se pehle dekhna ho):
-https://pavneetbs-bot.github.io/outdoo-site/
-Har push ke ~1 minute baad yahan latest version khud dikh jaata hai.
+Note: is Repl mein agent ka apna `origin` remote set hai — isliye `git fetch origin` GALAT repo se laata hai. Hamesha upar waala URL-based command hi use karo.
