@@ -196,6 +196,40 @@ section{padding:20px 0 8px}
   .pricetiles{grid-template-columns:repeat(3,1fr);gap:14px}
   .ptile{padding:18px}
 }
+/* ---- PLP filters ---- */
+.subchips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.subchips::-webkit-scrollbar{display:none}
+.schip{flex:0 0 auto;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:7px 14px;font-size:11.5px;font-weight:600;color:#4b473f;cursor:pointer;white-space:nowrap}
+.schip.on{background:var(--char);border-color:var(--char);color:#fff}
+.fltbtn{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:9px;background:#fff;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+.fltbtn svg{width:14px;height:14px;stroke:var(--char);fill:none;stroke-width:2}
+.fltbtn .fb3{background:var(--terra);color:#fff;border-radius:99px;font-size:9.5px;padding:1px 6px;font-weight:800}
+.plp-body{position:relative}
+.fltov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:none}
+.fltov.open{display:block}
+#fltPanel{position:fixed;left:0;right:0;bottom:0;z-index:61;background:#fff;border-radius:18px 18px 0 0;
+  max-height:78vh;overflow-y:auto;padding:16px 16px 90px;transform:translateY(105%);transition:transform .25s}
+#fltPanel.open{transform:translateY(0)}
+.fsec{border-bottom:1px solid var(--sand-soft);padding:12px 0}
+.fsec h4{font-size:12.5px;font-weight:800;margin-bottom:9px}
+.fopt{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12.5px;color:#4b473f;cursor:pointer}
+.fopt input{width:17px;height:17px;accent-color:var(--terra-deep)}
+.fltacts{position:fixed;left:0;right:0;bottom:0;z-index:62;display:none;gap:10px;padding:12px 16px;
+  background:#fff;border-top:1px solid var(--line)}
+.fltacts.open{display:flex}
+.fltacts .clr{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:12px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer}
+.fltacts .apl{flex:1.4;border:none;background:var(--terra-deep);color:#fff;border-radius:11px;padding:12px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer}
+.noresult{text-align:center;padding:36px 12px;color:var(--muted);font-size:12.5px;grid-column:1/-1}
+.noresult a{color:var(--terra-deep);font-weight:700;cursor:pointer}
+@media(min-width:900px){
+  .plp-body{display:grid;grid-template-columns:230px minmax(0,1fr);gap:34px;align-items:start}
+  .fltov{display:none!important}
+  #fltPanel{position:static;transform:none;max-height:none;border-radius:14px;border:1px solid var(--line);padding:6px 16px 16px}
+  .fltacts{position:static;display:flex;padding:12px 0 0;border:none;background:none}
+  .fltacts .apl{display:none}
+  .fltbtn{display:none}
+}
+body.flt-open .wafab{display:none}
 /* pagehead */
 .pagehead{padding:12px 0 2px}
 .pagehead h1{font-size:17px;font-weight:800}
@@ -763,15 +797,53 @@ footer{background:var(--char);color:#cfcbc2;padding:30px 0 22px;font-size:12px}
     <svg viewBox="0 0 24 24"><path d="M20 12 l-8 8 -8 -8 8 -8 z" /><circle cx="12" cy="12" r="2.4"/></svg>
     <span id="colOfferLine"></span>
   </div>
-  <div class="plptool">
-    <span class="cnt" id="colCnt"></span>
-    <select id="colSort" onchange="renderPLP()">
-      <option value="pop">Popular</option>
-      <option value="lo">Price: Low to High</option>
-      <option value="hi">Price: High to Low</option>
-    </select>
+  <div class="subchips" id="subChips"></div>
+  <div class="plp-body">
+    <aside>
+      <div class="fltov" id="fltOv" onclick="fltToggle(false)"></div>
+      <div id="fltPanel">
+        <div class="fsec"><h4>Price</h4>
+          <label class="fopt"><input type="checkbox" data-f="price" value="0-10000" onchange="fltSet()"> Under ₹10,000</label>
+          <label class="fopt"><input type="checkbox" data-f="price" value="10000-25000" onchange="fltSet()"> ₹10,000 – ₹25,000</label>
+          <label class="fopt"><input type="checkbox" data-f="price" value="25000-100000" onchange="fltSet()"> ₹25,000 – ₹1,00,000</label>
+          <label class="fopt"><input type="checkbox" data-f="price" value="100000-99999999" onchange="fltSet()"> ₹1,00,000+</label>
+        </div>
+        <div class="fsec"><h4>Rating</h4>
+          <label class="fopt"><input type="radio" name="frat" data-f="rating" value="4.3" onchange="fltSet()"> 4.3 ★ & above</label>
+          <label class="fopt"><input type="radio" name="frat" data-f="rating" value="4.5" onchange="fltSet()"> 4.5 ★ & above</label>
+        </div>
+        <div class="fsec"><h4>Dispatch</h4>
+          <label class="fopt"><input type="radio" name="fdis" data-f="dispatch" value="ready" onchange="fltSet()"> Ready to ship (7–10 days)</label>
+          <label class="fopt"><input type="radio" name="fdis" data-f="dispatch" value="mto" onchange="fltSet()"> Made to order</label>
+        </div>
+        <div class="fsec" style="border:none"><h4>Offers</h4>
+          <label class="fopt"><input type="checkbox" data-f="offer" value="1" onchange="fltSet()"> On offer only</label>
+        </div>
+        <div class="fltacts open" id="fltActs">
+          <button class="clr" onclick="fltClear()">Clear all</button>
+          <button class="apl" onclick="fltToggle(false)">Apply</button>
+        </div>
+      </div>
+    </aside>
+    <div>
+      <div class="plptool">
+        <span class="cnt" id="colCnt"></span>
+        <span style="display:flex;gap:9px;align-items:center">
+          <button class="fltbtn" onclick="fltToggle(true)">
+            <svg viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="10" y1="17" x2="14" y2="17"/></svg>
+            Filters <span class="fb3" id="fltCount" style="display:none">0</span></button>
+          <select id="colSort" onchange="renderPLP()">
+            <option value="pop">Popular</option>
+            <option value="lo">Price: Low to High</option>
+            <option value="hi">Price: High to Low</option>
+            <option value="rat">Top Rated</option>
+            <option value="off">Biggest Discount</option>
+          </select>
+        </span>
+      </div>
+      <div class="prods" id="plpGrid"></div>
+    </div>
   </div>
-  <div class="prods" id="plpGrid"></div>
 </div></div>
 
 <!-- PDP -->
@@ -1167,14 +1239,65 @@ function openCol(k){
   document.getElementById('colTag').textContent=c.tag;
   document.getElementById('colOff').textContent=c.off;
   document.getElementById('colOfferLine').textContent=c.offer;
-  renderPLP(); showView('plp');
+  fltReset(); buildChips(); renderPLP(); showView('plp');
 }
+
+// ---- filters ----
+function subOf(id){const x=PRODS[id],n=x.n;
+ if(x.col==='furniture'){if(/Dining/i.test(n))return 'Dining';if(/Swing/i.test(n))return 'Swings';
+  if(/Lounger|Daybed/i.test(n))return 'Loungers & Daybeds';if(/Armchair|Accent Chair|Chairs/i.test(n))return 'Accent';return 'Sofa Sets';}
+ if(x.col==='lighting'){if(/Ceiling/i.test(n))return 'Ceiling';if(/Floor/i.test(n))return 'Floor';
+  if(/Wall/i.test(n))return 'Wall';if(/Hanging|Pendant/i.test(n))return 'Hanging';return 'Lamps';}
+ if(x.col==='furnishings'){if(/Printed/i.test(n))return 'Printed';if(/Textured/i.test(n))return 'Textured';return 'Basic';}
+ if(x.col==='shade'){if(/Cantilever/i.test(n))return 'Cantilever';if(/Jumbo/i.test(n))return 'Jumbo';return 'Centre-Pole';}
+ if(x.col==='planters'){if(/Wall|Vertical|Partition|Screen|Lattice/i.test(n))return 'Green Walls & Screens';
+  if(/Urn/i.test(n))return 'Urns';if(/Trough/i.test(n))return 'Troughs';return 'Pots & Planters';}
+ if(x.col==='art'){if(/Water|Fountain/i.test(n))return 'Water Features';if(/Wall|Panel|Screen/i.test(n))return 'Wall Art';
+  if(/Lamp/i.test(n))return 'Sculpture Lamps';return 'Sculptures';}
+ return 'All';}
+let FLT={sub:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
+function fltReset(){FLT={sub:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
+ document.querySelectorAll('#fltPanel input').forEach(i=>{i.checked=false});}
+function fltSet(){
+ FLT.price=new Set([...document.querySelectorAll('input[data-f=price]:checked')].map(i=>i.value));
+ const r=document.querySelector('input[data-f=rating]:checked'); FLT.rating=r?parseFloat(r.value):0;
+ const d=document.querySelector('input[data-f=dispatch]:checked'); FLT.dispatch=d?d.value:'';
+ FLT.offer=!!document.querySelector('input[data-f=offer]:checked');
+ renderPLP();}
+function fltClear(){fltReset();buildChips();renderPLP();}
+function fltToggle(open){document.getElementById('fltPanel').classList.toggle('open',open);
+ document.getElementById('fltOv').classList.toggle('open',open);
+ document.body.classList.toggle('flt-open',open);}
+function chipTap(sb){FLT.sub.has(sb)?FLT.sub.delete(sb):FLT.sub.add(sb);buildChips();renderPLP();}
+function buildChips(){
+ const ids=Object.keys(PRODS).filter(id=>PRODS[id].col===lastCol);
+ const m={}; ids.forEach(id=>{const sb=subOf(id);m[sb]=(m[sb]||0)+1});
+ const subs=Object.keys(m).sort((a,b)=>m[b]-m[a]);
+ document.getElementById('subChips').innerHTML = subs.length>1 ?
+  subs.map(sb=>`<span class="schip${FLT.sub.has(sb)?' on':''}" onclick="chipTap('${sb}')">${sb} (${m[sb]})</span>`).join('') : '';}
+
 function renderPLP(){
   const k=lastCol, sort=document.getElementById('colSort').value;
-  let ids=Object.keys(PRODS).filter(id=>PRODS[id].col===k);
+  const total=Object.keys(PRODS).filter(id=>PRODS[id].col===k).length;
+  let ids=Object.keys(PRODS).filter(id=>{
+    const x=PRODS[id];
+    if(x.col!==k) return false;
+    if(FLT.sub.size && !FLT.sub.has(subOf(id))) return false;
+    if(FLT.price.size){let ok=false;FLT.price.forEach(rg=>{const [lo,hi]=rg.split('-').map(Number);if(x.p>=lo&&x.p<=hi)ok=true});if(!ok)return false;}
+    if(FLT.rating && parseFloat(x.r)<FLT.rating) return false;
+    if(FLT.dispatch==='ready' && /order/i.test(x.ship)) return false;
+    if(FLT.dispatch==='mto' && !/order/i.test(x.ship)) return false;
+    if(FLT.offer && !(x.m>x.p)) return false;
+    return true;});
   if(sort==='lo') ids.sort((a,b)=>PRODS[a].p-PRODS[b].p);
   if(sort==='hi') ids.sort((a,b)=>PRODS[b].p-PRODS[a].p);
-  document.getElementById('colCnt').textContent = ids.length+' products';
+  if(sort==='rat') ids.sort((a,b)=>parseFloat(PRODS[b].r)-parseFloat(PRODS[a].r));
+  if(sort==='off') ids.sort((a,b)=>((PRODS[b].m>PRODS[b].p?1-PRODS[b].p/PRODS[b].m:0)-(PRODS[a].m>PRODS[a].p?1-PRODS[a].p/PRODS[a].m:0)));
+  const nf=FLT.sub.size+FLT.price.size+(FLT.rating?1:0)+(FLT.dispatch?1:0)+(FLT.offer?1:0);
+  const fc=document.getElementById('fltCount');
+  if(fc){fc.textContent=nf;fc.style.display=nf?'inline-block':'none';}
+  document.getElementById('colCnt').textContent = nf? ids.length+' of '+total+' products' : ids.length+' products';
+  if(!ids.length){document.getElementById('plpGrid').innerHTML='<div class="noresult">Is filter mein kuch nahi mila.<br><a onclick="fltClear()">Clear filters</a></div>';return;}
   document.getElementById('plpGrid').innerHTML = ids.map(id=>{
     const x=PRODS[id];
     const off = x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
