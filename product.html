@@ -155,6 +155,30 @@ section{padding:20px 0 8px}
 .pc .mrp{color:var(--muted);text-decoration:line-through;font-weight:400;font-size:10.5px;margin-left:5px}
 .pc .ship{font-size:9.5px;color:var(--olive-deep);font-weight:600;margin-top:5px}
 
+/* ---- trust elements ---- */
+.trustrow{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.trustrow::-webkit-scrollbar{display:none}
+.tchip{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;background:var(--sand-soft);border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:10.5px;font-weight:700;color:#4b473f;white-space:nowrap}
+.tchip svg{width:14px;height:14px;stroke:var(--olive-deep);fill:none;stroke-width:1.9;flex-shrink:0}
+.secline{font-size:10px;color:var(--muted);margin:6px 0 2px}
+.delvblock{background:var(--olive-soft);border-radius:11px;padding:11px 13px;margin-top:10px}
+.delvblock div{display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#3d4636;padding:3px 0}
+.delvblock svg{width:14px;height:14px;stroke:var(--olive-deep);fill:none;stroke-width:1.9;flex-shrink:0;margin-top:1px}
+.vbadge{display:inline-flex;align-items:center;gap:3px;background:var(--olive-soft);color:var(--olive-deep);font-size:9px;font-weight:800;padding:2px 7px;border-radius:5px}
+.founder{display:flex;gap:14px;background:var(--olive);border-radius:16px;padding:18px 16px;color:#fff;margin:6px 0;align-items:center}
+.founder .fav{width:58px;height:58px;border-radius:50%;background:#fff;color:var(--olive-deep);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex-shrink:0}
+.founder h3{font-size:14.5px;font-weight:800;margin-bottom:4px}
+.founder p{font-size:11px;opacity:.94;line-height:1.55}
+.founder .fw{display:inline-block;margin-top:8px;background:#fff;color:var(--olive-deep);font-size:11px;font-weight:700;padding:7px 14px;border-radius:999px;cursor:pointer}
+.ugc{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ugc .u{position:relative;border-radius:11px;overflow:hidden;aspect-ratio:1;cursor:pointer}
+.ugc .u img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+@media(min-width:900px){
+  .ugc{grid-template-columns:repeat(6,1fr)}
+  .founder{padding:24px 26px}
+  .founder h3{font-size:18px}
+  .founder p{font-size:12.5px;max-width:640px}
+}
 /* pagehead */
 .pagehead{padding:12px 0 2px}
 .pagehead h1{font-size:17px;font-weight:800}
@@ -487,16 +511,39 @@ footer{background:var(--char);color:#cfcbc2;padding:30px 0 22px;font-size:12px}
 </div>
       <div class="chips"><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip">Free delivery</span><span class="chip terra">Assembly included</span></div>
       <p class="pdp-desc" id="pdDesc">Powder-coated aluminium frame with UV-stabilised weave and quick-dry cushions — built for Indian summers and monsoons alike.</p>
+      
+<div class="trustrow">
+  <span class="tchip"><svg viewBox="0 0 24 24"><path d="M12 3 l7 3 v6 c0 4.5 -3 7.5 -7 9 c-4 -1.5 -7 -4.5 -7 -9 V6 z"/><path d="M9 12 l2 2 l4 -4"/></svg>Damage-Free Promise</span>
+  <span class="tchip"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5 L7 21 l5 -2.5 L17 21 l-1.5 -7.5"/></svg>Up to 3-Yr Warranty</span>
+  <span class="tchip"><svg viewBox="0 0 24 24"><path d="M4 15 l5 5 M6 13 l5 5 M13 4 a7 7 0 0 1 7 7 l-4 4 -7 -7z"/></svg>Free Installation</span>
+  <span class="tchip"><svg viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 H6z"/><path d="M9 12 h6 M9 16 h6"/></svg>GST Invoice</span>
+  <span class="tchip"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10 V7 a4 4 0 0 1 8 0 v3"/></svg>Secure Payments</span>
+</div>
+<div class="secline">100% secure checkout · UPI · Cards · Net Banking · EMI available</div>
       <div class="pincheck">
         <label>Check delivery to your pincode</label>
         <div class="row"><input id="pin" maxlength="6" placeholder="e.g. 110001" inputmode="numeric">
         <button class="btn" style="padding:10px 18px" onclick="checkPin()">Check</button></div>
         <div class="pin-ok" id="pinok"></div>
       </div>
+      <div class="delvblock">
+        <div><svg viewBox="0 0 24 24"><path d="M3 7 h13 v10 H3z"/><path d="M16 10 h3.5 L21 13 v4 h-5"/><circle cx="7.5" cy="17" r="1.7"/><circle cx="17.5" cy="17" r="1.7"/></svg>Dispatched from our Delhi NCR facility with weather-safe packing</div>
+        <div><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 20 c0 -3.5 2.7 -5.5 6 -5.5 s6 2 6 5.5"/><path d="M16 8 l2 2 l4 -4"/></svg>Installed &amp; assembled by our trained in-house team</div>
+        <div><svg viewBox="0 0 24 24"><path d="M4 12 a8 8 0 1 1 3 6.2"/><path d="M4 19 v-5 h5"/></svg>Damage at unboxing? Replaced free — no questions asked</div>
+      </div>
       <div class="acc open"><div class="acc-h" onclick="accT(this)">Product Details<span class="pm">−</span></div>
         <div class="acc-b"><table class="dettbl" id="pdDet"></table></div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Specifications<span class="pm">+</span></div>
         <div class="acc-b"><ul class="speclist" id="pdSpec"></ul></div></div>
+            <div class="acc"><div class="acc-h" onclick="accT(this)">Why Outdoo<span class="pm">+</span></div>
+        <div class="acc-b">
+          <ul class="speclist">
+            <li><b>300+ luxury outdoor projects</b> delivered by the LifeWall team since 2015</li>
+            <li><b>Made in India since 1992</b> — by the country's largest outdoor furniture manufacturer</li>
+            <li><b>191K+ outdoor community</b> follows our work on Instagram</li>
+            <li><b>NASSCOM 10,000 Startups</b> incubated group company</li>
+          </ul>
+        </div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Seller<span class="pm">+</span></div>
         <div class="acc-b">Sold by an <b>Outdoo verified partner</b> and fulfilled by Outdoo. Quality checked before dispatch · GST invoice available.</div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Ratings & Reviews<span class="pm">+</span></div>
@@ -511,9 +558,9 @@ footer{background:var(--char);color:#cfcbc2;padding:30px 0 22px;font-size:12px}
               <div class="bar">1★<div class="tr"><div class="fl" style="width:2%"></div></div>2%</div>
             </div>
           </div>
-          <div class="review"><div class="rh"><span class="st">5 ★</span><span class="nm2">Ritika S., Gurugram</span><span class="dt">2 weeks ago</span></div>
+          <div class="review"><div class="rh"><span class="st">5 ★</span><span class="nm2">Ritika S., Gurugram</span><span class="vbadge">✓ VERIFIED BUYER</span><span class="dt">2 weeks ago</span></div>
             <p>Quality is much better than expected for the price. Delivery team assembled everything on the terrace. Survived two rain spells already.</p></div>
-          <div class="review"><div class="rh"><span class="st">4 ★</span><span class="nm2">Aman K., Mumbai</span><span class="dt">1 month ago</span></div>
+          <div class="review"><div class="rh"><span class="st">4 ★</span><span class="nm2">Aman K., Mumbai</span><span class="vbadge">✓ VERIFIED BUYER</span><span class="dt">1 month ago</span></div>
             <p>Looks premium, fabric dries quickly. Delivery took a couple of days extra but the team kept me informed on WhatsApp.</p></div>
         </div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Q&A<span class="pm">+</span></div>
