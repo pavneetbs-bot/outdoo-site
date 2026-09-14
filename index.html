@@ -282,6 +282,30 @@ body.flt-open .wafab{display:none}
   .cartwrap{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:34px;align-items:start}
   .csum{margin-top:0;position:sticky;top:90px}
 }
+/* ---- mini cart drawer ---- */
+.mcov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70;display:none}
+.mcov.open{display:block}
+#mcart{position:fixed;top:0;right:0;bottom:0;width:min(400px,88vw);background:#fff;z-index:71;
+  transform:translateX(105%);transition:transform .28s;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.18)}
+#mcart.open{transform:translateX(0)}
+.mch{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;border-bottom:1px solid var(--line)}
+.mch b{font-size:14.5px}
+.mch .x{width:30px;height:30px;border-radius:50%;background:var(--sand-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
+.mcb{flex:1;overflow-y:auto;padding:12px 14px}
+.mcf{border-top:1px solid var(--line);padding:12px 14px 14px;background:#fff}
+.mcf .r{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-bottom:3px}
+.mcf .sub2{font-size:10px;color:var(--muted);margin-bottom:10px}
+.mcf .btn{padding:13px}
+.mcf .vc{display:block;text-align:center;font-size:12px;font-weight:700;color:var(--terra-deep);padding:11px 0 2px;cursor:pointer}
+.mcline{display:flex;gap:10px;border-bottom:1px solid var(--sand-soft);padding:10px 0}
+.mcline .im{width:62px;height:62px;border-radius:9px;overflow:hidden;flex-shrink:0}
+.mcline .nm{font-size:11px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mcline .pr{font-size:12px;font-weight:800;margin-top:3px}
+.mcline .row2{display:flex;align-items:center;gap:12px;margin-top:6px}
+.mcline .qty button{width:24px;height:24px;font-size:13px}
+.mcline .qty span{width:26px;font-size:12px}
+.mcline .rm{font-size:10px;color:var(--muted);cursor:pointer;text-decoration:underline}
+.mcempty{text-align:center;color:var(--muted);font-size:12px;padding:40px 10px}
 /* pagehead */
 .pagehead{padding:12px 0 2px}
 .pagehead h1{font-size:17px;font-weight:800}
@@ -1070,6 +1094,20 @@ footer{background:var(--char);color:#cfcbc2;padding:30px 0 22px;font-size:12px}
   <div id="cartBody"></div>
 </div></div>
 
+
+<!-- MINI CART DRAWER -->
+<div class="mcov" id="mcov" onclick="miniCart(false)"></div>
+<div id="mcart">
+  <div class="mch"><b>Added to cart 🛒</b><span class="x" onclick="miniCart(false)">✕</span></div>
+  <div class="mcb" id="mcBody"></div>
+  <div class="mcf">
+    <div class="r"><span>Subtotal</span><span id="mcSub">₹0</span></div>
+    <div class="sub2">Coupon &amp; savings apply at cart · Delivery FREE</div>
+    <button class="btn" style="width:100%" onclick="miniCart(false);openCart()">View Cart &amp; Checkout</button>
+    <span class="vc" onclick="miniCart(false)">Continue shopping</span>
+  </div>
+</div>
+
 <div class="ctas">
   <button class="btn" onclick="addCart()">Add to Cart</button>
   <button class="btn olive" onclick="buyNow()">Buy Now</button>
@@ -1554,8 +1592,8 @@ let CART=[];
 function updBadge(){const n=CART.reduce((a,c)=>a+c.q,0);document.getElementById('cartn').textContent=n;}
 function addCart(id){id=id||curPid;if(!id||!PRODS[id]){toast('Added to cart');return;}
  const f=CART.find(c=>c.id===id); f?f.q++:CART.push({id,q:1});
- updBadge(); toast('Added to cart');}
-function buyNow(){addCart();openCart();}
+ updBadge(); miniCart(true);}
+function buyNow(){const id=curPid;if(id&&PRODS[id]){const f=CART.find(c=>c.id===id);f?f.q++:CART.push({id,q:1});updBadge();}openCart();}
 function openCart(){renderCart();showView('cart');}
 function cartQty(id,d){const f=CART.find(c=>c.id===id);if(!f)return;f.q=Math.max(1,Math.min(10,f.q+d));updBadge();renderCart();}
 function cartRm(id){CART=CART.filter(c=>c.id!==id);updBadge();renderCart();}
@@ -1599,6 +1637,22 @@ function renderCart(){
      <button class="wbtn" onclick="toast('Opens WhatsApp — order on chat')">Order on WhatsApp</button></div>
    </div></div>`;
 }
+
+
+// ---- mini cart drawer ----
+function miniCart(open){document.getElementById('mcart').classList.toggle('open',open);
+ document.getElementById('mcov').classList.toggle('open',open);
+ document.body.classList.toggle('flt-open',open);
+ if(open) renderMini();}
+function renderMini(){
+ const b=document.getElementById('mcBody');
+ if(!CART.length){b.innerHTML='<div class="mcempty">Your cart is empty</div>';document.getElementById('mcSub').textContent='₹0';return;}
+ b.innerHTML=CART.map(c=>{const x=PRODS[c.id];
+  return `<div class="mcline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
+   <div style="flex:1;min-width:0"><div class="nm">${x.n}</div><div class="pr">${inr(x.p)}</div>
+   <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1);renderMini()">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1);renderMini()">+</button></div>
+   <span class="rm" onclick="cartRm('${c.id}');renderMini()">Remove</span></div></div></div>`;}).join('');
+ document.getElementById('mcSub').textContent=inr(CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0));}
 
 // ---- marketplace strips ----
 function miniCard(id){const x=PRODS[id];
