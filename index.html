@@ -1030,6 +1030,32 @@ header{position:static!important}
   .expcats{grid-template-columns:repeat(8,1fr)}
   .speccard{padding:20px}
 }
+
+/* ---- PDP grouping + breathing ---- */
+.pcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:12px}
+.pcard .titlerow{margin-bottom:2px}
+.pcard .rate{margin:8px 0 2px}
+.pcard .skuline{margin-bottom:10px}
+.pcard .pricebig{margin-bottom:2px}
+.pcard .chips{margin-bottom:10px}
+.pcard .pdp-desc{margin:0 0 12px}
+.pcard .trustrow{padding-top:2px}
+.viewing{margin:8px 0 4px}
+.cashback{margin:12px 0 2px}
+.qtyrow{margin:14px 0 2px}
+.etamod{margin:0 0 12px}
+.delvblock{margin:0 0 14px}
+.speccard{margin-bottom:14px}
+.speccard .sizetbl{margin-top:14px}
+.acc{margin-bottom:10px}
+.simhead{margin:22px 0 12px}
+#pdp .pdp-info{display:flex;flex-direction:column}
+@media(min-width:900px){
+  .pcard{padding:20px;margin-bottom:14px}
+  .etamod{padding:18px}
+  .delvblock{padding:16px 18px;margin-bottom:16px}
+  .speccard{margin-bottom:16px}
+}
 </style>
 </head>
 <body>
@@ -1417,6 +1443,7 @@ header{position:static!important}
       </div>
     </div>
     <div class="pdp-info">
+      <div class="pcard">
       <div class="titlerow"><h1 id="pdT">Erica Outdoor Sofa Set (3+1+1) with Coffee Table</h1>
   <span class="sharebtn" onclick="toast('Share — mockup')"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6.5" r="2.4"/><circle cx="17" cy="17.5" r="2.4"/><line x1="8.2" y1="10.9" x2="14.8" y2="7.6"/><line x1="8.2" y1="13.1" x2="14.8" y2="16.4"/></svg>Share</span></div>
 <div class="byline">By <b>Outdoo Originals</b></div>
@@ -1433,6 +1460,8 @@ header{position:static!important}
   <div class="qty"><button onclick="qch(-1)">−</button><span id="pdQty">1</span><button onclick="qch(1)">+</button></div>
   <span class="hurry" id="pdHurry">Hurry! Only 3 left</span>
 </div>
+      </div>
+      <div class="pcard">
       <div class="chips"><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip">Free metro delivery</span><span class="chip terra">Self-assembly</span></div>
       <p class="pdp-desc" id="pdDesc">Powder-coated aluminium frame with UV-stabilised weave and quick-dry cushions — built for Indian summers and monsoons alike.</p>
       
@@ -1443,7 +1472,8 @@ header{position:static!important}
   <span class="tchip"><svg viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 H6z"/><path d="M9 12 h6 M9 16 h6"/></svg>GST Invoice</span>
   <span class="tchip"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10 V7 a4 4 0 0 1 8 0 v3"/></svg>Secure Payments</span>
 </div>
-<div class="secline">100% secure checkout · UPI · Cards · Net Banking · EMI available</div>
+<div class="secline" style="margin-top:8px">100% secure checkout · UPI · Cards · Net Banking · EMI available</div>
+      </div>
       <div class="etamod">
         <div class="top">
           <svg viewBox="0 0 24 24"><path d="M3 7 h11 v9 H3z"/><path d="M14 10 h4 L21 13 v3 h-7"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/></svg>
@@ -1469,20 +1499,14 @@ header{position:static!important}
         <div><svg viewBox="0 0 24 24"><path d="M4 12 a8 8 0 1 1 3 6.2"/><path d="M4 19 v-5 h5"/></svg>Damage at unboxing? Replaced free — no questions asked</div>
       </div>
       <div class="speccard">
-        <h3>Product Specifications</h3>
-        <span class="curated"><b>OUTDOO</b> Curated · chosen by the team behind 300+ outdoor projects</span>
+        <h3>Product details</h3>
+        <span class="curated"><b>OUTDOO</b> Curated · picked by the team behind 300+ outdoor projects</span>
         <div class="kv" id="pdKV"></div>
-      </div>
-      <div class="speccard">
-        <h3>About the product</h3>
-        <ul class="abt" id="pdAbout" style="margin:0 0 0 16px"></ul>
-        <div style="font-size:10.5px;letter-spacing:.06em;font-weight:800;color:var(--muted);margin:14px 0 0">INCLUDES / SIZE CHART</div>
         <table class="sizetbl" id="pdSize"></table>
       </div>
-      <div class="acc open"><div class="acc-h" onclick="accT(this)">Product Details<span class="pm">−</span></div>
-        <div class="acc-b"><table class="dettbl" id="pdDet"></table></div></div>
-      <div class="acc"><div class="acc-h" onclick="accT(this)">Specifications<span class="pm">+</span></div>
-        <div class="acc-b"><ul class="speclist" id="pdSpec"></ul></div></div>
+      
+      
+      
             <div class="acc"><div class="acc-h" onclick="accT(this)">Why Outdoo<span class="pm">+</span></div>
         <div class="acc-b">
           <ul class="speclist">
@@ -1492,8 +1516,7 @@ header{position:static!important}
             <li><b>Room packages</b> — build a full balcony or terrace in one order, at bundle pricing</li>
           </ul>
         </div></div>
-      <div class="acc"><div class="acc-h" onclick="accT(this)">Seller<span class="pm">+</span></div>
-        <div class="acc-b">Sold by an <b>Outdoo verified partner</b> and fulfilled by Outdoo. Quality checked before dispatch · GST invoice available.</div></div>
+      
       <div class="acc"><div class="acc-h" onclick="accT(this)">Ratings & Reviews<span class="pm">+</span></div>
         <div class="acc-b">
           <div class="rtabs"><button class="on" onclick="revTab(this,'p')">Product Reviews</button><button onclick="revTab(this,'c')">Category Reviews</button></div>
@@ -2058,20 +2081,6 @@ function openProduct(id){
   document.getElementById('pdRevAvg').textContent = x.r;
   document.getElementById('pdRevCnt').textContent = x.c + ' ratings';
   const d = COLDET[x.col];
-  document.getElementById('pdDet').innerHTML =
-    `<tr><td>Brand</td><td>Outdoo Originals</td></tr>
-     <tr><td>Assembly</td><td>${d.asm}</td></tr>
-     <tr><td>Colour</td><td>As shown</td></tr>
-     <tr><td>Material</td><td>${d.mat}</td></tr>
-     <tr><td>Dimensions</td><td>${d.dim}</td></tr>
-     <tr><td>Pack Content</td><td>1 set as described</td></tr>
-     <tr><td>Warranty</td><td>${d.warr}</td></tr>
-     <tr><td>SKU</td><td>${document.getElementById('pdSku').textContent.split(' · ')[0].replace('SKU ','')}</td></tr>`;
-  document.getElementById('pdSpec').innerHTML =
-    `<li>Built for Indian weather — sun, rain & humidity</li>
-     <li>${x.ship} from partner workshop</li>
-     <li>Free delivery in serviceable metros</li>
-     <li>Damage-free delivery promise</li>`;
   fillPDPv2(x, d, document.getElementById('pdSku').textContent.split(' · ')[0].replace('SKU ',''));
   const sims = Object.keys(PRODS).filter(i=>PRODS[i].col===x.col && PRODS[i]!==x).slice(0,6);
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
@@ -2719,19 +2728,10 @@ function fillPDPv2(x,d,sku){
   const mat=document.getElementById('pdMat'); if(mat) mat.textContent=d.mat;
   const eta=document.getElementById('pdEta'); if(eta) eta.textContent=x.ship.replace('Ships in ','').replace('Made to order · ','Made to order · ');
   const kv=document.getElementById('pdKV');
-  if(kv) kv.innerHTML=[['Brand','Outdoo Originals'],['Material',d.mat],['Assembly',d.asm],['Dimensions',d.dim],
-    ['Colour','As shown'],['Space',COLS[x.col]?COLS[x.col].t:'Outdoor'],['Weather rating','Outdoor-grade · UV & rain tested'],
-    ['Warranty',d.warr],['Pack content','1 set as described'],['SKU',sku],['Country of origin','India']]
+  if(kv) kv.innerHTML=[['Material',d.mat],['Assembly',d.asm],['Dimensions',d.dim],
+    ['Weather rating','Outdoor-grade · UV & rain tested'],['Warranty',d.warr],
+    ['Dispatch',x.ship],['SKU',sku+' · Made in India']]
     .map(r=>`<div class="k">${r[0]}</div><div class="v">${r[1]}</div>`).join('');
-  const ab=document.getElementById('pdAbout');
-  if(ab) ab.innerHTML=[
-    `${d.mat} — built for Indian sun, rain and humidity`,
-    `${d.asm}`,
-    `${x.ship} from our partner workshop`,
-    'Curated by the team behind 300+ outdoor projects',
-    'Free delivery across top metros with weather-safe packing',
-    `${d.warr} · damage-free delivery promise`,
-    'Custom sizes and finishes available on request'].map(t=>`<li>${t}</li>`).join('');
   const sz=document.getElementById('pdSize');
   if(sz){const rows=SIZEROWS[x.col]||SIZEROWS.furniture;
     sz.innerHTML='<tr><th>Size</th><th>Includes</th><th>Measurement</th></tr>'+
