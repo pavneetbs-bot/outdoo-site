@@ -1888,6 +1888,56 @@ setTimeout(()=>{if(offShown)return;offShown=true;
  if(document.body.classList.contains('flt-open'))return;
  document.getElementById('offpop').classList.add('open');document.getElementById('opov').classList.add('open');},5000);
 
+
+// ================= BROWSER HISTORY / BACK BUTTON =================
+(function(){
+  const _home=showHome, _col=openCol, _prod=openProduct, _cart=openCart;
+  const _mini=miniCart, _qv=qvOpen, _flt=fltToggle, _wa=waToggle;
+  let lock=false;
+
+  function anyModal(){
+    return ['mcart','qv','fltPanel','offpop','wachat'].some(id=>{
+      const el=document.getElementById(id); return el && el.classList.contains('open');});
+  }
+  function closeModals(){
+    try{ _mini(false); }catch(e){}
+    try{ qvClose(); }catch(e){}
+    try{ _flt(false); }catch(e){}
+    try{ offClose(); }catch(e){}
+    const w=document.getElementById('wachat'); if(w) w.classList.remove('open');
+    document.body.classList.remove('flt-open');
+  }
+  function push(st){ if(lock) return; history.pushState(st,'',location.pathname+location.search); }
+
+  // view openers record history
+  window.showHome=function(){ _home(); push({v:'home'}); };
+  window.openCol=function(k){ _col(k); push({v:'plp',k:k}); };
+  window.openProduct=function(id){ _prod(id); push({v:'pdp',id:id}); };
+  window.openCart=function(){ _cart(); push({v:'cart'}); };
+
+  // modals record history too, so back closes them
+  window.miniCart=function(o){ _mini(o); if(o) push({v:'modal'}); };
+  window.qvOpen=function(id){ _qv(id); push({v:'modal'}); };
+  window.fltToggle=function(o){ _flt(o); if(o && window.innerWidth<900) push({v:'modal'}); };
+  window.waToggle=function(){ _wa(); const w=document.getElementById('wachat');
+    if(w && w.classList.contains('open')) push({v:'modal'}); };
+
+  window.backFromPDP=function(){ history.back(); };
+
+  window.addEventListener('popstate', function(e){
+    if(anyModal()){ closeModals(); return; }
+    lock=true;
+    closeModals();
+    const st=e.state||{v:'home'};
+    if(st.v==='plp' && COLS[st.k]) _col(st.k);
+    else if(st.v==='pdp' && PRODS[st.id]) _prod(st.id);
+    else if(st.v==='cart') _cart();
+    else _home();
+    lock=false;
+  });
+
+  history.replaceState({v:'home'},'',location.pathname+location.search);
+})();
 </script>
 </body>
 </html>
