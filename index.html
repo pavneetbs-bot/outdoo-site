@@ -155,6 +155,47 @@ section{padding:20px 0 8px}
 .pc .mrp{color:var(--muted);text-decoration:line-through;font-weight:400;font-size:10.5px;margin-left:5px}
 .pc .ship{font-size:9.5px;color:var(--olive-deep);font-weight:600;margin-top:5px}
 
+/* ---- marketplace density strips ---- */
+.hstrip{display:flex;gap:11px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+.hstrip::-webkit-scrollbar{display:none}
+.mpc{flex:0 0 140px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer}
+.mpc .im{aspect-ratio:1}
+.mpc .bd{padding:8px 9px 10px}
+.mpc .nm{font-size:10px;font-weight:500;min-height:26px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mpc .pr{font-size:12px;font-weight:800;margin-top:3px}
+.mpc .mr2{font-size:9px;color:var(--muted);text-decoration:line-through;margin-left:5px}
+.deal{display:flex;gap:14px;background:linear-gradient(115deg,#2E2E2E,#4a3428);border-radius:16px;overflow:hidden;color:#fff;cursor:pointer;margin:6px 0}
+.deal .im{flex:0 0 42%;aspect-ratio:1}
+.deal .tx{padding:14px 14px 14px 2px;display:flex;flex-direction:column;justify-content:center}
+.deal .db{display:inline-block;background:var(--terra);font-size:9px;font-weight:800;letter-spacing:.08em;padding:4px 9px;border-radius:5px;width:max-content;margin-bottom:7px}
+.deal h3{font-size:14px;font-weight:700;line-height:1.25}
+.deal .dp{font-size:16px;font-weight:800;margin-top:6px}
+.deal .dm{font-size:10px;opacity:.7;text-decoration:line-through;margin-left:6px}
+.deal .tm{font-size:10px;margin-top:8px;opacity:.9}
+.deal .tm b{background:rgba(255,255,255,.15);padding:2px 6px;border-radius:4px;font-variant-numeric:tabular-nums}
+.spaces{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.space{position:relative;border-radius:13px;overflow:hidden;aspect-ratio:16/10;cursor:pointer}
+.space .im{position:absolute;inset:0}
+.space span{position:absolute;left:10px;bottom:9px;color:#fff;font-weight:700;font-size:12.5px;z-index:2;text-shadow:0 1px 8px rgba(0,0,0,.55)}
+.space::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.5))}
+.pricetiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ptile{background:var(--sand-soft);border:1px solid var(--line);border-radius:12px;padding:13px 10px;text-align:center;cursor:pointer}
+.ptile b{display:block;font-size:12.5px}
+.ptile span{font-size:9.5px;color:var(--muted)}
+.tagcloud{display:flex;flex-wrap:wrap;gap:8px}
+.tag{background:#fff;border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:11px;color:#4b473f;cursor:pointer}
+.seotext{font-size:11px;color:var(--muted);line-height:1.65}
+.seotext h3{font-size:12.5px;color:var(--char);margin:10px 0 4px}
+@media(min-width:900px){
+  .mpc{flex-basis:190px}
+  .mpc .nm{font-size:11px}
+  .deal .im{flex-basis:320px;aspect-ratio:auto}
+  .deal h3{font-size:19px}
+  .deal .dp{font-size:22px}
+  .spaces{grid-template-columns:repeat(4,1fr)}
+  .pricetiles{grid-template-columns:repeat(3,1fr);gap:14px}
+  .ptile{padding:18px}
+}
 /* pagehead */
 .pagehead{padding:12px 0 2px}
 .pagehead h1{font-size:17px;font-weight:800}
@@ -532,6 +573,17 @@ footer{background:var(--char);color:#cfcbc2;padding:30px 0 22px;font-size:12px}
     </div>
   </section>
 
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>More outdoor furniture</h2><span class="view" onclick="openCol('furniture')">View all →</span></div>
+    <div class="hstrip" id="stripSofas"></div>
+  </section>
+
+  <section style="padding-top:10px">
+    <div class="sec-head"><h2>Deal of the day</h2><span class="view" id="dealTimerTop"></span></div>
+    <div class="deal" id="dealCard"></div>
+  </section>
+
+
   <section>
     <div class="sec-head"><h2>New arrivals</h2><span class="view" onclick="openCol('art')">View all →</span></div>
     <div class="prods">
@@ -570,6 +622,46 @@ footer{background:var(--char);color:#cfcbc2;padding:30px 0 22px;font-size:12px}
     </div>
   </section>
 
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>Sculptural outdoor lighting</h2><span class="view" onclick="openCol('lighting')">View all →</span></div>
+    <div class="hstrip" id="stripLight"></div>
+  </section>
+
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>Shop by space</h2></div>
+    <div class="spaces">
+      <div class="space" onclick="openCol('planters')"><div class="im"><img data-img="FOLIAGE" alt=""></div><span>Balcony</span></div>
+      <div class="space" onclick="openCol('furniture')"><div class="im"><img data-img="SOFA" alt=""></div><span>Terrace</span></div>
+      <div class="space" onclick="openCol('art')"><div class="im"><img data-img="AZITA" alt=""></div><span>Garden</span></div>
+      <div class="space" onclick="openCol('shade')"><div class="im"><img data-img="COURTYARD" alt=""></div><span>Poolside</span></div>
+    </div>
+  </section>
+
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>Steals under ₹12,000</h2><span class="view" onclick="openCol('furnishings')">View all →</span></div>
+    <div class="hstrip" id="stripRugs"></div>
+  </section>
+
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>Planters & green walls</h2><span class="view" onclick="openCol('planters')">View all →</span></div>
+    <div class="hstrip" id="stripPlant"></div>
+  </section>
+
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>Art, sculpture & water features</h2><span class="view" onclick="openCol('art')">View all →</span></div>
+    <div class="hstrip" id="stripArt"></div>
+  </section>
+
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>Shop by budget</h2></div>
+    <div class="pricetiles">
+      <div class="ptile" onclick="openCol('furnishings')"><b>Under ₹10,000</b><span>Rugs & accents</span></div>
+      <div class="ptile" onclick="openCol('planters')"><b>₹10K – ₹50K</b><span>Planters, lamps, art</span></div>
+      <div class="ptile" onclick="openCol('furniture')"><b>₹50K+</b><span>Furniture & statement pieces</span></div>
+    </div>
+  </section>
+
+
   <div class="stats">
     <div class="stat"><svg viewBox="0 0 24 24"><path d="M3 7 h13 v10 H3z"/><path d="M16 10 h3.5 L21 13 v4 h-5"/><circle cx="7.5" cy="17" r="1.7"/><circle cx="17.5" cy="17" r="1.7"/></svg><b>6 Metros</b><span>Free delivery</span></div>
     <div class="stat"><svg viewBox="0 0 24 24"><path d="M12 3 l7 3 v6 c0 4.5 -3 7.5 -7 9 c-4 -1.5 -7 -4.5 -7 -9 V6 z"/><path d="M9 12 l2 2 l4 -4"/></svg><b>Quality</b><span>Team verified</span></div>
@@ -598,6 +690,44 @@ footer{background:var(--char);color:#cfcbc2;padding:30px 0 22px;font-size:12px}
         <div class="who"><span class="av">PM</span><div><div class="nm3">Priya Menon</div><div class="ct3">Bengaluru · Soft Furnishings</div></div></div></div>
     </div>
   </section>
+
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>Popular searches</h2></div>
+    <div class="tagcloud">
+      <span class="tag" onclick="openCol('furniture')">outdoor sofa set</span>
+      <span class="tag" onclick="openCol('furniture')">hanging swing chair</span>
+      <span class="tag" onclick="openCol('lighting')">diwali lights</span>
+      <span class="tag" onclick="openCol('planters')">balcony planters</span>
+      <span class="tag" onclick="openCol('furnishings')">outdoor rugs</span>
+      <span class="tag" onclick="openCol('shade')">garden umbrella</span>
+      <span class="tag" onclick="openCol('art')">water fountain</span>
+      <span class="tag" onclick="openCol('planters')">vertical garden</span>
+      <span class="tag" onclick="openCol('furniture')">terrace dining set</span>
+      <span class="tag" onclick="openCol('art')">buddha statue garden</span>
+    </div>
+  </section>
+
+  <section style="padding-top:6px">
+    <div class="sec-head"><h2>Frequently asked questions</h2></div>
+    <div class="acc"><div class="acc-h" onclick="accT(this)">Do you deliver & install?<span class="pm">+</span></div>
+      <div class="acc-b">Yes — free delivery in serviceable metros, and furniture is assembled at your home by our team.</div></div>
+    <div class="acc"><div class="acc-h" onclick="accT(this)">Will products survive rain & sun?<span class="pm">+</span></div>
+      <div class="acc-b">Everything on Outdoo is built for the outdoors — powder-coated frames, UV-stabilised weaves, quick-dry foam and weatherproof composites, made in India since 1992.</div></div>
+    <div class="acc"><div class="acc-h" onclick="accT(this)">What about warranty & returns?<span class="pm">+</span></div>
+      <div class="acc-b">Frames carry up to 3-year warranty and every delivery has a damage-free promise — issues at unboxing are replaced, no questions asked.</div></div>
+    <div class="acc"><div class="acc-h" onclick="accT(this)">Can I order custom sizes or colours?<span class="pm">+</span></div>
+      <div class="acc-b">Yes — most lamps, sculptures and planters are made to order in multiple sizes and finishes. Chat with us on WhatsApp for custom requests.</div></div>
+  </section>
+
+  <section style="padding-top:6px">
+    <div class="seotext">
+      <h3>Outdoor furniture & decor online in India — Outdoo</h3>
+      <p>Outdoo brings every outdoor possibility to your doorstep — luxury outdoor sofa sets, terrace dining, hanging swings, sun loungers, garden umbrellas, all-weather lamps, sculptural art, water features, planters and outdoor rugs. Curated by the team behind 300+ luxury outdoor projects at LifeWall, and manufactured in India by the country's largest outdoor furniture maker, est. 1992.</p>
+      <h3>Built for Indian weather</h3>
+      <p>Delhi NCR summers, Mumbai monsoons or Bengaluru sun — every product is engineered outdoors-first with powder-coated aluminium, UV-stabilised braids, quick-dry cushions and frost-proof composites, delivered and installed across top metros.</p>
+    </div>
+  </section>
+
 
 </div>
 
@@ -1137,6 +1267,41 @@ let ci=0;
 setInterval(()=>{ ci=(ci+1)%slides.length;
   slides.forEach((s,i)=>s.classList.toggle('on',i===ci));
   dots.forEach((d,i)=>d.classList.toggle('on',i===ci)); },3500);
+
+// ---- marketplace strips ----
+function miniCard(id){const x=PRODS[id];
+  const mr=x.m>x.p? `<span class="mr2">${inr(x.m)}</span>`:'';
+  return `<div class="mpc" onclick="openProduct('${id}')"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
+    <div class="bd"><div class="nm">${x.n}</div><div class="pr">${inr(x.p)}${mr}</div></div></div>`;}
+function fillStrip(el, ids){const d=document.getElementById(el); if(d) d.innerHTML=ids.map(miniCard).join('');}
+function byCol(c,n,skip=0){return Object.keys(PRODS).filter(i=>PRODS[i].col===c).slice(skip,skip+n);}
+function byPrice(max,n){return Object.keys(PRODS).filter(i=>PRODS[i].p<=max).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,n);}
+fillStrip('stripSofas', byCol('furniture',10,4));
+fillStrip('stripLight', byCol('lighting',10));
+fillStrip('stripRugs', byPrice(12000,10));
+fillStrip('stripPlant', byCol('planters',10));
+fillStrip('stripArt', byCol('art',10));
+// deal of the day: rotates daily
+(function(){
+  const ids=Object.keys(PRODS).filter(i=>PRODS[i].m>PRODS[i].p);
+  const pool=ids.length?ids:Object.keys(PRODS);
+  const day=Math.floor(Date.now()/864e5);
+  const id=pool[day%pool.length]; const x=PRODS[id];
+  const mr=x.m>x.p? `<span class="dm">${inr(x.m)}</span>`:'';
+  const card=document.getElementById('dealCard');
+  if(card){card.setAttribute('onclick',`openProduct('${id}')`);
+    card.innerHTML=`<div class="im"><img src="${IMGS[x.img]}" alt=""></div>
+      <div class="tx"><span class="db">TODAY ONLY</span><h3>${x.n}</h3>
+      <div class="dp">${inr(Math.round(x.p*0.95/100)*100)}${mr}</div>
+      <div class="tm">Ends in <b id="dealTimer">--:--:--</b></div></div>`;
+    function tick(){const now=new Date();const end=new Date(now);end.setHours(24,0,0,0);
+      let s=Math.max(0,(end-now)/1000|0);
+      const t=`${String(s/3600|0).padStart(2,'0')}:${String((s%3600)/60|0).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+      const a=document.getElementById('dealTimer'); if(a) a.textContent=t;
+      const b=document.getElementById('dealTimerTop'); if(b) b.textContent='Ends in '+t;}
+    tick(); setInterval(tick,1000);}
+})();
+
 </script>
 </body>
 </html>
