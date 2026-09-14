@@ -988,6 +988,48 @@ header{position:static!important}
   .deskicons{display:flex!important;align-items:center;gap:14px}
 }
 .deskbrand,.deskicons{display:none}
+
+/* ---- PDP v2 (organised) ---- */
+.matline{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#4b473f;margin:6px 0 2px}
+.matline::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--olive)}
+.pricebig .mrplab{font-size:11px;color:var(--muted);font-weight:600;margin-left:8px}
+.etamod{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px;margin:12px 0}
+.etamod .top{display:flex;align-items:center;gap:11px}
+.etamod .top svg{width:26px;height:26px;stroke:var(--char);fill:none;stroke-width:1.5;flex-shrink:0}
+.etamod .top .sep{width:1px;height:26px;background:var(--line)}
+.etamod .lb{font-size:10.5px;color:var(--muted)}
+.etamod .vl{font-size:14px;font-weight:800}
+.tri{display:flex;align-items:stretch;border-top:1px solid var(--sand-soft);margin-top:12px;padding-top:12px}
+.tri .c{flex:1;text-align:center;padding:0 4px}
+.tri .c+.c{border-left:1px solid var(--sand-soft)}
+.tri svg{width:22px;height:22px;stroke:var(--olive-deep);fill:none;stroke-width:1.6;margin-bottom:5px}
+.tri span{display:block;font-size:10px;color:#4b473f;line-height:1.35;font-weight:600}
+.speccard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px;margin-bottom:12px}
+.speccard h3{font-size:13.5px;font-weight:800;margin-bottom:12px}
+.curated{display:inline-flex;align-items:center;gap:8px;background:var(--olive-soft);border-radius:999px;
+  padding:5px 12px 5px 6px;font-size:10.5px;color:var(--olive-deep);font-weight:700;margin-bottom:13px}
+.curated b{background:var(--olive);color:#fff;border-radius:999px;padding:3px 9px;font-size:9px;letter-spacing:.04em}
+.kv{display:grid;grid-template-columns:38% 1fr;gap:9px 10px;font-size:12px}
+.kv .k{color:var(--muted)}
+.kv .v{font-weight:600;color:var(--char)}
+.abt li{font-size:12px;color:#4b473f;line-height:1.6;margin-bottom:6px}
+.sizetbl{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:10px}
+.sizetbl th{background:var(--sand-soft);text-align:left;padding:8px 9px;font-weight:700;font-size:10.5px;
+  border:1px solid var(--line)}
+.sizetbl td{padding:8px 9px;border:1px solid var(--line);color:#4b473f}
+.rtabs{display:flex;gap:8px;margin-bottom:12px}
+.rtabs button{flex:1;padding:10px;border-radius:9px;border:1.5px solid var(--line);background:#fff;font-family:inherit;
+  font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.rtabs button.on{background:var(--char);border-color:var(--char);color:#fff}
+.expcats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.expcats .ec{cursor:pointer;text-align:center}
+.expcats .ec .im{aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sand-soft)}
+.expcats .ec span{display:block;font-size:10px;font-weight:600;margin-top:6px;line-height:1.3}
+@media(min-width:900px){
+  .kv{font-size:13px}
+  .expcats{grid-template-columns:repeat(8,1fr)}
+  .speccard{padding:20px}
+}
 </style>
 </head>
 <body>
@@ -1378,6 +1420,7 @@ header{position:static!important}
       <div class="titlerow"><h1 id="pdT">Erica Outdoor Sofa Set (3+1+1) with Coffee Table</h1>
   <span class="sharebtn" onclick="toast('Share — mockup')"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6.5" r="2.4"/><circle cx="17" cy="17.5" r="2.4"/><line x1="8.2" y1="10.9" x2="14.8" y2="7.6"/><line x1="8.2" y1="13.1" x2="14.8" y2="16.4"/></svg>Share</span></div>
 <div class="byline">By <b>Outdoo Originals</b></div>
+<div class="matline" id="pdMat"></div>
 <div class="viewing"><svg viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4.5 12 4.5 s7 2 10 7.5 c-3 5.5 -7 7.5 -10 7.5 s-7 -2 -10 -7.5z"/><circle cx="12" cy="12" r="3"/></svg><span id="pdView">284</span>&nbsp;people viewing this</div>
       <div class="rate"><span class="st" id="pdR">4.6 ★</span><span id="pdC">212 ratings</span></div>
       <div class="skuline" id="pdSku">SKU OD-FUR-0114 · Outdoor Furniture</div>
@@ -1390,7 +1433,7 @@ header{position:static!important}
   <div class="qty"><button onclick="qch(-1)">−</button><span id="pdQty">1</span><button onclick="qch(1)">+</button></div>
   <span class="hurry" id="pdHurry">Hurry! Only 3 left</span>
 </div>
-      <div class="chips"><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip">Free delivery</span><span class="chip terra">Free delivery</span></div>
+      <div class="chips"><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip">Free metro delivery</span><span class="chip terra">Self-assembly</span></div>
       <p class="pdp-desc" id="pdDesc">Powder-coated aluminium frame with UV-stabilised weave and quick-dry cushions — built for Indian summers and monsoons alike.</p>
       
 <div class="trustrow">
@@ -1401,16 +1444,40 @@ header{position:static!important}
   <span class="tchip"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10 V7 a4 4 0 0 1 8 0 v3"/></svg>Secure Payments</span>
 </div>
 <div class="secline">100% secure checkout · UPI · Cards · Net Banking · EMI available</div>
-      <div class="pincheck">
-        <label>Check delivery to your pincode</label>
+      <div class="etamod">
+        <div class="top">
+          <svg viewBox="0 0 24 24"><path d="M3 7 h11 v9 H3z"/><path d="M14 10 h4 L21 13 v3 h-7"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/></svg>
+          <span class="sep"></span>
+          <div><div class="lb">Reaching your home in</div><div class="vl" id="pdEta">7–10 days</div></div>
+        </div>
+        <div class="pincheck" style="margin-top:12px;background:none;border:none;padding:0">
+
+        <label>Enter pincode for an accurate date</label>
         <div class="row"><input id="pin" maxlength="6" placeholder="e.g. 110001" inputmode="numeric">
         <button class="btn" style="padding:10px 18px" onclick="checkPin()">Check</button></div>
         <div class="pin-ok" id="pinok"></div>
+        </div>
+        <div class="tri">
+          <div class="c"><svg viewBox="0 0 24 24"><path d="M3 7 h11 v9 H3z"/><path d="M14 10 h4 L21 13 v3 h-7"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/></svg><span>Free delivery<br>in top metros</span></div>
+          <div class="c"><svg viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 H6z"/><path d="M9 12 h6 M9 16 h6"/></svg><span>GST invoice<br>on every order</span></div>
+          <div class="c"><svg viewBox="0 0 24 24"><path d="M4 12 a8 8 0 1 1 3 6.2"/><path d="M4 19 v-5 h5"/></svg><span>Damage-free<br>delivery promise</span></div>
+        </div>
       </div>
       <div class="delvblock">
         <div><svg viewBox="0 0 24 24"><path d="M3 7 h13 v10 H3z"/><path d="M16 10 h3.5 L21 13 v4 h-5"/><circle cx="7.5" cy="17" r="1.7"/><circle cx="17.5" cy="17" r="1.7"/></svg>Dispatched with weather-safe packing · free delivery across top metros</div>
         <div><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 20 c0 -3.5 2.7 -5.5 6 -5.5 s6 2 6 5.5"/><path d="M16 8 l2 2 l4 -4"/></svg>Curated by the team behind 300+ outdoor projects</div>
         <div><svg viewBox="0 0 24 24"><path d="M4 12 a8 8 0 1 1 3 6.2"/><path d="M4 19 v-5 h5"/></svg>Damage at unboxing? Replaced free — no questions asked</div>
+      </div>
+      <div class="speccard">
+        <h3>Product Specifications</h3>
+        <span class="curated"><b>OUTDOO</b> Curated · chosen by the team behind 300+ outdoor projects</span>
+        <div class="kv" id="pdKV"></div>
+      </div>
+      <div class="speccard">
+        <h3>About the product</h3>
+        <ul class="abt" id="pdAbout" style="margin:0 0 0 16px"></ul>
+        <div style="font-size:10.5px;letter-spacing:.06em;font-weight:800;color:var(--muted);margin:14px 0 0">INCLUDES / SIZE CHART</div>
+        <table class="sizetbl" id="pdSize"></table>
       </div>
       <div class="acc open"><div class="acc-h" onclick="accT(this)">Product Details<span class="pm">−</span></div>
         <div class="acc-b"><table class="dettbl" id="pdDet"></table></div></div>
@@ -1429,6 +1496,7 @@ header{position:static!important}
         <div class="acc-b">Sold by an <b>Outdoo verified partner</b> and fulfilled by Outdoo. Quality checked before dispatch · GST invoice available.</div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Ratings & Reviews<span class="pm">+</span></div>
         <div class="acc-b">
+          <div class="rtabs"><button class="on" onclick="revTab(this,'p')">Product Reviews</button><button onclick="revTab(this,'c')">Category Reviews</button></div>
           <div class="revtop">
             <div class="revbig"><span id="pdRevAvg">4.6</span><small id="pdRevCnt">212 ratings</small></div>
             <div class="bars">
@@ -1448,8 +1516,28 @@ header{position:static!important}
         <div class="acc-b qa">Be the first one to ask a question
           <input placeholder="Type your question… (300 chars)" style="margin-top:8px">
           <button class="btn" style="padding:9px 22px;font-size:12px" onclick="toast('Question posted — mockup')">Post</button></div></div>
+            <div class="acc"><div class="acc-h" onclick="accT(this)">All offers<span class="pm">+</span></div>
+        <div class="acc-b"><ul class="speclist">
+          <li><b>OUTDOO5</b> — extra 5% off, auto-applied at cart</li>
+          <li><b>Room package pricing</b> — up to 7% off when you buy a full space</li>
+          <li><b>Bulk &amp; trade</b> — special pricing on 10+ units <a onclick="enqOpen('bulk')" style="color:var(--terra-deep);font-weight:700;cursor:pointer">enquire →</a></li>
+          <li><b>EMI</b> available on cards at checkout</li>
+          <li>Made-to-order pieces: pay 20% now, balance before dispatch</li>
+        </ul></div></div>
+      <div class="acc"><div class="acc-h" onclick="accT(this)">Manufacturer &amp; brand<span class="pm">+</span></div>
+        <div class="acc-b" id="pdMfr"></div></div>
+      <div class="acc"><div class="acc-h" onclick="accT(this)">Delivery, assembly &amp; returns<span class="pm">+</span></div>
+        <div class="acc-b"><ul class="speclist">
+          <li>Free delivery across top metros, weather-safe packing</li>
+          <li>Self-assembly — fittings and a step-by-step guide ship with every piece</li>
+          <li>Damage at unboxing is replaced free — report within 48 hours with photos</li>
+          <li>Made-to-order items are not returnable once production starts</li>
+          <li>Questions while assembling? Our team is on WhatsApp</li>
+        </ul></div></div>
       <div class="simhead">View similar items</div>
       <div class="simrow" id="simRow"></div>
+      <div class="simhead" style="margin-top:20px">Explore more in categories</div>
+      <div class="expcats" id="expCats"></div>
       <div class="bulkstrip" onclick="enqOpen('bulk')" style="margin-top:18px">
         <div class="ic">📦</div>
         <div><b>Need more than 10 of these?</b>
@@ -1955,7 +2043,7 @@ function openProduct(id){
   document.getElementById('pdC').textContent=x.c+' ratings';
   document.getElementById('pdSku').textContent='SKU OD-'+x.col.slice(0,3).toUpperCase()+'-0'+(100+x.c)+' · '+c.t;
   const off = x.m>x.p ? Math.round((1-x.p/x.m)*100) : 0;
-  document.getElementById('pdPrice').innerHTML = inr(x.p) + (off?`<span class="mrp">${inr(x.m)}</span><span class="off">${off}% off</span>`:'');
+  document.getElementById('pdPrice').innerHTML = inr(x.p) + (off?`<span class="mrplab">MRP</span><span class="mrp">${inr(x.m)}</span><span class="off">${off}% OFF</span>`:'');
   document.getElementById('pdShip').textContent=x.ship;
   document.getElementById('pdDesc').textContent=COLDESC[x.col]||COLDESC['furniture'];
   document.getElementById('pdImg').src=IMGS[x.img];
@@ -1984,6 +2072,7 @@ function openProduct(id){
      <li>${x.ship} from partner workshop</li>
      <li>Free delivery in serviceable metros</li>
      <li>Damage-free delivery promise</li>`;
+  fillPDPv2(x, d, document.getElementById('pdSku').textContent.split(' · ')[0].replace('SKU ',''));
   const sims = Object.keys(PRODS).filter(i=>PRODS[i].col===x.col && PRODS[i]!==x).slice(0,6);
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
     return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt=""></div>
@@ -2612,6 +2701,48 @@ function enqSubmit(){
         <button class="gh" onclick="enqClose()">Close</button>
         <button class="btn" onclick="enqClose();waToggle()">WhatsApp us</button></div>
     </div>`;
+}
+
+// ---- PDP v2 fillers ----
+const SIZEROWS = {
+ furniture:[['Set','As shown','Seat H 42 cm · Frame powder-coated aluminium']],
+ shade:[['3 m span','1 umbrella + base plate','Pole H 250 cm · canopy 300 cm']],
+ lighting:[['Standard','1 lamp + fitting','See pack · IP44 rated']],
+ planters:[['As listed','1 planter / set as described','Frost-proof composite']],
+ furnishings:[['Standard','1 rug','Sizes from 60×36 in · custom on request']],
+ art:[['Multiple','1 sculpture + M.S. base plate','Made to order — sizes on request']]
+};
+function revTab(el,k){document.querySelectorAll('.rtabs button').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  toast(k==='p'?'Showing reviews for this product':'Showing reviews across this category');}
+function fillPDPv2(x,d,sku){
+  const mat=document.getElementById('pdMat'); if(mat) mat.textContent=d.mat;
+  const eta=document.getElementById('pdEta'); if(eta) eta.textContent=x.ship.replace('Ships in ','').replace('Made to order · ','Made to order · ');
+  const kv=document.getElementById('pdKV');
+  if(kv) kv.innerHTML=[['Brand','Outdoo Originals'],['Material',d.mat],['Assembly',d.asm],['Dimensions',d.dim],
+    ['Colour','As shown'],['Space',COLS[x.col]?COLS[x.col].t:'Outdoor'],['Weather rating','Outdoor-grade · UV & rain tested'],
+    ['Warranty',d.warr],['Pack content','1 set as described'],['SKU',sku],['Country of origin','India']]
+    .map(r=>`<div class="k">${r[0]}</div><div class="v">${r[1]}</div>`).join('');
+  const ab=document.getElementById('pdAbout');
+  if(ab) ab.innerHTML=[
+    `${d.mat} — built for Indian sun, rain and humidity`,
+    `${d.asm}`,
+    `${x.ship} from our partner workshop`,
+    'Curated by the team behind 300+ outdoor projects',
+    'Free delivery across top metros with weather-safe packing',
+    `${d.warr} · damage-free delivery promise`,
+    'Custom sizes and finishes available on request'].map(t=>`<li>${t}</li>`).join('');
+  const sz=document.getElementById('pdSize');
+  if(sz){const rows=SIZEROWS[x.col]||SIZEROWS.furniture;
+    sz.innerHTML='<tr><th>Size</th><th>Includes</th><th>Measurement</th></tr>'+
+      rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');}
+  const mf=document.getElementById('pdMfr');
+  if(mf) mf.innerHTML=`Made in India by our manufacturing partner — <b>established 1992</b>, India's largest outdoor furniture
+    range, producing in-house across furniture, shade, lighting, planters and art.
+    Curated and sold by <b>LifeWall Greentech Private Limited</b>, Delhi NCR. GST invoice issued on every order.`;
+  const ec=document.getElementById('expCats');
+  if(ec) ec.innerHTML=ARCH.slice(0,8).map(a=>`<div class="ec" onclick="openCol('${a[1]}')">
+    <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');
 }
 </script>
 </body>
