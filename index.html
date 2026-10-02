@@ -2127,8 +2127,8 @@ setInterval(()=>{ ci=(ci+1)%slides.length;
 
 
 // ---- cart ----
-let CART=[];
-function updBadge(){const n=CART.reduce((a,c)=>a+c.q,0);['cartn','cartn2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n;});}
+let CART=[]; try{CART=JSON.parse(localStorage.getItem('outdoo_cart')||'[]').filter(c=>c&&c.id&&c.q>0)}catch(e){CART=[]}
+function updBadge(){try{localStorage.setItem('outdoo_cart',JSON.stringify(CART))}catch(e){}const n=CART.reduce((a,c)=>a+c.q,0);['cartn','cartn2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n;});}
 function addCart(id){id=id||curPid;if(!id||!PRODS[id]){toast('Added to cart');return;}
  const f=CART.find(c=>c.id===id); f?f.q++:CART.push({id,q:1});
  updBadge(); miniCart(true); miniTitle('Added to cart ✓');}
@@ -2495,12 +2495,13 @@ function renderCheckout(){
       <div>${x.n}</div><div class="q">${c.q} × ${inr(x.p)}</div></div>`;}).join('');
   document.getElementById('coBody').innerHTML=`<div class="cowrap"><div>
     <div class="cobox"><h3>Contact &amp; delivery address</h3>
-      <div class="f2"><div class="fld"><label>FULL NAME</label><input id="coName" placeholder="Your name"><div class="msg">Please enter your name</div></div>
-      <div class="fld"><label>MOBILE</label><input id="coPh" maxlength="10" inputmode="numeric" placeholder="10-digit number"><div class="msg">Enter a valid 10-digit number</div></div></div>
-      <div class="fld"><label>EMAIL</label><input id="coEm" placeholder="you@email.com"><div class="msg">Enter a valid email</div></div>
-      <div class="fld"><label>ADDRESS</label><textarea id="coAd" rows="2" placeholder="Flat / house, street, landmark"></textarea><div class="msg">Please enter your address</div></div>
-      <div class="f2"><div class="fld"><label>CITY</label><input id="coCity" placeholder="City"><div class="msg">Required</div></div>
-      <div class="fld"><label>PINCODE</label><input id="coPin" maxlength="6" inputmode="numeric" placeholder="110001"><div class="msg">6-digit pincode</div></div></div>
+      <div class="f2"><div class="fld"><label>FULL NAME</label><input id="coName" placeholder="Your name" value="${(coLast.name||'').replace(/"/g,'')}"><div class="msg">Please enter your name</div></div>
+      <div class="fld"><label>MOBILE</label><input id="coPh" maxlength="10" inputmode="numeric" placeholder="10-digit number" value="${coLast.phone||''}"><div class="msg">Enter a valid 10-digit number</div></div></div>
+      <div class="fld"><label>EMAIL (optional)</label><input id="coEm" placeholder="you@email.com" value="${(coLast.email||'').replace(/"/g,'')}"><div class="msg">Enter a valid email</div></div>
+      <div class="fld"><label>ADDRESS</label><textarea id="coAd" rows="2" placeholder="Flat / house, street, landmark">${(coLast.address||'').replace(/</g,'')}</textarea><div class="msg">Please enter your address</div></div>
+      <div class="f2"><div class="fld"><label>CITY</label><input id="coCity" placeholder="City" value="${(coLast.city||'').replace(/"/g,'')}"><div class="msg">Required</div></div>
+      <div class="fld"><label>PINCODE</label><input id="coPin" maxlength="6" inputmode="numeric" placeholder="110001" value="${coLast.pincode||''}"><div class="msg">6-digit pincode</div></div></div>
+      <div class="fld"><label>STATE</label><select id="coState"><option value="">Select state</option>${CO_STATES.map(x=>`<option${x===coLast.state?' selected':''}>${x}</option>`).join('')}</select><div class="msg">Select your state</div></div>
     </div>
     <div class="cobox"><h3>Delivery</h3>
       <div class="payopt on"><input type="radio" name="dlv" checked>
@@ -2510,10 +2511,8 @@ function renderCheckout(){
       <div class="secline">Assembly is by you — fittings and a step-by-step guide ship with every piece.</div>
     </div>
     <div class="cobox"><h3>Payment</h3>
-      <div class="payopt on" onclick="pickPay(this)"><input type="radio" name="pay" checked><div><b>UPI</b><span>GPay · PhonePe · Paytm</span></div></div>
-      <div class="payopt" onclick="pickPay(this)"><input type="radio" name="pay"><div><b>Credit / Debit Card</b><span>Visa · Mastercard · RuPay · EMI available</span></div></div>
-      <div class="payopt" onclick="pickPay(this)"><input type="radio" name="pay"><div><b>Net Banking</b><span>All major banks</span></div></div>
-      <div class="payopt" onclick="pickPay(this)"><input type="radio" name="pay"><div><b>Pay 20% now, rest before dispatch</b><span>For made-to-order pieces · we'll share a payment link</span></div></div>
+      <div class="payopt on"><input type="radio" name="pay" checked><div><b>Cash on delivery</b><span>Pay in cash or UPI to the delivery partner when your order arrives</span></div></div>
+      <div class="secline">Online payment (UPI · cards · net banking) is coming soon.</div>
     </div>
    </div>
    <div>
@@ -2526,34 +2525,56 @@ function renderCheckout(){
         <div class="r"><span>Delivery to top metros</span><span class="grn">FREE</span></div>
         <div class="r tot"><span>Total payable</span><span>${inr(t.total)}</span></div>
       </div>
-      <button class="btn" style="width:100%;margin-top:13px;padding:14px" onclick="placeOrder()">Place order · ${inr(t.total)}</button>
-      <div class="secline" style="text-align:center">Inclusive of all taxes · GST invoice · 100% secure payment</div>
+      <button class="btn" id="coPlace" style="width:100%;margin-top:13px;padding:14px" onclick="placeOrder()">Place order · Cash on delivery · ${inr(t.total)}</button>
+      <div class="secline" style="text-align:center">Inclusive of all taxes · GST invoice from the seller · pay on delivery</div>
     </div>
    </div></div>`;
 }
 function pickPay(el){document.querySelectorAll('.payopt').forEach(p=>{if(p.querySelector('input[name=pay]'))p.classList.remove('on')});
   el.classList.add('on'); const r=el.querySelector('input'); if(r) r.checked=true;}
 function coBad(id,ok){const f=document.getElementById(id).closest('.fld'); f.classList.toggle('err',!ok); return ok;}
-function placeOrder(){
+const CO_STATES=['Andaman and Nicobar Islands','Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chandigarh','Chhattisgarh','Dadra and Nagar Haveli and Daman and Diu','Delhi','Goa','Gujarat','Haryana','Himachal Pradesh','Jammu and Kashmir','Jharkhand','Karnataka','Kerala','Ladakh','Lakshadweep','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Puducherry','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal'];
+let coLast={}; try{coLast=JSON.parse(localStorage.getItem('outdoo_addr')||'{}')}catch(e){}
+let coBusy=false;
+async function placeOrder(){
+  if(coBusy) return;
+  const v=id=>document.getElementById(id).value.trim();
   let ok=true;
-  ok=coBad('coName',document.getElementById('coName').value.trim().length>1)&&ok;
-  ok=coBad('coPh',/^[6-9]\d{9}$/.test(document.getElementById('coPh').value.trim()))&&ok;
-  ok=coBad('coEm',/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(document.getElementById('coEm').value.trim()))&&ok;
-  ok=coBad('coAd',document.getElementById('coAd').value.trim().length>6)&&ok;
-  ok=coBad('coCity',document.getElementById('coCity').value.trim().length>1)&&ok;
-  ok=coBad('coPin',/^\d{6}$/.test(document.getElementById('coPin').value.trim()))&&ok;
+  ok=coBad('coName',v('coName').length>1)&&ok;
+  ok=coBad('coPh',/^[6-9]\d{9}$/.test(v('coPh')))&&ok;
+  ok=coBad('coEm',!v('coEm')||/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v('coEm')))&&ok;
+  ok=coBad('coAd',v('coAd').length>6)&&ok;
+  ok=coBad('coCity',v('coCity').length>1)&&ok;
+  ok=coBad('coPin',/^\d{6}$/.test(v('coPin')))&&ok;
+  ok=coBad('coState',!!v('coState'))&&ok;
   if(!ok){toast('Please check the highlighted fields');return;}
+  const S=window.OUTDOO_SUPA||{};
+  if(!S.url||!S.anon){toast('Online ordering is unavailable right now. Please order on WhatsApp.');return;}
+  const customer={name:v('coName'),phone:v('coPh'),email:v('coEm'),address:v('coAd'),city:v('coCity'),state:v('coState'),pincode:v('coPin')};
+  try{localStorage.setItem('outdoo_addr',JSON.stringify(customer))}catch(e){}
+  const btn=document.getElementById('coPlace'); coBusy=true; if(btn){btn.disabled=true;btn.textContent='Placing your order…';}
+  let res, err;
+  try{
+    const r=await fetch(S.url+'/rest/v1/rpc/place_order',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},
+      body:JSON.stringify({p:{items:CART.map(c=>({sku:c.id,qty:c.q})),customer,coupon:'OUTDOO5'}})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) err=j.message||'Could not place the order'; else res=j;
+  }catch(e){err='Network problem. Check your connection and try again.';}
+  coBusy=false;
+  if(err){ if(btn){btn.disabled=false;btn.textContent='Place order · Cash on delivery';} toast(err); return; }
   const t=coTotals();
   document.getElementById('coS2').classList.add('on');
   document.getElementById('coS3').classList.add('on');
   document.getElementById('coBody').innerHTML=`<div class="cosucc"><div class="tick">✓</div>
     <h2>Order placed</h2>
-    <p>Thank you! This is a mockup — no payment was taken. In the live store you'd get an order ID, an email confirmation and WhatsApp updates until delivery.</p>
+    <p>Thank you, ${customer.name.split(' ')[0].replace(/[<>&]/g,'')}! Your order number is <b>${res.order_no}</b>. Pay ${inr(res.total)} in cash or UPI when it's delivered. We'll call you on ${customer.phone} to confirm.</p>
     <div class="osum" style="max-width:340px;margin:0 auto 18px;text-align:left">
-      <div class="r"><span>Order value</span><span>${inr(t.total)}</span></div>
-      <div class="r"><span>Items</span><span>${t.items}</span></div>
+      <div class="r"><span>Order</span><span>${res.order_no}</span></div>
+      <div class="r"><span>Pay on delivery</span><span>${inr(res.total)}</span></div>
+      <div class="r"><span>Items</span><span>${res.items}</span></div>
       <div class="r"><span>Delivery</span><span class="grn">FREE</span></div></div>
-    <button class="btn" style="padding:13px 26px" onclick="CART=[];updBadge();showHome()">Continue shopping</button></div>`;
+    <button class="btn" style="padding:13px 26px" onclick="showHome()">Continue shopping</button></div>`;
+  CART=[]; updBadge();
   window.scrollTo(0,0);
 }
 
@@ -2785,10 +2806,14 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
     if(_pp && typeof openProduct === 'function' && document.getElementById('pdp')){
       if(PRODS[_pp]) try{ openProduct(_pp); }catch(e){}
     }
+    CART = CART.filter(c => PRODS[c.id]); updBadge();
     console.log('[OUTDOO] live catalog loaded:', prods.length, 'products');
   }catch(e){ console.warn('[OUTDOO] Supabase load failed, using embedded catalog', e); }
 })();
 /* ===== end dynamic loader ===== */
+(function(){ const qs=new URLSearchParams(location.search), b=qs.get('buy'); updBadge();
+  if(qs.has('cart')){ history.replaceState(null,'','/'); setTimeout(openCart,300); }
+  if(b){ setTimeout(()=>{ if(PRODS[b]){ const f=CART.find(c=>c.id===b); f?f.q++:CART.push({id:b,q:1}); updBadge(); history.replaceState(null,'','/'); openCart(); } }, 900); } })();
 
 </script>
 </body>
