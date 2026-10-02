@@ -1119,6 +1119,52 @@ openCol = function(){ window.location.href='/'; };
 goCats = function(){ window.location.href='/'; };
 const _p = new URLSearchParams(location.search).get('p');
 openProduct(PRODS[_p] ? _p : 'lounge');
+/* ===== OUTDOO dynamic loader (Supabase) — fill url+anon to go dynamic; empty = embedded fallback ===== */
+window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3Z3B2Y2xxYm5hZXVjdmpudWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjA3MzcsImV4cCI6MjEwNjE5NjczN30.aE5Wdsbyd6LQqh7-JhokrxSXGauFknfjFedTEj0vwnM" };
+(async function(){
+  const S = window.OUTDOO_SUPA;
+  if(!S.url || !S.anon) return;                    // static fallback — site works as before
+  const H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon };
+  try{
+    const [pr, cr] = await Promise.all([
+      fetch(S.url + '/rest/v1/products?status=eq.published&select=sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug&limit=2000', {headers:H}),
+      fetch(S.url + '/rest/v1/collections?active=eq.true&select=slug,title,tagline,offer_badge,offer_text&order=sort', {headers:H})
+    ]);
+    if(!pr.ok) throw new Error('products ' + pr.status);
+    const prods = await pr.json();
+    if(!prods.length) return;                      // empty DB — keep embedded
+    const colsDB = cr.ok ? await cr.json() : [];
+
+    Object.keys(PRODS).forEach(k => delete PRODS[k]);
+    prods.forEach(p => {
+      PRODS[p.sku] = { n:p.name, p:Math.round(+p.price), m:p.mrp?Math.round(+p.mrp):0,
+        r:String(p.rating ?? '4.5'), c:p.rating_count ?? 0,
+        ship:p.ship_text || 'Ships in 7-10 days', img:p.sku, col:p.collection_slug };
+      if(p.image_url) IMGS[p.sku] = p.image_url;
+    });
+    if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
+      COLS[c.slug].t = c.title || COLS[c.slug].t;
+      COLS[c.slug].tag = c.tagline || COLS[c.slug].tag;
+      COLS[c.slug].off = c.offer_badge || COLS[c.slug].off;
+      if(c.offer_text) COLS[c.slug].offer = c.offer_text;
+    }});
+    document.querySelectorAll('img[data-img]').forEach(im => { const k = im.getAttribute('data-img'); if(IMGS[k]) im.src = IMGS[k]; });
+    if(typeof fillStrip === 'function'){
+      const trend = ['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'].filter(id => PRODS[id]);
+      if(trend.length) try{ fillStrip('stripTrend', trend); }catch(e){}
+    }
+    if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
+      try{ renderPLP(lastCol); }catch(e){}
+    }
+    const _pp = new URLSearchParams(location.search).get('p');
+    if(_pp && typeof openProduct === 'function' && document.getElementById('pdp')){
+      if(PRODS[_pp]) try{ openProduct(_pp); }catch(e){}
+    }
+    console.log('[OUTDOO] live catalog loaded:', prods.length, 'products');
+  }catch(e){ console.warn('[OUTDOO] Supabase load failed, using embedded catalog', e); }
+})();
+/* ===== end dynamic loader ===== */
+
 </script>
 </body>
 </html>
