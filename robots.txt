@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://outdoo.in/sitemap.xml
