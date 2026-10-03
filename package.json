@@ -1,0 +1,9 @@
+{
+  "name": "outdoo-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "update": "bash scripts/update.sh",
+    "seo": "node scripts/build-seo.mjs"
+  }
+}
