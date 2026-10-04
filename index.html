@@ -913,6 +913,34 @@ header{position:static!important}
   .mm-grid.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
   .mm-grid .mm-t b{font-size:13.5px}
 }
+
+/* ===== compare with similar items ===== */
+.cmpsec{margin:26px 0 10px}
+.cmpsec:empty{display:none}
+.cmp-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.cmp-hd b{font-size:15px}
+.cmp-hd label{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.cmp-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;-webkit-overflow-scrolling:touch}
+.cmp{border-collapse:separate;border-spacing:0;width:100%;min-width:560px;font-size:12px;table-layout:fixed}
+.cmp th,.cmp td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;background:#fff}
+.cmp tr:last-child th,.cmp tr:last-child td{border-bottom:0}
+.cmp th{width:92px;position:sticky;left:0;z-index:1;font-size:11px;font-weight:700;color:var(--muted);background:var(--sand-soft)}
+.cmp td.me{background:#fffaf6}
+.cmp .ci{cursor:pointer}
+.cmp .ci .im{aspect-ratio:1;border-radius:10px;overflow:hidden;background:var(--sand-soft);margin-bottom:6px}
+.cmp .ci .im img{width:100%;height:100%;object-fit:cover}
+.cmp .ci .nm{font-weight:600;line-height:1.3;color:#3d3a34;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.cmp .ci:hover .nm{color:var(--terra-deep)}
+.cmp .tag{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.05em;padding:2px 6px;border-radius:4px;margin-bottom:5px;background:var(--terra);color:#fff}
+.cmp .pr{font-size:14px;font-weight:800;color:var(--char)}
+.cmp .best{display:block;font-size:10px;font-weight:700;color:#2E7D4F;margin-top:2px}
+.cmp .st{color:#b8860b;font-weight:700}
+.cmp .mut{color:var(--muted)}
+.cmp .cadd{width:100%;border:0;border-radius:8px;padding:8px 6px;font-family:inherit;font-weight:700;font-size:11.5px;background:var(--terra);color:#fff;cursor:pointer}
+.cmp .cadd.alt{background:var(--olive)}
+.cmp tr.same{display:none}
+.cmpsec.all .cmp tr.same{display:table-row}
+@media(min-width:900px){.cmp{font-size:13px}.cmp th{width:150px;padding-left:14px}.cmp td{padding:12px 14px}.cmp .ci .im{max-width:170px}.cmp-hd b{font-size:18px}.cmp .cadd{max-width:170px}}
 /* ---- cart page transition ---- */
 #cart,#checkout{animation:slideUp .22s ease}
 @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -1631,6 +1659,7 @@ header{position:static!important}
       </div>
     </div>
   </div>
+  <div class="cmpsec" id="cmpSec"></div>
 </div></div>
 
 
@@ -2148,7 +2177,39 @@ function openProduct(id){
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
     return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt=""></div>
       <div class="bd"><div class="nm">${y.n}</div><div class="pr">${inr(y.p)}</div>${tbHTML(i)}</div></div>`;}).join('');
+  try{cmpRender(id);}catch(e){console.warn(e)}
   showView('pdp');
+}
+// ---- compare with similar items (Amazon-style) ----
+const TIERN={originals:'OUTDOO Originals',exclusive:'OUTDOO Exclusive',select:'OUTDOO Select'};
+function similarFor(id,n){const x=PRODS[id], sb=subOf(id), R=(typeof MENU!=='undefined'&&MENU.rank)||null;
+  return Object.keys(PRODS).filter(i=>i!==id&&PRODS[i].col===x.col).map(i=>{const y=PRODS[i];
+    const s=(subOf(i)===sb?3:0) - Math.abs(Math.log((y.p||1)/(x.p||1))) - (R&&i in R?R[i]/2000:0.5) + (y.stock===false?-5:0);
+    return [i,s];}).sort((a,b)=>b[1]-a[1]).slice(0,n||4).map(a=>a[0]);}
+function cmpRender(id){const box=document.getElementById('cmpSec'); if(!box) return;
+  const ids=[id,...similarFor(id,4)]; if(ids.length<2){box.innerHTML='';return;}
+  const P=ids.map(i=>PRODS[i]), d=COLDET[PRODS[id].col]||{};
+  const low=Math.min(...P.map(y=>y.p));
+  const off=y=>y.m>y.p?Math.round((1-y.p/y.m)*100):0;
+  const rows=[
+    ['', (y,i)=>`<div class="ci" onclick="openProduct('${ids[i]}');scrollTo(0,0)">${i===0?'<span class="tag">THIS ITEM</span>':''}<div class="im"><img src="${IMGS[y.img]||''}" alt=""></div><div class="nm">${_esc(y.n)}</div></div>`, true],
+    ['', (y,i)=>y.stock===false?'<span class="mut">Out of stock</span>':`<button class="cadd${i?'':' alt'}" onclick="addCart('${ids[i]}')">Add to cart</button>`, true],
+    ['Customer rating', y=>`<span class="st">${y.r} ★</span> <span class="mut">(${y.c})</span>`],
+    ['Price', y=>`<span class="pr">${inr(y.p)}</span>${y.p===low&&P.some(z=>z.p!==low)?'<span class="best">Lowest price</span>':''}`],
+    ['MRP · discount', y=>off(y)?`<s class="mut">${inr(y.m)}</s> · <b style="color:#2E7D4F">${off(y)}% off</b>`:'<span class="mut">—</span>'],
+    ['Type', (y,i)=>_esc(subOf(ids[i]))],
+    ['Material', y=>_esc(y.mat||d.mat||'—')],
+    ['Size', y=>_esc(y.dim||d.dim||'—')],
+    ['Weight', y=>y.kg?`${+y.kg} kg`:'<span class="mut">—</span>'],
+    ['Range', y=>_esc(TIERN[y.tier]||TIERN.select)],
+    ['Delivery', y=>_esc(y.ship||'')+'<br><span class="mut">Free · COD available</span>'],
+    ['Warranty', ()=>_esc(d.warr||'—')],
+  ];
+  const body=rows.map(([lab,f,keep])=>{const cells=P.map((y,i)=>f(y,i)); const same=!keep&&cells.every(c=>c===cells[0]); if(!keep&&cells.every(c=>/^(<span class="mut">)?—(<\/span>)?$/.test(c))) return '';
+    return `<tr class="${same?'same':''}"><th>${lab}</th>${cells.map((c,i)=>`<td class="${i?'':'me'}">${c}</td>`).join('')}</tr>`;}).join('');
+  box.className='cmpsec all';
+  box.innerHTML=`<div class="cmp-hd"><b>Compare with similar items</b><label><input type="checkbox" onchange="document.getElementById('cmpSec').classList.toggle('all',!this.checked)"> Show only differences</label></div>
+   <div class="cmp-wrap"><table class="cmp"><colgroup><col class="lab">${ids.map(()=>'<col>').join('')}</colgroup><tbody>${body}</tbody></table></div>`;
 }
 function backFromPDP(){ if(lastCol) showView('plp'); else showHome(); }
 let qty=1;
@@ -2905,7 +2966,7 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
   const H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon };
   try{
     const [pr, cr, sr] = await Promise.all([
-      fetch(S.url + '/rest/v1/products?status=eq.published&select=sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug,subcategory_slug&limit=2000', {headers:H}),
+      fetch(S.url + '/rest/v1/products?status=eq.published&select=sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug,subcategory_slug,material,dims,weight_kg,in_stock,tier&limit=2000', {headers:H}),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null)
     ]);
@@ -2922,6 +2983,7 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
       PRODS[p.sku] = { n:p.name, p:Math.round(+p.price), m:p.mrp?Math.round(+p.mrp):0,
         r:String(p.rating ?? '4.5'), c:p.rating_count ?? 0,
         ship:p.ship_text || 'Ships in 7-10 days', img:p.sku, col:p.collection_slug,
+        mat:p.material||'', dim:p.dims||'', kg:p.weight_kg||0, stock:p.in_stock, tier:p.tier||'select',
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : '') };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });

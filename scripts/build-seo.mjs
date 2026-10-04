@@ -90,6 +90,11 @@ header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff
 .dd-subs b{display:block;font-size:13px;margin-top:6px;line-height:1.3;color:var(--char)}.dd-subs small{font-size:11.5px;color:var(--muted)}.dd-subs a:hover b{color:var(--terra)}
 .dd-feat{position:relative;border-radius:14px;overflow:hidden;min-height:260px;background:var(--sand)}.dd-feat img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .dd-feat span{position:absolute;inset:auto 0 0;padding:14px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65))}.dd-feat b{display:block;font-size:15px;line-height:1.3;margin-bottom:6px}.dd-feat u{font-size:12px;font-weight:600}}
+.cmpx{margin:0 0 40px}.cmpx h2{font-size:17px;margin-bottom:10px}.cw{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.cmpx table{border-collapse:separate;border-spacing:0;width:100%;min-width:600px;table-layout:fixed;font-size:13px}.cmpx th,.cmpx td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;background:#fff}
+.cmpx tr:last-child>*{border-bottom:0}.cmpx th{width:120px;position:sticky;left:0;background:var(--sand-soft);color:var(--muted);font-size:12px}.cmpx td.me{background:#fffaf6}
+.cmpx td img{width:100%;max-width:170px;aspect-ratio:1;object-fit:cover;border-radius:10px;background:var(--sand-soft);margin-bottom:6px}.cmpx td b{display:block;font-weight:600;line-height:1.3}.cmpx td a:hover b{color:var(--terra)}
+.cmpx .tg{display:inline-block;font-size:10px;font-weight:700;background:var(--terra);color:#fff;border-radius:4px;padding:2px 6px;margin-bottom:5px}.cmpx strong{font-size:15px}.cmpx em{display:block;font-style:normal;font-size:11px;color:#2E7D4F;font-weight:600}.cmpx s{color:var(--muted)}
 .sub-h{font-size:17px;margin:26px 0 12px;scroll-margin-top:80px}
 .cart{position:relative;font-weight:600;font-size:13.5px;border:1px solid var(--line);border-radius:99px;padding:7px 14px;white-space:nowrap}.cart span{background:var(--terra);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;margin-left:6px}
 .crumbs{font-size:12.5px;color:var(--muted);margin:18px 0 10px}.crumbs a:hover{color:var(--terra)}
@@ -144,6 +149,29 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" width="400" height="400"></div>
 <div class="n">${esc(p.name)}</div><div class="p">${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}</div></a>`
 
+
+// Amazon-style "Compare with similar items": same sub-category first, then closest price
+const similar = (p, n = 4) => (ranked[p.collection_slug] || []).filter(x => x.sku !== p.sku)
+  .map((x, i) => [x, (x.subcategory_slug && x.subcategory_slug === p.subcategory_slug ? 3 : 0) - Math.abs(Math.log((x.price || 1) / (p.price || 1))) - i / 2000 - (x.in_stock === false ? 5 : 0)])
+  .sort((a, b) => b[1] - a[1]).slice(0, n).map(a => a[0])
+const subT = Object.fromEntries(subs.map(x => [x.slug, x.title]))
+const compare = p => {
+  const L = [p, ...similar(p)]; if (L.length < 2) return ''
+  const low = Math.min(...L.map(x => +x.price)), off = x => x.mrp > x.price ? Math.round((1 - x.price / x.mrp) * 100) : 0
+  const rows = [
+    ['', (x, i) => `<a href="/p/${x.slug}/">${i ? '' : '<span class="tg">THIS ITEM</span>'}<img src="${esc(x.image_url)}" alt="${esc(x.name)}" loading="lazy" width="200" height="200"><b>${esc(x.name)}</b></a>`, 1],
+    ['Price', x => `<strong>${inr(x.price)}</strong>${+x.price === low && L.some(y => +y.price !== low) ? '<em>Lowest price</em>' : ''}`, 1],
+    ['MRP · discount', x => off(x) ? `<s>${inr(x.mrp)}</s> · ${off(x)}% off` : '—'],
+    ['Type', x => esc(subT[x.subcategory_slug] || colOf[x.collection_slug]?.title || '—')],
+    ['Material', x => esc(x.material || '—')],
+    ['Size', x => esc(x.dims || '—')],
+    ['Range', x => esc(TIER[x.tier] || TIER.select)],
+    ['Delivery', x => esc(x.ship_text || 'Ships in 7-10 days') + ' · Free · COD'],
+  ]
+  const body = rows.map(([h, f, keep]) => { const c = L.map(f); if (!keep && c.every(v => v === '—')) return ''
+    return `<tr><th>${h}</th>${c.map((v, i) => `<td${i ? '' : ' class="me"'}>${v}</td>`).join('')}</tr>` }).join('')
+  return `<section class="cmpx"><h2>Compare with similar items</h2><div class="cw"><table>${body}</table></div></section>`
+}
 // ---------------------------------------------------------------- write pages
 for (const d of ['p', 'c', 'feed']) if (existsSync(join(ROOT, d))) rmSync(join(ROOT, d), { recursive: true })
 const write = (rel, text) => { const f = join(ROOT, rel); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, text) }
@@ -177,6 +205,7 @@ for (const p of products) {
 <div class="desc"><h2>About this product</h2><p>${esc(desc)}</p>
 <dl>${c ? `<dt>Category</dt><dd><a href="/c/${c.slug}/">${esc(c.title)}</a></dd>` : ''}${p.material ? `<dt>Material</dt><dd>${esc(p.material)}</dd>` : ''}${p.dims ? `<dt>Size</dt><dd>${esc(p.dims)}</dd>` : ''}<dt>SKU</dt><dd>${esc(p.sku)}</dd></dl></div>
 </div></div>
+${compare(p)}
 ${related.length ? `<section class="rel"><h2>More in ${esc(c?.title || 'this range')}</h2><div class="grid">${related.map(card).join('')}</div></section>` : ''}`,
   }))
 }
