@@ -1988,6 +1988,9 @@ function openCol(k){
   document.getElementById('colOff').textContent=c.off;
   document.getElementById('colOfferLine').textContent=c.offer;
   fltReset(); buildChips(); renderPLP(); showView('plp');
+  if(k!=='__search' && !c.f && RANK_FOR!==k){
+    _supaRpc('search_products',{q:'',p_category:k,p_limit:500}).then(rows=>{RANK={};rows.forEach((r,i)=>RANK[r.sku]=i);RANK_FOR=k;if(lastCol===k)renderPLP();}).catch(()=>{});
+  }
 }
 
 // ---- filters ----
@@ -2039,6 +2042,7 @@ function renderPLP(){
     if(FLT.dispatch==='mto' && !/order/i.test(x.ship)) return false;
     if(FLT.offer && !(x.m>x.p)) return false;
     return true;});
+  if(sort==='pop' && RANK_FOR===k) ids.sort((a,b)=>(a in RANK?RANK[a]:1e9)-(b in RANK?RANK[b]:1e9));
   if(sort==='lo') ids.sort((a,b)=>PRODS[a].p-PRODS[b].p);
   if(sort==='hi') ids.sort((a,b)=>PRODS[b].p-PRODS[a].p);
   if(sort==='rat') ids.sort((a,b)=>parseFloat(PRODS[b].r)-parseFloat(PRODS[a].r));
@@ -2047,7 +2051,9 @@ function renderPLP(){
   const fc=document.getElementById('fltCount');
   if(fc){fc.textContent=nf;fc.style.display=nf?'inline-block':'none';}
   document.getElementById('colCnt').textContent = nf? ids.length+' of '+total+' products' : ids.length+' products';
-  if(!ids.length){document.getElementById('plpGrid').innerHTML='<div class="noresult">Is filter mein kuch nahi mila.<br><a onclick="fltClear()">Clear filters</a></div>';return;}
+  if(!ids.length){document.getElementById('plpGrid').innerHTML= k==='__search'&&!total
+    ? '<div class="noresult">Nothing found for “'+SQ.replace(/[<>&]/g,'')+'”. Try another word, or ask us on WhatsApp — we source on request.<br><a onclick="showHome()">Back to home</a></div>'
+    : '<div class="noresult">Is filter mein kuch nahi mila.<br><a onclick="fltClear()">Clear filters</a></div>';return;}
   document.getElementById('plpGrid').innerHTML = ids.map(id=>{
     const x=PRODS[id];
     const off = x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
@@ -2064,6 +2070,7 @@ function renderPLP(){
 }
 let curPid=null;
 function openProduct(id){
+  if(lastCol==='__search' && SQ) _supaRpc('log_search',{p_kind:'click',p_q:SQ,p_sku:id}).catch(()=>{});
   curPid=id;
   const x=PRODS[id], c=COLS[x.col];
   document.getElementById('pdT').textContent=x.n;
@@ -2110,7 +2117,25 @@ const COLDET = {
 function goCats(){ showHome(); setTimeout(()=>document.querySelector('.catgrid').scrollIntoView({behavior:'smooth'}),60); }
 function showPDP(){ openProduct('lounge'); }
 function _oldAddCart(){ }
-function doSearch(){ const v=document.getElementById('q').value.trim(); toast(v? 'Search: "'+v+'" — mockup' : 'Type something to search'); }
+// ---- search + ranking (Supabase search_products; ranking set in admin → Settings → Search & ranking)
+let RANK={}, RANK_FOR=null, SQ='';
+function _supaRpc(fn,args){const S=window.OUTDOO_SUPA||{}; if(!S.url||!S.anon) return Promise.reject(new Error('offline'));
+  return fetch(S.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:JSON.stringify(args)})
+    .then(r=>r.ok?r.json():Promise.reject(new Error(r.status)));}
+function _localSearch(q){const ws=q.toLowerCase().split(/\s+/).filter(w=>w.length>1);
+  return Object.keys(PRODS).filter(id=>{const t=(PRODS[id].n+' '+(COLS[PRODS[id].col]||{}).t).toLowerCase();return ws.every(w=>t.includes(w.replace(/e?s$/,'')));});}
+async function doSearch(){
+  const inp=document.getElementById('q'), q=inp.value.trim();
+  if(!q){toast('Type something to search');return;}
+  inp.blur(); SQ=q; let ids;
+  try{ const rows=await _supaRpc('search_products',{q,p_limit:120}); ids=rows.map(r=>r.sku).filter(id=>PRODS[id]); }
+  catch(e){ ids=_localSearch(q); }
+  RANK={}; ids.forEach((id,i)=>RANK[id]=i); RANK_FOR='__search';
+  _supaRpc('log_search',{p_kind:'search',p_q:q,p_results:ids.length}).catch(()=>{});
+  COLS.__search={t:'“'+q+'”',tag:ids.length?ids.length+' matching products':'No products found',off:'SEARCH',offer:'Free delivery to top metros · Cash on delivery',
+    img:ids.length?PRODS[ids[0]].img:Object.keys(IMGS)[0],f:(x,id)=>id in RANK};
+  openCol('__search');
+}
 function checkPin(){
   const v = document.getElementById('pin').value, ok = document.getElementById('pinok');
   ok.style.display='block';

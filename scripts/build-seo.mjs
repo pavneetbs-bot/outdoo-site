@@ -142,8 +142,17 @@ ${related.length ? `<section class="rel"><h2>More in ${esc(c?.title || 'this ran
   }))
 }
 
+// category pages follow the admin ranking (Settings → Search & ranking); name order if it isn't available
+const rankOf = async cat => {
+  try {
+    const r = await fetch(`${SUPA.url}/rest/v1/rpc/search_products`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ q: '', p_category: cat, p_limit: 500 }) })
+    if (!r.ok) return {}
+    return Object.fromEntries((await r.json()).map((x, i) => [x.sku, i]))
+  } catch { return {} }
+}
 for (const c of cols) {
-  const list = products.filter(p => p.collection_slug === c.slug)
+  const rk = await rankOf(c.slug)
+  const list = products.filter(p => p.collection_slug === c.slug).sort((a, b) => (rk[a.sku] ?? 1e9) - (rk[b.sku] ?? 1e9))
   if (!list.length) continue
   const url = `/c/${c.slug}/`
   write(`c/${c.slug}/index.html`, page({
