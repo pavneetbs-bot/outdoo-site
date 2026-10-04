@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "update": "bash scripts/update.sh",
-    "seo": "node scripts/build-seo.mjs"
+    "seo": "node scripts/build-pages.mjs && node scripts/build-seo.mjs"
   }
 }

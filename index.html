@@ -1436,16 +1436,16 @@ header{position:static!important}
       <a onclick="toast('Coming soon — mockup')">Manufacturing — Est. 1992</a>
       <a onclick="toast('Coming soon — mockup')">B2B & Trade Enquiries</a>
       <a onclick="toast('Coming soon — mockup')">Architects & Designers</a>
-      <a onclick="toast('Coming soon — mockup')">Contact Us</a></div>
+      <a href="/contact/">Contact Us</a></div>
     <div><div class="fh">Help & Policies</div>
       <a onclick="toast('Coming soon — mockup')">Track Your Order</a>
-      <a onclick="toast('Coming soon — mockup')">Shipping & Delivery</a>
-      <a onclick="toast('Coming soon — mockup')">Damage-Free Promise</a>
+      <a href="/shipping/">Shipping & Delivery</a>
+      <a href="/returns/#damage">Damage-Free Promise</a>
       <a onclick="toast('Coming soon — mockup')">Warranty Policy</a>
       <a onclick="toast('Coming soon — mockup')">Payments & EMI</a>
-      <a onclick="toast('Coming soon — mockup')">Returns & Cancellations</a>
-      <a onclick="toast('Coming soon — mockup')">Privacy Policy</a>
-      <a onclick="toast('Coming soon — mockup')">Terms of Service</a></div>
+      <a href="/returns/">Returns & Cancellations</a>
+      <a href="/privacy/">Privacy Policy</a>
+      <a href="/terms/">Terms of Service</a></div>
   </div>
   <div class="fpay"><span>UPI</span><span>Credit & Debit Cards</span><span>Net Banking</span><span>EMI Available</span><span>100% Secure Payments</span></div>
   <div class="fcity">Outdoor furniture & decor online in Delhi NCR, Gurugram, Noida, Mumbai, Bengaluru, Hyderabad, Chennai, Pune, Chandigarh, Jaipur & Lucknow — luxury terrace, balcony, garden & poolside living by Outdoo.</div>
@@ -2756,6 +2756,7 @@ async function placeOrder(){
   coBusy=false;
   if(err){ if(btn){btn.disabled=false;btn.textContent='Place order · Cash on delivery';} toast(err); return; }
   const t=coTotals();
+  try{ if(window.otrack) otrack('purchase',{value:res.total,ref:res.order_no,skus:CART.map(c=>c.id)}) }catch(e){}
   document.getElementById('coS2').classList.add('on');
   document.getElementById('coS3').classList.add('on');
   document.getElementById('coBody').innerHTML=`<div class="cosucc"><div class="tick">✓</div>
@@ -3016,5 +3017,15 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
   if(b){ setTimeout(()=>{ if(PRODS[b]){ const f=CART.find(c=>c.id===b); f?f.q++:CART.push({id:b,q:1}); updBadge(); history.replaceState(null,'','/'); openCart(); } }, 900); } })();
 
 </script>
+<script src="/track.js"></script>
+<script>/* OUTDOO tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
+(function(){ if(!window.otrack) return;
+  var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };
+  var wrap=function(name, after){ var o=window[name]; if(typeof o!=='function') return; window[name]=function(){ var r=o.apply(this,arguments); try{ after.apply(this,arguments) }catch(e){} return r } };
+  wrap('openProduct', function(id){ otrack('view_item',{sku:id,value:price(id)}) });
+  wrap('addCart', function(id){ id=id||curPid; if(id&&price(id)!=null) otrack('add_to_cart',{sku:id,value:price(id)}) });
+  wrap('buyNow', function(){ if(curPid&&price(curPid)!=null) otrack('add_to_cart',{sku:curPid,value:price(curPid)}) });
+  wrap('openCheckout', function(){ if(CART.length){ var t=coTotals(); otrack('begin_checkout',{skus:CART.map(function(c){return c.id}),value:t.total}) } });
+})();</script>
 </body>
 </html>

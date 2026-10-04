@@ -7,6 +7,7 @@ git fetch origin
 git checkout -q main 2>/dev/null || git checkout -q -b main origin/main
 git reset --hard origin/main
 echo "→ Building product pages, sitemap and Google feed from the live catalog…"
+node scripts/build-pages.mjs
 node scripts/build-seo.mjs
 echo ""
 echo "✅ Up to date: $(git log -1 --format='%h %s')"

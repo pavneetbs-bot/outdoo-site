@@ -116,10 +116,10 @@ footer{background:var(--sand-soft);padding:30px 0;font-size:13px;color:#555}foot
 
 const CART_JS = `function _c(){try{return JSON.parse(localStorage.getItem('outdoo_cart')||'[]')}catch(e){return[]}}
 function _cs(c){try{localStorage.setItem('outdoo_cart',JSON.stringify(c))}catch(e){}var n=c.reduce(function(a,x){return a+x.q},0),e=document.getElementById('cartn');if(e)e.textContent=n}
-function addCart(id){var c=_c(),f=c.find(function(x){return x.id===id});f?f.q=Math.min(10,f.q+1):c.push({id:id,q:1});_cs(c);var t=document.getElementById('toast');t.textContent='Added to cart';t.classList.add('on');setTimeout(function(){t.classList.remove('on')},1600)}
+function addCart(id,v){var c=_c(),f=c.find(function(x){return x.id===id});f?f.q=Math.min(10,f.q+1):c.push({id:id,q:1});_cs(c);if(window.otrack)otrack('add_to_cart',{sku:id,value:v});var t=document.getElementById('toast');t.textContent='Added to cart';t.classList.add('on');setTimeout(function(){t.classList.remove('on')},1600)}
 _cs(_c());`
 
-const page = ({ title, desc, path, image, body, jsonld = [], cur = '' }) => `<!doctype html>
+const page = ({ title, desc, path, image, body, jsonld = [], cur = '', view = null }) => `<!doctype html>
 <html lang="en-IN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
@@ -140,10 +140,13 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 <footer><div class="wrap cols">
 <div><b>OUTDOO</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Free delivery to top metros · Cash on delivery</div>
 <div><b>Shop</b>${cols.map(c => `<a href="/c/${c.slug}/">${esc(c.title)}</a>`).join('')}</div>
-<div><b>OUTDOO</b><a href="/">Home</a><a href="https://seller.outdoo.in">Sell on OUTDOO</a></div>
+<div><b>OUTDOO</b><a href="/">Home</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outdoo.in">Sell on OUTDOO</a></div>
 </div></footer>
 <div class="toast" id="toast"></div>
 <script>${CART_JS}</script>
+<script>window.OUTDOO_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
+<script src="/track.js"></script>
+${view ? `<script>if(window.otrack)otrack('view_item',{sku:${JSON.stringify(view.sku)},value:${Math.round(+view.price || 0)}})</script>` : ''}
 </body></html>`
 
 const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" width="400" height="400"></div>
@@ -195,12 +198,12 @@ for (const p of products) {
       { '@type': 'ListItem', position: c ? 3 : 2, name: p.name, item: SITE + url }],
   }]
   write(`p/${p.slug}/index.html`, page({
-    title: `${p.name} | Buy Online at ${inr(p.price)} | OUTDOO`, desc: clip(desc, 158), path: url, image: p.image_url, jsonld, cur: p.collection_slug,
+    title: `${p.name} | Buy Online at ${inr(p.price)} | OUTDOO`, desc: clip(desc, 158), path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
     body: `<div class="crumbs"><a href="/">Home</a> › ${c ? `<a href="/c/${c.slug}/">${esc(c.title)}</a> › ` : ''}${esc(p.name)}</div>
 <div class="pd"><div class="pimg"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" width="800" height="800"></div>
 <div><span class="tier">${esc(TIER[p.tier] || TIER.select)}</span><h1>${esc(p.name)}</h1>
 <div class="price"><b>${inr(p.price)}</b>${off ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>
-<div class="btns">${p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}')">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
+<div class="btns">${p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
 <ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Free delivery to top metros</li><li>Cash on delivery available</li><li>Weather-safe packing · assembly guide included</li></ul>
 <div class="desc"><h2>About this product</h2><p>${esc(desc)}</p>
 <dl>${c ? `<dt>Category</dt><dd><a href="/c/${c.slug}/">${esc(c.title)}</a></dd>` : ''}${p.material ? `<dt>Material</dt><dd>${esc(p.material)}</dd>` : ''}${p.dims ? `<dt>Size</dt><dd>${esc(p.dims)}</dd>` : ''}<dt>SKU</dt><dd>${esc(p.sku)}</dd></dl></div>
@@ -227,7 +230,8 @@ ${(() => { const gs = groupsOf(c.slug); return gs.length > 1 ? gs.map(g => `<h2 
 }
 
 // ---------------------------------------------------------------- sitemap, robots, Google Merchant feed
-const urls = [[`${SITE}/`, today, '1.0'], ...cols.filter(c => products.some(p => p.collection_slug === c.slug)).map(c => [`${SITE}/c/${c.slug}/`, today, '0.8']),
+const POLICY = ['shipping', 'returns', 'privacy', 'terms', 'contact'].map(k => [`${SITE}/${k}/`, today, '0.3'])
+const urls = [[`${SITE}/`, today, '1.0'], ...POLICY, ...cols.filter(c => products.some(p => p.collection_slug === c.slug)).map(c => [`${SITE}/c/${c.slug}/`, today, '0.8']),
   ...products.map(p => [`${SITE}/p/${p.slug}/`, (p.updated_at || today).slice(0, 10), '0.7'])]
 write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d, pr]) => `  <url><loc>${u}</loc><lastmod>${d}</lastmod><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`)
 write('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`)
