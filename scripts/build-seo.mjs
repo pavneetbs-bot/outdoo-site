@@ -100,6 +100,7 @@ header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff
 .cmpx td img{width:100%;max-width:170px;aspect-ratio:1;object-fit:cover;border-radius:10px;background:var(--sand-soft);margin-bottom:6px}.cmpx td b{display:block;font-weight:600;line-height:1.3}.cmpx td a:hover b{color:var(--terra)}
 .cmpx .tg{display:inline-block;font-size:10px;font-weight:700;background:var(--terra);color:#fff;border-radius:4px;padding:2px 6px;margin-bottom:5px}.cmpx strong{font-size:15px}.cmpx em{display:block;font-style:normal;font-size:11px;color:#2E7D4F;font-weight:600}.cmpx s{color:var(--muted)}
 .sub-h{font-size:17px;margin:26px 0 12px;scroll-margin-top:80px}
+.cart.acc{margin-right:6px}@media(max-width:560px){.cart.acc{display:none}}
 .cart{position:relative;font-weight:600;font-size:13.5px;border:1px solid var(--line);border-radius:99px;padding:7px 14px;white-space:nowrap}.cart span{background:var(--terra);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;margin-left:6px}
 .crumbs{font-size:12.5px;color:var(--muted);margin:18px 0 10px}.crumbs a:hover{color:var(--terra)}
 .pd{display:grid;grid-template-columns:1.1fr 1fr;gap:34px;margin-bottom:40px}
@@ -139,12 +140,12 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 </head><body>
 <header><div class="wrap hd"><a class="logo" href="/">outd<b>oo</b></a>
 <nav class="nav">${cols.map(c => `<div class="nv"><a href="/c/${c.slug}/"${c.slug === cur ? ' class="on"' : ''}>${esc(c.title)}</a>${MEGA[c.slug] || ''}</div>`).join('')}</nav>
-<a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
+<a class="cart acc" href="/?account=1">Account</a><a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
 <main class="wrap">${body}</main>
 <footer><div class="wrap cols">
 <div><b>OUTDOO</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Free delivery to top metros · Cash on delivery</div>
 <div><b>Shop</b>${cols.map(c => `<a href="/c/${c.slug}/">${esc(c.title)}</a>`).join('')}</div>
-<div><b>OUTDOO</b><a href="/">Home</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outdoo.in">Sell on OUTDOO</a></div>
+<div><b>OUTDOO</b><a href="/">Home</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outdoo.in">Sell on OUTDOO</a></div>
 </div></footer>
 <div class="toast" id="toast"></div>
 <script>${CART_JS}</script>
