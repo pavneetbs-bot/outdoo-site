@@ -2968,9 +2968,10 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
   const S = window.OUTDOO_SUPA;
   if(!S.url || !S.anon) return;                    // static fallback — site works as before
   const H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon };
+  const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + '&order=sku&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr] = await Promise.all([
-      fetch(S.url + '/rest/v1/products?status=eq.published&select=sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug,subcategory_slug,material,dims,weight_kg,in_stock,tier&limit=2000', {headers:H}),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug,subcategory_slug,material,dims,weight_kg,in_stock,tier'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null)
     ]);

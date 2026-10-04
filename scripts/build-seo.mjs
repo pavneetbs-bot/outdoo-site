@@ -12,6 +12,10 @@ const SITE = 'https://outdoo.in'
 const html0 = readFileSync(join(ROOT, 'index.html'), 'utf8')
 const SUPA = { url: html0.match(/OUTDOO_SUPA = \{ url: "([^"]+)"/)[1], anon: html0.match(/OUTDOO_SUPA = \{[^}]*anon: "([^"]+)"/)[1] }
 const H = { apikey: SUPA.anon, Authorization: 'Bearer ' + SUPA.anon }
+const getAll = async path => {   // Supabase returns at most 1,000 rows per request
+  const out = []
+  for (let o = 0; ; o += 1000) { const d = await get(`${path}&limit=1000&offset=${o}`); out.push(...d); if (d.length < 1000) return out }
+}
 const get = async path => {
   const r = await fetch(`${SUPA.url}/rest/v1/${path}`, { headers: H })
   if (!r.ok) throw new Error(`${path} → ${r.status} ${await r.text()}`)
@@ -29,7 +33,7 @@ const inr = n => '₹' + Math.round(+n || 0).toLocaleString('en-IN')
 const TIER = { select: 'OUTDOO Select', exclusive: 'OUTDOO Exclusive', originals: 'OUTDOO Originals' }
 const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : s
 
-const products = (await get('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at&order=name&limit=5000'))
+const products = (await getAll('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at&order=name,sku'))
   .filter(p => p.price > 0)
 const cols = await get('collections?active=eq.true&select=*&order=sort')
 const subs = await get('subcategories?active=eq.true&select=*&order=sort').catch(() => [])
