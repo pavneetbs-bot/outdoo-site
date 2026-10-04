@@ -863,6 +863,56 @@ header{position:static!important}
   .navchips span{font-size:12.5px;padding:9px 16px}
 }
 
+
+/* ===== mega menu ===== */
+.navpanel.mega{max-width:none;padding:0;overflow:auto;max-height:calc(100vh - 120px);overscroll-behavior:contain}
+.mm{display:grid;grid-template-columns:1fr;gap:0}
+.mm-cats{display:flex;gap:8px;overflow-x:auto;padding:12px 14px 4px;scrollbar-width:none}
+.mm-cats::-webkit-scrollbar{display:none}
+.mm-cats a{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:5px 12px 5px 5px;border:1px solid var(--line);border-radius:999px;
+  font-size:11.5px;font-weight:700;color:#4b473f;cursor:pointer;background:#fff;white-space:nowrap}
+.mm-cats a img{width:26px;height:26px;border-radius:50%;object-fit:cover;background:var(--sand-soft)}
+.mm-cats a i{display:none}
+.mm-cats a.on{border-color:var(--terra);background:var(--terra-soft);color:var(--terra-deep)}
+.mm-body{padding:10px 14px 14px}
+.mm-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.mm-hd b{font-size:14px;color:var(--char)}
+.mm-hd a,.mm-all{font-size:11.5px;font-weight:700;color:var(--terra-deep);cursor:pointer;white-space:nowrap}
+.mm-subs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mm-t{cursor:pointer;min-width:0}
+.mm-t .im{aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sand-soft)}
+.mm-t .im img{width:100%;height:100%;object-fit:cover;transition:transform .35s}
+.mm-t:hover .im img{transform:scale(1.05)}
+.mm-t b{display:block;font-size:11.5px;font-weight:700;color:#3d3a34;margin-top:6px;line-height:1.25}
+.mm-t small{display:block;font-size:10.5px;color:var(--muted);margin-top:1px;line-height:1.3}
+.mm-feat{display:none}
+.mm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 14px 14px}
+.mm-grid .mm-t .im{aspect-ratio:4/3}
+@media(min-width:900px){
+  .stickytop{position:sticky}
+  .shopnav{position:relative}
+  .navpanel.mega{position:absolute;left:0;right:0;top:100%;max-width:none;margin:0;border-top:1px solid var(--line);
+    box-shadow:0 18px 40px rgba(0,0,0,.12);max-height:calc(100vh - 150px)}
+  .mm{grid-template-columns:230px minmax(0,1fr) 280px;max-width:1180px;margin:0 auto;padding:22px 24px 24px;gap:26px}
+  .mm-cats{flex-direction:column;gap:2px;padding:0;overflow:visible;border-right:1px solid var(--line);padding-right:14px}
+  .mm-cats a{border:none;border-radius:10px;padding:6px 10px 6px 6px;font-size:13px;background:none}
+  .mm-cats a img{width:34px;height:34px;border-radius:8px}
+  .mm-cats a i{display:block;margin-left:auto;font-style:normal;color:var(--muted)}
+  .mm-cats a.on{background:var(--sand-soft);color:var(--terra-deep)}
+  .mm-body{padding:0}
+  .mm-hd b{font-size:16px}
+  .mm-subs{grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+  .mm-t b{font-size:13px}
+  .mm-feat{display:block;position:relative;border-radius:14px;overflow:hidden;cursor:pointer;min-height:300px;background:var(--sand)}
+  .mm-feat img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .mm-feat .ov{position:absolute;inset:auto 0 0 0;padding:16px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65))}
+  .mm-feat .ov span{display:inline-block;background:var(--terra);font-size:10px;font-weight:800;letter-spacing:.06em;padding:4px 8px;border-radius:4px}
+  .mm-feat .ov b{display:block;font-size:16px;margin:8px 0 6px;line-height:1.3}
+  .mm-feat .ov u{font-size:12px;font-weight:700}
+  .mm-grid{grid-template-columns:repeat(4,minmax(0,1fr));max-width:1180px;margin:0 auto;padding:22px 24px 24px;gap:18px}
+  .mm-grid.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+  .mm-grid .mm-t b{font-size:13.5px}
+}
 /* ---- cart page transition ---- */
 #cart,#checkout{animation:slideUp .22s ease}
 @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -1994,7 +2044,7 @@ function openCol(k){
 }
 
 // ---- filters ----
-function subOf(id){const x=PRODS[id],n=x.n;
+function subOf(id){const x=PRODS[id],n=x.n; if(x.sb) return x.sb;
  if(x.col==='furniture'){if(/Dining/i.test(n))return 'Dining';if(/Swing/i.test(n))return 'Swings';
   if(/Lounger|Daybed/i.test(n))return 'Loungers & Daybeds';if(/Armchair|Accent Chair|Chairs/i.test(n))return 'Accent';return 'Sofa Sets';}
  if(x.col==='lighting'){if(/Ceiling/i.test(n))return 'Ceiling';if(/Floor/i.test(n))return 'Floor';
@@ -2481,18 +2531,70 @@ const NAVSETS = {
 };
 const NAVLABEL={cat:'SHOP BY CATEGORY',space:'SHOP BY SPACE',budget:'SHOP BY BUDGET',mood:'SHOP BY MOOD',pkg:'ROOM PACKAGES'};
 let navCur=null;
-function navOpen(kind,el){
-  const p=document.getElementById('navPanel');
-  document.querySelectorAll('.sn2').forEach(x=>x.classList.remove('on'));
-  if(navCur===kind){navCur=null;p.classList.remove('open');return;}
-  navCur=kind; if(el) el.classList.add('on');
-  let chips;
-  if(kind==='pkg') chips=PKGS.map((k,i)=>`<span onclick="navPick();openPkg(${i})">${k.n}</span>`).join('');
-  else chips=NAVSETS[kind].map(c=>`<span onclick="navPick();openCol('${c[1]}')">${c[0]}</span>`).join('');
-  p.innerHTML=`<div class="grp">${NAVLABEL[kind]}</div><div class="navchips">${chips}</div>`;
-  p.classList.add('open');
+// ---- mega menu (images: admin picture → else top-ranked product's photo) ----
+const MENU={subs:{}, rank:null};          // subs: title → {img, sort, slug} from the admin's sub-categories
+function _pimg(id){const x=PRODS[id];return x?(IMGS[x.img]||IMGS[id]||''):'';}
+function _byRank(ids){const R=MENU.rank;
+  return ids.slice().sort((a,b)=>R?((a in R?R[a]:1e9)-(b in R?R[b]:1e9)):((+PRODS[b].c||0)-(+PRODS[a].c||0)));}
+function _idsOf(k){const c=COLS[k]; return Object.keys(PRODS).filter(id=>c&&c.f?c.f(PRODS[id],id):PRODS[id].col===k);}
+function menuSubs(k){const g={};
+  _byRank(_idsOf(k)).forEach(id=>{const t=subOf(id);(g[t]=g[t]||[]).push(id);});
+  return Object.keys(g).map(t=>{const m=MENU.subs[k+'|'+t]||{};
+    return {t, n:g[t].length, img:m.img||_pimg(g[t].find(id=>_pimg(id))||g[t][0]), sort:m.sort??1e4-g[t].length};})
+   .sort((a,b)=>a.sort-b.sort);}
+function _esc(t){return String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function _q(t){return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function mmCat(k){const p=document.getElementById('navPanel'); if(!p) return;
+  const c=COLS[k]; if(!c) return;
+  p.querySelectorAll('.mm-cats a').forEach(a=>a.classList.toggle('on',a.dataset.k===k));
+  const subs=menuSubs(k), n=subs.reduce((a,x)=>a+x.n,0);
+  const top=_byRank(_idsOf(k)).find(id=>_pimg(id));
+  const fimg=c.mimg||IMGS[c.img]||_pimg(top);
+  p.querySelector('.mm-body').innerHTML=`<div class="mm-hd"><b>${_esc(c.t)}</b><a onclick="navPick();openCol('${k}')">Shop all ${n} →</a></div>
+   <div class="mm-subs">${subs.map(x=>`<div class="mm-t" onclick="navPick();openSub('${k}','${_esc(_q(x.t))}')">
+     <div class="im"><img src="${x.img}" alt=""></div><b>${_esc(x.t)}</b><small>${x.n} product${x.n>1?'s':''}</small></div>`).join('')}</div>`;
+  p.querySelector('.mm-feat').outerHTML=`<a class="mm-feat" onclick="navPick();openCol('${k}')"><img loading="lazy" src="${fimg}" alt="">
+   <div class="ov">${c.off?`<span>${_esc(c.off)}</span>`:''}<b>${_esc(c.mnote||c.tag||'')}</b><u>Shop ${_esc(c.t)} →</u></div></a>`;
 }
-function navPick(){navCur=null;document.getElementById('navPanel').classList.remove('open');
+function openSub(k,t){openCol(k); FLT.sub=new Set([t]); buildChips(); renderPLP();}
+function _menuRank(){ if(MENU.rank||MENU._asked) return; MENU._asked=1;
+  _supaRpc('search_products',{q:'',p_category:null,p_limit:2000}).then(rows=>{MENU.rank={};rows.forEach((r,i)=>MENU.rank[r.sku]=i);
+    if(navCur==='cat'){const a=document.querySelector('#navPanel .mm-cats a.on'); if(a) mmCat(a.dataset.k);}}).catch(()=>{});}
+function navOpen(kind,el,hover){
+  const p=document.getElementById('navPanel');
+  if(navCur===kind){ if(hover) return; navPick(); return; }
+  document.querySelectorAll('.sn2').forEach(x=>x.classList.remove('on'));
+  navCur=kind; if(el) el.classList.add('on');
+  _menuRank();
+  const tile=(on,img,t,sm)=>`<div class="mm-t" onclick="navPick();${on}"><div class="im"><img loading="lazy" src="${img}" alt=""></div><b>${_esc(t)}</b>${sm?`<small>${_esc(sm)}</small>`:''}</div>`;
+  if(kind==='cat'){
+    const cats=NAVSETS.cat.filter(c=>COLS[c[1]]);
+    p.innerHTML=`<div class="mm"><div class="mm-cats">${cats.map(c=>{const top=_byRank(_idsOf(c[1])).find(id=>_pimg(id));
+      return `<a data-k="${c[1]}" onmouseenter="mmCat('${c[1]}')" onclick="if(matchMedia('(hover:hover) and (min-width:900px)').matches){navPick();openCol('${c[1]}')}else mmCat('${c[1]}')"><img loading="lazy" src="${_pimg(top)||IMGS[COLS[c[1]].img]||''}" alt="">${_esc(COLS[c[1]].t||c[0])}<i>›</i></a>`}).join('')}</div>
+      <div class="mm-body"></div><a class="mm-feat"></a></div>`;
+    mmCat(cats[0][1]);
+  } else if(kind==='pkg'){
+    p.innerHTML=`<div class="mm-grid g5">${PKGS.map((k,i)=>tile(`openPkg(${i})`,IMGS[k.img]||_pimg(k.items.find(id=>PRODS[id])),k.n,k.inc)).join('')}</div>`;
+  } else {
+    p.innerHTML=`<div class="mm-grid${NAVSETS[kind].length>4?' g5':''}">${NAVSETS[kind].map(c=>{const C=COLS[c[1]]||{};
+      const img=IMGS[C.img]||_pimg(_byRank(_idsOf(c[1])).find(id=>_pimg(id)));
+      return tile(`openCol('${c[1]}')`,img,c[0],C.tag);}).join('')}</div>`;
+  }
+  p.classList.add('open','mega');
+}
+// desktop: open on hover, close when the pointer leaves the header
+(function(){const hov=()=>matchMedia('(hover:hover) and (min-width:900px)').matches; let tO=null,tC=null;
+  document.querySelectorAll('.sn2[onclick^="navOpen"]').forEach(el=>{
+    const kind=(el.getAttribute('onclick').match(/navOpen\('(\w+)'/)||[])[1];
+    el.addEventListener('mouseenter',()=>{ if(!hov()) return; clearTimeout(tC); clearTimeout(tO); tO=setTimeout(()=>navOpen(kind,el,true), navCur?0:140); });
+    el.addEventListener('mouseleave',()=>clearTimeout(tO));
+  });
+  document.querySelectorAll('.sn2:not([onclick^="navOpen"])').forEach(el=>el.addEventListener('mouseenter',()=>{ if(hov()&&navCur){clearTimeout(tO);tC=setTimeout(navPick,150);} }));
+  const nav=document.querySelector('.shopnav'); if(!nav) return;
+  nav.addEventListener('mouseleave',()=>{ if(!hov()) return; clearTimeout(tO); tC=setTimeout(()=>{ if(navCur) navPick(); },220); });
+  nav.addEventListener('mouseenter',()=>clearTimeout(tC));
+})();
+function navPick(){navCur=null;document.getElementById('navPanel').classList.remove('open','mega');
   document.querySelectorAll('.sn2').forEach(x=>x.classList.remove('on'));}
 
 (function(){const el=document.querySelector('.stickytop'); if(!el) return;
@@ -2802,10 +2904,14 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
   if(!S.url || !S.anon) return;                    // static fallback — site works as before
   const H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon };
   try{
-    const [pr, cr] = await Promise.all([
-      fetch(S.url + '/rest/v1/products?status=eq.published&select=sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug&limit=2000', {headers:H}),
-      fetch(S.url + '/rest/v1/collections?active=eq.true&select=slug,title,tagline,offer_badge,offer_text&order=sort', {headers:H})
+    const [pr, cr, sr] = await Promise.all([
+      fetch(S.url + '/rest/v1/products?status=eq.published&select=sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug,subcategory_slug&limit=2000', {headers:H}),
+      fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
+      fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null)
     ]);
+    const subsDB = sr && sr.ok ? await sr.json() : [], SUBT = {};
+    subsDB.forEach(x => { SUBT[x.slug] = x.title;
+      if(typeof MENU !== 'undefined') MENU.subs[x.category_slug + '|' + x.title] = { img: x.image_url || '', sort: x.sort ?? 100 }; });
     if(!pr.ok) throw new Error('products ' + pr.status);
     const prods = await pr.json();
     if(!prods.length) return;                      // empty DB — keep embedded
@@ -2815,7 +2921,8 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
     prods.forEach(p => {
       PRODS[p.sku] = { n:p.name, p:Math.round(+p.price), m:p.mrp?Math.round(+p.mrp):0,
         r:String(p.rating ?? '4.5'), c:p.rating_count ?? 0,
-        ship:p.ship_text || 'Ships in 7-10 days', img:p.sku, col:p.collection_slug };
+        ship:p.ship_text || 'Ships in 7-10 days', img:p.sku, col:p.collection_slug,
+        sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : '') };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
@@ -2823,6 +2930,7 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
       COLS[c.slug].tag = c.tagline || COLS[c.slug].tag;
       COLS[c.slug].off = c.offer_badge || COLS[c.slug].off;
       if(c.offer_text) COLS[c.slug].offer = c.offer_text;
+      COLS[c.slug].mimg = c.menu_image || ''; COLS[c.slug].mnote = c.menu_note || '';
     }});
     document.querySelectorAll('img[data-img]').forEach(im => { const k = im.getAttribute('data-img'); if(IMGS[k]) im.src = IMGS[k]; });
     if(typeof fillStrip === 'function'){

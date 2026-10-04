@@ -29,9 +29,10 @@ const inr = n => '₹' + Math.round(+n || 0).toLocaleString('en-IN')
 const TIER = { select: 'OUTDOO Select', exclusive: 'OUTDOO Exclusive', originals: 'OUTDOO Originals' }
 const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : s
 
-const products = (await get('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,description,material,dims,tier,in_stock,updated_at&order=name&limit=5000'))
+const products = (await get('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at&order=name&limit=5000'))
   .filter(p => p.price > 0)
-const cols = await get('collections?active=eq.true&select=slug,title,tagline,sort&order=sort')
+const cols = await get('collections?active=eq.true&select=*&order=sort')
+const subs = await get('subcategories?active=eq.true&select=*&order=sort').catch(() => [])
 const colOf = Object.fromEntries(cols.map(c => [c.slug, c]))
 const taken = new Set()
 for (const p of products) { let sl = slug(p.name, p.sku); if (taken.has(sl)) sl = `${sl}-${String(p.sku).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`; taken.add(sl); p.slug = sl }
@@ -44,6 +45,35 @@ const describe = p => p.description?.trim() || [
   `${p.ship_text || 'Ships in 7-10 days'}, free delivery to top metros, cash on delivery available.`,
 ].filter(Boolean).join(' ')
 
+// category pages follow the admin ranking (Settings → Search & ranking); name order if it isn't available
+const rankOf = async cat => {
+  try {
+    const r = await fetch(`${SUPA.url}/rest/v1/rpc/search_products`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ q: '', p_category: cat, p_limit: 500 }) })
+    if (!r.ok) return {}
+    return Object.fromEntries((await r.json()).map((x, i) => [x.sku, i]))
+  } catch { return {} }
+}
+const ranked = {}
+for (const c of cols) { const rk = await rankOf(c.slug); ranked[c.slug] = products.filter(p => p.collection_slug === c.slug).sort((a, b) => (rk[a.sku] ?? 1e9) - (rk[b.sku] ?? 1e9)) }
+// sub-category groups of a category, in admin sort order (products without one go under "More")
+const groupsOf = cs => {
+  const list = ranked[cs] || [], own = subs.filter(x => x.category_slug === cs)
+  const g = own.map(x => ({ slug: x.slug, title: x.title, image: x.image_url, items: list.filter(p => p.subcategory_slug === x.slug) }))
+  const rest = list.filter(p => !own.some(x => x.slug === p.subcategory_slug))
+  if (rest.length && own.length) g.push({ slug: `${cs}-more`, title: 'More', items: rest })
+  return g.filter(x => x.items.length)
+}
+
+// desktop mega menu (pure CSS hover): sub-category tiles with pictures + a feature picture
+const MEGA = Object.fromEntries(cols.map(c => {
+  const gs = groupsOf(c.slug), list = ranked[c.slug] || []
+  if (!list.length) return [c.slug, '']
+  const feat = c.menu_image || list[0].image_url
+  return [c.slug, `<div class="dd"><div class="ddin"><div class="dd-subs">${(gs.length ? gs : [{ slug: '', title: 'All ' + c.title, items: list }]).map(g =>
+    `<a href="/c/${c.slug}/${g.slug ? '#' + g.slug : ''}"><img src="${esc(g.image || g.items[0].image_url)}" alt="" loading="lazy" width="160" height="160"><b>${esc(g.title)}</b><small>${g.items.length} product${g.items.length > 1 ? 's' : ''}</small></a>`).join('')}</div>
+<a class="dd-feat" href="/c/${c.slug}/"><img src="${esc(feat)}" alt="${esc(c.title)}" loading="lazy"><span><b>${esc(c.menu_note || c.tagline || c.title)}</b><u>Shop all ${list.length} →</u></span></a></div></div>`]
+}))
+
 // ---------------------------------------------------------------- shared layout
 const CSS = `:root{--terra:#C26445;--terra-deep:#A84F33;--olive:#55634A;--sand:#EADCC8;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:Poppins,system-ui,sans-serif;color:var(--char);background:#fff;line-height:1.55;font-size:14.5px}
@@ -52,6 +82,15 @@ a{color:inherit;text-decoration:none}img{display:block;max-width:100%}
 header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
 .hd{display:flex;align-items:center;gap:18px;height:62px}.logo{font:800 25px 'Plus Jakarta Sans',sans-serif;letter-spacing:-.03em}.logo b{color:var(--terra)}
 .nav{display:flex;gap:16px;overflow-x:auto;flex:1;font-size:13.5px;font-weight:500;scrollbar-width:none}.nav a{white-space:nowrap;color:#555}.nav a:hover,.nav a.on{color:var(--terra)}
+.nv{position:static}.dd{display:none}.nav .dd a{white-space:normal;color:inherit}
+@media(hover:hover) and (min-width:900px){.nv>a{display:block;padding:21px 0}.nv:hover>a{color:var(--terra)}
+.nv:hover .dd{display:block}.dd{position:absolute;left:0;right:0;top:100%;background:#fff;border-top:1px solid var(--line);box-shadow:0 18px 40px rgba(0,0,0,.12)}
+.ddin{max-width:1120px;margin:0 auto;padding:22px 18px 24px;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:24px;white-space:normal}
+.dd-subs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;align-content:start}.dd-subs a img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--sand-soft)}
+.dd-subs b{display:block;font-size:13px;margin-top:6px;line-height:1.3;color:var(--char)}.dd-subs small{font-size:11.5px;color:var(--muted)}.dd-subs a:hover b{color:var(--terra)}
+.dd-feat{position:relative;border-radius:14px;overflow:hidden;min-height:260px;background:var(--sand)}.dd-feat img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dd-feat span{position:absolute;inset:auto 0 0;padding:14px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.65))}.dd-feat b{display:block;font-size:15px;line-height:1.3;margin-bottom:6px}.dd-feat u{font-size:12px;font-weight:600}}
+.sub-h{font-size:17px;margin:26px 0 12px;scroll-margin-top:80px}
 .cart{position:relative;font-weight:600;font-size:13.5px;border:1px solid var(--line);border-radius:99px;padding:7px 14px;white-space:nowrap}.cart span{background:var(--terra);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;margin-left:6px}
 .crumbs{font-size:12.5px;color:var(--muted);margin:18px 0 10px}.crumbs a:hover{color:var(--terra)}
 .pd{display:grid;grid-template-columns:1.1fr 1fr;gap:34px;margin-bottom:40px}
@@ -90,7 +129,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter
 ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n')}
 </head><body>
 <header><div class="wrap hd"><a class="logo" href="/">outd<b>oo</b></a>
-<nav class="nav">${cols.map(c => `<a href="/c/${c.slug}/"${c.slug === cur ? ' class="on"' : ''}>${esc(c.title)}</a>`).join('')}</nav>
+<nav class="nav">${cols.map(c => `<div class="nv"><a href="/c/${c.slug}/"${c.slug === cur ? ' class="on"' : ''}>${esc(c.title)}</a>${MEGA[c.slug] || ''}</div>`).join('')}</nav>
 <a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
 <main class="wrap">${body}</main>
 <footer><div class="wrap cols">
@@ -142,17 +181,8 @@ ${related.length ? `<section class="rel"><h2>More in ${esc(c?.title || 'this ran
   }))
 }
 
-// category pages follow the admin ranking (Settings → Search & ranking); name order if it isn't available
-const rankOf = async cat => {
-  try {
-    const r = await fetch(`${SUPA.url}/rest/v1/rpc/search_products`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ q: '', p_category: cat, p_limit: 500 }) })
-    if (!r.ok) return {}
-    return Object.fromEntries((await r.json()).map((x, i) => [x.sku, i]))
-  } catch { return {} }
-}
 for (const c of cols) {
-  const rk = await rankOf(c.slug)
-  const list = products.filter(p => p.collection_slug === c.slug).sort((a, b) => (rk[a.sku] ?? 1e9) - (rk[b.sku] ?? 1e9))
+  const list = ranked[c.slug] || []
   if (!list.length) continue
   const url = `/c/${c.slug}/`
   write(`c/${c.slug}/index.html`, page({
@@ -163,7 +193,7 @@ for (const c of cols) {
       mainEntity: { '@type': 'ItemList', itemListElement: list.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/p/${p.slug}/` })) } }],
     body: `<div class="crumbs"><a href="/">Home</a> › ${esc(c.title)}</div><section class="cat"><h1>${esc(c.title)}</h1>
 <p class="lead">${esc(c.tagline || '')}${c.tagline ? ' · ' : ''}${list.length} designs · free delivery to top metros · cash on delivery</p>
-<div class="grid">${list.map(card).join('')}</div></section>`,
+${(() => { const gs = groupsOf(c.slug); return gs.length > 1 ? gs.map(g => `<h2 class="sub-h" id="${g.slug}">${esc(g.title)}</h2><div class="grid">${g.items.map(card).join('')}</div>`).join('') : `<div class="grid">${list.map(card).join('')}</div>` })()}</section>`,
   }))
 }
 
