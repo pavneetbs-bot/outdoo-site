@@ -2400,7 +2400,7 @@ function waToggle(){document.getElementById('wachat').classList.toggle('open');}
 let offShown=false;
 function offClose(){document.getElementById('offpop').classList.remove('open');document.getElementById('opov').classList.remove('open');}
 setTimeout(()=>{if(offShown)return;offShown=true;
- if(document.body.classList.contains('flt-open'))return;
+ if(document.body.classList.contains('flt-open')||new URLSearchParams(location.search).has('preview'))return;
  document.getElementById('offpop').classList.add('open');document.getElementById('opov').classList.add('open');},5000);
 
 
@@ -3014,8 +3014,28 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
     CART = CART.filter(c => PRODS[c.id]); updBadge();
     console.log('[OUTDOO] live catalog loaded:', prods.length, 'products');
   }catch(e){ console.warn('[OUTDOO] Supabase load failed, using embedded catalog', e); }
+  finally{ window.__odLoaded = true; }
 })();
 /* ===== end dynamic loader ===== */
+/* ===== admin "Preview on site": ?preview=<base64 product> shows a not-yet-live product (nothing is read from the database) ===== */
+(function(){
+  const raw = new URLSearchParams(location.search).get('preview'); if(!raw || typeof openProduct !== 'function') return;
+  let x; try{ x = JSON.parse(decodeURIComponent(escape(atob(raw.replace(/-/g,'+').replace(/_/g,'/'))))); }catch(e){ return; }
+  const show = () => {
+    const id = '__preview';
+    const col = COLS[x.col] ? x.col : Object.keys(COLS)[0];
+    PRODS[id] = { n:String(x.n||'Product'), p:+x.p||0, m:+x.m||0, r:'4.5', c:0, ship:String(x.ship||'Ships in 10-14 days'), img:id, col,
+      mat:String(x.mat||''), dim:String(x.dim||''), kg:0, stock:true, tier:x.tier||'select', sb:String(x.sb||'') };
+    IMGS[id] = /^https:\/\//.test(x.img||'') ? x.img : '';
+    try{ openProduct(id); }catch(e){ console.warn(e); }
+    const b = document.createElement('div');
+    b.textContent = 'Preview — this product is not live on outdoo.in yet' + (x.sku ? ' · ' + x.sku : '');
+    b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#2E2E2E;color:#fff;font:600 13px Inter,sans-serif;text-align:center;padding:8px 12px';
+    document.body.appendChild(b); document.body.style.paddingTop = '34px';
+    document.title = 'Preview · ' + PRODS[id].n;
+  };
+  let n = 0; (function wait(){ if(window.__odLoaded || ++n > 40) show(); else setTimeout(wait, 100); })();
+})();
 (function(){ const qs=new URLSearchParams(location.search), b=qs.get('buy'); updBadge();
   if(qs.has('cart')){ history.replaceState(null,'','/'); setTimeout(openCart,300); }
   if(b){ setTimeout(()=>{ if(PRODS[b]){ const f=CART.find(c=>c.id===b); f?f.q++:CART.push({id:b,q:1}); updBadge(); history.replaceState(null,'','/'); openCart(); } }, 900); } })();
