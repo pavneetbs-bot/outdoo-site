@@ -60,10 +60,16 @@
   }
 
   // ---------------------------------------------------------------- sign in with an email code
+  let pendingNext = null, pendingWhy = ''
+  window.acRequire = async function (next, why) {
+    if (!S().url) return say('Accounts are unavailable right now')
+    if (await token()) return next()
+    pendingNext = next; pendingWhy = why || ''; signIn()
+  }
   function signIn(email = '', sent = false, err = '') {
     view(`<div class="ac-sign">
       <div class="ac-card">
-        <h2>${sent ? 'Enter the code' : 'Sign in or create your account'}</h2>
+        <h2>${sent ? 'Enter the code' : (pendingWhy || 'Sign in or create your account')}</h2>
         <p class="mut">${sent ? `We sent a 6-digit code to <b>${esc(email)}</b>. It works for 10 minutes.` : 'Track orders, cancel, return, save addresses and get GST invoices. No password needed: we email you a code.'}</p>
         ${sent ? `<div class="fld"><label>6-DIGIT CODE</label><input id="acCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" class="ac-code"></div>
           <button class="btn ac-wide" id="acGo" onclick="acVerify('${esc(email)}')">Sign in</button>
@@ -77,7 +83,7 @@
     </div>`)
     setTimeout(() => { const i = $(sent ? 'acCode' : 'acEmail'); if (i) { i.focus(); i.onkeydown = e => { if (e.key === 'Enter') $('acGo').click() } } }, 50)
   }
-  window.acSignIn = () => signIn()
+  window.acSignIn = () => { pendingNext = null; pendingWhy = ''; signIn() }
   window.acSend = async function (email) {
     email = (email || $('acEmail')?.value || '').trim().toLowerCase()
     if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) return signIn(email, false, 'Enter a valid email')
@@ -89,14 +95,65 @@
     const code = ($('acCode')?.value || '').replace(/\D/g, '')
     if (code.length !== 6) return signIn(email, true, 'Enter the 6-digit code from the email')
     const b = $('acGo'); if (b) { b.disabled = true; b.textContent = 'Signing in…' }
-    try { keep({ ...(await auth('verify', { type: 'email', email, token: code })), user: { email } }); acOpen('orders') }
+    try {
+      keep({ ...(await auth('verify', { type: 'email', email, token: code })), user: { email } })
+      if (pendingNext) { const n = pendingNext; pendingNext = null; pendingWhy = ''; return n() }
+      acOpen('orders')
+    }
     catch (e) { signIn(email, true, /expired|invalid/i.test(e.message) ? 'That code is wrong or has expired. Try again or send a new code.' : e.message) }
   }
   window.acSignOut = async function () {
     try { if (sess) await auth('logout', {}, sess.access_token) } catch (e) {}
-    saveSess(null); me = null; orders = null; if (typeof showHome === 'function') showHome()
+    saveSess(null); me = null; orders = null; wl = null; wlPaint(); if (typeof showHome === 'function') showHome()
     say('Signed out')
   }
+
+
+  // ---------------------------------------------------------------- wishlist (saved in the customer's account)
+  let wl = null
+  async function wlLoad() {
+    if (wl) return wl
+    const t = await token(); if (!t) return (wl = [])
+    try { const r = await fetch(S().url + '/auth/v1/user', { headers: { apikey: S().anon, Authorization: 'Bearer ' + t } }); const j = await r.json(); wl = Array.isArray(j.user_metadata?.wishlist) ? j.user_metadata.wishlist : [] } catch (e) { wl = wl || [] }
+    return wl
+  }
+  async function wlSave(list) {
+    const t = await token(); if (!t) throw new Error('Please sign in again')
+    const r = await fetch(S().url + '/auth/v1/user', { method: 'PUT', headers: { apikey: S().anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ data: { wishlist: list.slice(0, 200) } }) })
+    if (!r.ok) throw new Error('Could not save your wishlist. Please try again.')
+    wl = list; wlPaint()
+  }
+  function wlPaint() {
+    const n = (wl || []).length
+    document.querySelectorAll('.wlcount').forEach(el => { el.textContent = n || ''; el.hidden = !n })
+    const id = typeof curPid !== 'undefined' ? curPid : null, b = $('pdWish')
+    if (b) { const on = !!id && (wl || []).includes(id); b.classList.toggle('on', on); const l = b.querySelector('.wl-l'); if (l) l.textContent = on ? 'Saved' : 'Save' }
+  }
+  window.acWishToggle = function (id) {
+    id = id || (typeof curPid !== 'undefined' ? curPid : null); if (!id) return
+    acRequire(async () => {
+      const list = [...await wlLoad()], i = list.indexOf(id)
+      i >= 0 ? list.splice(i, 1) : list.unshift(id)
+      try { await wlSave(list); say(i >= 0 ? 'Removed from wishlist' : 'Saved to wishlist') } catch (e) { say(e.message) }
+      if ($('account')?.style.display === 'block' && $('wlGrid')) acWishlist()
+      else if (typeof openProduct === 'function' && typeof PRODS !== 'undefined' && PRODS[id] && $('pdp')?.style.display !== 'block') openProduct(id)
+    }, 'Sign in to save your wishlist')
+  }
+  window.acWishlist = function () {
+    acRequire(async () => {
+      view('<div class="ac-load">Loading your wishlist…</div>')
+      const list = (await wlLoad()).filter(id => typeof PRODS !== 'undefined' && PRODS[id])
+      const inr0 = n => typeof inr === 'function' ? inr(n) : rs(n)
+      view(`<div class="ac-card"><h2>My wishlist</h2>${list.length ? `<p class="mut">${list.length} saved item${list.length > 1 ? 's' : ''}</p>
+        <div id="wlGrid" class="wl-grid">${list.map(id => { const x = PRODS[id]; return `<div class="wl-item">
+          <div class="wl-img" onclick="openProduct('${esc(id)}')"><img src="${esc((typeof IMGS !== 'undefined' && IMGS[x.img]) || '')}" alt=""></div>
+          <div class="wl-n" onclick="openProduct('${esc(id)}')">${esc(x.n)}</div><div class="wl-p">${inr0(x.p)}</div>
+          <div class="wl-a"><button class="btn" onclick="addCart('${esc(id)}')">Add to cart</button><button class="btn ghost" onclick="acWishToggle('${esc(id)}')">Remove</button></div></div>` }).join('')}</div>`
+        : `<p class="mut" id="wlGrid">Nothing saved yet. Tap <b>Save</b> on any product to keep it here.</p><button class="btn" onclick="showHome()">Browse products</button>`}</div>`)
+    }, 'Sign in to see your wishlist')
+  }
+  window.acWlPaint = wlPaint
+  setTimeout(() => { if (sess) wlLoad().then(wlPaint) }, 500)
 
   // ---------------------------------------------------------------- account
   function draw() {
@@ -386,5 +443,6 @@
   document.addEventListener('DOMContentLoaded', paintHeader); if (document.readyState !== 'loading') paintHeader()
   const qs = new URLSearchParams(location.search)
   if (qs.has('account') || location.hash === '#account') setTimeout(() => acOpen(), 300)
+  if (qs.has('wishlist')) setTimeout(() => acWishlist(), 400)
   if (qs.has('track') || location.hash === '#track') setTimeout(() => acTrack(qs.get('track') || ''), 300)
 })()

@@ -1213,6 +1213,12 @@ header{position:static!important}
   .speccard{margin-bottom:16px}
 }
 .rate,.qrate{display:none!important}
+.wlbtn{margin-right:6px}.wlbtn.on svg{fill:var(--terra);stroke:var(--terra)}
+.wl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-top:12px}
+.wl-item{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.wl-img{aspect-ratio:1;border-radius:9px;overflow:hidden;background:var(--sand-soft);cursor:pointer}.wl-img img{width:100%;height:100%;object-fit:cover}
+.wl-n{font-size:13px;font-weight:600;cursor:pointer;line-height:1.35}.wl-p{font-size:13px;font-weight:700}
+.wl-a{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}.wl-a .btn{padding:7px 10px;font-size:11.5px;flex:1}
 </style>
 </head>
 <body>
@@ -1233,7 +1239,7 @@ header{position:static!important}
   <div class="wrap hd">
     <a class="logohome" onclick="showHome()" aria-label="Outdoo home"><img class="logoimg" src="img/58cf1aaf5600.png" alt="Outdoo"></a>
     <div class="hd-right">
-      <div class="icobtn" onclick="toast('Wishlist — mockup')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></div>
+      <div class="icobtn" onclick="acWishlist()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></div>
       <div class="icobtn" onclick="miniCart(true);miniTitle('Your cart')"><svg viewBox="0 0 24 24"><path d="M4 6 h2 l2.4 10 h9.6 l2 -7 H8"/><circle cx="10" cy="20" r="1.6"/><circle cx="17" cy="20" r="1.6"/></svg><span class="cartn" id="cartn">0</span></div>
     </div>
   </div>
@@ -1247,7 +1253,7 @@ header{position:static!important}
 <div class="searchrow"><a class="deskbrand" onclick="showHome()" aria-label="Outdoo home"><img src="img/3bf0696560fe.png" alt="Outdoo"></a><div class="search">
     <input id="q" placeholder="Search outdoor sofas, planters, lights…" onkeydown="if(event.key==='Enter')doSearch()">
     <button onclick="doSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></button>
-  </div><div class="deskicons"><div class="icobtn" onclick="toast('Wishlist — mockup')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></div><div class="icobtn" onclick="miniCart(true);miniTitle('Your cart')"><svg viewBox="0 0 24 24"><path d="M4 6 h2 l2.4 10 h9.6 l2 -7 H8"/><circle cx="10" cy="20" r="1.6"/><circle cx="17" cy="20" r="1.6"/></svg><span class="cartn" id="cartn2">0</span></div></div></div>
+  </div><div class="deskicons"><div class="icobtn" onclick="acWishlist()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></div><div class="icobtn" onclick="miniCart(true);miniTitle('Your cart')"><svg viewBox="0 0 24 24"><path d="M4 6 h2 l2.4 10 h9.6 l2 -7 H8"/><circle cx="10" cy="20" r="1.6"/><circle cx="17" cy="20" r="1.6"/></svg><span class="cartn" id="cartn2">0</span></div></div></div>
 <div class="shopnav"><div class="in">
   <div class="sn2" onclick="navOpen('cat',this)">Category <i>▾</i></div>
   <div class="sn2" onclick="navOpen('space',this)">Space <i>▾</i></div>
@@ -1579,7 +1585,7 @@ header{position:static!important}
     <div class="pdp-info">
       <div class="pcard">
       <div class="titlerow"><h1 id="pdT">Erica Outdoor Sofa Set (3+1+1) with Coffee Table</h1>
-  <span class="sharebtn" onclick="shareProduct()"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6.5" r="2.4"/><circle cx="17" cy="17.5" r="2.4"/><line x1="8.2" y1="10.9" x2="14.8" y2="7.6"/><line x1="8.2" y1="13.1" x2="14.8" y2="16.4"/></svg>Share</span></div>
+  <span class="sharebtn wlbtn" id="pdWish" onclick="acWishToggle()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg><span class="wl-l">Save</span></span><span class="sharebtn" onclick="shareProduct()"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6.5" r="2.4"/><circle cx="17" cy="17.5" r="2.4"/><line x1="8.2" y1="10.9" x2="14.8" y2="7.6"/><line x1="8.2" y1="13.1" x2="14.8" y2="16.4"/></svg>Share</span></div>
 <div class="byline">By <b>Outdoo Originals</b></div>
 <div class="matline" id="pdMat"></div>
 <div class="viewing"><svg viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4.5 12 4.5 s7 2 10 7.5 c-3 5.5 -7 7.5 -10 7.5 s-7 -2 -10 -7.5z"/><circle cx="12" cy="12" r="3"/></svg><span id="pdView">284</span>&nbsp;people viewing this</div>
@@ -1783,7 +1789,7 @@ header{position:static!important}
   <div class="bn on" onclick="showHome()"><svg viewBox="0 0 24 24"><path d="M4 11 L12 4 l8 7"/><path d="M6 10 v9 h12 v-9"/></svg>Home</div>
   <div class="bn" onclick="goCats()"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 13 v7 M13 16.5 h7"/></svg>Categories</div>
   <div class="bn" onclick="acTrack()"><svg viewBox="0 0 24 24"><path d="M3 7 h13 v10 H3z"/><path d="M16 10 h3.5 L21 13 v4 h-5"/><circle cx="7.5" cy="17" r="1.7"/><circle cx="17.5" cy="17" r="1.7"/></svg>Track</div>
-  <div class="bn" onclick="toast('Wishlist — mockup')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg>Wishlist</div>
+  <div class="bn" onclick="acWishlist()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg>Wishlist</div>
   <div class="bn" onclick="acOpen()"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20 c1.5 -4 5 -5.5 8 -5.5 s6.5 1.5 8 5.5"/></svg>Account</div>
 </nav>
 
@@ -2179,7 +2185,7 @@ function renderPLP(){
 let curPid=null;
 function openProduct(id){
   if(lastCol==='__search' && SQ) _supaRpc('log_search',{p_kind:'click',p_q:SQ,p_sku:id}).catch(()=>{});
-  curPid=id;
+  curPid=id; setTimeout(()=>window.acWlPaint&&acWlPaint(),0);
   const x=PRODS[id], c=COLS[x.col];
   document.getElementById('pdT').textContent=x.n;
   document.getElementById('pdR').textContent=x.r+' ★';
@@ -2710,7 +2716,9 @@ function coTotals(){
 }
 function openCheckout(){
   if(!CART.length){toast('Your cart is empty');return;}
-  renderCheckout(); showView('checkout');
+  const go=()=>{ renderCheckout(); showView('checkout'); };
+  if(window.acRequire && (window.OUTDOO_SUPA||{}).url) return acRequire(go,'Sign in to check out');
+  go();
 }
 function renderCheckout(){
   const t=coTotals();
