@@ -2875,7 +2875,7 @@ function bulkForm(){return `
   <div class="note">📦 Bulk pricing applies on <b>10+ units</b>. For smaller quantities, please order from the store.</div>
   <div class="fld"><label>FULL NAME *</label><input id="bName" placeholder="Your name"><div class="msg">Please enter your name</div></div>
   <div class="f2">
-    <div class="fld"><label>MOBILE *</label><input id="bPh" maxlength="10" inputmode="numeric" placeholder="10-digit number"><div class="msg">Enter a valid 10-digit mobile</div></div>
+    <div class="fld"><label>MOBILE *</label><input id="bPh" type="tel" autocomplete="tel" maxlength="14" inputmode="numeric" placeholder="10-digit number"><div class="msg">Enter a valid 10-digit mobile</div></div>
     <div class="fld"><label>EMAIL *</label><input id="bEm" placeholder="you@company.com"><div class="msg">Enter a valid email</div></div>
   </div>
   <div class="f2">
@@ -2902,7 +2902,9 @@ function bulkForm(){return `
   </div>
   <div class="fld"><label>REQUIREMENT DETAILS (OPTIONAL)</label>
     <textarea id="bMsg" rows="2" placeholder="Site, sizes, finishes, any reference"></textarea></div>
-  <div class="erow"><button class="btn" style="flex:1" onclick="enqStep2()">Continue →</button></div>`;
+  <input type="text" name="website" id="bWeb" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+  <div class="msg" id="bErr" style="display:none;color:#b23a2e;font-size:12px;margin:4px 0"></div>
+  <div class="erow"><button class="btn" id="bGo" style="flex:1" onclick="enqStep2()">Send enquiry</button></div>`;
 }
 function bad(id,ok){const el=document.getElementById(id); if(!el) return ok;
   const f=el.closest('.fld'); if(f) f.classList.toggle('err',!ok); return ok;}
@@ -2910,17 +2912,7 @@ const ph=v=>/^[6-9]\d{9}$/.test((v||'').trim());
 const em=v=>/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test((v||'').trim());
 const val=id=>(document.getElementById(id)||{}).value||'';
 
-let ENQ=null;
-function enqSnap(){
-  if(enqKind==='db') return {kind:'design_build',name:val('eName').trim(),phone:val('ePh').trim(),email:val('eEm').trim(),
-    city:val('eCity'),budget:val('eBud'),
-    details:['Start: '+val('eWhen'), val('eMsg').trim()].filter(Boolean).join(' · ')};
-  return {kind:'bulk',name:val('bName').trim(),phone:val('bPh').trim(),email:val('bEm').trim(),
-    city:val('bCity').trim(),budget:val('bBud'),
-    details:['Company: '+(val('bCo').trim()||'-'),'Category: '+val('bCat'),'Qty: '+val('bQty'),'Needed: '+val('bWhen'),val('bMsg').trim()].filter(Boolean).join(' · ')};
-}
 function enqStep2(){
-  if(document.getElementById(enqKind==='db'?'eName':'bName')) ENQ=enqSnap();
   let ok=true;
   if(enqKind==='db'){
     const digits=val('ePh').replace(/\D/g,'').slice(-10);
@@ -2933,7 +2925,7 @@ function enqStep2(){
     submitDB(digits);
   } else {
     ok=bad('bName',val('bName').trim().length>1)&&ok;
-    ok=bad('bPh',ph(val('bPh')))&&ok;
+    ok=bad('bPh',ph(val('bPh').replace(/\D/g,'').slice(-10)))&&ok;
     ok=bad('bEm',em(val('bEm')))&&ok;
     ok=bad('bCity',val('bCity').trim().length>1)&&ok;
     ok=bad('bCat',!!val('bCat'))&&ok;
@@ -2941,13 +2933,7 @@ function enqStep2(){
     ok=bad('bBud',!!val('bBud'))&&ok;
     ok=bad('bWhen',!!val('bWhen'))&&ok;
     if(!ok){toast('Please check the highlighted fields');return;}
-    document.getElementById('enqBody').innerHTML=`
-      <div class="confirmbox"><h4>Just confirming your order size</h4>
-        <p>You selected <b>${val('bQty')}</b> with a budget of <b>${val('bBud')}</b>. Bulk pricing and dedicated support apply on <b>10+ units</b>, and made-to-order items need 2–4 weeks of production time.</p>
-        <label class="ck"><input type="checkbox" id="bOk"> <span>Yes, this is a genuine bulk requirement and the quantity above is correct.</span></label>
-      </div>
-      <div class="erow"><button class="gh" onclick="enqOpen('bulk')">← Edit details</button>
-      <button class="btn" onclick="enqSubmit()">Confirm &amp; submit</button></div>`;
+    submitBulk();
   }
 }
 // ---- Design & Build → LifeWall Flow CRM (website_lead_submit) ----
@@ -2986,33 +2972,31 @@ async function submitDB(digits){
     if(btn){btn.disabled=false;btn.textContent='Send enquiry';}
   }finally{ DB_BUSY=false; }
 }
-async function enqSubmit(){
-  const ck=document.getElementById(enqKind==='db'?'eOk':'bOk');
-  if(!ck||!ck.checked){toast('Please tick the confirmation to continue');return;}
-  const who=enqKind==='db'?'design & build':'bulk';
-  const F=window.FLOW_LEADS||{};
-  if(!ENQ||!F.url||!F.anon){toast('Enquiry could not be sent. Please email orders@outdoo.in');return;}
-  const btn=document.querySelector('#enqBody .btn'); if(btn){btn.disabled=true;btn.textContent='Sending…';}
+let BULK_BUSY=false;
+async function submitBulk(){
+  if(BULK_BUSY) return; BULK_BUSY=true;
+  const S=window.OUTDOO_SUPA||{}, btn=document.getElementById('bGo'), err=document.getElementById('bErr');
+  const showErr=m=>{ if(err){err.textContent=m;err.style.display='block';} };
+  if(err) err.style.display='none'; if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  let utm={}; try{ utm=JSON.parse(sessionStorage.getItem('od_utm')||'{}'); }catch(e){}
+  const p={name:val('bName').trim(),phone:val('bPh').replace(/\D/g,'').slice(-10),email:val('bEm').trim(),company:val('bCo').trim(),city:val('bCity').trim(),
+    category:val('bCat'),quantity:val('bQty'),budget:val('bBud'),needed_by:val('bWhen'),details:val('bMsg').trim(),page_url:location.href,utm,website:val('bWeb')};
   try{
-    const r=await fetch(F.url+'/rest/v1/rpc/outdoo_submit_enquiry',{method:'POST',
-      headers:{apikey:F.anon,Authorization:'Bearer '+F.anon,'Content-Type':'application/json'},
-      body:JSON.stringify({p_kind:ENQ.kind,p_name:ENQ.name,p_phone:ENQ.phone,p_email:ENQ.email,p_city:ENQ.city,p_budget:ENQ.budget,p_details:ENQ.details})});
+    const r=await fetch(S.url+'/rest/v1/rpc/submit_bulk_enquiry',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:JSON.stringify({p})});
     if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(j&&j.ok===false){ showErr(j.error||'Something went wrong, please try again.'); throw 0; }
+    document.getElementById('enqBody').innerHTML=`
+      <div style="text-align:center;padding:14px 4px 6px">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--olive);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">✓</div>
+        <h3 style="font-size:17px;font-weight:800;margin-bottom:6px">Enquiry received</h3>
+        <p style="font-size:13px;color:var(--muted);max-width:340px;margin:0 auto 16px">Thanks! Our bulk orders team will call you within one working day with pricing.</p>
+        <div class="erow" style="max-width:340px;margin:0 auto"><button class="btn" style="flex:1" onclick="enqClose()">Close</button></div>
+      </div>`;
   }catch(e){
-    if(btn){btn.disabled=false;btn.textContent='Try again';}
-    toast('Could not send right now. Please try again, or email orders@outdoo.in');return;
-  }
-  document.getElementById('enqBody').innerHTML=`
-    <div style="text-align:center;padding:14px 4px 6px">
-      <div class="tick" style="width:56px;height:56px;border-radius:50%;background:var(--olive);color:#fff;font-size:26px;
-        display:flex;align-items:center;justify-content:center;margin:0 auto 14px">✓</div>
-      <h3 style="font-size:17px;font-weight:800;margin-bottom:6px">Enquiry received</h3>
-      <p style="font-size:12px;color:var(--muted);max-width:340px;margin:0 auto 6px">
-        Thanks! Our ${who} team will call you within one working day.</p>
-      <div class="erow" style="max-width:340px;margin:0 auto">
-        <button class="gh" onclick="enqClose()">Close</button>
-        <button class="btn" onclick="enqClose();waToggle()">WhatsApp us</button></div>
-    </div>`;
+    if(e!==0) showErr('Something went wrong, please try again or email orders@outdoo.in.');
+    if(btn){btn.disabled=false;btn.textContent='Send enquiry';}
+  }finally{ BULK_BUSY=false; }
 }
 
 // ---- PDP v2 fillers ----
@@ -3048,7 +3032,7 @@ function fillPDPv2(x,d,sku){
     <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');
 }
 /* ===== OUTDOO dynamic loader (Supabase) — fill url+anon to go dynamic; empty = embedded fallback ===== */
-/* Flow (LifeWall CRM): Design & Build enquiries → website_lead_submit() (anon key can only call that RPC) */
+/* Design & Build → LifeWall Flow CRM website_lead_submit(); Bulk & Trade → OUTDOO submit_bulk_enquiry() (admin: Orders → Enquiries) */
 window.FLOW_LEADS = { url: "https://sxwumzkdyclhjqnfnxfk.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4d3VtemtkeWNsaGpxbmZueGZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MjI4NjEsImV4cCI6MjA4NDQ5ODg2MX0.RUQj6yMD-s2ZcDmJRgmHL6TZThQb26cLziv61a07pmg" };
 window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3Z3B2Y2xxYm5hZXVjdmpudWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjA3MzcsImV4cCI6MjEwNjE5NjczN30.aE5Wdsbyd6LQqh7-JhokrxSXGauFknfjFedTEj0vwnM" };
 (async function(){
