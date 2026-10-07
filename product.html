@@ -499,6 +499,7 @@ body{padding-bottom:78px}
   #wachat{bottom:96px;right:26px}
   body{padding-bottom:0}
 }
+.rate,.qrate{display:none!important}
 </style>
 </head>
 <body class="pdp-open">
@@ -586,7 +587,7 @@ body{padding-bottom:78px}
   <span class="tchip"><svg viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 H6z"/><path d="M9 12 h6 M9 16 h6"/></svg>GST Invoice</span>
   <span class="tchip"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10 V7 a4 4 0 0 1 8 0 v3"/></svg>Secure Payments</span>
 </div>
-<div class="secline">100% secure checkout · UPI · Cards · Net Banking · EMI available</div>
+<div class="secline">Pay on delivery · Cash or UPI · Free delivery to top metros</div>
       <div class="pincheck">
         <label>Check delivery to your pincode</label>
         <div class="row"><input id="pin" maxlength="6" placeholder="e.g. 110001" inputmode="numeric">
@@ -613,23 +614,8 @@ body{padding-bottom:78px}
         </div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Seller<span class="pm">+</span></div>
         <div class="acc-b">Sold by an <b>Outdoo verified partner</b> and fulfilled by Outdoo. Quality checked before dispatch · GST invoice available.</div></div>
-      <div class="acc"><div class="acc-h" onclick="accT(this)">Ratings & Reviews<span class="pm">+</span></div>
-        <div class="acc-b">
-          <div class="revtop">
-            <div class="revbig"><span id="pdRevAvg">4.6</span><small id="pdRevCnt">212 ratings</small></div>
-            <div class="bars">
-              <div class="bar">5★<div class="tr"><div class="fl" style="width:64%"></div></div>64%</div>
-              <div class="bar">4★<div class="tr"><div class="fl" style="width:24%"></div></div>24%</div>
-              <div class="bar">3★<div class="tr"><div class="fl" style="width:8%"></div></div>8%</div>
-              <div class="bar">2★<div class="tr"><div class="fl" style="width:2%"></div></div>2%</div>
-              <div class="bar">1★<div class="tr"><div class="fl" style="width:2%"></div></div>2%</div>
-            </div>
-          </div>
-          <div class="review"><div class="rh"><span class="st">5 ★</span><span class="nm2">Ritika S., Gurugram</span><span class="vbadge">✓ VERIFIED BUYER</span><span class="dt">2 weeks ago</span></div>
-            <p>Quality is much better than expected for the price. Delivery team assembled everything on the terrace. Survived two rain spells already.</p></div>
-          <div class="review"><div class="rh"><span class="st">4 ★</span><span class="nm2">Aman K., Mumbai</span><span class="vbadge">✓ VERIFIED BUYER</span><span class="dt">1 month ago</span></div>
-            <p>Looks premium, fabric dries quickly. Delivery took a couple of days extra but the team kept me informed on WhatsApp.</p></div>
-        </div></div>
+      <div class="acc"><div class="acc-h" onclick="accT(this)">Reviews<span class="pm">+</span></div>
+        <div class="acc-b"><p style="font-size:13px;color:var(--muted)">No reviews yet. Reviews from verified buyers will appear here after delivery.</p><span id="pdRevAvg" hidden></span><span id="pdRevCnt" hidden></span></div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Q&A<span class="pm">+</span></div>
         <div class="acc-b qa">Be the first one to ask a question
           <input placeholder="Type your question… (300 chars)" style="margin-top:8px">
@@ -681,7 +667,7 @@ body{padding-bottom:78px}
       <a href="/privacy/">Privacy Policy</a>
       <a href="/terms/">Terms of Service</a></div>
   </div>
-  <div class="fpay"><span>UPI</span><span>Credit & Debit Cards</span><span>Net Banking</span><span>EMI Available</span><span>100% Secure Payments</span></div>
+  <div class="fpay"><span>Cash on Delivery</span><span>UPI on Delivery</span><span>Free Delivery to Top Metros</span></div>
   <div class="fcity">Outdoor furniture & decor online in Delhi NCR, Gurugram, Noida, Mumbai, Bengaluru, Hyderabad, Chennai, Pune, Chandigarh, Jaipur & Lucknow — luxury terrace, balcony, garden & poolside living by Outdoo.</div>
   <div class="fnote">© 2026 Outdoo · LifeWall Greentech Private Limited · Made in India</div>
 </div></footer>

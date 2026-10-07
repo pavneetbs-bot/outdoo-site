@@ -1212,6 +1212,7 @@ header{position:static!important}
   .delvblock{padding:16px 18px;margin-bottom:16px}
   .speccard{margin-bottom:16px}
 }
+.rate,.qrate{display:none!important}
 </style>
 </head>
 <body>
@@ -1401,21 +1402,6 @@ header{position:static!important}
     </div>
   </div>
 
-  <div class="sec2">
-    <div class="sh"><h2>What customers say</h2><p>4.5 ★ average across 600+ ratings</p></div>
-    <div style="height:14px"></div>
-    <div class="revstrip">
-      <div class="rcard"><div class="stars">★★★★★ <span class="vbadge">✓ VERIFIED</span></div>
-        <p>"Ordered the lounge set for our Gurugram terrace. Quality is better than what we saw in stores at this price, and it has already survived two rain spells."</p>
-        <div class="who"><span class="av">RS</span><div><div class="nm3">Ritika Sharma</div><div class="ct3">Gurugram · Lounge Set</div></div></div></div>
-      <div class="rcard"><div class="stars">★★★★★ <span class="vbadge">✓ VERIFIED</span></div>
-        <p>"String lights aur planters dono mangaye the. Packaging solid thi, 4 din mein delivery. Balcony ka look hi badal gaya."</p>
-        <div class="who"><span class="av">AK</span><div><div class="nm3">Aman Khanna</div><div class="ct3">Mumbai · Lighting &amp; Planters</div></div></div></div>
-      <div class="rcard"><div class="stars">★★★★☆ <span class="vbadge">✓ VERIFIED</span></div>
-        <p>"Cushion covers survived the first rains without fading. Assembly took me 20 minutes with the guide."</p>
-        <div class="who"><span class="av">PM</span><div><div class="nm3">Priya Menon</div><div class="ct3">Bengaluru · Soft Furnishings</div></div></div></div>
-    </div>
-  </div>
 
   <div class="sec2">
     <div class="sh"><h2>Popular searches</h2></div>
@@ -1516,7 +1502,7 @@ header{position:static!important}
       <a href="/privacy/">Privacy Policy</a>
       <a href="/terms/">Terms of Service</a></div>
   </div>
-  <div class="fpay"><span>UPI</span><span>Credit & Debit Cards</span><span>Net Banking</span><span>EMI Available</span><span>100% Secure Payments</span></div>
+  <div class="fpay"><span>Cash on Delivery</span><span>UPI on Delivery</span><span>Free Delivery to Top Metros</span></div>
   <div class="fcity">Outdoor furniture & decor online in Delhi NCR, Gurugram, Noida, Mumbai, Bengaluru, Hyderabad, Chennai, Pune, Chandigarh, Jaipur & Lucknow — luxury terrace, balcony, garden & poolside living by Outdoo.</div>
   <div class="fnote">© 2026 Outdoo · LifeWall Greentech Private Limited · Made in India</div>
 </div></footer>
@@ -1543,10 +1529,6 @@ header{position:static!important}
           <label class="fopt"><input type="checkbox" data-f="price" value="10000-25000" onchange="fltSet()"> ₹10,000 – ₹25,000</label>
           <label class="fopt"><input type="checkbox" data-f="price" value="25000-100000" onchange="fltSet()"> ₹25,000 – ₹1,00,000</label>
           <label class="fopt"><input type="checkbox" data-f="price" value="100000-99999999" onchange="fltSet()"> ₹1,00,000+</label>
-        </div>
-        <div class="fsec"><h4>Rating</h4>
-          <label class="fopt"><input type="radio" name="frat" data-f="rating" value="4.3" onchange="fltSet()"> 4.3 ★ & above</label>
-          <label class="fopt"><input type="radio" name="frat" data-f="rating" value="4.5" onchange="fltSet()"> 4.5 ★ & above</label>
         </div>
         <div class="fsec"><h4>Dispatch</h4>
           <label class="fopt"><input type="radio" name="fdis" data-f="dispatch" value="ready" onchange="fltSet()"> Ready to ship (7–10 days)</label>
@@ -1624,7 +1606,7 @@ header{position:static!important}
   <span class="tchip"><svg viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 H6z"/><path d="M9 12 h6 M9 16 h6"/></svg>GST Invoice</span>
   <span class="tchip"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10 V7 a4 4 0 0 1 8 0 v3"/></svg>Secure Payments</span>
 </div>
-<div class="secline" style="margin-top:8px">100% secure checkout · UPI · Cards · Net Banking · EMI available</div>
+<div class="secline" style="margin-top:8px">Pay on delivery · Cash or UPI · Free delivery to top metros</div>
       </div>
       <div class="etamod">
         <div class="top">
@@ -1669,24 +1651,8 @@ header{position:static!important}
           </ul>
         </div></div>
       
-      <div class="acc"><div class="acc-h" onclick="accT(this)">Ratings & Reviews<span class="pm">+</span></div>
-        <div class="acc-b">
-          <div class="rtabs"><button class="on" onclick="revTab(this,'p')">Product Reviews</button><button onclick="revTab(this,'c')">Category Reviews</button></div>
-          <div class="revtop">
-            <div class="revbig"><span id="pdRevAvg">4.6</span><small id="pdRevCnt">212 ratings</small></div>
-            <div class="bars">
-              <div class="bar">5★<div class="tr"><div class="fl" style="width:64%"></div></div>64%</div>
-              <div class="bar">4★<div class="tr"><div class="fl" style="width:24%"></div></div>24%</div>
-              <div class="bar">3★<div class="tr"><div class="fl" style="width:8%"></div></div>8%</div>
-              <div class="bar">2★<div class="tr"><div class="fl" style="width:2%"></div></div>2%</div>
-              <div class="bar">1★<div class="tr"><div class="fl" style="width:2%"></div></div>2%</div>
-            </div>
-          </div>
-          <div class="review"><div class="rh"><span class="st">5 ★</span><span class="nm2">Ritika S., Gurugram</span><span class="vbadge">✓ VERIFIED BUYER</span><span class="dt">2 weeks ago</span></div>
-            <p>Quality is much better than expected for the price. Delivery team assembled everything on the terrace. Survived two rain spells already.</p></div>
-          <div class="review"><div class="rh"><span class="st">4 ★</span><span class="nm2">Aman K., Mumbai</span><span class="vbadge">✓ VERIFIED BUYER</span><span class="dt">1 month ago</span></div>
-            <p>Looks premium, fabric dries quickly. Delivery took a couple of days extra but the team kept me informed on WhatsApp.</p></div>
-        </div></div>
+      <div class="acc"><div class="acc-h" onclick="accT(this)">Reviews<span class="pm">+</span></div>
+        <div class="acc-b"><p style="font-size:13px;color:var(--muted)">No reviews yet. Reviews from verified buyers will appear here after delivery.</p><span id="pdRevAvg" hidden></span><span id="pdRevCnt" hidden></span></div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Q&A<span class="pm">+</span></div>
         <div class="acc-b qa">Be the first one to ask a question
           <input placeholder="Type your question… (300 chars)" style="margin-top:8px">
@@ -1696,8 +1662,6 @@ header{position:static!important}
           <li><b>OUTDOO5</b> — extra 5% off, auto-applied at cart</li>
           <li><b>Room package pricing</b> — up to 7% off when you buy a full space</li>
           <li><b>Bulk &amp; trade</b> — special pricing on 10+ units <a onclick="enqOpen('bulk')" style="color:var(--terra-deep);font-weight:700;cursor:pointer">enquire →</a></li>
-          <li><b>EMI</b> available on cards at checkout</li>
-          <li>Made-to-order pieces: pay 20% now, balance before dispatch</li>
         </ul></div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Manufacturer &amp; brand<span class="pm">+</span></div>
         <div class="acc-b" id="pdMfr"></div></div>
@@ -2263,7 +2227,6 @@ function cmpRender(id){const box=document.getElementById('cmpSec'); if(!box) ret
   const rows=[
     ['', (y,i)=>`<div class="ci" onclick="openProduct('${ids[i]}');scrollTo(0,0)">${i===0?'<span class="tag">THIS ITEM</span>':''}<div class="im"><img src="${IMGS[y.img]||''}" alt=""></div><div class="nm">${_esc(y.n)}</div></div>`, true],
     ['', (y,i)=>y.stock===false?'<span class="mut">Out of stock</span>':`<button class="cadd${i?'':' alt'}" onclick="addCart('${ids[i]}')">Add to cart</button>`, true],
-    ['Customer rating', y=>`<span class="st">${y.r} ★</span> <span class="mut">(${y.c})</span>`],
     ['Price', y=>`<span class="pr">${inr(y.p)}</span>${y.p===low&&P.some(z=>z.p!==low)?'<span class="best">Lowest price</span>':''}`],
     ['MRP · discount', y=>off(y)?`<s class="mut">${inr(y.m)}</s> · <b style="color:#2E7D4F">${off(y)}% off</b>`:'<span class="mut">—</span>'],
     ['Type', (y,i)=>_esc(subOf(ids[i]))],
