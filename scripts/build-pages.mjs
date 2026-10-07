@@ -20,7 +20,7 @@ const CO = {
   city: 'New Delhi',
   returnDays: 7,
   damageHours: 48,
-  updated: '4 October 2026',
+  updated: '7 October 2026',
 }
 const CATS = [['furniture', 'Furniture'], ['shade', 'Shade'], ['lighting', 'Lighting'], ['planters', 'Planters'], ['art', 'Art'], ['furnishings', 'Furnishings']]
 
@@ -75,6 +75,42 @@ const PAGES = {
 <p>Once the returned item reaches the seller and passes a quick check, we refund within <b>7 working days</b>. Cash-on-delivery orders are refunded by UPI or bank transfer to an account you give us.</p>
 <h2>How to start</h2>
 <p>Email <a href="mailto:${CO.email}">${CO.email}</a> with your order number, the product, the reason and photos.</p>`,
+  },
+  warranty: {
+    title: 'Warranty Policy', desc: 'How product warranties work on OUTDOO: who gives them, what they cover and how to make a claim.',
+    body: `
+<h2>Who gives the warranty</h2>
+<p>Products on ${CO.brand} are made and sold by verified sellers, and the warranty comes from the seller or manufacturer. Where a product has a warranty, its period and what it covers are shown on the product page under Specifications. If no warranty is shown, the product doesn't carry one beyond the <a href="/returns/#damage">damage-free promise</a>.</p>
+<h2>What warranties usually cover</h2>
+<ul>
+<li>Manufacturing defects: broken welds or joints, frame failure, faulty wiring in lights.</li>
+<li>Defects that show up under normal outdoor use as described on the product page.</li>
+</ul>
+<h2>What they don't cover</h2>
+<ul>
+<li>Normal weathering: gradual fading in direct sun, natural patina on metal, wood or stone.</li>
+<li>Damage from misuse, wrong assembly, overloading, accidents or changes you make to the product.</li>
+<li>Cushions and fabrics left out in heavy rain or stored wet, unless the product page says they're made for it.</li>
+<li>Damage in transit. That's covered separately: report it within ${CO.damageHours} hours under our <a href="/returns/#damage">damage-free promise</a>.</li>
+</ul>
+<h2>How to make a claim</h2>
+<p>Email <a href="mailto:${CO.email}">${CO.email}</a> with your order number (starts with OD), photos or a short video of the problem, and a line on what happened. We take it up with the seller for you and keep you updated. If the claim is accepted, the seller repairs or replaces the part or product as their warranty terms set out.</p>
+<h2>Care</h2>
+<p>Outdoor pieces last longer with a little care: cover or store cushions when it rains, wipe off dust and bird droppings, and follow the care guide that ships with your product.</p>`,
+  },
+  payments: {
+    title: 'Payments', desc: 'How to pay for your OUTDOO order: cash or UPI on delivery today, with online payment coming soon.',
+    body: `
+<h2>Pay on delivery</h2>
+<p>Right now every ${CO.brand} order is paid on delivery. Pay the delivery partner in cash or by UPI when your order arrives. There's nothing to pay when you place the order.</p>
+<h2>Online payment</h2>
+<p>Card, UPI and net-banking payments at checkout are coming soon. We'll update this page when they go live.</p>
+<h2>Prices and GST</h2>
+<p>All prices on ${CO.brand} include GST. Your GST invoice comes from the seller. Business buyers can add their GSTIN at checkout to get a B2B invoice; it can be changed until the invoice is generated.</p>
+<h2>Refunds</h2>
+<p>Refunds for pay-on-delivery orders go by UPI or bank transfer to an account you give us, within 7 working days of the return passing the seller's check. See <a href="/returns/">Returns, Refunds &amp; Cancellations</a>.</p>
+<h2>Stay safe</h2>
+<p>${CO.brand} will never ask for your card details, UPI PIN or OTP over phone, email or WhatsApp. Report anything suspicious to <a href="mailto:${CO.email}">${CO.email}</a>.</p>`,
   },
   privacy: {
     title: 'Privacy Policy', desc: 'What information OUTDOO collects, why, who it is shared with, and your rights under the Digital Personal Data Protection Act, 2023.',

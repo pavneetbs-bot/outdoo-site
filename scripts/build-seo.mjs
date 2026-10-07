@@ -235,7 +235,7 @@ ${(() => { const gs = groupsOf(c.slug); return gs.length > 1 ? gs.map(g => `<h2 
 }
 
 // ---------------------------------------------------------------- sitemap, robots, Google Merchant feed
-const POLICY = ['about', 'shipping', 'returns', 'privacy', 'terms', 'contact'].map(k => [`${SITE}/${k}/`, today, '0.3'])
+const POLICY = ['about', 'shipping', 'warranty', 'payments', 'returns', 'privacy', 'terms', 'contact'].map(k => [`${SITE}/${k}/`, today, '0.3'])
 const urls = [[`${SITE}/`, today, '1.0'], ...POLICY, ...cols.filter(c => products.some(p => p.collection_slug === c.slug)).map(c => [`${SITE}/c/${c.slug}/`, today, '0.8']),
   ...products.map(p => [`${SITE}/p/${p.slug}/`, (p.updated_at || today).slice(0, 10), '0.7'])]
 write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d, pr]) => `  <url><loc>${u}</loc><lastmod>${d}</lastmod><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`)
