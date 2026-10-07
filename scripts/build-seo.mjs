@@ -145,7 +145,7 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 <footer><div class="wrap cols">
 <div><b>OUTDOO</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Free delivery to top metros · Cash on delivery</div>
 <div><b>Shop</b>${cols.map(c => `<a href="/c/${c.slug}/">${esc(c.title)}</a>`).join('')}</div>
-<div><b>OUTDOO</b><a href="/">Home</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outdoo.in">Sell on OUTDOO</a></div>
+<div><b>OUTDOO</b><a href="/">Home</a><a href="/about/">About OUTDOO</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outdoo.in">Sell on OUTDOO</a></div>
 </div></footer>
 <div class="toast" id="toast"></div>
 <script>${CART_JS}</script>
@@ -235,7 +235,7 @@ ${(() => { const gs = groupsOf(c.slug); return gs.length > 1 ? gs.map(g => `<h2 
 }
 
 // ---------------------------------------------------------------- sitemap, robots, Google Merchant feed
-const POLICY = ['shipping', 'returns', 'privacy', 'terms', 'contact'].map(k => [`${SITE}/${k}/`, today, '0.3'])
+const POLICY = ['about', 'shipping', 'returns', 'privacy', 'terms', 'contact'].map(k => [`${SITE}/${k}/`, today, '0.3'])
 const urls = [[`${SITE}/`, today, '1.0'], ...POLICY, ...cols.filter(c => products.some(p => p.collection_slug === c.slug)).map(c => [`${SITE}/c/${c.slug}/`, today, '0.8']),
   ...products.map(p => [`${SITE}/p/${p.slug}/`, (p.updated_at || today).slice(0, 10), '0.7'])]
 write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d, pr]) => `  <url><loc>${u}</loc><lastmod>${d}</lastmod><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`)

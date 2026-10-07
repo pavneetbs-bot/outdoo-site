@@ -1,4 +1,4 @@
-// Policy pages: /shipping/ /returns/ /privacy/ /terms/ /contact/
+// Pages: /about/ /shipping/ /returns/ /privacy/ /terms/ /contact/
 // Needed for Google Merchant Center, Meta Commerce and the Consumer Protection (E-Commerce) Rules.
 // No network needed. Run: node scripts/build-pages.mjs   (npm run update runs it too)
 // Edit the text in PAGES below, run the script, commit.
@@ -25,6 +25,25 @@ const CO = {
 const CATS = [['furniture', 'Furniture'], ['shade', 'Shade'], ['lighting', 'Lighting'], ['planters', 'Planters'], ['art', 'Art'], ['furnishings', 'Furnishings']]
 
 const PAGES = {
+  about: {
+    title: 'About OUTDOO', desc: 'OUTDOO is an online marketplace for outdoor living — furniture, shade, lighting, planters and decor, direct from Indian manufacturers.',
+    body: `
+<p>${CO.brand} is an online marketplace for outdoor living. Balconies, terraces, gardens, farmhouses and cafés: everything to furnish them, in one place. Our tagline says it: <b>Every Outdoor Possibility</b>.</p>
+<h2>Direct from the makers</h2>
+<p>We work directly with manufacturers, so you buy from the people who build the product, without a chain of middlemen in between. Every seller on ${CO.brand} is GST-registered and verified by us before their products go live.</p>
+<h2>Curated by people who build outdoor spaces</h2>
+<p>${CO.brand} is ${CO.group.charAt(0).toLowerCase() + CO.group.slice(1)}. LifeWall designs and builds luxury outdoor spaces across Delhi NCR and has completed 300+ projects: pergolas, terraces, water features and more. The same team picks what goes on ${CO.brand}, choosing pieces that hold up to Indian sun, rain and dust.</p>
+<h2>What you can expect</h2>
+<ul>
+<li>Free delivery to top metros, with cash on delivery.</li>
+<li>${CO.returnDays}-day returns. See <a href="/returns/">Returns, Refunds &amp; Cancellations</a>.</li>
+<li>Damage-free promise: report transit damage within ${CO.damageHours} hours and we sort it out.</li>
+</ul>
+<h2>Sell on ${CO.brand}</h2>
+<p>Make outdoor furniture or decor? Apply at <a href="https://seller.outdoo.in">seller.outdoo.in</a>.</p>
+<h2>Company</h2>
+<p>${CO.brand} is operated by ${CO.legal}, Delhi NCR, India. Questions? Write to <a href="mailto:${CO.email}">${CO.email}</a>.</p>`,
+  },
   shipping: {
     title: 'Shipping & Delivery', desc: 'Free delivery to top metros, dispatch timelines, cash on delivery and what to check when your OUTDOO order arrives.',
     body: `
