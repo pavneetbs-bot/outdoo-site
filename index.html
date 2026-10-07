@@ -1653,10 +1653,6 @@ header{position:static!important}
       
       <div class="acc"><div class="acc-h" onclick="accT(this)">Reviews<span class="pm">+</span></div>
         <div class="acc-b"><p style="font-size:13px;color:var(--muted)">No reviews yet. Reviews from verified buyers will appear here after delivery.</p><span id="pdRevAvg" hidden></span><span id="pdRevCnt" hidden></span></div></div>
-      <div class="acc"><div class="acc-h" onclick="accT(this)">Q&A<span class="pm">+</span></div>
-        <div class="acc-b qa">Be the first one to ask a question
-          <input placeholder="Type your question… (300 chars)" style="margin-top:8px">
-          <button class="btn" style="padding:9px 22px;font-size:12px" onclick="toast('Question posted — mockup')">Post</button></div></div>
             <div class="acc"><div class="acc-h" onclick="accT(this)">All offers<span class="pm">+</span></div>
         <div class="acc-b"><ul class="speclist">
           <li><b>OUTDOO5</b> — extra 5% off, auto-applied at cart</li>
@@ -2739,8 +2735,6 @@ function renderCheckout(){
     <div class="cobox"><h3>Delivery</h3>
       <div class="payopt on"><input type="radio" name="dlv" checked>
         <div><b>Standard — FREE</b><span>Dispatch as per each item's timeline · weather-safe packing</span></div></div>
-      <div class="payopt"><input type="radio" name="dlv" onclick="toast('Priority dispatch — mockup')">
-        <div><b>Priority dispatch — ₹1,500</b><span>Moved to the front of the production queue where possible</span></div></div>
       <div class="secline">Assembly is by you — fittings and a step-by-step guide ship with every piece.</div>
     </div>
     <div class="cobox"><h3>Payment</h3>
@@ -2846,27 +2840,28 @@ function enqClose(){document.getElementById('enq').classList.remove('open');
   document.getElementById('enqov').classList.remove('open');document.body.classList.remove('flt-open');}
 const opts=(a)=>a.map(x=>`<option value="${x}">${x}</option>`).join('');
 
+const FLOW_CITIES=['Delhi','Gurgaon','Noida','Greater Noida','Faridabad','Ghaziabad','Meerut','Sonipat','Other'];
+const FLOW_BUDGETS=['Below 10L','10L–15L','15L–20L','20L–25L','25L–50L','50L & Above'];
 function dbForm(){return `
-  <div class="note">📍 We take up turnkey projects <b>only in Delhi NCR</b> at the moment. Minimum project value <b>₹10 lakh</b>.</div>
-  <div class="fld"><label>FULL NAME *</label><input id="eName" placeholder="Your name"><div class="msg">Please enter your name</div></div>
+  <div class="fld"><label>FULL NAME *</label><input id="eName" autocomplete="name" placeholder="Your name"><div class="msg">Please enter your name</div></div>
   <div class="f2">
-    <div class="fld"><label>MOBILE *</label><input id="ePh" maxlength="10" inputmode="numeric" placeholder="10-digit number"><div class="msg">Enter a valid 10-digit mobile</div></div>
-    <div class="fld"><label>EMAIL *</label><input id="eEm" placeholder="you@email.com"><div class="msg">Enter a valid email</div></div>
+    <div class="fld"><label>MOBILE *</label><input id="ePh" type="tel" autocomplete="tel" inputmode="numeric" maxlength="14" placeholder="10-digit number"><div class="msg">Enter a valid 10-digit mobile</div></div>
+    <div class="fld"><label>EMAIL (OPTIONAL)</label><input id="eEm" type="email" autocomplete="email" placeholder="you@email.com"><div class="msg">Enter a valid email</div></div>
   </div>
   <div class="f2">
-    <div class="fld"><label>CITY (NCR ONLY) *</label>
-      <select id="eCity"><option value="">Select city</option>${opts(NCR)}<option value="other">My city is outside NCR</option></select>
-      <div class="msg">Please select an NCR city</div></div>
-    <div class="fld"><label>WHEN DO YOU WANT TO START? *</label>
-      <select id="eWhen"><option value="">Select timeline</option>${opts(WHENS)}</select>
-      <div class="msg">Please select a timeline</div></div>
+    <div class="fld"><label>CITY *</label>
+      <select id="eCity"><option value="">Select city</option>${opts(FLOW_CITIES)}</select>
+      <div class="msg">Please select your city</div></div>
+    <div class="fld"><label>BUDGET *</label>
+      <select id="eBud"><option value="">Select budget</option>${opts(FLOW_BUDGETS)}</select>
+      <div class="msg">Please select your budget</div></div>
   </div>
-  <div class="fld"><label>PROJECT BUDGET *</label>
-    <select id="eBud"><option value="">Select budget range</option>${opts(BUDGETS)}</select>
-    <div class="msg">Please select your budget range</div></div>
-  <div class="fld"><label>ABOUT YOUR SPACE (OPTIONAL)</label>
-    <textarea id="eMsg" rows="2" placeholder="Terrace / farmhouse / villa garden, approx area, what you have in mind"></textarea></div>
-  <div class="erow"><button class="btn" style="flex:1" onclick="enqStep2()">Continue →</button></div>`;
+  <div class="fld"><label>WHAT ARE YOU LOOKING FOR?</label><input id="eInt" placeholder="Terrace garden, pergola, water feature…"></div>
+  <div class="fld"><label>MESSAGE (OPTIONAL)</label>
+    <textarea id="eMsg" rows="2" placeholder="Approx area, timeline, anything else"></textarea></div>
+  <input type="text" name="website" id="eWeb" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+  <div class="msg" id="eErr" style="display:none;color:#b23a2e;font-size:12px;margin:4px 0"></div>
+  <div class="erow"><button class="btn" id="eGo" style="flex:1" onclick="enqStep2()">Send enquiry</button></div>`;
 }
 function bulkForm(){return `
   <div class="note">📦 Bulk pricing applies on <b>10+ units</b>. For smaller quantities, please order from the store.</div>
@@ -2920,31 +2915,14 @@ function enqStep2(){
   if(document.getElementById(enqKind==='db'?'eName':'bName')) ENQ=enqSnap();
   let ok=true;
   if(enqKind==='db'){
-    ok=bad('eName',val('eName').trim().length>1)&&ok;
-    ok=bad('ePh',ph(val('ePh')))&&ok;
-    ok=bad('eEm',em(val('eEm')))&&ok;
+    const digits=val('ePh').replace(/\D/g,'').slice(-10);
+    ok=bad('eName',val('eName').trim().length>=2)&&ok;
+    ok=bad('ePh',/^[6-9]\d{9}$/.test(digits))&&ok;
+    ok=bad('eEm',!val('eEm').trim()||em(val('eEm')))&&ok;
     ok=bad('eCity',!!val('eCity'))&&ok;
-    ok=bad('eWhen',!!val('eWhen'))&&ok;
     ok=bad('eBud',!!val('eBud'))&&ok;
     if(!ok){toast('Please check the highlighted fields');return;}
-    if(val('eCity')==='other'){
-      document.getElementById('enqBody').innerHTML=`
-        <div class="confirmbox"><h4>We're NCR-only for now</h4>
-        <p>Turnkey design &amp; build is currently available <b>only in Delhi NCR</b> — our teams, material partners and site supervision all sit here, and we'd rather say no than do a project badly from a distance.</p>
-        <p style="margin-top:8px">You can still order any product from the store — we deliver across top metros.</p></div>
-        <div class="erow"><button class="gh" onclick="enqOpen('db')">← Change city</button>
-        <button class="btn" onclick="enqClose();showHome()">Browse the store</button></div>`;
-      return;
-    }
-    const b=val('eBud');
-    document.getElementById('enqBody').innerHTML=`
-      <div class="confirmbox"><h4>Just confirming your budget</h4>
-        <p>You selected <b>${b}</b>. Our turnkey projects genuinely start at <b>₹10 lakh</b> — that covers design, material, execution and handover for a real terrace or garden build.</p>
-        <p style="margin-top:8px">If this isn't your working budget, please change it now rather than after a site visit — it saves your time and ours.</p>
-        <label class="ck"><input type="checkbox" id="eOk"> <span>Yes, <b>${b}</b> is my working budget for this project.</span></label>
-      </div>
-      <div class="erow"><button class="gh" onclick="enqOpen('db')">← Change budget</button>
-      <button class="btn" onclick="enqSubmit()">Confirm &amp; submit</button></div>`;
+    submitDB(digits);
   } else {
     ok=bad('bName',val('bName').trim().length>1)&&ok;
     ok=bad('bPh',ph(val('bPh')))&&ok;
@@ -2963,6 +2941,42 @@ function enqStep2(){
       <div class="erow"><button class="gh" onclick="enqOpen('bulk')">← Edit details</button>
       <button class="btn" onclick="enqSubmit()">Confirm &amp; submit</button></div>`;
   }
+}
+// ---- Design & Build → LifeWall Flow CRM (website_lead_submit) ----
+(function(){ try{ if(sessionStorage.getItem('od_utm')) return; const q=new URLSearchParams(location.search), u={};
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid'].forEach(k=>{ const v=q.get(k); if(v) u[k]=v; });
+  sessionStorage.setItem('od_utm',JSON.stringify(u)); }catch(e){} })();
+let DB_BUSY=false;
+async function submitDB(digits){
+  if(DB_BUSY) return; DB_BUSY=true;
+  const F=window.FLOW_LEADS||{}, btn=document.getElementById('eGo'), err=document.getElementById('eErr');
+  const showErr=m=>{ if(err){err.textContent=m;err.style.display='block';} };
+  if(err) err.style.display='none';
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  let utm={}; try{ utm=JSON.parse(sessionStorage.getItem('od_utm')||'{}'); }catch(e){}
+  const body={p_name:val('eName').trim(),p_phone:digits,p_city:val('eCity'),p_budget:val('eBud'),
+    p_page_url:location.href,p_site:'outdoo',p_website:val('eWeb')};
+  if(val('eEm').trim()) body.p_email=val('eEm').trim();
+  if(val('eInt').trim()) body.p_interest=val('eInt').trim();
+  if(val('eMsg').trim()) body.p_message=val('eMsg').trim();
+  if(Object.keys(utm).length) body.p_utm=utm;
+  try{
+    const r=await fetch(F.url+'/rest/v1/rpc/website_lead_submit',{method:'POST',
+      headers:{apikey:F.anon,Authorization:'Bearer '+F.anon,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    if(j&&j.ok===false){ showErr(j.error||'Something went wrong, please try again.'); throw 0; }
+    document.getElementById('enqBody').innerHTML=`
+      <div style="text-align:center;padding:14px 4px 6px">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--olive);color:#fff;font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">✓</div>
+        <h3 style="font-size:17px;font-weight:800;margin-bottom:6px">Thank you!</h3>
+        <p style="font-size:13px;color:var(--muted);max-width:340px;margin:0 auto 16px">Our design team will call you within 24 hours.</p>
+        <div class="erow" style="max-width:340px;margin:0 auto"><button class="btn" style="flex:1" onclick="enqClose()">Close</button></div>
+      </div>`;
+  }catch(e){
+    if(e!==0) showErr('Something went wrong, please try again or WhatsApp us.');
+    if(btn){btn.disabled=false;btn.textContent='Send enquiry';}
+  }finally{ DB_BUSY=false; }
 }
 async function enqSubmit(){
   const ck=document.getElementById(enqKind==='db'?'eOk':'bOk');
@@ -3026,8 +3040,8 @@ function fillPDPv2(x,d,sku){
     <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');
 }
 /* ===== OUTDOO dynamic loader (Supabase) — fill url+anon to go dynamic; empty = embedded fallback ===== */
-/* Flow (LifeWall CRM): Design & Build and Bulk enquiries go to crm_leads via outdoo_submit_enquiry() */
-window.FLOW_LEADS = { url: "https://sxwumzkdyclhjqnfnxfk.supabase.co", anon: "" };
+/* Flow (LifeWall CRM): Design & Build enquiries → website_lead_submit() (anon key can only call that RPC) */
+window.FLOW_LEADS = { url: "https://sxwumzkdyclhjqnfnxfk.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4d3VtemtkeWNsaGpxbmZueGZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MjI4NjEsImV4cCI6MjA4NDQ5ODg2MX0.RUQj6yMD-s2ZcDmJRgmHL6TZThQb26cLziv61a07pmg" };
 window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3Z3B2Y2xxYm5hZXVjdmpudWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjA3MzcsImV4cCI6MjEwNjE5NjczN30.aE5Wdsbyd6LQqh7-JhokrxSXGauFknfjFedTEj0vwnM" };
 (async function(){
   const S = window.OUTDOO_SUPA;
