@@ -26,7 +26,7 @@ Persistent chrome: bottom navigation (Home / Categories / Track / Wishlist / Acc
 
 | Token | Value | Use |
 |---|---|---|
-| `--terra` / `--terra-deep` | `#C26445` / `#A84F33` | Primary buttons, badges, accents |
+| `--terra` / `--terra-deep` | `#BE5633` / `#A84F33` | Primary buttons, badges, accents |
 | `--olive` / `--olive-deep` | `#55634A` / `#414D38` | Secondary buttons, rating chips, brand band |
 | `--sand` / `--sand-soft` | `#EADCC8` / `#F6F1E7` | Surfaces, image placeholders |
 | `--stone` | `#D6D2C7` | Neutral |

@@ -79,7 +79,7 @@ const MEGA = Object.fromEntries(cols.map(c => {
 }))
 
 // ---------------------------------------------------------------- shared layout
-const CSS = `:root{--terra:#C26445;--terra-deep:#A84F33;--olive:#2E2E2E;--sand:#EADCC8;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
+const CSS = `:root{--terra:#BE5633;--terra-deep:#A84F33;--olive:#2E2E2E;--sand:#EADCC8;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:Poppins,system-ui,sans-serif;color:var(--char);background:#fff;line-height:1.55;font-size:14.5px}
 a{color:inherit;text-decoration:none}img{display:block;max-width:100%}
 .wrap{max-width:1120px;margin:0 auto;padding:0 18px}
@@ -133,12 +133,12 @@ const page = ({ title, desc, path, image, body, jsonld = [], cur = '', view = nu
 <meta property="og:type" content="${path.startsWith('/p/') ? 'product' : 'website'}"><meta property="og:site_name" content="outrr">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${SITE}${path}">
 ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">` : ''}
-<link rel="icon" href="/favicon.png">
+<link rel="icon" href="/favicon.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>${CSS}</style>
 ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n')}
 </head><body>
-<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png" alt="outrr" height="26"></a>
+<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png?v=3" alt="outrr" height="26"></a>
 <nav class="nav">${cols.map(c => `<div class="nv"><a href="/c/${c.slug}/"${c.slug === cur ? ' class="on"' : ''}>${esc(c.title)}</a>${MEGA[c.slug] || ''}</div>`).join('')}</nav>
 <a class="cart acc" href="/?account=1">Account</a><a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
 <main class="wrap">${body}</main>

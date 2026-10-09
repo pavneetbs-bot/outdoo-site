@@ -178,7 +178,7 @@ We acknowledge complaints within 48 hours and resolve them within one month.</p>
   },
 }
 
-const CSS = `:root{--terra:#C26445;--olive:#2E2E2E;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
+const CSS = `:root{--terra:#BE5633;--olive:#2E2E2E;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:Poppins,system-ui,sans-serif;color:var(--char);background:#fff;line-height:1.65;font-size:15px}
 a{color:var(--terra)}.wrap{max-width:1120px;margin:0 auto;padding:0 18px}
 header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
@@ -200,11 +200,11 @@ const page = (key, p) => `<!doctype html>
 <meta name="description" content="${esc(p.desc)}">
 <link rel="canonical" href="${SITE}/${key}/">
 <meta property="og:type" content="website"><meta property="og:site_name" content="outrr"><meta property="og:title" content="${esc(p.title)} | outrr"><meta property="og:url" content="${SITE}/${key}/">
-<link rel="icon" href="/favicon.png">
+<link rel="icon" href="/favicon.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>${CSS}</style>
 </head><body>
-<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png" alt="outrr" height="26"></a>
+<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png?v=3" alt="outrr" height="26"></a>
 <nav class="nav">${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</nav>
 <a class="cart" href="/?cart=1">Cart</a></div></header>
 <main class="wrap"><div class="crumbs"><a href="/">Home</a> › ${esc(p.title)}</div>
