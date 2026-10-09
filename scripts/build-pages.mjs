@@ -178,11 +178,11 @@ We acknowledge complaints within 48 hours and resolve them within one month.</p>
   },
 }
 
-const CSS = `:root{--terra:#C26445;--olive:#55634A;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
+const CSS = `:root{--terra:#C26445;--olive:#2E2E2E;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:Poppins,system-ui,sans-serif;color:var(--char);background:#fff;line-height:1.65;font-size:15px}
 a{color:var(--terra)}.wrap{max-width:1120px;margin:0 auto;padding:0 18px}
 header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
-.hd{display:flex;align-items:center;gap:18px;height:62px}.logo{font:800 25px 'Plus Jakarta Sans',sans-serif;letter-spacing:-.03em;color:var(--char);text-decoration:none}.logo b{color:var(--terra)}
+.hd{display:flex;align-items:center;gap:18px;height:62px}.logo{display:flex;align-items:center}.logo img{height:26px;width:auto;display:block}
 .nav{display:flex;gap:16px;overflow-x:auto;flex:1;font-size:13.5px;font-weight:500;scrollbar-width:none}.nav a{white-space:nowrap;color:#555;text-decoration:none}.nav a:hover{color:var(--terra)}
 .cart{font-weight:600;font-size:13.5px;border:1px solid var(--line);border-radius:99px;padding:7px 14px;white-space:nowrap;color:var(--char);text-decoration:none}
 .crumbs{font-size:12.5px;color:var(--muted);margin:18px 0 10px}.crumbs a{color:inherit;text-decoration:none}
@@ -190,7 +190,7 @@ article{max-width:760px;margin:0 0 60px}h1{font-size:30px;line-height:1.2;margin
 h2{font-size:18px;margin:26px 0 8px}p{margin:0 0 12px}ul{margin:0 0 12px 20px}li{margin:4px 0}
 .side{display:flex;gap:10px;flex-wrap:wrap;margin:30px 0 0;padding-top:18px;border-top:1px solid var(--line);font-size:13.5px}.side a{color:#555;text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:6px 12px}.side a.on{border-color:var(--terra);color:var(--terra)}
 footer{background:var(--sand-soft);padding:30px 0;font-size:13px;color:#555}footer .cols{display:flex;gap:30px;flex-wrap:wrap;justify-content:space-between}footer a{display:block;margin:3px 0;color:#555;text-decoration:none}
-@media(max-width:760px){h1{font-size:24px}.hd{gap:12px}.logo{font-size:22px}}`
+@media(max-width:760px){h1{font-size:24px}.hd{gap:12px}.logo img{height:23px}}`
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 const page = (key, p) => `<!doctype html>
@@ -204,7 +204,7 @@ const page = (key, p) => `<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>${CSS}</style>
 </head><body>
-<header><div class="wrap hd"><a class="logo" href="/">out<b>rr</b></a>
+<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png" alt="outrr" height="26"></a>
 <nav class="nav">${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</nav>
 <a class="cart" href="/?cart=1">Cart</a></div></header>
 <main class="wrap"><div class="crumbs"><a href="/">Home</a> › ${esc(p.title)}</div>

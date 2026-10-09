@@ -79,12 +79,12 @@ const MEGA = Object.fromEntries(cols.map(c => {
 }))
 
 // ---------------------------------------------------------------- shared layout
-const CSS = `:root{--terra:#C26445;--terra-deep:#A84F33;--olive:#55634A;--sand:#EADCC8;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
+const CSS = `:root{--terra:#C26445;--terra-deep:#A84F33;--olive:#2E2E2E;--sand:#EADCC8;--sand-soft:#F6F1E7;--char:#2E2E2E;--muted:#7a756c;--line:#e6e0d4}
 *{box-sizing:border-box;margin:0;padding:0}body{font-family:Poppins,system-ui,sans-serif;color:var(--char);background:#fff;line-height:1.55;font-size:14.5px}
 a{color:inherit;text-decoration:none}img{display:block;max-width:100%}
 .wrap{max-width:1120px;margin:0 auto;padding:0 18px}
 header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
-.hd{display:flex;align-items:center;gap:18px;height:62px}.logo{font:800 25px 'Plus Jakarta Sans',sans-serif;letter-spacing:-.03em}.logo b{color:var(--terra)}
+.hd{display:flex;align-items:center;gap:18px;height:62px}.logo{display:flex;align-items:center}.logo img{height:26px;width:auto;display:block}
 .nav{display:flex;gap:16px;overflow-x:auto;flex:1;font-size:13.5px;font-weight:500;scrollbar-width:none}.nav a{white-space:nowrap;color:#555}.nav a:hover,.nav a.on{color:var(--terra)}
 .nv{position:static}.dd{display:none}.nav .dd a{white-space:normal;color:inherit}
 @media(hover:hover) and (min-width:900px){.nv>a{display:block;padding:21px 0}.nv:hover>a{color:var(--terra)}
@@ -98,7 +98,7 @@ header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff
 .cmpx table{border-collapse:separate;border-spacing:0;width:100%;min-width:600px;table-layout:fixed;font-size:13px}.cmpx th,.cmpx td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;background:#fff}
 .cmpx tr:last-child>*{border-bottom:0}.cmpx th{width:120px;position:sticky;left:0;background:var(--sand-soft);color:var(--muted);font-size:12px}.cmpx td.me{background:#fffaf6}
 .cmpx td img{width:100%;max-width:170px;aspect-ratio:1;object-fit:cover;border-radius:10px;background:var(--sand-soft);margin-bottom:6px}.cmpx td b{display:block;font-weight:600;line-height:1.3}.cmpx td a:hover b{color:var(--terra)}
-.cmpx .tg{display:inline-block;font-size:10px;font-weight:700;background:var(--terra);color:#fff;border-radius:4px;padding:2px 6px;margin-bottom:5px}.cmpx strong{font-size:15px}.cmpx em{display:block;font-style:normal;font-size:11px;color:#2E7D4F;font-weight:600}.cmpx s{color:var(--muted)}
+.cmpx .tg{display:inline-block;font-size:10px;font-weight:700;background:var(--terra);color:#fff;border-radius:4px;padding:2px 6px;margin-bottom:5px}.cmpx strong{font-size:15px}.cmpx em{display:block;font-style:normal;font-size:11px;color:#A84F33;font-weight:600}.cmpx s{color:var(--muted)}
 .sub-h{font-size:17px;margin:26px 0 12px;scroll-margin-top:80px}
 .cart.acc{margin-right:6px}@media(max-width:560px){.cart.acc{display:none}}
 .cart{position:relative;font-weight:600;font-size:13.5px;border:1px solid var(--line);border-radius:99px;padding:7px 14px;white-space:nowrap}.cart span{background:var(--terra);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;margin-left:6px}
@@ -107,7 +107,7 @@ header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff
 .pimg{background:var(--sand-soft);border-radius:16px;overflow:hidden;aspect-ratio:1}.pimg img{width:100%;height:100%;object-fit:cover}
 h1{font-size:27px;line-height:1.2;margin:4px 0 10px;letter-spacing:-.01em}
 .tier{display:inline-block;font-size:11.5px;font-weight:600;background:var(--sand-soft);color:var(--olive);border-radius:99px;padding:3px 10px}
-.price{display:flex;align-items:baseline;gap:10px;margin:14px 0 4px}.price b{font-size:28px}.price s{color:var(--muted)}.price em{font-style:normal;color:#2E7D4F;font-weight:600}
+.price{display:flex;align-items:baseline;gap:10px;margin:14px 0 4px}.price b{font-size:28px}.price s{color:var(--muted)}.price em{font-style:normal;color:#A84F33;font-weight:600}
 .tax{font-size:12px;color:var(--muted)}
 .btns{display:flex;gap:10px;margin:20px 0}.btn{flex:1;display:inline-flex;justify-content:center;align-items:center;border:0;border-radius:11px;padding:14px 18px;font:600 15px Poppins,sans-serif;cursor:pointer;background:var(--terra);color:#fff}.btn.alt{background:var(--olive)}.btn:disabled{opacity:.5}
 .perks{list-style:none;display:grid;gap:7px;font-size:13.5px;border:1px solid var(--line);border-radius:12px;padding:14px 16px}.perks li:before{content:'✓';color:var(--olive);font-weight:700;margin-right:8px}
@@ -117,7 +117,7 @@ h1{font-size:27px;line-height:1.2;margin:4px 0 10px;letter-spacing:-.01em}
 .rel{margin:10px 0 50px}.cat{margin:6px 0 50px}.cat .lead{color:var(--muted);margin-bottom:18px}
 footer{background:var(--sand-soft);padding:30px 0;font-size:13px;color:#555}footer .cols{display:flex;gap:30px;flex-wrap:wrap;justify-content:space-between}footer a{display:block;margin:3px 0}footer a:hover{color:var(--terra)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--char);color:#fff;border-radius:99px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}
-@media(max-width:760px){.pd{grid-template-columns:1fr;gap:18px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}h1{font-size:22px}.hd{gap:12px}.logo{font-size:22px}}`
+@media(max-width:760px){.pd{grid-template-columns:1fr;gap:18px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}h1{font-size:22px}.hd{gap:12px}.logo img{height:23px}}`
 
 const CART_JS = `function _c(){try{return JSON.parse(localStorage.getItem('outrr_cart')||'[]')}catch(e){return[]}}
 function _cs(c){try{localStorage.setItem('outrr_cart',JSON.stringify(c))}catch(e){}var n=c.reduce(function(a,x){return a+x.q},0),e=document.getElementById('cartn');if(e)e.textContent=n}
@@ -138,7 +138,7 @@ ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter
 <style>${CSS}</style>
 ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n')}
 </head><body>
-<header><div class="wrap hd"><a class="logo" href="/">out<b>rr</b></a>
+<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png" alt="outrr" height="26"></a>
 <nav class="nav">${cols.map(c => `<div class="nv"><a href="/c/${c.slug}/"${c.slug === cur ? ' class="on"' : ''}>${esc(c.title)}</a>${MEGA[c.slug] || ''}</div>`).join('')}</nav>
 <a class="cart acc" href="/?account=1">Account</a><a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
 <main class="wrap">${body}</main>
