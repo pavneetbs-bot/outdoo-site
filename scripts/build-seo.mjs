@@ -1,4 +1,4 @@
-// Builds the search-engine pages for outdoo.in from the live catalog in Supabase:
+// Builds the search-engine pages for outrr.in from the live catalog in Supabase:
 //   p/<product>/index.html   one fast, crawlable page per product (title, description, price, JSON-LD)
 //   c/<category>/index.html  one page per category, linking to its products
 //   sitemap.xml, robots.txt, feed/google.xml (Google Merchant Center)
@@ -8,9 +8,9 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const SITE = 'https://outdoo.in'
+const SITE = 'https://outrr.in'
 const html0 = readFileSync(join(ROOT, 'index.html'), 'utf8')
-const SUPA = { url: html0.match(/OUTDOO_SUPA = \{ url: "([^"]+)"/)[1], anon: html0.match(/OUTDOO_SUPA = \{[^}]*anon: "([^"]+)"/)[1] }
+const SUPA = { url: html0.match(/OUTRR_SUPA = \{ url: "([^"]+)"/)[1], anon: html0.match(/OUTRR_SUPA = \{[^}]*anon: "([^"]+)"/)[1] }
 const H = { apikey: SUPA.anon, Authorization: 'Bearer ' + SUPA.anon }
 const getAll = async path => {   // Supabase returns at most 1,000 rows per request
   const out = []
@@ -30,7 +30,7 @@ export const slug = (name, sku) => {
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const inr = n => '₹' + Math.round(+n || 0).toLocaleString('en-IN')
-const TIER = { select: 'OUTDOO Select', exclusive: 'OUTDOO Exclusive', originals: 'OUTDOO Originals' }
+const TIER = { select: 'outrr Select', exclusive: 'outrr Exclusive', originals: 'outrr Originals' }
 const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : s
 
 const products = (await getAll('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at&order=name,sku'))
@@ -43,7 +43,7 @@ for (const p of products) { let sl = slug(p.name, p.sku); if (taken.has(sl)) sl 
 const today = new Date().toISOString().slice(0, 10)
 
 const describe = p => p.description?.trim() || [
-  `${p.name} from the OUTDOO ${colOf[p.collection_slug]?.title || 'outdoor'} range${colOf[p.collection_slug]?.tagline ? ` (${colOf[p.collection_slug].tagline.toLowerCase()})` : ''}.`,
+  `${p.name} from the outrr ${colOf[p.collection_slug]?.title || 'outdoor'} range${colOf[p.collection_slug]?.tagline ? ` (${colOf[p.collection_slug].tagline.toLowerCase()})` : ''}.`,
   p.material ? `Made in ${p.material}.` : 'Built for Indian weather: sun, rain and dust.',
   p.dims ? `Size: ${p.dims}.` : '',
   `${p.ship_text || 'Ships in 7-10 days'}, free delivery to top metros, cash on delivery available.`,
@@ -119,8 +119,8 @@ footer{background:var(--sand-soft);padding:30px 0;font-size:13px;color:#555}foot
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--char);color:#fff;border-radius:99px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}
 @media(max-width:760px){.pd{grid-template-columns:1fr;gap:18px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}h1{font-size:22px}.hd{gap:12px}.logo{font-size:22px}}`
 
-const CART_JS = `function _c(){try{return JSON.parse(localStorage.getItem('outdoo_cart')||'[]')}catch(e){return[]}}
-function _cs(c){try{localStorage.setItem('outdoo_cart',JSON.stringify(c))}catch(e){}var n=c.reduce(function(a,x){return a+x.q},0),e=document.getElementById('cartn');if(e)e.textContent=n}
+const CART_JS = `function _c(){try{return JSON.parse(localStorage.getItem('outrr_cart')||'[]')}catch(e){return[]}}
+function _cs(c){try{localStorage.setItem('outrr_cart',JSON.stringify(c))}catch(e){}var n=c.reduce(function(a,x){return a+x.q},0),e=document.getElementById('cartn');if(e)e.textContent=n}
 function addCart(id,v){var c=_c(),f=c.find(function(x){return x.id===id});f?f.q=Math.min(10,f.q+1):c.push({id:id,q:1});_cs(c);if(window.otrack)otrack('add_to_cart',{sku:id,value:v});var t=document.getElementById('toast');t.textContent='Added to cart';t.classList.add('on');setTimeout(function(){t.classList.remove('on')},1600)}
 _cs(_c());`
 
@@ -130,7 +130,7 @@ const page = ({ title, desc, path, image, body, jsonld = [], cur = '', view = nu
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${SITE}${path}">
-<meta property="og:type" content="${path.startsWith('/p/') ? 'product' : 'website'}"><meta property="og:site_name" content="OUTDOO">
+<meta property="og:type" content="${path.startsWith('/p/') ? 'product' : 'website'}"><meta property="og:site_name" content="outrr">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${SITE}${path}">
 ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">` : ''}
 <link rel="icon" href="/favicon.png">
@@ -138,18 +138,18 @@ ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter
 <style>${CSS}</style>
 ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n')}
 </head><body>
-<header><div class="wrap hd"><a class="logo" href="/">outd<b>oo</b></a>
+<header><div class="wrap hd"><a class="logo" href="/">out<b>rr</b></a>
 <nav class="nav">${cols.map(c => `<div class="nv"><a href="/c/${c.slug}/"${c.slug === cur ? ' class="on"' : ''}>${esc(c.title)}</a>${MEGA[c.slug] || ''}</div>`).join('')}</nav>
 <a class="cart acc" href="/?account=1">Account</a><a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
 <main class="wrap">${body}</main>
 <footer><div class="wrap cols">
-<div><b>OUTDOO</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Free delivery to top metros · Cash on delivery</div>
+<div><b>outrr</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Free delivery to top metros · Cash on delivery</div>
 <div><b>Shop</b>${cols.map(c => `<a href="/c/${c.slug}/">${esc(c.title)}</a>`).join('')}</div>
-<div><b>OUTDOO</b><a href="/">Home</a><a href="/about/">About OUTDOO</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outdoo.in">Sell on OUTDOO</a></div>
+<div><b>outrr</b><a href="/">Home</a><a href="/about/">About outrr</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outrr.in">Sell on outrr</a></div>
 </div></footer>
 <div class="toast" id="toast"></div>
 <script>${CART_JS}</script>
-<script>window.OUTDOO_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
+<script>window.OUTRR_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
 <script src="/track.js"></script>
 ${view ? `<script>if(window.otrack)otrack('view_item',{sku:${JSON.stringify(view.sku)},value:${Math.round(+view.price || 0)}})</script>` : ''}
 </body></html>`
@@ -190,11 +190,11 @@ for (const p of products) {
   const related = products.filter(x => x.collection_slug === p.collection_slug && x.sku !== p.sku).slice(0, 8)
   const jsonld = [{
     '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.sku, image: [p.image_url], description: desc,
-    brand: { '@type': 'Brand', name: 'OUTDOO' }, category: c?.title,
+    brand: { '@type': 'Brand', name: 'outrr' }, category: c?.title,
     ...(p.material ? { material: p.material } : {}),
     offers: { '@type': 'Offer', url: SITE + url, priceCurrency: 'INR', price: (+p.price).toFixed(2), itemCondition: 'https://schema.org/NewCondition',
       availability: p.in_stock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
-      seller: { '@type': 'Organization', name: 'OUTDOO' },
+      seller: { '@type': 'Organization', name: 'outrr' },
       shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'INR' }, shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' } } },
   }, {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
@@ -203,7 +203,7 @@ for (const p of products) {
       { '@type': 'ListItem', position: c ? 3 : 2, name: p.name, item: SITE + url }],
   }]
   write(`p/${p.slug}/index.html`, page({
-    title: `${p.name} | Buy Online at ${inr(p.price)} | OUTDOO`, desc: clip(desc, 158), path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
+    title: `${p.name} | Buy Online at ${inr(p.price)} | outrr`, desc: clip(desc, 158), path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
     body: `<div class="crumbs"><a href="/">Home</a> › ${c ? `<a href="/c/${c.slug}/">${esc(c.title)}</a> › ` : ''}${esc(p.name)}</div>
 <div class="pd"><div class="pimg"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" width="800" height="800"></div>
 <div><span class="tier">${esc(TIER[p.tier] || TIER.select)}</span><h1>${esc(p.name)}</h1>
@@ -223,8 +223,8 @@ for (const c of cols) {
   if (!list.length) continue
   const url = `/c/${c.slug}/`
   write(`c/${c.slug}/index.html`, page({
-    title: `${c.title} Online in India | ${list.length} Designs | OUTDOO`,
-    desc: clip(`Shop ${c.title.toLowerCase()} online at OUTDOO: ${c.tagline ? c.tagline.toLowerCase() + '. ' : ''}${list.length} designs built for Indian weather, free delivery to top metros, cash on delivery.`, 158),
+    title: `${c.title} Online in India | ${list.length} Designs | outrr`,
+    desc: clip(`Shop ${c.title.toLowerCase()} online at outrr: ${c.tagline ? c.tagline.toLowerCase() + '. ' : ''}${list.length} designs built for Indian weather, free delivery to top metros, cash on delivery.`, 158),
     path: url, image: list[0].image_url, cur: c.slug,
     jsonld: [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: c.title, url: SITE + url,
       mainEntity: { '@type': 'ItemList', itemListElement: list.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/p/${p.slug}/` })) } }],
@@ -243,13 +243,13 @@ write('robots.txt', `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`)
 const x = s => esc(s)
 write('feed/google.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>
-<title>OUTDOO</title><link>${SITE}/</link><description>OUTDOO outdoor furniture, lighting and decor</description>
+<title>outrr</title><link>${SITE}/</link><description>outrr outdoor furniture, lighting and decor</description>
 ${products.map(p => `<item>
   <g:id>${x(p.sku)}</g:id><g:title>${x(clip(p.name, 150))}</g:title><g:description>${x(clip(describe(p), 4900))}</g:description>
   <g:link>${SITE}/p/${p.slug}/</g:link><g:image_link>${x(p.image_url)}</g:image_link>
   <g:availability>${p.in_stock === false ? 'out_of_stock' : 'in_stock'}</g:availability><g:condition>new</g:condition>
   ${p.mrp > p.price ? `<g:price>${(+p.mrp).toFixed(2)} INR</g:price><g:sale_price>${(+p.price).toFixed(2)} INR</g:sale_price>` : `<g:price>${(+p.price).toFixed(2)} INR</g:price>`}
-  <g:brand>OUTDOO</g:brand><g:identifier_exists>no</g:identifier_exists><g:product_type>${x(colOf[p.collection_slug]?.title || 'Outdoor')}</g:product_type>
+  <g:brand>outrr</g:brand><g:identifier_exists>no</g:identifier_exists><g:product_type>${x(colOf[p.collection_slug]?.title || 'Outdoor')}</g:product_type>
   <g:shipping><g:country>IN</g:country><g:price>0 INR</g:price></g:shipping>
 </item>`).join('\n')}
 </channel></rss>

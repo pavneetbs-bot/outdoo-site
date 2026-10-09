@@ -1,9 +1,9 @@
-/* OUTDOO — My account, order tracking, cancel / return, address book, GST details.
+/* outrr — My account, order tracking, cancel / return, address book, GST details.
    Sign-in: 6-digit code sent to email (Supabase Auth OTP). Every rule is checked again in the
    database (025_customer_accounts.sql); this file only draws the screens. */
 (function () {
-  const S = () => window.OUTDOO_SUPA || {}
-  const KEY = 'outdoo_session'
+  const S = () => window.OUTRR_SUPA || {}
+  const KEY = 'outrr_session'
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
   const rs = n => '₹' + Math.round(+n || 0).toLocaleString('en-IN')
   const d8 = (t, time) => t ? new Date(t).toLocaleString('en-IN', time ? { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' } : { day: 'numeric', month: 'short', year: 'numeric' }) : ''
@@ -352,7 +352,7 @@
         <tbody>${rows}<tr class="tot"><td colspan="4">Total</td><td class=n>${m(tx)}</td><td></td>${intra ? `<td class=n>${m(gs / 2)}</td><td class=n>${m(gs / 2)}</td>` : `<td class=n>${m(gs)}</td>`}<td class=n>${m(tt)}</td></tr></tbody></table>
         <p class="mut">Amounts include GST. Payment: ${o.payment_method === 'cod' ? 'Cash on delivery' : 'Prepaid'}.${+o.discount ? ' Coupon discounts are given by the marketplace and do not reduce this invoice.' : ''}</p>
         <p style="margin-top:30px">For ${esc(s.legal_name || s.name)}<br><small>Authorised signatory</small></p>
-        <p class="mut" style="border-top:1px solid #eee;padding-top:8px">Sold through ${esc(co.brand_name || 'OUTDOO')} (${esc(co.legal_name || '')}${co.gstin && !co.gstin_is_dummy ? ', GSTIN ' + esc(co.gstin) : ''}), an e-commerce operator. Computer-generated invoice.</p></body></html>`
+        <p class="mut" style="border-top:1px solid #eee;padding-top:8px">Sold through ${esc(co.brand_name || 'outrr')} (${esc(co.legal_name || '')}${co.gstin && !co.gstin_is_dummy ? ', GSTIN ' + esc(co.gstin) : ''}), an e-commerce operator. Computer-generated invoice.</p></body></html>`
       if (w) { w.document.open(); w.document.write(html); w.document.close() }
     } catch (e) { if (w) w.close(); say(e.message) }
   }
@@ -400,7 +400,7 @@
   // ---------------------------------------------------------------- track without signing in
   window.acTrack = function (no = '', ph = '', err = '', res = null) {
     view(`<div class="pagetop"><span class="bk" onclick="showHome()">←</span><h2>Track your order</h2></div>
-      <div class="ac-card ac-trk"><div class="f2"><div class="fld"><label>ORDER NUMBER</label><input id="tkO" placeholder="OD10002" value="${esc(no)}"></div>
+      <div class="ac-card ac-trk"><div class="f2"><div class="fld"><label>ORDER NUMBER</label><input id="tkO" placeholder="OR10002" value="${esc(no)}"></div>
         <div class="fld"><label>MOBILE USED FOR THE ORDER</label><input id="tkP" maxlength="10" inputmode="numeric" value="${esc(ph)}"></div></div>
         <button class="btn" id="tkGo" onclick="acDoTrack()">Track</button> ${sess ? '' : '<a class="sm" onclick="acOpen()">Sign in to cancel or return</a>'}
         ${err ? `<div class="ac-err">${esc(err)}</div>` : ''}</div>

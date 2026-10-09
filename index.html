@@ -1,20 +1,23 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>/* brand change (outdoo → outrr): keep this browser's cart, address and sign-in */
+try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var o='out'+'doo_'+k,v=localStorage.getItem(o);if(v!=null&&localStorage.getItem('outrr_'+k)==null)localStorage.setItem('outrr_'+k,v);if(v!=null)localStorage.removeItem(o)});
+['sid'].forEach(function(k){var o='out'+'doo_'+k,v=sessionStorage.getItem(o);if(v!=null&&sessionStorage.getItem('outrr_'+k)==null)sessionStorage.setItem('outrr_'+k,v)})}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#ffffff">
-<title>Outdoo — Every Outdoor Possibility | Outdoor Furniture, Lighting & Decor Online</title>
+<title>outrr — Every Outdoor Possibility | Outdoor Furniture, Lighting & Decor Online</title>
 <meta name="description" content="India's destination for outdoor living — furniture, shade, planters, lighting & soft furnishings. Curated by the team behind 300+ luxury outdoor projects. A LifeWall Group company.">
-<meta property="og:title" content="Outdoo — Every Outdoor Possibility">
+<meta property="og:title" content="outrr — Every Outdoor Possibility">
 <meta property="og:description" content="Outdoor furniture, lighting, planters & more, delivered free across top metros. Cash on delivery.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://outdoo.in/">
-<meta property="og:site_name" content="OUTDOO">
-<meta property="og:image" content="https://outdoo.in/img/58cf1aaf5600.png">
-<link rel="canonical" href="https://outdoo.in/">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"OUTDOO","url":"https://outdoo.in/","logo":"https://outdoo.in/img/58cf1aaf5600.png","slogan":"Every Outdoor Possibility","parentOrganization":{"@type":"Organization","name":"LifeWall"}},{"@type":"WebSite","name":"OUTDOO","url":"https://outdoo.in/"}]}</script>
+<meta property="og:url" content="https://outrr.in/">
+<meta property="og:site_name" content="outrr">
+<meta property="og:image" content="https://outrr.in/img/outrr-logo.png">
+<link rel="canonical" href="https://outrr.in/">
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"outrr","url":"https://outrr.in/","logo":"https://outrr.in/img/outrr-logo.png","slogan":"Every Outdoor Possibility","parentOrganization":{"@type":"Organization","name":"LifeWall"}},{"@type":"WebSite","name":"outrr","url":"https://outrr.in/"}]}</script>
 <link rel="icon" type="image/png" href="img/ef099d5355b1.png"><link rel="apple-touch-icon" href="img/739607835196.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -716,7 +719,7 @@ sec2,.sec2{display:block;padding:30px 0 6px}
 .hero2 .cta{display:inline-block;margin-top:14px;background:var(--char);color:#fff;font-size:12px;font-weight:700;
   padding:11px 20px;border-radius:999px;cursor:pointer}
 
-/* category tiles (square, OUTDOO rounded) */
+/* category tiles (square, outrr rounded) */
 .archrow{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
 .arch{cursor:pointer}
 .arch .im{aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--sand-soft)}
@@ -1233,11 +1236,11 @@ header{position:static!important}
   </defs>
 </svg>
 
-<div class="announce">Launch offer — <b>extra 5% off</b> with code <b>OUTDOO5</b> · Free metro delivery</div>
+<div class="announce">Launch offer — <b>extra 5% off</b> with code <b>OUTRR5</b> · Free metro delivery</div>
 
 <header>
   <div class="wrap hd">
-    <a class="logohome" onclick="showHome()" aria-label="Outdoo home"><img class="logoimg" src="img/58cf1aaf5600.png" alt="Outdoo"></a>
+    <a class="logohome" onclick="showHome()" aria-label="outrr home"><img class="logoimg" src="img/outrr-logo.png" alt="outrr"></a>
     <div class="hd-right">
       <div class="icobtn" onclick="acWishlist()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></div>
       <div class="icobtn" onclick="miniCart(true);miniTitle('Your cart')"><svg viewBox="0 0 24 24"><path d="M4 6 h2 l2.4 10 h9.6 l2 -7 H8"/><circle cx="10" cy="20" r="1.6"/><circle cx="17" cy="20" r="1.6"/></svg><span class="cartn" id="cartn">0</span></div>
@@ -1250,7 +1253,7 @@ header{position:static!important}
 
 
 <div class="stickytop">
-<div class="searchrow"><a class="deskbrand" onclick="showHome()" aria-label="Outdoo home"><img src="img/3bf0696560fe.png" alt="Outdoo"></a><div class="search">
+<div class="searchrow"><a class="deskbrand" onclick="showHome()" aria-label="outrr home"><img src="img/outrr-logo-desk.png" alt="outrr"></a><div class="search">
     <input id="q" placeholder="Search outdoor sofas, planters, lights…" onkeydown="if(event.key==='Enter')doSearch()">
     <button onclick="doSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></button>
   </div><div class="deskicons"><div class="icobtn" onclick="acWishlist()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></div><div class="icobtn" onclick="miniCart(true);miniTitle('Your cart')"><svg viewBox="0 0 24 24"><path d="M4 6 h2 l2.4 10 h9.6 l2 -7 H8"/><circle cx="10" cy="20" r="1.6"/><circle cx="17" cy="20" r="1.6"/></svg><span class="cartn" id="cartn2">0</span></div></div></div>
@@ -1387,7 +1390,7 @@ header{position:static!important}
   </div>
 
   <div class="sec2">
-    <div class="sh"><h2>Real homes, real terraces</h2><p>Spaces designed by our team · tag <b>@outdoo</b> to get featured</p></div>
+    <div class="sh"><h2>Real homes, real terraces</h2><p>Spaces designed by our team · tag <b>@outrr</b> to get featured</p></div>
     <div style="height:14px"></div>
     <div class="ugc">
       <div class="u"><img data-img="TCASSIO" alt=""></div>
@@ -1403,7 +1406,7 @@ header{position:static!important}
     <div class="founder">
       <div class="fav">PS</div>
       <div><h3>From the makers of LifeWall</h3>
-        <p>Outdoo is built by the team behind LifeWall — 300+ luxury terraces, farmhouses and outdoor spaces across Delhi NCR since 2015 — in partnership with India's largest outdoor furniture manufacturer, making in India since 1992.</p>
+        <p>outrr is built by the team behind LifeWall — 300+ luxury terraces, farmhouses and outdoor spaces across Delhi NCR since 2015 — in partnership with India's largest outdoor furniture manufacturer, making in India since 1992.</p>
         <span class="fw" onclick="window.open('https://www.instagram.com/lifewall_official/','_blank','noopener')">Follow the journey →</span></div>
     </div>
   </div>
@@ -1441,7 +1444,7 @@ header{position:static!important}
     <div class="acc"><div class="acc-h" onclick="accT(this)">Do you deliver across India?<span class="pm">+</span></div>
       <div class="acc-b">Free delivery across top metros. Assembly is simple and done by you — every piece ships with fittings and a step-by-step guide, and our team is on WhatsApp if you get stuck.</div></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">Will products survive rain &amp; sun?<span class="pm">+</span></div>
-      <div class="acc-b">Everything on Outdoo is built for the outdoors — powder-coated frames, UV-stabilised weaves, quick-dry foam and weatherproof composites, made in India since 1992.</div></div>
+      <div class="acc-b">Everything on outrr is built for the outdoors — powder-coated frames, UV-stabilised weaves, quick-dry foam and weatherproof composites, made in India since 1992.</div></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">What about warranty &amp; returns?<span class="pm">+</span></div>
       <div class="acc-b">Frames carry up to 3-year warranty and every delivery has a damage-free promise — issues at unboxing are replaced, no questions asked.</div></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">Can I customise a room package?<span class="pm">+</span></div>
@@ -1450,8 +1453,8 @@ header{position:static!important}
 
   <div class="sec2">
     <div class="seotext">
-      <h3>Outdoor furniture &amp; decor online in India — Outdoo</h3>
-      <p>Outdoo brings every outdoor possibility to your doorstep — luxury outdoor sofa sets, terrace dining, hanging swings, sun loungers, garden umbrellas, all-weather lamps, sculptural art, water features, planters and outdoor rugs. Curated by the team behind 300+ luxury outdoor projects at LifeWall, and manufactured in India by the country's largest outdoor furniture maker, est. 1992.</p>
+      <h3>Outdoor furniture &amp; decor online in India — outrr</h3>
+      <p>outrr brings every outdoor possibility to your doorstep — luxury outdoor sofa sets, terrace dining, hanging swings, sun loungers, garden umbrellas, all-weather lamps, sculptural art, water features, planters and outdoor rugs. Curated by the team behind 300+ luxury outdoor projects at LifeWall, and manufactured in India by the country's largest outdoor furniture maker, est. 1992.</p>
       <h3>Built for Indian weather</h3>
       <p>Delhi NCR summers, Mumbai monsoons or Bengaluru sun — every product is engineered outdoors-first with powder-coated aluminium, UV-stabilised braids, quick-dry cushions and frost-proof composites, delivered free across top metros.</p>
     </div>
@@ -1462,19 +1465,19 @@ header{position:static!important}
 <div class="band">
   <div class="rule"></div>
   <h2>Spaces for a brighter you</h2>
-  <p>Outdoo brings ten years of luxury outdoor design — 300+ terraces, farmhouses and courtyards — into products you can order online.</p>
+  <p>outrr brings ten years of luxury outdoor design — 300+ terraces, farmhouses and courtyards — into products you can order online.</p>
   <button class="btn" style="background:#fff;color:var(--olive-deep)" onclick="toast('lifewall.in — group site')">Know the LifeWall story</button>
-  <div class="sig">OUTDOO&nbsp;&nbsp;|&nbsp;&nbsp;A LIFEWALL GROUP COMPANY</div>
+  <div class="sig">outrr&nbsp;&nbsp;|&nbsp;&nbsp;A LIFEWALL GROUP COMPANY</div>
 </div>
 
 <footer><div class="wrap">
   <div class="fcols">
     <div style="max-width:270px">
-      <span class="logochip"><img src="img/58cf1aaf5600.png" alt="Outdoo — Every Outdoor Possibility"></span>
+      <span class="logochip"><img src="img/outrr-logo.png" alt="outrr — Every Outdoor Possibility"></span>
       <p style="margin-top:10px;font-size:11.5px">Every outdoor possibility — outdoor furniture, shade, lighting, planters, art & furnishings. Free delivery to top metros.</p>
       <div class="ftag">A LIFEWALL GROUP COMPANY</div>
       <div class="fsoc"><a href="https://www.instagram.com/lifewall_official/" target="_blank" rel="noopener">Instagram</a></div>
-      <p style="margin-top:12px;font-size:11.5px">WhatsApp support · orders@outdoo.in<br>Delhi NCR, India</p>
+      <p style="margin-top:12px;font-size:11.5px">WhatsApp support · orders@outrr.in<br>Delhi NCR, India</p>
     </div>
     <div><div class="fh">Shop Outdoor</div>
       <a href="/c/furniture/" onclick="event.preventDefault();openCol('furniture')">Outdoor Sofa Sets</a>
@@ -1496,7 +1499,7 @@ header{position:static!important}
       <a href="/c/art/" onclick="event.preventDefault();openCol('art')">Buddha statue for garden</a>
       <a href="/c/art/" onclick="event.preventDefault();openCol('art')">Outdoor water fountain</a></div>
     <div><div class="fh">Company</div>
-      <a href="/about/">About Outdoo</a>
+      <a href="/about/">About outrr</a>
       <a href="/contact/">Contact Us</a></div>
     <div><div class="fh">Help & Policies</div>
       <a onclick="acTrack()">Track Your Order</a><a onclick="acOpen()">My Account</a>
@@ -1509,8 +1512,8 @@ header{position:static!important}
       <a href="/terms/">Terms of Service</a></div>
   </div>
   <div class="fpay"><span>Cash on Delivery</span><span>UPI on Delivery</span><span>Free Delivery to Top Metros</span></div>
-  <div class="fcity">Outdoor furniture & decor online in Delhi NCR, Gurugram, Noida, Mumbai, Bengaluru, Hyderabad, Chennai, Pune, Chandigarh, Jaipur & Lucknow — luxury terrace, balcony, garden & poolside living by Outdoo.</div>
-  <div class="fnote">© 2026 Outdoo · LifeWall Greentech Private Limited · Made in India</div>
+  <div class="fcity">Outdoor furniture & decor online in Delhi NCR, Gurugram, Noida, Mumbai, Bengaluru, Hyderabad, Chennai, Pune, Chandigarh, Jaipur & Lucknow — luxury terrace, balcony, garden & poolside living by outrr.</div>
+  <div class="fnote">© 2026 outrr · LifeWall Greentech Private Limited · Made in India</div>
 </div></footer>
 </div><!-- /home -->
 
@@ -1586,7 +1589,7 @@ header{position:static!important}
       <div class="pcard">
       <div class="titlerow"><h1 id="pdT">Erica Outdoor Sofa Set (3+1+1) with Coffee Table</h1>
   <span class="sharebtn wlbtn" id="pdWish" onclick="acWishToggle()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg><span class="wl-l">Save</span></span><span class="sharebtn" onclick="shareProduct()"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6.5" r="2.4"/><circle cx="17" cy="17.5" r="2.4"/><line x1="8.2" y1="10.9" x2="14.8" y2="7.6"/><line x1="8.2" y1="13.1" x2="14.8" y2="16.4"/></svg>Share</span></div>
-<div class="byline">By <b>Outdoo Originals</b></div>
+<div class="byline">By <b>outrr Originals</b></div>
 <div class="matline" id="pdMat"></div>
 <div class="viewing"><svg viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4.5 12 4.5 s7 2 10 7.5 c-3 5.5 -7 7.5 -10 7.5 s-7 -2 -10 -7.5z"/><circle cx="12" cy="12" r="3"/></svg><span id="pdView">284</span>&nbsp;people viewing this</div>
       <div class="rate"><span class="st" id="pdR">4.6 ★</span><span id="pdC">212 ratings</span></div>
@@ -1594,7 +1597,7 @@ header{position:static!important}
       <div class="pricebig" id="pdPrice">₹86,999<span class="mrp">₹1,04,000</span><span class="off">16% off</span></div>
       <div class="taxline">Inclusive of all taxes</div>
 <div class="cashback"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><line x1="6.5" y1="12" x2="6.5" y2="12.01"/><line x1="17.5" y1="12" x2="17.5" y2="12.01"/></svg>
-  <span>Only for today: get cashback worth <b id="pdCash">₹4,350</b> + extra 5% off with OUTDOO5</span></div>
+  <span>Only for today: get cashback worth <b id="pdCash">₹4,350</b> + extra 5% off with OUTRR5</span></div>
 <div class="qtyrow">
   <span style="font-size:12px;font-weight:700">QTY</span>
   <div class="qty"><button onclick="qch(-1)">−</button><span id="pdQty">1</span><button onclick="qch(1)">+</button></div>
@@ -1640,14 +1643,14 @@ header{position:static!important}
       </div>
       <div class="speccard">
         <h3>Product details</h3>
-        <span class="curated"><b>OUTDOO</b> Curated · picked by the team behind 300+ outdoor projects</span>
+        <span class="curated"><b>outrr</b> Curated · picked by the team behind 300+ outdoor projects</span>
         <div class="kv" id="pdKV"></div>
         <table class="sizetbl" id="pdSize"></table>
       </div>
       
       
       
-            <div class="acc"><div class="acc-h" onclick="accT(this)">Why Outdoo<span class="pm">+</span></div>
+            <div class="acc"><div class="acc-h" onclick="accT(this)">Why outrr<span class="pm">+</span></div>
         <div class="acc-b">
           <ul class="speclist">
             <li><b>Curated by the team behind 300+ outdoor projects</b> — we pick what actually survives Indian weather</li>
@@ -1661,7 +1664,7 @@ header{position:static!important}
         <div class="acc-b"><p style="font-size:13px;color:var(--muted)">No reviews yet. Reviews from verified buyers will appear here after delivery.</p><span id="pdRevAvg" hidden></span><span id="pdRevCnt" hidden></span></div></div>
             <div class="acc"><div class="acc-h" onclick="accT(this)">All offers<span class="pm">+</span></div>
         <div class="acc-b"><ul class="speclist">
-          <li><b>OUTDOO5</b> — extra 5% off, auto-applied at cart</li>
+          <li><b>OUTRR5</b> — extra 5% off, auto-applied at cart</li>
           <li><b>Room package pricing</b> — up to 7% off when you buy a full space</li>
           <li><b>Bulk &amp; trade</b> — special pricing on 10+ units <a onclick="enqOpen('bulk')" style="color:var(--terra-deep);font-weight:700;cursor:pointer">enquire →</a></li>
         </ul></div></div>
@@ -1739,8 +1742,8 @@ header{position:static!important}
 
 <!-- WA CHAT -->
 <div id="wachat">
-  <div class="wch"><span class="av2">O</span><div><b>Outdoo Support</b><span>● Online · replies in minutes</span></div></div>
-  <div class="wcb"><div class="wmsg">Namaste! 👋 Outdoo mein swagat hai.<br>Furniture, delivery, bulk order ya custom size — kuch bhi poochhiye!</div></div>
+  <div class="wch"><span class="av2">O</span><div><b>outrr Support</b><span>● Online · replies in minutes</span></div></div>
+  <div class="wcb"><div class="wmsg">Namaste! 👋 outrr mein swagat hai.<br>Furniture, delivery, bulk order ya custom size — kuch bhi poochhiye!</div></div>
   <button class="wcta" onclick="toast('Opens WhatsApp chat — mockup')">Start Chat on WhatsApp</button>
 </div>
 
@@ -1752,9 +1755,9 @@ header{position:static!important}
     <div class="opbd">
       <span class="ob">🎁 WELCOME OFFER</span>
       <h3>Flat 5% OFF on your first order</h3>
-      <p>Code <b>OUTDOO5</b> auto-applied at cart · plus free design help on WhatsApp for your space</p>
+      <p>Code <b>OUTRR5</b> auto-applied at cart · plus free design help on WhatsApp for your space</p>
       <input placeholder="Enter your email" type="email">
-      <button class="btn" onclick="offClose();toast('Welcome aboard! OUTDOO5 applied at cart 🎉')">Claim my 5% OFF</button>
+      <button class="btn" onclick="offClose();toast('Welcome aboard! OUTRR5 applied at cart 🎉')">Claim my 5% OFF</button>
       <span class="opno" onclick="offClose()">No thanks, I'll pay full price</span>
     </div>
   </div>
@@ -2077,15 +2080,15 @@ const COLS = {
  art: {t:'Art & Sculpture', tag:'Sculptures, wall art & landscape elements', off:'NEW COLLECTION', img:'ABUDDHA',
        offer:'Outdoor-grade composites · Made-to-order sizes & colours'},
  furniture:  {t:'Outdoor Furniture',      tag:'Lounges, dining, chairs & more',      off:'UP TO 40% OFF',      img:'BFURN',
-              offer:'Extra 5% off with OUTDOO5 · Free assembly on lounge & dining sets'},
+              offer:'Extra 5% off with OUTRR5 · Free assembly on lounge & dining sets'},
  shade:      {t:'Shade & Pergolas',       tag:'Umbrellas, gazebos & canopies',       off:'MONSOON READY',      img:'COURTYARD',
-              offer:'Extra 5% off with OUTDOO5 · UV-proof fabrics on all shade products'},
+              offer:'Extra 5% off with OUTRR5 · UV-proof fabrics on all shade products'},
  lighting:   {t:'Outdoor Lighting',       tag:'String lights, lamps & lanterns',     off:'FROM ₹999',          img:'PARTY',
-              offer:'Buy 2 get 5% extra off on all lighting · Code OUTDOO5 stacks'},
+              offer:'Buy 2 get 5% extra off on all lighting · Code OUTRR5 stacks'},
  planters:   {t:'Planters & Garden',      tag:'Planters, vertical gardens & greens', off:'NEW COLLECTION',     img:'FOLIAGE',
               offer:'Free jute plant covers with orders above ₹2,999'},
  furnishings:{t:'Soft Furnishings',       tag:'Cushions, rugs, throws & covers',     off:'UP TO 30% OFF',      img:'CUSHION',
-              offer:'All-weather fabrics · Extra 5% off with OUTDOO5'}
+              offer:'All-weather fabrics · Extra 5% off with OUTRR5'}
 };
 
 function showView(v){
@@ -2216,7 +2219,7 @@ function openProduct(id){
   showView('pdp');
 }
 // ---- compare with similar items (Amazon-style) ----
-const TIERN={originals:'OUTDOO Originals',exclusive:'OUTDOO Exclusive',select:'OUTDOO Select'};
+const TIERN={originals:'outrr Originals',exclusive:'outrr Exclusive',select:'outrr Select'};
 function similarFor(id,n){const x=PRODS[id], sb=subOf(id), R=(typeof MENU!=='undefined'&&MENU.rank)||null;
   return Object.keys(PRODS).filter(i=>i!==id&&PRODS[i].col===x.col).map(i=>{const y=PRODS[i];
     const s=(subOf(i)===sb?3:0) - Math.abs(Math.log((y.p||1)/(x.p||1))) - (R&&i in R?R[i]/2000:0.5) + (y.stock===false?-5:0);
@@ -2267,7 +2270,7 @@ function showPDP(){ openProduct('lounge'); }
 function _oldAddCart(){ }
 // ---- search + ranking (Supabase search_products; ranking set in admin → Settings → Search & ranking)
 let RANK={}, RANK_FOR=null, SQ='';
-function _supaRpc(fn,args){const S=window.OUTDOO_SUPA||{}; if(!S.url||!S.anon) return Promise.reject(new Error('offline'));
+function _supaRpc(fn,args){const S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon) return Promise.reject(new Error('offline'));
   return fetch(S.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:JSON.stringify(args)})
     .then(r=>r.ok?r.json():Promise.reject(new Error(r.status)));}
 function _localSearch(q){const ws=q.toLowerCase().split(/\s+/).filter(w=>w.length>1);
@@ -2305,8 +2308,8 @@ setInterval(()=>{ ci=(ci+1)%slides.length;
 
 
 // ---- cart ----
-let CART=[]; try{CART=JSON.parse(localStorage.getItem('outdoo_cart')||'[]').filter(c=>c&&c.id&&c.q>0)}catch(e){CART=[]}
-function updBadge(){try{localStorage.setItem('outdoo_cart',JSON.stringify(CART))}catch(e){}const n=CART.reduce((a,c)=>a+c.q,0);['cartn','cartn2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n;});}
+let CART=[]; try{CART=JSON.parse(localStorage.getItem('outrr_cart')||'[]').filter(c=>c&&c.id&&c.q>0)}catch(e){CART=[]}
+function updBadge(){try{localStorage.setItem('outrr_cart',JSON.stringify(CART))}catch(e){}const n=CART.reduce((a,c)=>a+c.q,0);['cartn','cartn2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n;});}
 function addCart(id){id=id||curPid;if(!id||!PRODS[id]){toast('Added to cart');return;}
  const f=CART.find(c=>c.id===id); f?f.q++:CART.push({id,q:1});
  updBadge(); miniCart(true); miniTitle('Added to cart ✓');}
@@ -2345,7 +2348,7 @@ function renderCart(){
    <div class="csum">
     <div class="r"><span>Subtotal (${CART.reduce((a,c)=>a+c.q,0)} items)</span><span>${inr(sub)}</span></div>
     ${save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(save)}</span></div>`:''}
-    <div class="r"><span>Coupon OUTDOO5 <span class="grn">(auto-applied)</span></span><span class="grn">− ${inr(coup)}</span></div>
+    <div class="r"><span>Coupon OUTRR5 <span class="grn">(auto-applied)</span></span><span class="grn">− ${inr(coup)}</span></div>
     <div class="r"><span>Delivery to top metros</span><span class="grn">FREE</span></div>
     <div class="r tot"><span>Total</span><span>${inr(total)}</span></div>
     <div class="secline" style="margin-top:6px">Inclusive of all taxes · GST invoice available</div>
@@ -2717,7 +2720,7 @@ function coTotals(){
 function openCheckout(){
   if(!CART.length){toast('Your cart is empty');return;}
   const go=()=>{ renderCheckout(); showView('checkout'); };
-  if(window.acRequire && (window.OUTDOO_SUPA||{}).url) return acRequire(go,'Sign in to check out');
+  if(window.acRequire && (window.OUTRR_SUPA||{}).url) return acRequire(go,'Sign in to check out');
   go();
 }
 function renderCheckout(){
@@ -2756,7 +2759,7 @@ function renderCheckout(){
       <div class="osum" style="margin-top:12px">
         <div class="r"><span>Subtotal</span><span>${inr(t.sub)}</span></div>
         ${t.save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(t.save)}</span></div>`:''}
-        <div class="r"><span>Coupon OUTDOO5</span><span class="grn">− ${inr(t.coup)}</span></div>
+        <div class="r"><span>Coupon OUTRR5</span><span class="grn">− ${inr(t.coup)}</span></div>
         <div class="r"><span>Delivery to top metros</span><span class="grn">FREE</span></div>
         <div class="r tot"><span>Total payable</span><span>${inr(t.total)}</span></div>
       </div>
@@ -2770,7 +2773,7 @@ function pickPay(el){document.querySelectorAll('.payopt').forEach(p=>{if(p.query
   el.classList.add('on'); const r=el.querySelector('input'); if(r) r.checked=true;}
 function coBad(id,ok){const f=document.getElementById(id).closest('.fld'); f.classList.toggle('err',!ok); return ok;}
 const CO_STATES=['Andaman and Nicobar Islands','Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chandigarh','Chhattisgarh','Dadra and Nagar Haveli and Daman and Diu','Delhi','Goa','Gujarat','Haryana','Himachal Pradesh','Jammu and Kashmir','Jharkhand','Karnataka','Kerala','Ladakh','Lakshadweep','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Puducherry','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal'];
-let coLast={}; try{coLast=JSON.parse(localStorage.getItem('outdoo_addr')||'{}')}catch(e){}
+let coLast={}; try{coLast=JSON.parse(localStorage.getItem('outrr_addr')||'{}')}catch(e){}
 let coBusy=false;
 async function placeOrder(){
   if(coBusy) return;
@@ -2786,17 +2789,17 @@ async function placeOrder(){
   const gstOn=document.getElementById('coGstOn')&&document.getElementById('coGstOn').checked;
   if(gstOn){ ok=coBad('coCo',v('coCo').length>1)&&ok; ok=coBad('coGst',/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(v('coGst').toUpperCase()))&&ok; }
   if(!ok){toast('Please check the highlighted fields');return;}
-  const S=window.OUTDOO_SUPA||{};
+  const S=window.OUTRR_SUPA||{};
   if(!S.url||!S.anon){toast('Online ordering is unavailable right now. Please order on WhatsApp.');return;}
   const customer={name:v('coName'),phone:v('coPh'),email:v('coEm'),address:v('coAd'),city:v('coCity'),state:v('coState'),pincode:v('coPin')};
-  try{localStorage.setItem('outdoo_addr',JSON.stringify(customer))}catch(e){}
+  try{localStorage.setItem('outrr_addr',JSON.stringify(customer))}catch(e){}
   if(gstOn){ customer.company=v('coCo'); customer.gstin=v('coGst').toUpperCase(); }
   const utok=window.acToken?await acToken():null;
   const btn=document.getElementById('coPlace'); coBusy=true; if(btn){btn.disabled=true;btn.textContent='Placing your order…';}
   let res, err;
   try{
     const r=await fetch(S.url+'/rest/v1/rpc/place_order',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(utok||S.anon),'Content-Type':'application/json'},
-      body:JSON.stringify({p:{items:CART.map(c=>({sku:c.id,qty:c.q})),customer,coupon:'OUTDOO5'}})});
+      body:JSON.stringify({p:{items:CART.map(c=>({sku:c.id,qty:c.q})),customer,coupon:'OUTRR5'}})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
@@ -2975,7 +2978,7 @@ async function submitDB(digits){
 let BULK_BUSY=false;
 async function submitBulk(){
   if(BULK_BUSY) return; BULK_BUSY=true;
-  const S=window.OUTDOO_SUPA||{}, btn=document.getElementById('bGo'), err=document.getElementById('bErr');
+  const S=window.OUTRR_SUPA||{}, btn=document.getElementById('bGo'), err=document.getElementById('bErr');
   const showErr=m=>{ if(err){err.textContent=m;err.style.display='block';} };
   if(err) err.style.display='none'; if(btn){btn.disabled=true;btn.textContent='Sending…';}
   let utm={}; try{ utm=JSON.parse(sessionStorage.getItem('od_utm')||'{}'); }catch(e){}
@@ -2994,7 +2997,7 @@ async function submitBulk(){
         <div class="erow" style="max-width:340px;margin:0 auto"><button class="btn" style="flex:1" onclick="enqClose()">Close</button></div>
       </div>`;
   }catch(e){
-    if(e!==0) showErr('Something went wrong, please try again or email orders@outdoo.in.');
+    if(e!==0) showErr('Something went wrong, please try again or email orders@outrr.in.');
     if(btn){btn.disabled=false;btn.textContent='Send enquiry';}
   }finally{ BULK_BUSY=false; }
 }
@@ -3031,12 +3034,12 @@ function fillPDPv2(x,d,sku){
   if(ec) ec.innerHTML=ARCH.slice(0,8).map(a=>`<div class="ec" onclick="openCol('${a[1]}')">
     <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');
 }
-/* ===== OUTDOO dynamic loader (Supabase) — fill url+anon to go dynamic; empty = embedded fallback ===== */
-/* Design & Build → LifeWall Flow CRM website_lead_submit(); Bulk & Trade → OUTDOO submit_bulk_enquiry() (admin: Orders → Enquiries) */
+/* ===== outrr dynamic loader (Supabase) — fill url+anon to go dynamic; empty = embedded fallback ===== */
+/* Design & Build → LifeWall Flow CRM website_lead_submit(); Bulk & Trade → outrr submit_bulk_enquiry() (admin: Orders → Enquiries) */
 window.FLOW_LEADS = { url: "https://sxwumzkdyclhjqnfnxfk.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4d3VtemtkeWNsaGpxbmZueGZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MjI4NjEsImV4cCI6MjA4NDQ5ODg2MX0.RUQj6yMD-s2ZcDmJRgmHL6TZThQb26cLziv61a07pmg" };
-window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3Z3B2Y2xxYm5hZXVjdmpudWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjA3MzcsImV4cCI6MjEwNjE5NjczN30.aE5Wdsbyd6LQqh7-JhokrxSXGauFknfjFedTEj0vwnM" };
+window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3Z3B2Y2xxYm5hZXVjdmpudWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjA3MzcsImV4cCI6MjEwNjE5NjczN30.aE5Wdsbyd6LQqh7-JhokrxSXGauFknfjFedTEj0vwnM" };
 (async function(){
-  const S = window.OUTDOO_SUPA;
+  const S = window.OUTRR_SUPA;
   if(!S.url || !S.anon) return;                    // static fallback — site works as before
   const H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon };
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + '&order=sku&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
@@ -3083,8 +3086,8 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
       if(PRODS[_pp]) try{ openProduct(_pp); }catch(e){}
     }
     CART = CART.filter(c => PRODS[c.id]); updBadge();
-    console.log('[OUTDOO] live catalog loaded:', prods.length, 'products');
-  }catch(e){ console.warn('[OUTDOO] Supabase load failed, using embedded catalog', e); }
+    console.log('[outrr] live catalog loaded:', prods.length, 'products');
+  }catch(e){ console.warn('[outrr] Supabase load failed, using embedded catalog', e); }
   finally{ window.__odLoaded = true; }
 })();
 /* ===== end dynamic loader ===== */
@@ -3100,7 +3103,7 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
     IMGS[id] = /^https:\/\//.test(x.img||'') ? x.img : '';
     try{ openProduct(id); }catch(e){ console.warn(e); }
     const b = document.createElement('div');
-    b.textContent = 'Preview — this product is not live on outdoo.in yet' + (x.sku ? ' · ' + x.sku : '');
+    b.textContent = 'Preview — this product is not live on outrr.in yet' + (x.sku ? ' · ' + x.sku : '');
     b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#2E2E2E;color:#fff;font:600 13px Inter,sans-serif;text-align:center;padding:8px 12px';
     document.body.appendChild(b); document.body.style.paddingTop = '34px';
     document.title = 'Preview · ' + PRODS[id].n;
@@ -3116,14 +3119,14 @@ window.OUTDOO_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "e
 async function shareProduct(){
   const id=(typeof curPid!=='undefined'&&curPid)||window._pid||'';
   const url=location.origin+'/?p='+encodeURIComponent(id);
-  const title=(document.getElementById('pdT')||{}).textContent||'OUTDOO';
-  if(navigator.share){ try{ await navigator.share({title,text:title+' on OUTDOO',url}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
+  const title=(document.getElementById('pdT')||{}).textContent||'outrr';
+  if(navigator.share){ try{ await navigator.share({title,text:title+' on outrr',url}); return; }catch(e){ if(e&&e.name==='AbortError') return; } }
   try{ await navigator.clipboard.writeText(url); toast('Link copied'); }catch(e){ toast(url); }
 }
 </script>
 <script src="/account.js"></script>
 <script src="/track.js"></script>
-<script>/* OUTDOO tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
+<script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };
   var wrap=function(name, after){ var o=window[name]; if(typeof o!=='function') return; window[name]=function(){ var r=o.apply(this,arguments); try{ after.apply(this,arguments) }catch(e){} return r } };

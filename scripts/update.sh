@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One command to bring the outdoo.in Repl up to date:  npm run update  → then press Republish
+# One command to bring the outrr.in Repl up to date:  npm run update  → then press Republish
 set -e
 cd "$(dirname "$0")/.."
 echo "→ Getting the latest code from GitHub (main)…"

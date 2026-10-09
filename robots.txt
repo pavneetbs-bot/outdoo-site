@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://outdoo.in/sitemap.xml
+Sitemap: https://outrr.in/sitemap.xml

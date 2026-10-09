@@ -1,10 +1,10 @@
-# OUTDOO Mockup — Code Documentation
+# outrr Mockup — Code Documentation
 
 **Files:**
 | File | Size | Use |
 |---|---|---|
-| `Outdoo_Mobile_Mockup_v3.html` | ~1 MB | Demo file. Images embedded as base64 — works offline. Use this for investor demos. |
-| `Outdoo_Mobile_Mockup_v3_lite.html` | ~50 KB | Same code, images load from Unsplash URLs. Use this for sharing with ChatGPT/developers. Needs internet. |
+| `outrr_Mobile_Mockup_v3.html` | ~1 MB | Demo file. Images embedded as base64 — works offline. Use this for investor demos. |
+| `outrr_Mobile_Mockup_v3_lite.html` | ~50 KB | Same code, images load from Unsplash URLs. Use this for sharing with ChatGPT/developers. Needs internet. |
 
 Single self-contained HTML file. No build step, no dependencies, no framework — plain HTML + CSS + vanilla JavaScript. Open in any browser.
 
@@ -12,11 +12,11 @@ Single self-contained HTML file. No build step, no dependencies, no framework �
 
 ## 1. What it is
 
-A clickable UI mockup of OUTDOO — an outdoor-living e-commerce store (Pepperfry-style, mobile-first). Three screens in one file, switched via JavaScript (no page reloads):
+A clickable UI mockup of outrr — an outdoor-living e-commerce store (Pepperfry-style, mobile-first). Three screens in one file, switched via JavaScript (no page reloads):
 
 1. **Home** (`#home`) — announcement bar, header with search, category tabs, category photo grid (10 tiles), auto-rotating hero carousel (3 slides), stats strip, signup offer banner, 2 promo tiles, Bestsellers grid, New Arrivals grid, brand band, footer.
 2. **Collection / PLP** (`#plp`) — category banner with offer badge, coupon-style offer strip, product count, working sort (Popular / Price low-high / high-low), product grid. 5 collections.
-3. **Product / PDP** (`#pdp`) — gallery + thumbnails, title + share, "By Outdoo Originals", people-viewing strip, price + MRP + % off, cashback line, QTY stepper + "Hurry! Only X left", delivery pincode check, accordions (Product Details, Specifications, Seller, Ratings & Reviews, Q&A), similar-items scroll row, sticky Add to Cart / Buy Now bar.
+3. **Product / PDP** (`#pdp`) — gallery + thumbnails, title + share, "By outrr Originals", people-viewing strip, price + MRP + % off, cashback line, QTY stepper + "Hurry! Only X left", delivery pincode check, accordions (Product Details, Specifications, Seller, Ratings & Reviews, Q&A), similar-items scroll row, sticky Add to Cart / Buy Now bar.
 
 Persistent chrome: bottom navigation (Home / Categories / Track / Wishlist / Account), floating "Buy on WhatsApp" pill, toast notifications. On PDP the bottom nav is replaced by the sticky CTA bar (via `body.pdp-open` class).
 
@@ -59,7 +59,7 @@ lounge: { n:'Terraza 4-Seater...', p:86999, m:104000, r:'4.6', c:212,
 ### `COLS` — collections (5)
 ```js
 furniture: { t:'Outdoor Furniture', tag:'Lounges, dining...', off:'UP TO 40% OFF',
-             img:'SOFA', offer:'Extra 10% off with OUTDOO10 · ...' }
+             img:'SOFA', offer:'Extra 10% off with outrr10 · ...' }
 ```
 `t` title · `tag` subtitle · `off` banner badge · `img` banner image · `offer` coupon-strip text.
 
@@ -104,7 +104,7 @@ The real store (per the build brief `claude_Replit_OutdoorStore_Build_Prompt.md`
 
 ---
 
-*Generated 11 Sep 2026 · OUTDOO — A LifeWall Group Company*
+*Generated 11 Sep 2026 · outrr — A LifeWall Group Company*
 
 ## Tracking & policy pages (Oct 2026)
 - `track.js` (loaded on every page) logs page_view / view_item / add_to_cart / begin_checkout / purchase to

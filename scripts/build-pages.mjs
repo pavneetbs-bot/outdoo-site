@@ -7,16 +7,16 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
-const SITE = 'https://outdoo.in'
+const SITE = 'https://outrr.in'
 const html0 = readFileSync(join(ROOT, 'index.html'), 'utf8')
-const SUPA = { url: html0.match(/OUTDOO_SUPA = \{ url: "([^"]+)"/)[1], anon: html0.match(/OUTDOO_SUPA = \{[^}]*anon: "([^"]+)"/)[1] }
+const SUPA = { url: html0.match(/OUTRR_SUPA = \{ url: "([^"]+)"/)[1], anon: html0.match(/OUTRR_SUPA = \{[^}]*anon: "([^"]+)"/)[1] }
 
 // ---------------------------------------------------------------- business facts (one place)
 const CO = {
   legal: 'Sunshine Upgrades Private Limited',
-  brand: 'OUTDOO',
+  brand: 'outrr',
   group: 'A LifeWall Group Company',
-  email: 'orders@outdoo.in',
+  email: 'orders@outrr.in',
   city: 'New Delhi',
   returnDays: 7,
   damageHours: 48,
@@ -26,7 +26,7 @@ const CATS = [['furniture', 'Furniture'], ['shade', 'Shade'], ['lighting', 'Ligh
 
 const PAGES = {
   about: {
-    title: 'About OUTDOO', desc: 'OUTDOO is an online marketplace for outdoor living — furniture, shade, lighting, planters and decor, direct from Indian manufacturers.',
+    title: 'About outrr', desc: 'outrr is an online marketplace for outdoor living — furniture, shade, lighting, planters and decor, direct from Indian manufacturers.',
     body: `
 <p>${CO.brand} is an online marketplace for outdoor living. Balconies, terraces, gardens, farmhouses and cafés: everything to furnish them, in one place. Our tagline says it: <b>Every Outdoor Possibility</b>.</p>
 <h2>Direct from the makers</h2>
@@ -40,12 +40,12 @@ const PAGES = {
 <li>Damage-free promise: report transit damage within ${CO.damageHours} hours and we sort it out.</li>
 </ul>
 <h2>Sell on ${CO.brand}</h2>
-<p>Make outdoor furniture or decor? Apply at <a href="https://seller.outdoo.in">seller.outdoo.in</a>.</p>
+<p>Make outdoor furniture or decor? Apply at <a href="https://seller.outrr.in">seller.outrr.in</a>.</p>
 <h2>Company</h2>
 <p>${CO.brand} is operated by ${CO.legal}, Delhi NCR, India. Questions? Write to <a href="mailto:${CO.email}">${CO.email}</a>.</p>`,
   },
   shipping: {
-    title: 'Shipping & Delivery', desc: 'Free delivery to top metros, dispatch timelines, cash on delivery and what to check when your OUTDOO order arrives.',
+    title: 'Shipping & Delivery', desc: 'Free delivery to top metros, dispatch timelines, cash on delivery and what to check when your outrr order arrives.',
     body: `
 <h2>Where we deliver</h2>
 <p>We deliver to India's major metro cities. Delivery is <b>free</b>. If your pincode can't be served yet, we call you before dispatch and cancel the order at no cost to you.</p>
@@ -62,7 +62,7 @@ const PAGES = {
 <p>Write to <a href="mailto:${CO.email}">${CO.email}</a> with your order number (starts with OD).</p>`,
   },
   returns: {
-    title: 'Returns, Refunds & Cancellations', desc: `Cancel free before dispatch, report damage within ${CO.damageHours} hours, return within ${CO.returnDays} days. How OUTDOO refunds work.`,
+    title: 'Returns, Refunds & Cancellations', desc: `Cancel free before dispatch, report damage within ${CO.damageHours} hours, return within ${CO.returnDays} days. How outrr refunds work.`,
     body: `
 <h2>Cancel an order</h2>
 <p>You can cancel <b>free of charge</b> any time before the order is dispatched. Write to <a href="mailto:${CO.email}">${CO.email}</a> or reply on WhatsApp with your order number.</p>
@@ -77,7 +77,7 @@ const PAGES = {
 <p>Email <a href="mailto:${CO.email}">${CO.email}</a> with your order number, the product, the reason and photos.</p>`,
   },
   warranty: {
-    title: 'Warranty Policy', desc: 'How product warranties work on OUTDOO: who gives them, what they cover and how to make a claim.',
+    title: 'Warranty Policy', desc: 'How product warranties work on outrr: who gives them, what they cover and how to make a claim.',
     body: `
 <h2>Who gives the warranty</h2>
 <p>Products on ${CO.brand} are made and sold by verified sellers, and the warranty comes from the seller or manufacturer. Where a product has a warranty, its period and what it covers are shown on the product page under Specifications. If no warranty is shown, the product doesn't carry one beyond the <a href="/returns/#damage">damage-free promise</a>.</p>
@@ -99,7 +99,7 @@ const PAGES = {
 <p>Outdoor pieces last longer with a little care: cover or store cushions when it rains, wipe off dust and bird droppings, and follow the care guide that ships with your product.</p>`,
   },
   payments: {
-    title: 'Payments', desc: 'How to pay for your OUTDOO order: cash or UPI on delivery today, with online payment coming soon.',
+    title: 'Payments', desc: 'How to pay for your outrr order: cash or UPI on delivery today, with online payment coming soon.',
     body: `
 <h2>Pay on delivery</h2>
 <p>Right now every ${CO.brand} order is paid on delivery. Pay the delivery partner in cash or by UPI when your order arrives. There's nothing to pay when you place the order.</p>
@@ -113,9 +113,9 @@ const PAGES = {
 <p>${CO.brand} will never ask for your card details, UPI PIN or OTP over phone, email or WhatsApp. Report anything suspicious to <a href="mailto:${CO.email}">${CO.email}</a>.</p>`,
   },
   privacy: {
-    title: 'Privacy Policy', desc: 'What information OUTDOO collects, why, who it is shared with, and your rights under the Digital Personal Data Protection Act, 2023.',
+    title: 'Privacy Policy', desc: 'What information outrr collects, why, who it is shared with, and your rights under the Digital Personal Data Protection Act, 2023.',
     body: `
-<p>${CO.brand} (${CO.group}) is run by ${CO.legal} (“we”). This policy explains how we handle your personal data on outdoo.in, in line with the Digital Personal Data Protection Act, 2023 and the Information Technology Act, 2000.</p>
+<p>${CO.brand} (${CO.group}) is run by ${CO.legal} (“we”). This policy explains how we handle your personal data on outrr.in, in line with the Digital Personal Data Protection Act, 2023 and the Information Technology Act, 2000.</p>
 <h2>What we collect</h2>
 <ul><li><b>When you order:</b> name, mobile number, email (optional), delivery address, city, state and pincode, and what you bought.</li>
 <li><b>When you contact us:</b> what you write to us and your contact details.</li>
@@ -141,9 +141,9 @@ const PAGES = {
 <p>We'll post any changes on this page with a new date.</p>`,
   },
   terms: {
-    title: 'Terms of Service', desc: 'The terms for buying on OUTDOO, an online marketplace for outdoor furniture, lighting and decor.',
+    title: 'Terms of Service', desc: 'The terms for buying on outrr, an online marketplace for outdoor furniture, lighting and decor.',
     body: `
-<p>outdoo.in is operated by ${CO.legal} (“${CO.brand}”, “we”), ${CO.group}. By using the site or placing an order you agree to these terms.</p>
+<p>outrr.in is operated by ${CO.legal} (“${CO.brand}”, “we”), ${CO.group}. By using the site or placing an order you agree to these terms.</p>
 <h2>Marketplace</h2>
 <p>${CO.brand} is an online marketplace. Products are made and sold by independent sellers (manufacturers and brands) listed on ${CO.brand}. The seller is responsible for the product, its quality and its GST invoice; ${CO.brand} runs the platform, takes orders and payments, and handles customer support.</p>
 <h2>Products and prices</h2>
@@ -162,12 +162,12 @@ const PAGES = {
 <p>These terms are governed by Indian law. Courts in ${CO.city} have jurisdiction. For complaints, contact our Grievance Officer — see <a href="/contact/">Contact</a>.</p>`,
   },
   contact: {
-    title: 'Contact Us', desc: 'Reach OUTDOO for orders, delivery, returns, bulk enquiries or selling on OUTDOO.',
+    title: 'Contact Us', desc: 'Reach outrr for orders, delivery, returns, bulk enquiries or selling on outrr.',
     body: `
 <h2>Orders and support</h2>
 <p>Email <a href="mailto:${CO.email}">${CO.email}</a> — please add your order number (starts with OD). We usually reply within one working day.</p>
 <h2>Sell on ${CO.brand}</h2>
-<p>Manufacturers and brands can apply at <a href="https://seller.outdoo.in">seller.outdoo.in</a>.</p>
+<p>Manufacturers and brands can apply at <a href="https://seller.outrr.in">seller.outrr.in</a>.</p>
 <h2>Grievance Officer</h2>
 <p>As required by the Consumer Protection (E-Commerce) Rules, 2020 and the IT Rules:<br>
 Grievance Officer, ${CO.legal}<br>
@@ -196,15 +196,15 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const page = (key, p) => `<!doctype html>
 <html lang="en-IN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(p.title)} | OUTDOO</title>
+<title>${esc(p.title)} | outrr</title>
 <meta name="description" content="${esc(p.desc)}">
 <link rel="canonical" href="${SITE}/${key}/">
-<meta property="og:type" content="website"><meta property="og:site_name" content="OUTDOO"><meta property="og:title" content="${esc(p.title)} | OUTDOO"><meta property="og:url" content="${SITE}/${key}/">
+<meta property="og:type" content="website"><meta property="og:site_name" content="outrr"><meta property="og:title" content="${esc(p.title)} | outrr"><meta property="og:url" content="${SITE}/${key}/">
 <link rel="icon" href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>${CSS}</style>
 </head><body>
-<header><div class="wrap hd"><a class="logo" href="/">outd<b>oo</b></a>
+<header><div class="wrap hd"><a class="logo" href="/">out<b>rr</b></a>
 <nav class="nav">${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</nav>
 <a class="cart" href="/?cart=1">Cart</a></div></header>
 <main class="wrap"><div class="crumbs"><a href="/">Home</a> › ${esc(p.title)}</div>
@@ -213,11 +213,11 @@ ${p.body.trim()}
 <nav class="side" aria-label="Policies">${Object.entries(PAGES).map(([k, x]) => `<a href="/${k}/"${k === key ? ' class="on"' : ''}>${esc(x.title)}</a>`).join('')}</nav>
 </article></main>
 <footer><div class="wrap cols">
-<div><b>OUTDOO</b><br>Every Outdoor Possibility<br>${CO.group}<br>Free delivery to top metros · Cash on delivery</div>
+<div><b>outrr</b><br>Every Outdoor Possibility<br>${CO.group}<br>Free delivery to top metros · Cash on delivery</div>
 <div><b>Shop</b>${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</div>
-<div><b>Help</b>${Object.entries(PAGES).map(([k, x]) => `<a href="/${k}/">${esc(x.title)}</a>`).join('')}<a href="https://seller.outdoo.in">Sell on OUTDOO</a></div>
+<div><b>Help</b>${Object.entries(PAGES).map(([k, x]) => `<a href="/${k}/">${esc(x.title)}</a>`).join('')}<a href="https://seller.outrr.in">Sell on outrr</a></div>
 </div></footer>
-<script>window.OUTDOO_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
+<script>window.OUTRR_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
 <script src="/track.js"></script>
 </body></html>
 `

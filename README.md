@@ -1,6 +1,6 @@
-# OUTDOO — outdoo.in
+# outrr — outrr.in
 
-Static storefront for OUTDOO (A LifeWall Group Company).
+Static storefront for outrr (A LifeWall Group Company).
 Every outdoor possibility — furniture, shade, lighting, planters, art & furnishings.
 
 - `index.html` — full store (home, collections, product pages). 127 real products from 6 seller catalogs, images embedded.
