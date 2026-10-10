@@ -145,7 +145,7 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 <footer><div class="wrap cols">
 <div><b>outrr</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Free delivery to top metros · Cash on delivery</div>
 <div><b>Shop</b>${cols.map(c => `<a href="/c/${c.slug}/">${esc(c.title)}</a>`).join('')}</div>
-<div><b>outrr</b><a href="/">Home</a><a href="/about/">About outrr</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outrr.in">Sell on outrr</a></div>
+<div><b>outrr</b><a href="/">Home</a><a href="/about/">About outrr</a><a href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=footer" target="_blank" rel="noopener">Sell on outrr</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outrr.in">Sell on outrr</a></div>
 </div></footer>
 <div class="toast" id="toast"></div>
 <script>${CART_JS}</script>

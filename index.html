@@ -851,6 +851,12 @@ header{position:static!important}
 .sn2 i{font-style:normal;font-size:9px;color:var(--muted);margin-left:2px}
 .sn2.on{color:var(--terra-deep);border-bottom-color:var(--terra-deep)}
 .sn2.sale{color:var(--terra-deep)}
+.sn2.sell{margin-left:auto;color:var(--terra-deep);text-decoration:none;border:1.5px solid var(--terra);border-radius:99px;padding:6px 13px;margin-top:5px;margin-bottom:5px;align-self:center}
+.sellband{margin:18px auto 0;max-width:1180px;padding:0 16px}
+.sellband .in{display:flex;align-items:center;gap:18px;justify-content:space-between;flex-wrap:wrap;background:var(--sand-soft);border:1px solid #e6dccb;border-radius:16px;padding:20px 22px}
+.sellband b{display:block;font:800 18px 'Plus Jakarta Sans',sans-serif;color:var(--char)}
+.sellband span{font-size:13px;color:#6b6357}
+.sellband a{background:var(--terra);color:#fff;text-decoration:none;border-radius:10px;padding:11px 18px;font-weight:700;font-size:13.5px;white-space:nowrap}
 .navpanel{display:none;border-top:1px solid var(--sand-soft);background:#fff;padding:12px 14px 14px;
   max-width:640px;margin:0 auto;box-shadow:0 10px 24px rgba(0,0,0,.08)}
 .navpanel.open{display:block}
@@ -1265,6 +1271,7 @@ header{position:static!important}
   <div class="sn2" onclick="navOpen('pkg',this)">Packages <i>▾</i></div>
   <div class="sn2" onclick="enqOpen('db')">Design&nbsp;&amp;&nbsp;Build</div>
   <div class="sn2 sale" onclick="openCol('furniture')">Sale</div>
+  <a class="sn2 sell" href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=nav" target="_blank" rel="noopener">Sell on outrr</a>
 </div>
 <div class="navpanel" id="navPanel"></div>
 </div>
@@ -1462,6 +1469,8 @@ header{position:static!important}
 
 </div>
 
+<div class="sellband"><div class="in"><div><b>Make outdoor furniture, lighting, planters or decor?</b><span>Sell on outrr. You set the price, we bring the buyers, make your product images and handle everything after the order.</span></div><a href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=home_banner" target="_blank" rel="noopener">Sell on outrr →</a></div></div>
+
 <div class="band">
   <div class="rule"></div>
   <h2>Spaces for a brighter you</h2>
@@ -1500,6 +1509,7 @@ header{position:static!important}
       <a href="/c/art/" onclick="event.preventDefault();openCol('art')">Outdoor water fountain</a></div>
     <div><div class="fh">Company</div>
       <a href="/about/">About outrr</a>
+      <a href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=footer" target="_blank" rel="noopener">Sell on outrr</a>
       <a href="/contact/">Contact Us</a></div>
     <div><div class="fh">Help & Policies</div>
       <a onclick="acTrack()">Track Your Order</a><a onclick="acOpen()">My Account</a>
