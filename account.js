@@ -269,7 +269,7 @@
     <div class="fld"><label>GSTIN</label><input id="acGst" maxlength="15" style="text-transform:uppercase" value="${esc(g)}" placeholder="07ABCDE1234F1Z5"></div>`
   window.acEdit = function (oid, what) {
     const o = orders.find(x => x.id === oid)
-    if (what === 'address') modal('Change delivery address', `<p class="mut sm">You can change this until the seller confirms the order and makes the tax invoice.</p>${addrForm(o)}<div class="ac-err" hidden></div>`,
+    if (what === 'address') modal('Change delivery address', `<p class="mut sm">You can change this until the order is dispatched and the tax invoice is made.</p>${addrForm(o)}<div class="ac-err" hidden></div>`,
       `<button class="btn ghost" onclick="acClose()">Close</button><button class="btn" id="acDo" onclick="acDoEdit('${oid}','address')">Save address</button>`)
     else modal('GST invoice details', `<p class="mut sm">Get a GST invoice in your business name to claim input tax credit. Leave both empty to remove.</p>${gstForm(o.company_name || me.company_name || '', o.gstin || me.gstin || '')}<div class="ac-err" hidden></div>`,
       `<button class="btn ghost" onclick="acClose()">Close</button><button class="btn" id="acDo" onclick="acDoEdit('${oid}','gst')">Save</button>`)
@@ -339,14 +339,15 @@
       const m = n => (+n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       let tx = 0, gs = 0, tt = 0
       const rows = lines.map((l, i) => { const g = +l.gross - +l.taxable; tx += +l.taxable; gs += g; tt += +l.gross
-        return `<tr><td>${i + 1}</td><td>${esc(l.name)}<br><small>${esc(l.sku)}</small></td><td>${esc(l.hsn || '—')}</td><td class=n>${l.qty}</td><td class=n>${m(l.taxable)}</td><td class=n>${+l.gst_pct}%</td>${intra ? `<td class=n>${m(g / 2)}</td><td class=n>${m(g / 2)}</td>` : `<td class=n>${m(g)}</td>`}<td class=n>${m(l.gross)}</td></tr>` }).join('')
+        return `<tr><td>${i + 1}</td><td>${esc(l.name)}<br><small>${esc(l.sku)}</small></td><td>${esc(l.hsn || '—')}</td><td class=n>${l.qty}</td><td class=n>${m(l.taxable)}</td><td class=n>${+l.gst_pct}%</td>${intra ? `<td class=n>${m(g / 2)}</td><td class=n>${m(g / 2)}</td>` : `<td class=n>${m(g)}</td>`}<td class=n>${m(l.gross)}</td></tr>` + (+l.ship_fee ? (() => { const f = +l.ship_fee, ft = Math.round(f / (1 + +l.gst_pct / 100) * 100) / 100, fg = Math.round((f - ft) * 100) / 100; tx += ft; gs += fg; tt += f
+          return `<tr><td></td><td>Shipping charges</td><td>${esc(l.hsn || '—')}</td><td class=n>1</td><td class=n>${m(ft)}</td><td class=n>${+l.gst_pct}%</td>${intra ? `<td class=n>${m(fg / 2)}</td><td class=n>${m(fg / 2)}</td>` : `<td class=n>${m(fg)}</td>`}<td class=n>${m(f)}</td></tr>` })() : '') }).join('')
       const html = `<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${esc(lines[0].invoice_no)}</title><style>
         body{font:13px/1.45 Arial,sans-serif;color:#222;max-width:820px;margin:24px auto;padding:0 16px}h1{font-size:20px;margin:0}small,.mut{color:#777}
         .top{display:flex;justify-content:space-between;gap:20px;margin-bottom:16px}.g{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}.box{border:1px solid #ddd;border-radius:8px;padding:10px}
         table{width:100%;border-collapse:collapse;margin:8px 0}th,td{border-bottom:1px solid #e5e5e5;padding:6px;text-align:left;vertical-align:top}th{background:#F6F1E7}.n{text-align:right}.tot td{font-weight:700}
         .p{margin:16px 0}@media print{.p{display:none}}</style></head><body>
         <div class="p"><button onclick="print()">Print / Save as PDF</button></div>
-        <div class="top"><div><img src="${location.origin}/img/outrr-logo.png?v=3" alt="outrr" style="height:28px;width:auto;display:block;margin-bottom:10px"><h1>Tax invoice</h1><span class="mut">Original for recipient</span></div><div style="text-align:right">Invoice <b>${esc(lines[0].invoice_no)}</b><br>Date ${d8(lines[0].confirmed_at || o.created_at)}<br>Order ${esc(o.order_no)}</div></div>
+        <div class="top"><div><img src="${location.origin}/img/outrr-logo.png?v=3" alt="outrr" style="height:28px;width:auto;display:block;margin-bottom:10px"><h1>Tax invoice</h1><span class="mut">Original for recipient</span></div><div style="text-align:right">Invoice <b>${esc(lines[0].invoice_no)}</b><br>Date ${d8(lines[0].invoice_date || lines[0].confirmed_at || o.created_at)}<br>Order ${esc(o.order_no)}</div></div>
         <div class="g"><div class="box"><b>Sold by</b><br><b>${esc(s.legal_name || s.name)}</b><br>${esc(s.pickup_address || '')} ${esc(s.pickup_pincode || '')}<br>${s.gstin ? 'GSTIN ' + esc(s.gstin) : ''}${s.pan ? '<br>PAN ' + esc(s.pan) : ''}</div>
           <div class="box"><b>Bill to / ship to</b><br>${o.company_name ? `<b>${esc(o.company_name)}</b><br>` : ''}${esc(o.customer_name)}<br>${esc(o.address)}<br>${esc(o.city)}, ${esc(o.state)} ${esc(o.pincode)}${o.gstin ? `<br>GSTIN <b>${esc(o.gstin)}</b>` : ''}<br>Place of supply: ${esc(o.state)}${SC[o.state] ? ' (' + SC[o.state] + ')' : ''}</div></div>
         <table><thead><tr><th>#</th><th>Item</th><th>HSN</th><th class=n>Qty</th><th class=n>Taxable</th><th class=n>GST</th>${intra ? '<th class=n>CGST</th><th class=n>SGST</th>' : '<th class=n>IGST</th>'}<th class=n>Total</th></tr></thead>
