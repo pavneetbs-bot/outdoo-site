@@ -1244,10 +1244,18 @@ header{position:static!important}
 .wl-n{font-size:13px;font-weight:600;cursor:pointer;line-height:1.35}.wl-p{font-size:13px;font-weight:700}
 .wl-a{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}.wl-a .btn{padding:7px 10px;font-size:11.5px;flex:1}
 
+/* Shop by space: 4 equal portrait tiles (desktop one row, phone 2x2) */
+.spaces4{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+.spaces4>.sh,.spaces4>div[style]{grid-column:1/-1}
+.spaces4 .bhalves{display:contents}
+.spaces4 .bcard.big,.spaces4 .bcard.half{aspect-ratio:4/5;margin:0}
+.spaces4 .bcard h3,.spaces4 .bcard.half h3{font-size:16px}
+@media(min-width:760px){.spaces4{grid-template-columns:repeat(4,1fr);gap:16px}.spaces4 .bcard h3,.spaces4 .bcard.half h3{font-size:20px}}
 /* ---- campaign banners (img/banners) — shown by date, see OBN in the script at the end ---- */
 .obn{display:block;position:relative;border-radius:16px;overflow:hidden;cursor:pointer;container-type:inline-size;background:var(--sand,#EADCC8)}
 .obn img{display:block;width:100%;height:auto}
 .obn-sec{margin:18px 0}
+.obn[data-act=""]{cursor:default}
 .obn-hero{position:relative;margin:14px 0 6px;border-radius:18px;overflow:hidden}
 .obn-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .obn-track::-webkit-scrollbar{display:none}
@@ -1323,7 +1331,7 @@ header{position:static!important}
 <div id="home">
 <div class="wrap">
 
-<div class="obn-hero" id="obnHero" hidden><div class="obn-track"><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="Take a sneak peek. Shop this Dussehra — preview the outrr marketplace"><picture><source media="(max-width:760px)" srcset="img/banners/b1-sneak-peek-m.jpg"><img src="img/banners/b1-sneak-peek.jpg" alt="Take a sneak peek. Shop this Dussehra — preview the outrr marketplace" width="1800" height="563" fetchpriority="high" decoding="async"></picture></a><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="wa" role="link" tabindex="0" aria-label="outrr opens in — explore and shop India's first outdoor marketplace, 20 Oct"><picture><source media="(max-width:760px)" srcset="img/banners/b9-countdown-m.jpg"><img src="img/banners/b9-countdown.jpg" alt="outrr opens in — explore and shop India's first outdoor marketplace, 20 Oct" width="1800" height="563" loading="lazy" decoding="async"></picture><span class="obn-cd" data-cd="d" style="left:26.57%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="h" style="left:39.07%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="m" style="left:51.63%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="s" style="left:64.13%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span></a><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="No peeking! …okay fine, a little peeking. Orders open 20 Oct"><picture><source media="(max-width:760px)" srcset="img/banners/na-no-peeking-m.jpg"><img src="img/banners/na-no-peeking.jpg" alt="No peeking! …okay fine, a little peeking. Orders open 20 Oct" width="1800" height="563" loading="lazy" decoding="async"></picture></a></div><div class="obn-dots" role="tablist" aria-label="Banners"></div></div>
+<div class="obn-hero" id="obnHero" hidden><div class="obn-track"><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="Take a sneak peek. Shop this Dussehra — preview the outrr marketplace"><picture><source media="(max-width:760px)" srcset="img/banners/b1-sneak-peek-m.jpg"><img src="img/banners/b1-sneak-peek.jpg" alt="Take a sneak peek. Shop this Dussehra — preview the outrr marketplace" width="1800" height="563" fetchpriority="high" decoding="async"></picture></a><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="" aria-label="outrr opens in — explore and shop India's first outdoor marketplace, 20 Oct"><picture><source media="(max-width:760px)" srcset="img/banners/b9-countdown-m.jpg"><img src="img/banners/b9-countdown.jpg" alt="outrr opens in — explore and shop India's first outdoor marketplace, 20 Oct" width="1800" height="563" loading="lazy" decoding="async"></picture><span class="obn-cd" data-cd="d" style="left:26.57%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="h" style="left:39.07%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="m" style="left:51.63%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="s" style="left:64.13%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span></a></div><div class="obn-dots" role="tablist" aria-label="Banners"></div></div>
 
     <div class="hero2" onclick="goSpaces()">
     <div class="im"><img data-img="HERO" alt="Outdoor living"></div>
@@ -1338,9 +1346,8 @@ header{position:static!important}
     <div class="archrow" id="archTop"></div>
   </div>
 
-  <div class="obn-sec"><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="One marketplace, three ways to shop: products, hyperlocal, services"><picture><source media="(max-width:760px)" srcset="img/banners/b2-three-ways-m.jpg"><img src="img/banners/b2-three-ways.jpg" alt="One marketplace, three ways to shop: products, hyperlocal, services" width="1800" height="563" loading="lazy" decoding="async"></picture></a></div>
 
-  <div class="sec2">
+  <div class="sec2 spaces4">
     <div class="sh"><h2>Shop by space</h2><p>Start with where you live outdoors — we'll show you what belongs there.</p></div>
     <div style="height:14px"></div>
     <div class="bcard big" onclick="openCol('furniture')">
@@ -1398,7 +1405,6 @@ header{position:static!important}
     <div class="otiles" id="tilesWeather"></div>
   </div>
 
-<div class="obn-sec"><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="wa" role="link" tabindex="0" aria-label="India's first outdoor marketplace is almost here — launching this Dussehra, 20 Oct"><picture><source media="(max-width:760px)" srcset="img/banners/b10-countdown-strip-m.jpg"><img src="img/banners/b10-countdown-strip.jpg" alt="India's first outdoor marketplace is almost here — launching this Dussehra, 20 Oct" width="1800" height="300" loading="lazy" decoding="async"></picture><span class="obn-cd" data-cd="d" style="left:57.93%;top:32.6%;width:5.37%;height:37.6%;color:#fff;font-size:2.7cqw"><b>--</b><i style="font-size:.55cqw">DAYS</i></span><span class="obn-cd" data-cd="h" style="left:63.83%;top:32.6%;width:5.37%;height:37.6%;color:#fff;font-size:2.7cqw"><b>--</b><i style="font-size:.55cqw">HRS</i></span><span class="obn-cd" data-cd="m" style="left:69.8%;top:32.6%;width:5.37%;height:37.6%;color:#fff;font-size:2.7cqw"><b>--</b><i style="font-size:.55cqw">MINS</i></span><span class="obn-cd" data-cd="s" style="left:75.73%;top:32.6%;width:5.37%;height:37.6%;color:#fff;font-size:2.7cqw"><b>--</b><i style="font-size:.55cqw">SECS</i></span></a></div>
 
     <div class="sec2">
     <div class="shl"><h2>Deal of the day</h2><span class="view" id="dealTimerTop"></span></div>
@@ -1448,7 +1454,6 @@ header{position:static!important}
     </div>
   </div>
 
-<div class="obn-sec"><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="wa" role="link" tabindex="0" aria-label="A new chapter for India's outdoors — this Dussehra, 20 October"><picture><source media="(max-width:760px)" srcset="img/banners/b4-new-chapter-m.jpg"><img src="img/banners/b4-new-chapter.jpg" alt="A new chapter for India's outdoors — this Dussehra, 20 October" width="1800" height="563" loading="lazy" decoding="async"></picture></a></div>
 
     <div class="sec2">
     <div class="sh"><h2>Real homes, real terraces</h2><p>Spaces designed by our team · tag <b>@outrr</b> to get featured</p></div>
@@ -1463,7 +1468,6 @@ header{position:static!important}
     </div>
   </div>
 
-<div class="obn-sec"><a class="obn" data-from="" data-to="" data-act="about" role="link" tabindex="0" aria-label="Every piece has a hometown — direct from India's makers"><picture><source media="(max-width:760px)" srcset="img/banners/nb-hometown-m.jpg"><img src="img/banners/nb-hometown.jpg" alt="Every piece has a hometown. Khurja pots, Panipat throws, Jodhpur tables — bought straight from the makers" width="1800" height="562" loading="lazy" decoding="async"></picture></a></div>
 
   <div class="sec2">
     <div class="founder">
@@ -3210,12 +3214,7 @@ async function shareProduct(){
    Tiles (vertical images) go into product grids via OBN_TILES. Edit dates here. */
 (function(){
   var LAUNCH = new Date('2026-10-20T00:00:00+05:30').getTime();
-  var OBN_TILES = [
-    { el:'stripTrend', at:1, img:'t-sneak-peek', alt:'Take a sneak peek. Shop this Dussehra', act:'spaces', to:LAUNCH },
-    { el:'stripTrend', at:1, img:'t-live', alt:"We're live — India's first marketplace for outdoors is open", act:'spaces', from:LAUNCH, to:new Date('2026-10-28T00:00:00+05:30').getTime() },
-    { el:'tilesBest', at:1, img:'t-direct', alt:'Direct from manufacturer — straight to your balcony, terrace and garden', act:'col:furniture', keep:4 },
-    { el:'tilesNew', at:1, img:'t-hometown', alt:'Every piece has a hometown — direct from India\'s makers', act:'about', keep:4 }
-  ];
+  var OBN_TILES = [];   // { el, at, img, alt, act, from, to, keep } — vertical 4:5 images inside product grids
   function live(from, to){ var n = Date.now(); return (!from || n >= from) && (!to || n < to); }
   function t(v){ return v ? new Date(v).getTime() : 0; }
   window.obnGo = function(act){
@@ -3228,6 +3227,7 @@ async function shareProduct(){
     }catch(e){}
   };
   function wire(a){
+    if(!a.getAttribute('data-act')) return;
     a.addEventListener('click', function(){ obnGo(a.getAttribute('data-act')); });
     a.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); obnGo(a.getAttribute('data-act')); } });
   }
@@ -3273,8 +3273,7 @@ async function shareProduct(){
   var an = document.querySelector('.announce');
   if(an && Date.now() < LAUNCH){
     an.className = 'announce obn-tick';
-    an.innerHTML = '<span class="tg">PREVIEW MODE</span><span class="mq"><span>Wishlist everything. Checkout soon. &nbsp;✦&nbsp; Festive deals unlocking on launch day &nbsp;✦&nbsp; You\'re viewing a preview of <em>India\'s outdoor marketplace</em> &nbsp;✦&nbsp; Orders open 20 Oct · Dussehra</span></span><button class="rm" type="button">REMIND ME</button>';
-    an.querySelector('.rm').onclick = function(){ obnGo('wa'); };
+    an.innerHTML = '<span class="mq"><span>Launching this Dussehra · 20 Oct &nbsp;✦&nbsp; Wishlist your favourites now &nbsp;✦&nbsp; Festive deals unlock on launch day &nbsp;✦&nbsp; Free delivery in top metros</span></span>';
   }
   // 5. vertical images as tiles inside product grids (re-applied whenever a grid is re-rendered)
   function tileHTML(x, strip){ return '<div class="obn-tile' + (strip ? ' mpc' : '') + '" data-obn-tile role="link" tabindex="0" aria-label="' + x.alt.replace(/"/g, '&quot;') + '"><img src="img/banners/' + x.img + '.jpg" alt="' + x.alt.replace(/"/g, '&quot;') + '" loading="lazy" decoding="async"></div>'; }
