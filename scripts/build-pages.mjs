@@ -345,5 +345,86 @@ ${SELLER_CSS}</style>
 { const f = join(ROOT, 'seller', 'index.html'); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, sellerPage()) }
 console.log('Seller page built: /seller/?s=<slug>')
 
+// ---------------------------------------------------------------- pitch pages: /preview/?s=<slug>
+// A sample seller page the outrr team made for a prospect (admin → Sellers → Pitch pages).
+// Private link, never indexed, no prices or cart. "Claim this page" → seller.outrr.in apply form, filled in.
+const PREVIEW_CSS = `.pv-top{background:#2E2E2E;color:#fff;border-radius:14px;padding:14px 18px;margin:16px 0 0;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.pv-top div{flex:1;min-width:230px}.pv-top b{display:block;font-size:15px}.pv-top span{font-size:13px;color:#ddd}
+.pv-claim{background:var(--terra);color:#fff;text-decoration:none;border-radius:10px;padding:11px 18px;font-weight:600;font-size:14px;white-space:nowrap;display:inline-block}
+.pv-claim:hover{background:var(--terra-deep,#A84F33)}
+.card .ct{font-size:12px;color:var(--muted)}.card .smp{position:absolute;left:8px;bottom:8px;background:rgba(46,46,46,.75);color:#fff;font-size:10.5px;font-weight:600;border-radius:5px;padding:2px 7px}
+.card .soon{font-size:12.5px;color:var(--terra);font-weight:600;margin-top:3px}
+.pv-why{margin:44px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.pv-why div{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff}.pv-why b{display:block;font-size:14.5px;margin-bottom:4px}.pv-why span{font-size:13px;color:var(--muted)}
+.pv-end{margin:40px 0 60px;text-align:center;padding:34px 20px;border-radius:18px;background:var(--sand-soft)}.pv-end h2{font-size:22px;margin-bottom:6px}.pv-end p{color:var(--muted);margin-bottom:16px}
+.pv-bar{display:none}
+@media(max-width:760px){.pv-why{grid-template-columns:1fr 1fr}.pv-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:1px solid var(--line);padding:10px 14px;gap:10px;align-items:center;box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+ .pv-bar span{flex:1;font-size:12.5px;color:var(--muted);line-height:1.3}.pv-bar .pv-claim{padding:10px 14px;font-size:13.5px}body{padding-bottom:68px}}`
+
+const PREVIEW_JS = `(function(){
+var Q=new URLSearchParams(location.search),slug=(Q.get('s')||'').trim().toLowerCase(),team=Q.get('team')==='1',root=document.getElementById('sp');
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var sid;try{sid=sessionStorage.getItem('outrr_pv_sid');if(!sid){sid=Math.random().toString(36).slice(2,12);sessionStorage.setItem('outrr_pv_sid',sid)}}catch(e){sid=Math.random().toString(36).slice(2,12)}
+var dev=/Mobi|Android|iPhone/i.test(navigator.userAgent)?'mobile':'desktop';
+function none(t,b){document.title='outrr preview';root.innerHTML='<div class="sp-empty"><h1>'+t+'</h1><p>'+b+'</p><a class="btn" href="https://seller.outrr.in/?utm_source=pitch&utm_medium=preview_expired#apply">Apply to sell on outrr</a></div>'}
+if(!slug)return none('Preview not found','Check the link the outrr team sent you.');
+var S=window.OUTRR_SUPA;
+fetch(S.url+'/rest/v1/rpc/pitch_open',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:JSON.stringify({p_slug:slug,p_sid:sid,p_device:dev,p_count:!team})})
+.then(function(r){return r.ok?r.json():null}).then(function(d){
+ if(!d||!d.available)return d&&d.expired?none('This preview has expired','Ask the outrr team for a fresh link, or apply to sell on outrr directly.'):none('Preview not found','Check the link the outrr team sent you.');render(d)}).catch(function(){none('Couldn\\u2019t load the preview','Please check your connection and try again.')});
+var D,cat='';
+function claimUrl(){return 'https://seller.outrr.in/?pitch='+encodeURIComponent(slug)+'&utm_source=pitch&utm_medium=preview&utm_campaign='+encodeURIComponent(slug)+'#apply'}
+function render(d){D=d;var nm=d.brand||d.name,ini=String(nm||'?').trim().split(/\\s+/).map(function(x){return x[0]}).slice(0,2).join('').toUpperCase();
+ document.title=nm+' on outrr (preview)';
+ var claim=d.claimed?'<span class="pv-claim" style="background:#2f7a45">\\u2713 Claimed</span>':'<a class="pv-claim" href="'+claimUrl()+'">Claim this page</a>';
+ var h='<div class="pv-top" role="status"><div><b>'+(d.claimed?esc(nm)+' has claimed this page':'A sample page we made for '+esc(nm))+'</b><span>'+(d.claimed?'It goes live once the seller account is set up.':'This is how your brand could look on outrr. It\\u2019s private: only people with this link can see it.')+'</span></div>'+claim+'</div>';
+ h+='<div class="sp-hero">'+(d.banner?'<img class="bn" src="'+esc(d.banner)+'" alt="">':'')+'</div>';
+ h+='<div class="sp-id"><div class="sp-logo">'+(d.logo?'<img src="'+esc(d.logo)+'" alt="'+esc(nm)+' logo">':esc(ini))+'</div><div class="sp-nm"><h1>'+esc(nm)+'</h1>'+(d.tagline?'<p>'+esc(d.tagline)+'</p>':'')+'</div></div>';
+ h+='<div class="sp-facts"><span class="ver">Sample page</span>'+(d.city?'<span>'+esc(d.city)+'</span>':'')+(d.categories||[]).map(function(c){return '<span>'+esc(c.title)+'</span>'}).join('')+'<span>'+d.products.length+' product'+(d.products.length===1?'':'s')+'</span></div>';
+ h+='<div class="sp-bar"><h2>Your products</h2><div class="sp-chips" id="spc"></div></div><div class="grid" id="spg"></div>';
+ if(d.about)h+='<section class="sp-about"><div><h2>About '+esc(nm)+'</h2><div class="crumbs" style="margin:0">'+(d.city?esc(d.city):'')+'</div></div><p>'+esc(d.about)+'</p></section>';
+ h+='<div class="pv-why"><div><b>Free to join</b><span>No joining fee. Pay a commission only when you sell.</span></div><div><b>We make your images</b><span>Studio-style product photos and listings, made by outrr.</span></div><div><b>Buyers across India</b><span>Homeowners, architects and businesses shopping for outdoor living.</span></div><div><b>Paid to your bank</b><span>Weekly payouts after delivery.</span></div></div>';
+ if(!d.claimed)h+='<div class="pv-end"><h2>Like your page?</h2><p>Claim it and start selling on outrr. Takes about 3 minutes; we fill in what we already know.</p><a class="pv-claim" href="'+claimUrl()+'">Claim this page</a></div><div class="pv-bar"><span>Your sample page on outrr</span><a class="pv-claim" href="'+claimUrl()+'">Claim this page</a></div>';
+ else h+='<div style="height:50px"></div>';
+ root.innerHTML=h;chips();grid();
+ Array.prototype.forEach.call(document.querySelectorAll('.pv-claim[href]'),function(a){a.addEventListener('click',function(){if(window.otrack)otrack('pitch_claim',{path:'/preview/'+slug})})});
+}
+function chips(){var c=[{slug:'',title:'All'}].concat((D.categories||[]).filter(function(c){return D.products.some(function(p){return p.cat===c.slug})}));if(c.length<3){document.getElementById('spc').innerHTML='';return}
+ document.getElementById('spc').innerHTML=c.map(function(x){return '<button class="'+(cat===x.slug?'on':'')+'" data-c="'+esc(x.slug)+'">'+esc(x.title)+'</button>'}).join('');
+ Array.prototype.forEach.call(document.querySelectorAll('#spc button'),function(b){b.onclick=function(){cat=b.getAttribute('data-c');chips();grid()}})}
+function grid(){var t={};(D.categories||[]).forEach(function(c){t[c.slug]=c.title});
+ var l=D.products.filter(function(p){return !cat||p.cat===cat}),g=document.getElementById('spg');
+ if(!l.length){g.innerHTML='<p style="color:var(--muted);grid-column:1/-1;padding:30px 0">Your products will show here.</p>';return}
+ g.innerHTML=l.map(function(p){return '<div class="card"><div class="im">'+(p.image?'<img src="'+esc(p.image)+'" alt="'+esc(p.name)+'" loading="lazy" width="400" height="400">':'')+(p.sample?'<span class="smp">Sample image</span>':'')+'</div>'
+  +'<div class="n">'+esc(p.name||'Your product')+'</div>'+(t[p.cat]?'<div class="ct">'+esc(t[p.cat])+'</div>':'')+'<div class="soon">Price on listing</div></div>'}).join('')}
+})();`
+
+const previewPage = () => `<!doctype html>
+<html lang="en-IN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview | outrr</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.png?v=3">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>${CSS}
+${SELLER_CSS}
+${PREVIEW_CSS}</style>
+</head><body>
+<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png?v=3" alt="outrr" height="26"></a>
+<nav class="nav">${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</nav>
+<a class="cart" href="https://seller.outrr.in/?utm_source=pitch&utm_medium=preview_header">Sell on outrr</a></div></header>
+<main class="wrap" id="sp"><div class="sp-load">Loading…</div></main>
+<footer><div class="wrap cols">
+<div><b>outrr</b><br>Every Outdoor Possibility<br>${CO.group}</div>
+<div><b>Sell on outrr</b><a href="https://seller.outrr.in">Apply to sell</a><a href="mailto:${CO.email}">${CO.email}</a></div>
+</div></footer>
+<script>window.OUTRR_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
+<script src="/track.js"></script>
+<script>${PREVIEW_JS}</script>
+</body></html>
+`
+{ const f = join(ROOT, 'preview', 'index.html'); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, previewPage()) }
+console.log('Pitch preview page built: /preview/?s=<slug>')
+
 export const POLICY_PATHS = Object.keys(PAGES).map(k => `/${k}/`)
 console.log(`Policy pages built: ${POLICY_PATHS.join(' ')}`)
