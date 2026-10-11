@@ -226,205 +226,23 @@ for (const [key, p] of Object.entries(PAGES)) {
   const f = join(ROOT, key, 'index.html'); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, page(key, p))
 }
 
-// ---------------------------------------------------------------- seller pages: /seller/?s=<slug>
-// Dynamic: reads seller_page() from Supabase. Published = seller on a plan with a page (Basic / Premium)
-// and Active. Unpublished pages open only from Seller Hub / admin (preview link) with a banner.
-const SELLER_CSS = `.sp-pv{background:#FBEFE9;border:1px solid #EFC9B8;border-radius:12px;padding:12px 16px;margin:16px 0 0;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-.sp-pv div{flex:1;min-width:220px}.sp-pv b{display:block;font-size:15px}.sp-pv span{font-size:13px;color:#7a4a32}
-.sp-pv a{background:var(--terra);color:#fff;text-decoration:none;border-radius:10px;padding:10px 16px;font-weight:600;font-size:13.5px;white-space:nowrap}
-.sp-hero{position:relative;margin:16px 0 0;border-radius:18px;overflow:hidden;background:linear-gradient(120deg,#BE5633,#8f3f24);min-height:190px}
-.sp-hero img.bn{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.sp-hero:after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.35))}
-.sp-id{display:flex;gap:18px;align-items:flex-end;margin:-46px 0 0 22px;position:relative;z-index:2}
-.sp-logo{width:108px;height:108px;border-radius:20px;background:#fff;border:4px solid #fff;box-shadow:0 6px 20px rgba(0,0,0,.12);overflow:hidden;display:flex;align-items:center;justify-content:center;font:800 34px 'Plus Jakarta Sans',sans-serif;color:var(--terra);flex-shrink:0}
-.sp-logo img{width:100%;height:100%;object-fit:cover}
-.sp-nm{padding:0 0 4px;min-width:0;align-self:flex-end;margin-top:52px}.sp-nm h1{font-size:28px;line-height:1.15;margin:0;letter-spacing:-.01em}.sp-nm p{color:var(--muted);margin:4px 0 0;font-size:14.5px}
-.sp-facts{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
-.sp-facts span{font-size:12.5px;font-weight:500;border:1px solid var(--line);border-radius:99px;padding:5px 12px;background:#fff}
-.sp-facts .ver{background:#2E2E2E;color:#fff;border-color:#2E2E2E}.sp-facts .tr{background:var(--sand-soft)}
-.sp-share{margin-left:auto;background:none;border:1px solid var(--line);border-radius:99px;padding:5px 14px;font:600 12.5px Poppins,sans-serif;cursor:pointer}
-.sp-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:30px 0 14px}.sp-bar h2{font-size:19px;margin:0 auto 0 0}
-.sp-chips{display:flex;gap:8px;flex-wrap:wrap}.sp-chips button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 14px;font:500 13px Poppins,sans-serif;cursor:pointer;color:#555}
-.sp-chips button.on{background:var(--char);border-color:var(--char);color:#fff}
-.sp-bar select{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:500 13px Poppins,sans-serif;background:#fff}
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
-.card{display:block;color:inherit}.card a{text-decoration:none;color:inherit}.card .im{position:relative;aspect-ratio:1;background:var(--sand-soft);border-radius:14px;overflow:hidden}
-.card .im img{width:100%;height:100%;object-fit:cover;transition:transform .3s}.card:hover .im img{transform:scale(1.04)}
-.card .off{position:absolute;left:10px;top:10px;background:var(--terra);color:#fff;font-size:11px;font-weight:700;border-radius:6px;padding:3px 7px}
-.card .oos{position:absolute;inset:auto 0 0;background:rgba(46,46,46,.75);color:#fff;font-size:12px;text-align:center;padding:5px}
-.card .n{font-size:13.5px;font-weight:500;margin:9px 0 3px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card .p{font-weight:700;font-size:15px}.card .p s{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
-.card .rt{font-size:12px;color:var(--muted);margin-top:2px}
-.card .add{margin-top:8px;width:100%;border:1px solid var(--terra);color:var(--terra);background:#fff;border-radius:10px;padding:8px;font:600 13px Poppins,sans-serif;cursor:pointer}
-.card .add:hover{background:var(--terra);color:#fff}
-.sp-about{display:grid;grid-template-columns:1fr 1.4fr;gap:30px;margin:48px 0 56px;padding:28px;border-radius:18px;background:var(--sand-soft)}
-.sp-about h2{font-size:21px;margin:0 0 6px}.sp-about p{white-space:pre-line;margin:0;color:#444}
-.sp-empty{text-align:center;padding:70px 20px}.sp-empty h1{font-size:24px;margin-bottom:8px}.sp-empty a.btn{display:inline-block;margin-top:16px;background:var(--terra);color:#fff;text-decoration:none;border-radius:10px;padding:11px 18px;font-weight:600}
-.sp-load{padding:90px 0;text-align:center;color:var(--muted)}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--char);color:#fff;border-radius:99px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}
-@media(max-width:900px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.sp-hero{min-height:130px;border-radius:14px}
- .sp-id{margin:-34px 0 0 12px;gap:12px}.sp-nm{margin-top:38px}.sp-logo{width:80px;height:80px;border-radius:16px;font-size:26px}.sp-nm h1{font-size:21px}.sp-about{grid-template-columns:1fr;gap:10px;padding:20px}}`
-
-const SELLER_JS = `(function(){
-var Q=new URLSearchParams(location.search),slug=(Q.get('s')||'').trim().toLowerCase(),tok=Q.get('preview')||null,root=document.getElementById('sp');
-var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
-var inr=function(n){return '\\u20b9'+Math.round(+n||0).toLocaleString('en-IN')};
-var TIER={exclusive:'outrr Exclusive',originals:'outrr Originals'};
-function cart(){try{return JSON.parse(localStorage.getItem('outrr_cart')||'[]')}catch(e){return[]}}
-function setCart(c){try{localStorage.setItem('outrr_cart',JSON.stringify(c))}catch(e){}var n=c.reduce(function(a,x){return a+x.q},0),e=document.getElementById('cartn');if(e)e.textContent=n}
-function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');setTimeout(function(){e.classList.remove('on')},1700)}
-window.spAdd=function(sku,v){var c=cart(),f=c.find(function(x){return x.id===sku});f?f.q=Math.min(10,f.q+1):c.push({id:sku,q:1});setCart(c);if(window.otrack)otrack('add_to_cart',{sku:sku,value:v});toast('Added to cart')};
-setCart(cart());
-function none(name){document.title='Seller page not available | outrr';root.innerHTML='<div class="sp-empty"><h1>'+(name?esc(name)+' isn\\u2019t showing a page right now':'Seller page not found')+'</h1><p>'+(name?'Their products are still on outrr. Browse the full range below.':'Check the link, or browse everything on outrr.')+'</p><a class="btn" href="/">Shop outrr</a></div>'}
-if(!slug)return none();
-var S=window.OUTRR_SUPA;
-fetch(S.url+'/rest/v1/rpc/seller_page',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:JSON.stringify({p_slug:slug,p_token:tok})})
-.then(function(r){return r.ok?r.json():null}).then(function(d){if(!d||!d.available)return none(d&&d.name);render(d)}).catch(function(){none()});
-var D,cat='',sort='pop';
-function render(d){D=d;var nm=d.brand&&d.brand!==d.name?d.brand:d.name;
- document.title=nm+(d.tagline?' \\u2013 '+d.tagline:'')+' | outrr';
- if(!d.published){var m=document.createElement('meta');m.name='robots';m.content='noindex';document.head.appendChild(m)}
- var md=document.querySelector('meta[name=description]');if(md)md.content=(d.tagline||('Shop '+nm+' on outrr'))+'. '+d.products.length+' products, free delivery to top metros.';
- var since=d.since?new Date(d.since).getFullYear():null,ini=String(nm||'?').trim().split(/\\s+/).map(function(x){return x[0]}).slice(0,2).join('').toUpperCase();
- var h='';
- if(!d.published)h+='<div class="sp-pv" role="status"><div><b>Your page is unpublished</b><span>'+(d.plan!=='free'&&d.seller_status!=='active'?'It goes live once outrr verifies your seller account. Only you and the outrr team can see this preview.':'Pay for your listing to publish your page. Only you and the outrr team can see this preview.')+'</span></div>'+(d.plan==='free'?'<a href="https://seller.outrr.in/#plan">Pay to publish</a>':'')+'</div>';
- h+='<div class="sp-hero">'+(d.banner?'<img class="bn" src="'+esc(d.banner)+'" alt="">':'')+'</div>';
- h+='<div class="sp-id"><div class="sp-logo">'+(d.logo?'<img src="'+esc(d.logo)+'" alt="'+esc(nm)+' logo">':esc(ini))+'</div><div class="sp-nm"><h1>'+esc(nm)+'</h1>'+(d.tagline?'<p>'+esc(d.tagline)+'</p>':'')+'</div></div>';
- h+='<div class="sp-facts"><span class="ver">\\u2713 Verified seller</span>'+(TIER[d.tier]?'<span class="tr">'+TIER[d.tier]+'</span>':'')+(d.city?'<span>'+esc(d.city)+'</span>':'')+(since?'<span>On outrr since '+since+'</span>':'')
-  +(d.rating_count?'<span>\\u2605 '+d.rating+' ('+d.rating_count+' review'+(d.rating_count>1?'s':'')+')</span>':'')+'<span>'+d.products.length+' product'+(d.products.length===1?'':'s')+'</span><button class="sp-share" onclick="spShare()">Share</button></div>';
- h+='<div class="sp-bar"><h2>All products</h2><div class="sp-chips" id="spc"></div><select id="sps" aria-label="Sort"><option value="pop">Popular</option><option value="lo">Price: low to high</option><option value="hi">Price: high to low</option><option value="off">Biggest discount</option></select></div><div class="grid" id="spg"></div>';
- if(d.about)h+='<section class="sp-about"><div><h2>About '+esc(nm)+'</h2><div class="crumbs" style="margin:0">'+(d.city?esc(d.city)+' \\u00b7 ':'')+'Sells on outrr'+(since?' since '+since:'')+'</div></div><p>'+esc(d.about)+'</p></section>';
- else h+='<div style="height:50px"></div>';
- root.innerHTML=h;
- document.getElementById('sps').onchange=function(e){sort=e.target.value;grid()};chips();grid();
- if(window.otrack)otrack('page_view',{path:'/seller/'+slug});
-}
-function chips(){var c=[{slug:'',title:'All',count:D.products.length}].concat(D.categories||[]);if(c.length<3){document.getElementById('spc').innerHTML='';return}
- document.getElementById('spc').innerHTML=c.map(function(x){return '<button class="'+(cat===x.slug?'on':'')+'" data-c="'+esc(x.slug)+'">'+esc(x.title)+' \\u00b7 '+x.count+'</button>'}).join('');
- Array.prototype.forEach.call(document.querySelectorAll('#spc button'),function(b){b.onclick=function(){cat=b.getAttribute('data-c');chips();grid()}})}
-function grid(){var off=function(p){return p.mrp>p.price?(p.mrp-p.price)/p.mrp:0};
- var l=D.products.filter(function(p){return !cat||p.collection_slug===cat}).slice();
- if(sort==='lo')l.sort(function(a,b){return a.price-b.price});else if(sort==='hi')l.sort(function(a,b){return b.price-a.price});else if(sort==='off')l.sort(function(a,b){return off(b)-off(a)});
- var g=document.getElementById('spg');
- if(!l.length){g.innerHTML='<p style="color:var(--muted);grid-column:1/-1;padding:30px 0">No products live yet.</p>';return}
- g.innerHTML=l.map(function(p){var o=Math.round(off(p)*100),u='/?p='+encodeURIComponent(p.sku);
-  return '<div class="card"><a href="'+u+'"><div class="im">'+(p.image_url?'<img src="'+esc(p.image_url)+'" alt="'+esc(p.name)+'" loading="lazy" width="400" height="400">':'')+(o>=5?'<span class="off">'+o+'% OFF</span>':'')+(p.in_stock===false?'<span class="oos">Out of stock</span>':'')+'</div>'
-   +'<div class="n">'+esc(p.name)+'</div><div class="p">'+inr(p.price)+(p.mrp>p.price?'<s>'+inr(p.mrp)+'</s>':'')+'</div>'+(p.rating_count?'<div class="rt">\\u2605 '+(+p.rating).toFixed(1)+' ('+p.rating_count+')</div>':'')+'</a>'
-   +(p.in_stock===false?'':'<button class="add" onclick="spAdd(\\''+esc(p.sku).replace(/\\\\/g,'')+'\\','+Math.round(p.price)+')">Add to cart</button>')+'</div>'}).join('')}
-window.spShare=function(){var u=location.origin+'/seller/?s='+encodeURIComponent(slug);if(navigator.share)navigator.share({title:document.title,url:u}).catch(function(){});else{try{navigator.clipboard.writeText(u);toast('Link copied')}catch(e){prompt('Copy this link',u)}}};
-})();`
-
-const sellerPage = () => `<!doctype html>
+// ---------------------------------------------------------------- seller + pitch pages
+// Both are brand stores inside the home page (store.js, same header, menu, cart and footer):
+//   /?store=<slug>[&token=]  seller page (seller_page RPC)   ·   /?pitch=<slug>[&team=1]  sample page for a prospect (pitch_open RPC)
+// The old addresses /seller/?s= and /preview/?s= keep working: they forward with the same details.
+const forward = (title, map, noindex) => `<!doctype html>
 <html lang="en-IN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Seller | outrr</title>
-<meta name="description" content="Shop direct from verified Indian makers of outdoor furniture, lighting and decor on outrr.">
-<meta property="og:type" content="website"><meta property="og:site_name" content="outrr">
+<title>${title} | outrr</title>${noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}
 <link rel="icon" href="/favicon.png?v=3">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>${CSS}
-.cart span{background:var(--terra);color:#fff;border-radius:99px;font-size:11px;padding:1px 7px;margin-left:6px}
-${SELLER_CSS}</style>
-</head><body>
-<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png?v=3" alt="outrr" height="26"></a>
-<nav class="nav">${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</nav>
-<a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
-<main class="wrap" id="sp"><div class="sp-load">Loading…</div></main>
-<footer><div class="wrap cols">
-<div><b>outrr</b><br>Every Outdoor Possibility<br>${CO.group}<br>Free delivery to top metros · Cash on delivery</div>
-<div><b>Shop</b>${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</div>
-<div><b>Help</b>${Object.entries(PAGES).map(([k, x]) => `<a href="/${k}/">${esc(x.title)}</a>`).join('')}<a href="https://seller.outrr.in">Sell on outrr</a></div>
-</div></footer>
-<div class="toast" id="toast"></div>
-<script>window.OUTRR_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
-<script src="/track.js"></script>
-<script>${SELLER_JS}</script>
-</body></html>
+<script>(function(){var q=new URLSearchParams(location.search),o=new URLSearchParams();${map}location.replace('/?'+o.toString()+location.hash)})();</script>
+</head><body style="font-family:system-ui,sans-serif;color:#7a756c;text-align:center;padding:80px 20px">Opening…</body></html>
 `
-{ const f = join(ROOT, 'seller', 'index.html'); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, sellerPage()) }
-console.log('Seller page built: /seller/?s=<slug>')
-
-// ---------------------------------------------------------------- pitch pages: /preview/?s=<slug>
-// A sample seller page the outrr team made for a prospect (admin → Sellers → Pitch pages).
-// Private link, never indexed, no prices or cart. "Claim this page" → seller.outrr.in apply form, filled in.
-const PREVIEW_CSS = `.pv-top{background:#2E2E2E;color:#fff;border-radius:14px;padding:14px 18px;margin:16px 0 0;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-.pv-top div{flex:1;min-width:230px}.pv-top b{display:block;font-size:15px}.pv-top span{font-size:13px;color:#ddd}
-.pv-claim{background:var(--terra);color:#fff;text-decoration:none;border-radius:10px;padding:11px 18px;font-weight:600;font-size:14px;white-space:nowrap;display:inline-block}
-.pv-claim:hover{background:var(--terra-deep,#A84F33)}
-.card .ct{font-size:12px;color:var(--muted)}.card .smp{position:absolute;left:8px;bottom:8px;background:rgba(46,46,46,.75);color:#fff;font-size:10.5px;font-weight:600;border-radius:5px;padding:2px 7px}
-.card .soon{font-size:12.5px;color:var(--terra);font-weight:600;margin-top:3px}
-.pv-why{margin:44px 0 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.pv-why div{border:1px solid var(--line);border-radius:14px;padding:16px;background:#fff}.pv-why b{display:block;font-size:14.5px;margin-bottom:4px}.pv-why span{font-size:13px;color:var(--muted)}
-.pv-end{margin:40px 0 60px;text-align:center;padding:34px 20px;border-radius:18px;background:var(--sand-soft)}.pv-end h2{font-size:22px;margin-bottom:6px}.pv-end p{color:var(--muted);margin-bottom:16px}
-.pv-bar{display:none}
-@media(max-width:760px){.pv-why{grid-template-columns:1fr 1fr}.pv-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:1px solid var(--line);padding:10px 14px;gap:10px;align-items:center;box-shadow:0 -6px 20px rgba(0,0,0,.08)}
- .pv-bar span{flex:1;font-size:12.5px;color:var(--muted);line-height:1.3}.pv-bar .pv-claim{padding:10px 14px;font-size:13.5px}body{padding-bottom:68px}}`
-
-const PREVIEW_JS = `(function(){
-var Q=new URLSearchParams(location.search),slug=(Q.get('s')||'').trim().toLowerCase(),team=Q.get('team')==='1',root=document.getElementById('sp');
-var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
-var sid;try{sid=sessionStorage.getItem('outrr_pv_sid');if(!sid){sid=Math.random().toString(36).slice(2,12);sessionStorage.setItem('outrr_pv_sid',sid)}}catch(e){sid=Math.random().toString(36).slice(2,12)}
-var dev=/Mobi|Android|iPhone/i.test(navigator.userAgent)?'mobile':'desktop';
-function none(t,b){document.title='outrr preview';root.innerHTML='<div class="sp-empty"><h1>'+t+'</h1><p>'+b+'</p><a class="btn" href="https://seller.outrr.in/?utm_source=pitch&utm_medium=preview_expired#apply">Apply to sell on outrr</a></div>'}
-if(!slug)return none('Preview not found','Check the link the outrr team sent you.');
-var S=window.OUTRR_SUPA;
-fetch(S.url+'/rest/v1/rpc/pitch_open',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:JSON.stringify({p_slug:slug,p_sid:sid,p_device:dev,p_count:!team})})
-.then(function(r){return r.ok?r.json():null}).then(function(d){
- if(!d||!d.available)return d&&d.expired?none('This preview has expired','Ask the outrr team for a fresh link, or apply to sell on outrr directly.'):none('Preview not found','Check the link the outrr team sent you.');render(d)}).catch(function(){none('Couldn\\u2019t load the preview','Please check your connection and try again.')});
-var D,cat='';
-function claimUrl(){return 'https://seller.outrr.in/?pitch='+encodeURIComponent(slug)+'&utm_source=pitch&utm_medium=preview&utm_campaign='+encodeURIComponent(slug)+'#apply'}
-function render(d){D=d;var nm=d.brand||d.name,ini=String(nm||'?').trim().split(/\\s+/).map(function(x){return x[0]}).slice(0,2).join('').toUpperCase();
- document.title=nm+' on outrr (preview)';
- var claim=d.claimed?'<span class="pv-claim" style="background:#2f7a45">\\u2713 Claimed</span>':'<a class="pv-claim" href="'+claimUrl()+'">Claim this page</a>';
- var h='<div class="pv-top" role="status"><div><b>'+(d.claimed?esc(nm)+' has claimed this page':'A sample page we made for '+esc(nm))+'</b><span>'+(d.claimed?'It goes live once the seller account is set up.':'This is how your brand could look on outrr. It\\u2019s private: only people with this link can see it.')+'</span></div>'+claim+'</div>';
- h+='<div class="sp-hero">'+(d.banner?'<img class="bn" src="'+esc(d.banner)+'" alt="">':'')+'</div>';
- h+='<div class="sp-id"><div class="sp-logo">'+(d.logo?'<img src="'+esc(d.logo)+'" alt="'+esc(nm)+' logo">':esc(ini))+'</div><div class="sp-nm"><h1>'+esc(nm)+'</h1>'+(d.tagline?'<p>'+esc(d.tagline)+'</p>':'')+'</div></div>';
- h+='<div class="sp-facts"><span class="ver">Sample page</span>'+(d.city?'<span>'+esc(d.city)+'</span>':'')+(d.categories||[]).map(function(c){return '<span>'+esc(c.title)+'</span>'}).join('')+'<span>'+d.products.length+' product'+(d.products.length===1?'':'s')+'</span></div>';
- h+='<div class="sp-bar"><h2>Your products</h2><div class="sp-chips" id="spc"></div></div><div class="grid" id="spg"></div>';
- if(d.about)h+='<section class="sp-about"><div><h2>About '+esc(nm)+'</h2><div class="crumbs" style="margin:0">'+(d.city?esc(d.city):'')+'</div></div><p>'+esc(d.about)+'</p></section>';
- h+='<div class="pv-why"><div><b>Free to join</b><span>No joining fee. Pay a commission only when you sell.</span></div><div><b>We make your images</b><span>Studio-style product photos and listings, made by outrr.</span></div><div><b>Buyers across India</b><span>Homeowners, architects and businesses shopping for outdoor living.</span></div><div><b>Paid to your bank</b><span>Weekly payouts after delivery.</span></div></div>';
- if(!d.claimed)h+='<div class="pv-end"><h2>Like your page?</h2><p>Claim it and start selling on outrr. Takes about 3 minutes; we fill in what we already know.</p><a class="pv-claim" href="'+claimUrl()+'">Claim this page</a></div><div class="pv-bar"><span>Your sample page on outrr</span><a class="pv-claim" href="'+claimUrl()+'">Claim this page</a></div>';
- else h+='<div style="height:50px"></div>';
- root.innerHTML=h;chips();grid();
- Array.prototype.forEach.call(document.querySelectorAll('.pv-claim[href]'),function(a){a.addEventListener('click',function(){if(window.otrack)otrack('pitch_claim',{path:'/preview/'+slug})})});
-}
-function chips(){var c=[{slug:'',title:'All'}].concat((D.categories||[]).filter(function(c){return D.products.some(function(p){return p.cat===c.slug})}));if(c.length<3){document.getElementById('spc').innerHTML='';return}
- document.getElementById('spc').innerHTML=c.map(function(x){return '<button class="'+(cat===x.slug?'on':'')+'" data-c="'+esc(x.slug)+'">'+esc(x.title)+'</button>'}).join('');
- Array.prototype.forEach.call(document.querySelectorAll('#spc button'),function(b){b.onclick=function(){cat=b.getAttribute('data-c');chips();grid()}})}
-function grid(){var t={};(D.categories||[]).forEach(function(c){t[c.slug]=c.title});
- var l=D.products.filter(function(p){return !cat||p.cat===cat}),g=document.getElementById('spg');
- if(!l.length){g.innerHTML='<p style="color:var(--muted);grid-column:1/-1;padding:30px 0">Your products will show here.</p>';return}
- g.innerHTML=l.map(function(p){return '<div class="card"><div class="im">'+(p.image?'<img src="'+esc(p.image)+'" alt="'+esc(p.name)+'" loading="lazy" width="400" height="400">':'')+(p.sample?'<span class="smp">Sample image</span>':'')+'</div>'
-  +'<div class="n">'+esc(p.name||'Your product')+'</div>'+(t[p.cat]?'<div class="ct">'+esc(t[p.cat])+'</div>':'')+'<div class="soon">Price on listing</div></div>'}).join('')}
-})();`
-
-const previewPage = () => `<!doctype html>
-<html lang="en-IN"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Preview | outrr</title>
-<meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="/favicon.png?v=3">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>${CSS}
-${SELLER_CSS}
-${PREVIEW_CSS}</style>
-</head><body>
-<header><div class="wrap hd"><a class="logo" href="/"><img src="/img/outrr-logo.png?v=3" alt="outrr" height="26"></a>
-<nav class="nav">${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</nav>
-<a class="cart" href="https://seller.outrr.in/?utm_source=pitch&utm_medium=preview_header">Sell on outrr</a></div></header>
-<main class="wrap" id="sp"><div class="sp-load">Loading…</div></main>
-<footer><div class="wrap cols">
-<div><b>outrr</b><br>Every Outdoor Possibility<br>${CO.group}</div>
-<div><b>Sell on outrr</b><a href="https://seller.outrr.in">Apply to sell</a><a href="mailto:${CO.email}">${CO.email}</a></div>
-</div></footer>
-<script>window.OUTRR_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
-<script src="/track.js"></script>
-<script>${PREVIEW_JS}</script>
-</body></html>
-`
-{ const f = join(ROOT, 'preview', 'index.html'); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, previewPage()) }
-console.log('Pitch preview page built: /preview/?s=<slug>')
+for (const [dir, html] of [
+  ['seller', forward('Seller', "o.set('store',q.get('s')||'');if(q.get('preview'))o.set('token',q.get('preview'));['utm_source','utm_medium','utm_campaign'].forEach(function(k){if(q.get(k))o.set(k,q.get(k))});", false)],
+  ['preview', forward('Preview', "o.set('pitch',q.get('s')||'');if(q.get('team'))o.set('team',q.get('team'));['utm_source','utm_medium','utm_campaign'].forEach(function(k){if(q.get(k))o.set(k,q.get(k))});", true)]
+]) { const f = join(ROOT, dir, 'index.html'); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, html) }
+console.log('Seller pages: /?store=<slug> (old /seller/?s= forwards) · pitch pages: /?pitch=<slug> (old /preview/?s= forwards)')
 
 export const POLICY_PATHS = Object.keys(PAGES).map(k => `/${k}/`)
 console.log(`Policy pages built: ${POLICY_PATHS.join(' ')}`)

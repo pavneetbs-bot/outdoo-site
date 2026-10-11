@@ -71,6 +71,7 @@ h1,h2,h3{font-weight:700;line-height:1.2;letter-spacing:-.01em}
 .announce{background:linear-gradient(90deg,var(--terra),var(--terra-deep));color:#fff;text-align:center;
   font-size:11.5px;padding:8px 12px;font-weight:600}
 .announce b{color:#ffe3c4}
+.pvnote{font-size:11px;color:var(--terra-deep);font-weight:600;margin-top:3px}
 
 /* header */
 header{position:sticky;top:0;z-index:60;background:#fff;border-bottom:1px solid var(--line)}
@@ -1677,6 +1678,9 @@ header{position:static!important}
 </div></footer>
 </div><!-- /home -->
 
+<!-- seller store / pitch page (store.js): /?store=<slug>, /?pitch=<slug> -->
+<div id="store" style="display:none"></div>
+
 <!-- PLP -->
 <div id="plp"><div class="wrap">
   <span class="plpback" onclick="showHome()">← Home</span>
@@ -2252,7 +2256,7 @@ const COLS = {
 };
 
 function showView(v){
-  ['home','plp','pdp','cart','checkout','account'].forEach(x=>{const el=document.getElementById(x); if(el) el.style.display = x===v?'block':'none';});
+  ['home','store','plp','pdp','cart','checkout','account'].forEach(x=>{const el=document.getElementById(x); if(el) el.style.display = x===v?'block':'none';});
   document.body.classList.toggle('pdp-open', v==='pdp');
   window.scrollTo(0,0);
 }
@@ -2470,11 +2474,16 @@ setInterval(()=>{ ci=(ci+1)%slides.length;
 
 // ---- cart ----
 let CART=[]; try{CART=JSON.parse(localStorage.getItem('outrr_cart')||'[]').filter(c=>c&&c.id&&c.q>0)}catch(e){CART=[]}
+// products from a pitch (sample) page aren't in the catalog: the cart line carries them (x), and they can't be ordered yet
+function cartX(){CART.forEach(c=>{if(c.x&&!PRODS[c.id]){PRODS[c.id]={n:c.x.n,p:+c.x.p||0,m:+c.x.m||0,r:'4.5',c:0,ship:'Orders open when this brand joins outrr',img:c.id,col:c.x.col||'',pv:c.x.pv||'sample'};IMGS[c.id]=c.x.u||'';}});}
+function cartLine(id){const x=PRODS[id];return x&&x.pv?{id,q:1,x:{n:x.n,p:x.p,m:x.m,u:IMGS[x.img]||'',col:x.col,pv:x.pv}}:{id,q:1};}
+const pvNote=x=>x&&x.pv?`<div class="pvnote">Sample product from ${String(x.pv).replace(/</g,'&lt;')} · orders open when they join outrr</div>`:'';
+cartX();
 function updBadge(){try{localStorage.setItem('outrr_cart',JSON.stringify(CART))}catch(e){}const n=CART.reduce((a,c)=>a+c.q,0);['cartn','cartn2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n;});}
 function addCart(id){id=id||curPid;if(!id||!PRODS[id]){toast('Added to cart');return;}
- const f=CART.find(c=>c.id===id); f?f.q++:CART.push({id,q:1});
+ const f=CART.find(c=>c.id===id); f?f.q++:CART.push(cartLine(id));
  updBadge(); miniCart(true); miniTitle('Added to cart ✓');}
-function buyNow(){const id=curPid;if(id&&PRODS[id]){const f=CART.find(c=>c.id===id);f?f.q++:CART.push({id,q:1});updBadge();}openCart();}
+function buyNow(){const id=curPid;if(id&&PRODS[id]){const f=CART.find(c=>c.id===id);f?f.q++:CART.push(cartLine(id));updBadge();}openCart();}
 function openCart(){renderCart();showView('cart');}
 function cartQty(id,d){const f=CART.find(c=>c.id===id);if(!f)return;f.q=Math.max(1,Math.min(10,f.q+d));updBadge();renderCart();}
 function cartRm(id){CART=CART.filter(c=>c.id!==id);updBadge();renderCart();}
@@ -2493,7 +2502,7 @@ function renderCart(){
  const lines=CART.map(c=>{const x=PRODS[c.id];
   return `<div class="cline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
    <div class="inf"><div class="nm">${x.n}</div>
-   <div class="pr">${inr(x.p)}${x.m>x.p?`<span class="mr2">${inr(x.m)}</span>`:''}</div>
+   <div class="pr">${inr(x.p)}${x.m>x.p?`<span class="mr2">${inr(x.m)}</span>`:''}</div>${pvNote(x)}
    <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1)">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1)">+</button></div>
    <span class="rm" onclick="cartRm('${c.id}')">Remove</span></div></div></div>`;}).join('');
  // cross-sell: add-ons under 15K from cols not fully in cart
@@ -2530,7 +2539,7 @@ function renderMini(){
  if(!CART.length){b.innerHTML='<div class="mcempty">Your cart is empty</div>';document.getElementById('mcSub').textContent='₹0';return;}
  b.innerHTML=CART.map(c=>{const x=PRODS[c.id];
   return `<div class="mcline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
-   <div style="flex:1;min-width:0"><div class="nm">${x.n}</div><div class="pr">${inr(x.p)}</div>
+   <div style="flex:1;min-width:0"><div class="nm">${x.n}</div><div class="pr">${inr(x.p)}</div>${pvNote(x)}
    <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1);renderMini()">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1);renderMini()">+</button></div>
    <span class="rm" onclick="cartRm('${c.id}');renderMini()">Remove</span></div></div></div>`;}).join('');
  document.getElementById('mcSub').textContent=inr(CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0));}
@@ -2598,7 +2607,7 @@ function waToggle(){document.getElementById('wachat').classList.toggle('open');}
 let offShown=false;
 function offClose(){document.getElementById('offpop').classList.remove('open');document.getElementById('opov').classList.remove('open');}
 setTimeout(()=>{if(offShown)return;offShown=true;
- if(document.body.classList.contains('flt-open')||new URLSearchParams(location.search).has('preview'))return;
+ if(document.body.classList.contains('flt-open')||/[?&](preview|store|pitch)=/.test(location.search))return;
  document.getElementById('offpop').classList.add('open');document.getElementById('opov').classList.add('open');},5000);
 
 
@@ -2648,6 +2657,7 @@ setTimeout(()=>{if(offShown)return;offShown=true;
     else if(st.v==='pdp' && PRODS[st.id]) _prod(st.id);
     else if(st.v==='cart') _cart();
     else if(st.v==='checkout') _co();
+    else if(st.v==='store' && window.storeShow) storeShow();
     else _home();
     lock=false;
   });
@@ -2881,6 +2891,8 @@ function coTotals(){
 }
 function openCheckout(){
   if(!CART.length){toast('Your cart is empty');return;}
+  const smp=CART.find(c=>PRODS[c.id]&&PRODS[c.id].pv);
+  if(smp){toast('Sample products can\'t be ordered yet. Remove them to check out.');if(document.getElementById('cart').style.display!=='block')openCart();return;}
   const go=()=>{ renderCheckout(); showView('checkout'); };
   if(window.acRequire && (window.OUTRR_SUPA||{}).url) return acRequire(go,'Sign in to check out');
   go();
@@ -3247,7 +3259,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     if(_pp && typeof openProduct === 'function' && document.getElementById('pdp')){
       if(PRODS[_pp]) try{ openProduct(_pp); }catch(e){}
     }
-    CART = CART.filter(c => PRODS[c.id]); updBadge();
+    cartX(); CART = CART.filter(c => PRODS[c.id]); updBadge();
     console.log('[outrr] live catalog loaded:', prods.length, 'products');
   }catch(e){ console.warn('[outrr] Supabase load failed, using embedded catalog', e); }
   finally{ window.__odLoaded = true; }
@@ -3288,6 +3300,7 @@ async function shareProduct(){
 </script>
 <script src="/account.js"></script>
 <script src="/track.js"></script>
+<script src="/store.js?v=1"></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };
