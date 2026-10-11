@@ -1251,20 +1251,72 @@ header{position:static!important}
 .spaces4 .bcard.big,.spaces4 .bcard.half{aspect-ratio:4/5;margin:0}
 .spaces4 .bcard h3,.spaces4 .bcard.half h3{font-size:16px}
 @media(min-width:760px){.spaces4{grid-template-columns:repeat(4,1fr);gap:16px}.spaces4 .bcard h3,.spaces4 .bcard.half h3{font-size:20px}}
-/* ---- campaign banners (img/banners) — shown by date, see OBN in the script at the end ---- */
-.obn{display:block;position:relative;border-radius:16px;overflow:hidden;cursor:pointer;container-type:inline-size;background:var(--sand,#EADCC8)}
-.obn img{display:block;width:100%;height:auto}
-.obn-sec{margin:18px 0}
+/* ---- campaign banners — HTML (real text), photos in img/banners/, shown by date (script at the end) ---- */
+.obn{display:block;position:relative;border-radius:20px;overflow:hidden;cursor:pointer;color:var(--char);text-decoration:none;font-family:'Poppins',sans-serif}
 .obn[data-act=""]{cursor:default}
-.obn-hero{position:relative;margin:14px 0 6px;border-radius:18px;overflow:hidden}
+.obn-sec{margin:22px 0}
+.obn-hero{position:relative;margin:14px 0 8px;border-radius:20px;overflow:hidden}
 .obn-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .obn-track::-webkit-scrollbar{display:none}
 .obn-track .obn{flex:0 0 100%;scroll-snap-align:start;border-radius:0}
-.obn-dots{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:6px;pointer-events:none}
-.obn-dots button{pointer-events:auto;width:8px;height:8px;border-radius:5px;border:0;padding:0;background:rgba(255,255,255,.6);box-shadow:0 0 0 1px rgba(0,0,0,.15);cursor:pointer;transition:width .2s}
-.obn-dots button.on{width:22px;background:#fff}
-.obn-cd{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.obn-cd b{font-weight:800}.obn-cd i{font-style:normal;font-weight:600;letter-spacing:.12em;margin-top:.5em}
+.obn-dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:6px;pointer-events:none;z-index:4}
+.obn-dots button{pointer-events:auto;width:8px;height:8px;border-radius:5px;border:0;padding:0;background:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(46,46,46,.25);cursor:pointer;transition:width .2s}
+.obn-dots button.on{width:24px;background:var(--terra)}
+.ob-eye{display:block;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.ob-pill{display:inline-block;background:var(--char);color:#fff;font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:6px 12px}
+.ob-h{font-size:29px;font-weight:800;line-height:1.08;letter-spacing:-.02em;margin:12px 0 0}
+.ob-h em{font-style:normal;color:var(--terra)}
+.ob-p{font-size:14px;line-height:1.55;margin:10px 0 0;max-width:460px;opacity:.85}
+.ob-btn{display:inline-block;margin-top:16px;background:var(--terra);color:#fff;font-size:14px;font-weight:600;border-radius:999px;padding:12px 22px}
+.ob-ph img,.ob-card img,.ob-bg{display:block;width:100%;height:100%;object-fit:cover}
+/* hero 1: sneak peek */
+.ob-peek{background:#F6F1E7;display:flex;flex-direction:column;min-height:560px}
+.ob-peek .ob-tx{padding:26px 22px 0;position:relative;z-index:2}
+.ob-peek .ob-art{position:relative;flex:1;min-height:250px;margin-top:10px}
+.ob-arc{position:absolute;right:-30%;bottom:-55%;width:120%;aspect-ratio:1;border-radius:50%;background:var(--terra)}
+.ob-card{position:absolute;bottom:34px;border:5px solid #fff;border-radius:16px;overflow:hidden;box-shadow:0 14px 34px rgba(0,0,0,.22)}
+.ob-card.l{left:12%;width:36%;aspect-ratio:3/4.6;transform:rotate(-3deg)}
+.ob-card.r{left:47%;width:40%;aspect-ratio:3/4.4;bottom:48px;transform:rotate(3deg)}
+.ob-tag{display:none;position:absolute;right:16px;bottom:12px;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;z-index:2}
+/* hero 2: countdown */
+.ob-cd{background:#1E1D1B;color:#fff;min-height:560px;display:flex;align-items:center;justify-content:center;text-align:center}
+.ob-cd .ob-bg{position:absolute;inset:0;opacity:.45}
+.ob-cd::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(30,29,27,.55),rgba(30,29,27,.9))}
+.ob-cd .ob-tx{position:relative;z-index:2;padding:24px 16px}
+.ob-cd .ob-eye{color:#F4C76B}
+.ob-tiles{display:flex;gap:8px;justify-content:center;margin:16px 0 4px}
+.obn-cd{display:flex;flex-direction:column;align-items:center;justify-content:center;width:72px;height:84px;background:#F6F1E7;border-radius:14px;color:var(--terra);font-variant-numeric:tabular-nums}
+.obn-cd b{font-size:34px;font-weight:800;line-height:1}
+.obn-cd i{font-style:normal;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--char);margin-top:6px}
+.ob-cd .ob-p{margin:14px auto 0;font-size:15px;opacity:.9}
+.ob-cd .ob-p b{color:#F4C76B;white-space:nowrap}
+.ob-cd .ob-bg{opacity:.6}
+/* section banners: photo + text */
+.ob-kit,.ob-diwali{display:flex;flex-direction:column}
+.ob-kit{background:var(--terra);color:#fff}
+.ob-diwali{background:#1E1D1B;color:#fff}
+.ob-kit .ob-ph,.ob-diwali .ob-ph{aspect-ratio:16/10}
+.ob-kit .ob-tx,.ob-diwali .ob-tx{padding:22px 22px 26px}
+.ob-kit .ob-eye{color:#FBE3D6}.ob-diwali .ob-eye,.ob-diwali .ob-h em{color:#F4C76B}
+.ob-kit .ob-btn{background:#fff;color:var(--terra)}
+.ob-diwali .ob-btn{background:#F4C76B;color:#1E1D1B}
+@media(min-width:760px){
+  .ob-h{font-size:44px}.ob-p{font-size:16px}.ob-btn{font-size:15px;padding:13px 26px}
+  .ob-peek{flex-direction:row;align-items:center;min-height:480px}
+  .ob-peek .ob-tx{flex:0 0 52%;padding:40px 0 40px 6%}
+  .ob-peek .ob-art{align-self:stretch;margin:0}
+  .ob-arc{right:-18%;bottom:-40%;width:110%}
+  .ob-card.l{left:6%;width:40%;bottom:60px}.ob-card.r{left:44%;width:44%;bottom:80px}
+  .ob-tag{display:block}
+  .ob-kit .ob-h,.ob-diwali .ob-h{font-size:40px}
+  .ob-cd{min-height:480px}.obn-cd{width:110px;height:122px;border-radius:18px}.obn-cd b{font-size:54px}.obn-cd i{font-size:11px}.ob-tiles{gap:16px;margin-top:22px}
+  .ob-kit,.ob-diwali{flex-direction:row;min-height:400px}
+  .ob-kit .ob-ph,.ob-diwali .ob-ph{aspect-ratio:auto;flex:0 0 52%;order:2}
+  .ob-kit .ob-tx,.ob-diwali .ob-tx{flex:1;align-self:center;padding:40px 5% 40px 6%}
+  .ob-kit .ob-ph{-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%);mask-image:linear-gradient(90deg,transparent,#000 22%)}
+  .ob-diwali .ob-ph{padding:26px 26px 26px 0}.ob-diwali .ob-ph img{border-radius:16px}
+}
+@media(min-width:1100px){.ob-h{font-size:50px}.ob-peek,.ob-cd{min-height:500px}}
 .obn-tile{position:relative;padding:0;border-radius:12px;overflow:hidden;cursor:pointer;background:var(--sand,#EADCC8);border:0}
 .obn-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top}
 .otiles .obn-tile{min-height:100%;aspect-ratio:4/5}
@@ -1331,7 +1383,29 @@ header{position:static!important}
 <div id="home">
 <div class="wrap">
 
-<div class="obn-hero" id="obnHero" hidden><div class="obn-track"><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="Take a sneak peek. Shop this Dussehra — preview the outrr marketplace"><picture><source media="(max-width:760px)" srcset="img/banners/b1-sneak-peek-m.jpg"><img src="img/banners/b1-sneak-peek.jpg" alt="Take a sneak peek. Shop this Dussehra — preview the outrr marketplace" width="1800" height="563" fetchpriority="high" decoding="async"></picture></a><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="" aria-label="outrr opens in — explore and shop India's first outdoor marketplace, 20 Oct"><picture><source media="(max-width:760px)" srcset="img/banners/b9-countdown-m.jpg"><img src="img/banners/b9-countdown.jpg" alt="outrr opens in — explore and shop India's first outdoor marketplace, 20 Oct" width="1800" height="563" loading="lazy" decoding="async"></picture><span class="obn-cd" data-cd="d" style="left:26.57%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="h" style="left:39.07%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="m" style="left:51.63%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span><span class="obn-cd" data-cd="s" style="left:64.13%;top:26.55%;width:9.33%;height:28.15%;color:#BE5633;font-size:5.4cqw"><b>--</b></span></a></div><div class="obn-dots" role="tablist" aria-label="Banners"></div></div>
+<div class="obn-hero" id="obnHero" hidden><div class="obn-track">
+    <a class="obn ob-peek" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="Take a sneak peek. Shop this Dussehra. Explore the store">
+      <div class="ob-tx">
+        <span class="ob-pill">India's first marketplace for outdoors</span>
+        <h2 class="ob-h">Take a sneak peek.<br><em>Shop this Dussehra.</em></h2>
+        <p class="ob-p">Furniture, decor, lights and planters for every balcony, terrace and lawn. Direct from the manufacturer.</p>
+        <span class="ob-btn">Explore the store →</span>
+      </div>
+      <div class="ob-art"><span class="ob-arc"></span>
+        <span class="ob-card l"><img src="img/banners/ph-garden-night.jpg" alt="Garden lounge chair with glowing lanterns" fetchpriority="high"></span>
+        <span class="ob-card r"><img src="img/banners/ph-terrace-sunset.jpg" alt="Rooftop lounge set at sunset" fetchpriority="high"></span>
+        <span class="ob-tag">Live 20.10 · outrr.in</span>
+      </div>
+    </a>
+    <div class="obn ob-cd" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="" aria-label="outrr opens on 20 October">
+      <img class="ob-bg" src="img/banners/ph-night.jpg" alt="" loading="lazy">
+      <div class="ob-tx">
+        <span class="ob-eye">outrr opens in</span>
+        <div class="ob-tiles"><span class="obn-cd" data-cd="d"><b>--</b><i>Days</i></span><span class="obn-cd" data-cd="h"><b>--</b><i>Hours</i></span><span class="obn-cd" data-cd="m"><b>--</b><i>Mins</i></span><span class="obn-cd" data-cd="s"><b>--</b><i>Secs</i></span></div>
+        <p class="ob-p">India's first outdoor marketplace opens this <b>Dussehra, 20 Oct</b>.</p>
+      </div>
+    </div>
+  </div><div class="obn-dots" role="tablist" aria-label="Banners"></div></div>
 
     <div class="hero2" onclick="goSpaces()">
     <div class="im"><img data-img="HERO" alt="Outdoor living"></div>
@@ -1366,7 +1440,15 @@ header{position:static!important}
       <div class="tx"><h3>The Garden</h3></div><span class="sn">Shop garden →</span></div>
   </div>
 
-<div class="obn-sec"><a class="obn" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="pkg" role="link" tabindex="0" aria-label="Pick a theme. Get the whole look — ready-made kits for balconies, terraces and gardens"><picture><source media="(max-width:760px)" srcset="img/banners/b3-theme-kits-m.jpg"><img src="img/banners/b3-theme-kits.jpg" alt="Pick a theme. Get the whole look — ready-made kits for balconies, terraces and gardens" width="1800" height="563" loading="lazy" decoding="async"></picture></a></div>
+<div class="obn-sec"><a class="obn ob-kit" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="pkg" role="link" tabindex="0" aria-label="Pick a theme. Get the whole look. See room packages">
+      <div class="ob-ph"><img src="img/banners/ph-lounge.jpg" alt="Terrace lounge with planters" loading="lazy"></div>
+      <div class="ob-tx">
+        <span class="ob-eye">Room packages</span>
+        <h2 class="ob-h">Pick a theme.<br>Get the whole look.</h2>
+        <p class="ob-p">Ready-made sets for balconies, terraces and gardens, at bundle prices.</p>
+        <span class="ob-btn">See room packages →</span>
+      </div>
+    </a></div>
 
     <div class="sec2">
     <div class="sh"><h2>Complete rooms, one order</h2><p>Curated packages at bundle pricing — swap anything, we'll re-price it on WhatsApp.</p></div>
@@ -1385,7 +1467,15 @@ header{position:static!important}
   </div>
 
   <div class="sec2">
-    <a class="obn" data-from="" data-to="2026-11-09T00:00:00+05:30" data-act="col:lighting" role="link" tabindex="0" aria-label="Light up your balcony for Diwali — lanterns, string lights, planters and seating"><picture><source media="(max-width:760px)" srcset="img/banners/b7-diwali-m.jpg"><img src="img/banners/b7-diwali.jpg" alt="Light up your balcony for Diwali — lanterns, string lights, planters and seating" width="1800" height="563" loading="lazy" decoding="async"></picture></a>
+    <a class="obn ob-diwali" data-from="" data-to="2026-11-09T00:00:00+05:30" data-act="col:lighting" role="link" tabindex="0" aria-label="Light up your balcony for Diwali. Shop festive lighting">
+      <div class="ob-ph"><img src="img/banners/ph-diwali-balcony.jpg" alt="Balcony with glowing lanterns and string lights" loading="lazy"></div>
+      <div class="ob-tx">
+        <span class="ob-eye">Dussehra to Diwali</span>
+        <h2 class="ob-h">Light up your<br><em>balcony for Diwali.</em></h2>
+        <p class="ob-p">Lanterns, string lights, planters and seating to make your balcony glow this festive season.</p>
+        <span class="ob-btn">Shop festive lighting →</span>
+      </div>
+    </a>
     <div class="bcard big" data-obn-alt onclick="openCol('lighting')" style="margin-bottom:0">
       <div class="im"><img data-img="PARTY" alt="Diwali"></div>
       <div class="tx"><h3>Light up this Diwali</h3></div><span class="sn">Festive lighting →</span></div>
@@ -3210,7 +3300,7 @@ async function shareProduct(){
 
 <script>
 /* ---- campaign banners: date windows (IST), live countdown, hero slider, grid tiles ----
-   Banners: <a class="obn" data-from data-to data-act>, images in img/banners/.
+   Banners: .obn elements with data-from / data-to / data-act (HTML + photos in img/banners/).
    Tiles (vertical images) go into product grids via OBN_TILES. Edit dates here. */
 (function(){
   var LAUNCH = new Date('2026-10-20T00:00:00+05:30').getTime();
@@ -3232,7 +3322,7 @@ async function shareProduct(){
     a.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); obnGo(a.getAttribute('data-act')); } });
   }
   // 1. date windows
-  document.querySelectorAll('a.obn').forEach(function(a){
+  document.querySelectorAll('.obn').forEach(function(a){
     if(!live(t(a.getAttribute('data-from')), t(a.getAttribute('data-to')))){ var w = a.closest('.obn-sec'); (w || a).remove(); return; }
     wire(a);
     var alt = a.parentNode.querySelector('[data-obn-alt]'); if(alt) alt.style.display = 'none';
@@ -3262,7 +3352,7 @@ async function shareProduct(){
     var pad = function(n){ return (n < 10 ? '0' : '') + n; };
     var tick = function(){
       var ms = LAUNCH - Date.now();
-      if(ms <= 0){ document.querySelectorAll('.obn-cd').forEach(function(c){ var a = c.closest('a.obn'); var w = a && a.closest('.obn-sec'); (w || a) && (w || a).remove(); }); return false; }
+      if(ms <= 0){ document.querySelectorAll('.obn-cd').forEach(function(c){ var a = c.closest('.obn'); var w = a && a.closest('.obn-sec'); (w || a) && (w || a).remove(); }); return false; }
       var s = Math.floor(ms / 1000), v = { d: Math.floor(s / 86400), h: Math.floor(s % 86400 / 3600), m: Math.floor(s % 3600 / 60), s: s % 60 };
       cds.forEach(function(c){ c.firstChild.textContent = pad(v[c.getAttribute('data-cd')]); });
       return true;
