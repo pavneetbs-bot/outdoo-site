@@ -194,6 +194,7 @@
               ${full && ['requested', 'approved'].includes(i.return.status) ? ` <a onclick="acCancelReturn('${i.return.id}')">Withdraw</a>` : ''}</div>` : ''}
             ${full && i.can_return ? `<div class="sm"><a class="ao-act" onclick="acReturn('${o.id}','${i.id}')">Return this item</a> <span class="mut">until ${d8(i.return_until)}</span></div>` : ''}
             ${i.status === 'delivered' && !i.can_return && !i.return && i.return_until ? `<div class="mut sm">Return window closed ${d8(i.return_until)}</div>` : ''}
+            ${full && i.status === 'delivered' ? `<div class="sm"><a class="ao-act" onclick="acRate('${o.id}')">★ Rate &amp; review</a></div>` : ''}
           </div></div>`).join('')}</div>
       ${full ? `<div class="ao-addr mut sm"><b>Deliver to</b> ${esc(o.customer_name)}, ${esc(o.address)}, ${esc(o.city)}, ${esc(o.state)} ${esc(o.pincode)} · ${esc(o.phone)}
         ${o.gstin ? `<br><b>GST invoice</b> ${esc(o.company_name)} · ${esc(o.gstin)}` : ''}</div>` : `<div class="ao-addr mut sm">Delivering to ${esc(o.city)}, ${esc(o.state)} ${esc(o.pincode)}</div>`}
@@ -445,4 +446,85 @@
   if (qs.has('account') || location.hash === '#account') setTimeout(() => acOpen(), 300)
   if (qs.has('wishlist')) setTimeout(() => acWishlist(), 400)
   if (qs.has('track') || location.hash === '#track') setTimeout(() => acTrack(qs.get('track') || ''), 300)
+
+  // ---------------------------------------------------------------- reviews (035): one per delivered product, from the email link or My account
+  window.acEmail = () => sess?.email || ''
+  const STAR_TXT = ['', 'Poor', 'Not great', 'Okay', 'Good', 'Loved it']
+  let rv = null      // { token, data, cur: { [itemId]: { rating, comment, files: [], photos: [] } } }
+  const starsHtml = (id, n) => `<div class="rv-st" role="radiogroup" aria-label="Rating">${[1, 2, 3, 4, 5].map(k =>
+    `<button type="button" role="radio" aria-checked="${k === n}" aria-label="${k} star${k > 1 ? 's' : ''}" class="${k <= n ? 'on' : ''}" onclick="rvStar('${id}',${k})">★</button>`).join('')}<span>${STAR_TXT[n] || 'Tap to rate'}</span></div>`
+  function rvDraw() {
+    const items = rv.data.items.filter(i => i.can_review)
+    const body = !items.length ? `<p>Reviews open once your items are delivered. We'll email you then.</p>` : `
+      <p class="mut sm">Order ${esc(rv.data.order_no)} · rate each product. Photos of it in your space help other buyers the most.</p>
+      ${items.map(i => { const c = rv.cur[i.id]; return `<div class="rv-item" id="rv-${i.id}">
+        <div class="ac-ri"><div class="im">${i.image_url ? `<img src="${esc(i.image_url)}" alt="">` : ''}</div><div><b>${esc(i.name)}</b>
+          ${i.review ? `<div class="mut sm">${i.review.status === 'published' ? 'Your review is live on outrr.in' : 'Thanks! Your review is being checked'} · you can edit it</div>` : ''}</div></div>
+        ${starsHtml(i.id, c.rating)}
+        <div class="fld"><label>YOUR REVIEW (optional)</label><textarea rows="3" maxlength="2000" placeholder="What did you like? How is the quality, size, colour?" oninput="rvTxt('${i.id}',this.value)">${esc(c.comment)}</textarea></div>
+        <div class="fld"><label>PHOTOS (up to 5)</label><input type="file" accept="image/*" multiple onchange="rvPick('${i.id}',this)">
+          <div class="ac-ph" id="rvph-${i.id}">${c.photos.map(p => `<img src="${S().url}/storage/v1/object/public/review-photos/${esc(p)}" alt="">`).join('')}${c.files.map(f => `<img src="${URL.createObjectURL(f)}" alt="">`).join('')}</div></div>
+        <button class="btn" id="rvb-${i.id}" onclick="rvSend('${i.id}')">${i.review ? 'Update review' : 'Submit review'}</button>
+        <div class="ac-err" id="rve-${i.id}" hidden></div></div>` }).join('')}`
+    modal(`Rate your ${items.length > 1 ? 'products' : 'product'}`, body, `<button class="btn ghost" onclick="acClose()">Done</button>`)
+  }
+  window.rvOpen = async function (tokenStr) {
+    if (!S().url) return say('Reviews are unavailable right now')
+    try {
+      const d = await rpc('review_order', { p_token: tokenStr }, false)
+      rv = { token: tokenStr, data: d, cur: {} }
+      for (const i of d.items) rv.cur[i.id] = { rating: i.review?.rating || 0, comment: i.review?.comment || '', photos: i.review?.photos || [], files: [] }
+      rvDraw()
+    } catch (e) { say(e.message) }
+  }
+  window.acRate = async function (oid) {
+    try { const t = await rpc('my_review_token', { p_order: oid }); if (t) rvOpen(t); else say('Could not open the review form') } catch (e) { say(e.message) }
+  }
+  window.rvStar = (id, n) => { rv.cur[id].rating = n; const el = document.querySelector(`#rv-${id} .rv-st`); if (el) el.outerHTML = starsHtml(id, n) }
+  window.rvTxt = (id, v) => { rv.cur[id].comment = v }
+  window.rvPick = (id, inp) => {
+    const c = rv.cur[id]; c.files = [...c.files, ...[...inp.files].filter(f => /^image\//.test(f.type))].slice(0, Math.max(0, 5 - c.photos.length))
+    $('rvph-' + id).innerHTML = c.photos.map(p => `<img src="${S().url}/storage/v1/object/public/review-photos/${esc(p)}" alt="">`).join('') + c.files.map(f => `<img src="${URL.createObjectURL(f)}" alt="">`).join('')
+  }
+  window.rvSend = async function (id) {
+    const c = rv.cur[id], err = m => { const e = $('rve-' + id); e.textContent = m; e.hidden = false }
+    if (!c.rating) return err('Tap the stars to rate it first')
+    busy('rvb-' + id, true, c.files.length ? 'Uploading photos…' : 'Sending…')
+    try {
+      const t = (await token()) || S().anon
+      for (const f of c.files) {
+        const path = `${rv.token}/${id}-${Date.now()}-${c.photos.length}.jpg`
+        const r = await fetch(`${S().url}/storage/v1/object/review-photos/${path}`, { method: 'POST', headers: { apikey: S().anon, Authorization: 'Bearer ' + t, 'Content-Type': 'image/jpeg' }, body: await shrink(f) })
+        if (!r.ok) throw new Error('Photo upload failed. Try smaller photos or skip them.')
+        c.photos.push(path)
+      }
+      c.files = []
+      await rpc('submit_review', { p_token: rv.token, p_item: id, p_rating: c.rating, p_comment: c.comment, p_photos: c.photos }, false)
+      const it = rv.data.items.find(x => x.id === id); it.review = { rating: c.rating, comment: c.comment, photos: c.photos, status: 'pending' }
+      const box = $('rv-' + id); if (box) box.innerHTML = `<div class="rv-done">✓ Thanks for rating <b>${esc(it.name)}</b> ${'★'.repeat(c.rating)}. We check every review before it goes live.</div>`
+    } catch (e) { busy('rvb-' + id, false, 'Submit review'); err(e.message) }
+  }
+
+  // product page: published reviews from verified buyers
+  window.rvPdp = async function (sku) {
+    const box = $('pdRevList'); if (!box || !S().url) return
+    box.dataset.sku = sku
+    try {
+      const d = await rpc('product_reviews_public', { p_sku: sku }, false)
+      if (box.dataset.sku !== sku) return
+      if (!d || !d.count) { box.innerHTML = '<p class="rv-none">No reviews yet. Reviews from verified buyers appear here after delivery.</p>'; return }
+      const bar = k => { const n = d.stars[k] || 0; return `<div class="rv-bar"><span>${k}★</span><i><b style="width:${Math.round(n / d.count * 100)}%"></b></i><span>${n}</span></div>` }
+      box.innerHTML = `<div class="rv-sum"><div class="rv-avg"><b>${d.avg}</b><span>★</span><small>${d.count} review${d.count > 1 ? 's' : ''}</small></div><div class="rv-bars">${[5, 4, 3, 2, 1].map(bar).join('')}</div></div>
+        ${d.reviews.map(r => `<div class="review"><div class="rh"><span class="st">${r.rating} ★</span><span class="nm2">${esc(r.name)}</span><span class="dt">${esc(r.city || '')}${r.city ? ' · ' : ''}${d8(r.date)} · Verified buyer</span></div>
+          ${r.comment ? `<p>${esc(r.comment)}</p>` : ''}
+          ${(r.photos || []).length ? `<div class="rv-pp">${r.photos.map(p => `<a href="${S().url}/storage/v1/object/public/review-photos/${esc(p)}" target="_blank" rel="noopener"><img src="${S().url}/storage/v1/object/public/review-photos/${esc(p)}" alt="Customer photo" loading="lazy"></a>`).join('')}</div>` : ''}</div>`).join('')}`
+      const R = $('pdR'), C = $('pdC'); if (R) R.textContent = d.avg + ' ★'; if (C) C.textContent = d.count + ' rating' + (d.count > 1 ? 's' : '')
+    } catch (e) { /* keep the placeholder */ }
+  }
+  const rvHash = () => {
+    const h = window.__initHash || location.hash; window.__initHash = ''
+    const m = h.match(/^#review=([0-9a-f-]{36})/i); if (m) setTimeout(() => rvOpen(m[1]), 400)
+    const t = h.match(/^#track=([A-Z0-9-]+)/i); if (t) setTimeout(() => acTrack(decodeURIComponent(t[1])), 400)
+  }
+  rvHash(); addEventListener('hashchange', rvHash)
 })()

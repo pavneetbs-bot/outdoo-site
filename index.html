@@ -951,6 +951,21 @@ header{position:static!important}
 .cmpsec.all .cmp tr.same{display:table-row}
 @media(min-width:900px){.cmp{font-size:13px}.cmp th{width:150px;padding-left:14px}.cmp td{padding:12px 14px}.cmp .ci .im{max-width:170px}.cmp-hd b{font-size:18px}.cmp .cadd{max-width:170px}}
 
+
+/* reviews (035) */
+.rv-none{font-size:13px;color:var(--muted)}
+.rv-sum{display:flex;gap:18px;align-items:center;margin:4px 0 10px}
+.rv-avg{display:flex;flex-direction:column;align-items:center;min-width:70px}
+.rv-avg b{font-size:28px;line-height:1}.rv-avg span{color:#E3A008}.rv-avg small{font-size:11px;color:var(--muted)}
+.rv-bars{flex:1;display:flex;flex-direction:column;gap:3px}
+.rv-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.rv-bar i{flex:1;height:6px;background:var(--sand-soft);border-radius:3px;overflow:hidden}.rv-bar i b{display:block;height:100%;background:var(--olive)}
+.rv-pp{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.rv-pp img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.rv-item{border-top:1px solid var(--line);padding:14px 0}.rv-item:first-of-type{border-top:0}
+.rv-st{display:flex;align-items:center;gap:2px;margin:4px 0 10px}
+.rv-st button{background:none;border:0;font-size:30px;line-height:1;color:#d8d2c5;padding:0 2px;cursor:pointer}
+.rv-st button.on{color:#E3A008}.rv-st span{margin-left:8px;font-size:13px;color:var(--muted)}
+.rv-done{background:#EEF3EA;color:#3c4a33;border-radius:10px;padding:12px 14px;font-size:13.5px}
 /* ===== My account (account.js) ===== */
 .ac{padding-bottom:90px}
 .ac .pagetop{justify-content:flex-start!important;text-align:left!important}.ac .pagetop h2{margin:0!important;flex:none}
@@ -1671,7 +1686,7 @@ header{position:static!important}
         </div></div>
       
       <div class="acc"><div class="acc-h" onclick="accT(this)">Reviews<span class="pm">+</span></div>
-        <div class="acc-b"><p style="font-size:13px;color:var(--muted)">No reviews yet. Reviews from verified buyers will appear here after delivery.</p><span id="pdRevAvg" hidden></span><span id="pdRevCnt" hidden></span></div></div>
+        <div class="acc-b"><div id="pdRevList"><p class="rv-none">No reviews yet. Reviews from verified buyers appear here after delivery.</p></div><span id="pdRevAvg" hidden></span><span id="pdRevCnt" hidden></span></div></div>
             <div class="acc"><div class="acc-h" onclick="accT(this)">All offers<span class="pm">+</span></div>
         <div class="acc-b"><ul class="speclist">
           <li><b>OUTRR5</b> — extra 5% off, auto-applied at cart</li>
@@ -2226,6 +2241,7 @@ function openProduct(id){
     return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt=""></div>
       <div class="bd"><div class="nm">${y.n}</div><div class="pr">${inr(y.p)}</div>${tbHTML(i)}</div></div>`;}).join('');
   try{cmpRender(id);}catch(e){console.warn(e)}
+  try{const rl=document.getElementById('pdRevList'); if(rl) rl.innerHTML='<p class="rv-none">Loading reviews…</p>'; window.rvPdp&&rvPdp(id);}catch(e){}
   showView('pdp');
 }
 // ---- compare with similar items (Amazon-style) ----
@@ -2501,6 +2517,7 @@ setTimeout(()=>{if(offShown)return;offShown=true;
     lock=false;
   });
 
+  window.__initHash=location.hash;   // #review= / #track= links from emails (account.js)
   history.replaceState({v:'home'},'',location.pathname+location.search);
 })();
 
@@ -2742,7 +2759,7 @@ function renderCheckout(){
     <div class="cobox"><h3>Contact &amp; delivery address</h3><div id="coAcct"></div>
       <div class="f2"><div class="fld"><label>FULL NAME</label><input id="coName" placeholder="Your name" value="${(coLast.name||'').replace(/"/g,'')}"><div class="msg">Please enter your name</div></div>
       <div class="fld"><label>MOBILE</label><input id="coPh" maxlength="10" inputmode="numeric" placeholder="10-digit number" value="${coLast.phone||''}"><div class="msg">Enter a valid 10-digit number</div></div></div>
-      <div class="fld"><label>EMAIL (optional)</label><input id="coEm" placeholder="you@email.com" value="${(coLast.email||'').replace(/"/g,'')}"><div class="msg">Enter a valid email</div></div>
+      <div class="fld"><label>EMAIL <span style="font-weight:400;text-transform:none">(order updates and invoice)</span></label><input id="coEm" type="email" autocomplete="email" placeholder="you@email.com" value="${(coLast.email||(window.acEmail&&acEmail())||'').replace(/"/g,'')}"><div class="msg">Enter a valid email for order updates</div></div>
       <div class="fld"><label>ADDRESS</label><textarea id="coAd" rows="2" placeholder="Flat / house, street, landmark">${(coLast.address||'').replace(/</g,'')}</textarea><div class="msg">Please enter your address</div></div>
       <div class="f2"><div class="fld"><label>CITY</label><input id="coCity" placeholder="City" value="${(coLast.city||'').replace(/"/g,'')}"><div class="msg">Required</div></div>
       <div class="fld"><label>PINCODE</label><input id="coPin" maxlength="6" inputmode="numeric" placeholder="110001" value="${coLast.pincode||''}"><div class="msg">6-digit pincode</div></div></div>
@@ -2791,7 +2808,7 @@ async function placeOrder(){
   let ok=true;
   ok=coBad('coName',v('coName').length>1)&&ok;
   ok=coBad('coPh',/^[6-9]\d{9}$/.test(v('coPh')))&&ok;
-  ok=coBad('coEm',!v('coEm')||/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v('coEm')))&&ok;
+  ok=coBad('coEm',/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(v('coEm')))&&ok;
   ok=coBad('coAd',v('coAd').length>6)&&ok;
   ok=coBad('coCity',v('coCity').length>1)&&ok;
   ok=coBad('coPin',/^\d{6}$/.test(v('coPin')))&&ok;
