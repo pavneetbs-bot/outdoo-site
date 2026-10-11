@@ -16,7 +16,7 @@ const CO = {
   legal: 'Sunshine Upgrades Private Limited',
   brand: 'outrr',
   group: 'A LifeWall Group Company',
-  email: 'orders@outrr.in',
+  email: 'support@outrr.in',
   city: 'New Delhi',
   returnDays: 7,
   damageHours: 48,
