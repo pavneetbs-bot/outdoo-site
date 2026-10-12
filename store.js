@@ -23,7 +23,7 @@
     '.sthero img{width:100%;height:100%;object-fit:cover;display:block}',
     '.sthero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(20,18,14,.72) 0%,rgba(20,18,14,.35) 45%,rgba(20,18,14,0) 75%)}',
     '.sthero .tx{position:absolute;z-index:2;left:max(16px,calc((100vw - 1132px)/2));top:50%;transform:translateY(-62%);color:#fff;max-width:540px;padding-right:16px}',
-    '.sthero.own+.wrap .stcard{margin-top:14px}',
+    '.stban{display:block;width:100%;height:auto;max-height:min(520px,70vw);object-fit:contain;border-radius:18px;background:var(--sand-soft)}',
     '.sthero.own{height:clamp(200px,31vw,470px);background:var(--sand-soft)}.sthero.own::after{display:none}.sthero.own img{object-position:center}',
     '.stauto{display:grid;grid-template-columns:1fr 1.15fr;min-height:clamp(260px,32vw,460px);background:var(--bg)}',
     '.stauto .tx{align-self:center;padding:28px 28px 64px max(16px,calc((100vw - 1132px)/2));color:var(--char)}',
@@ -328,11 +328,12 @@
     renderBody()
   }
   // banner: one template for every store: a coloured panel for their main category (name, tagline, product
-  // thumbnails) beside a picture: their own banner, or else the category photo. Text never sits on the picture.
+  // thumbnails) beside the category photo. Their own banner (often with offers written on it) is never cropped:
+  // it shows whole, at its own shape, as the first banner under the store menu.
   var THEME = { planters: ['#E6EDE0', '#3F5A35'], furniture: ['#EFE4D4', '#7A4A2E'], lighting: ['#2E2E2E', '#F2C76E'], shade: ['#E3E0D8', '#4B5A63'], art: ['#F3E3DA', '#A84F33'], furnishings: ['#F4EADF', '#8A4B5C'] }
   function heroHTML() {
     var n = {}, main = ''; IDS.forEach(function (id) { var c = PRODS[id].col; n[c] = (n[c] || 0) + 1; if (!main || n[c] > n[main]) main = c })
-    var col = COLS[main] || {}, th = THEME[main] || ['#F4EADF', '#A84F33'], pic = D.banner || IMGS[col.img] || imgOf(IDS[0])
+    var col = COLS[main] || {}, th = THEME[main] || ['#F4EADF', '#A84F33'], pic = IMGS[col.img] || imgOf(IDS[0])
     var tag = String(D.tagline || col.tag || '').replace(/\s*\|.*$/, ''); if (tag.length > 110) tag = tag.slice(0, 107).replace(/\s+\S*$/, '') + '…'
     var thumbs = IDS.filter(function (id) { return imgOf(id) }).slice(0, 3)
     return '<div class="stauto" style="--bg:' + th[0] + ';--ac:' + th[1] + '"><div class="tx"><div class="k">Now on outrr · ' + esc(col.t || 'Outdoor living') + '</div>'
@@ -369,6 +370,7 @@
   }
   function homeHTML() {
     var h = '', top = IDS.slice(0, 4)
+    if (D.banner) h += '<div class="sec2"><img class="stban" src="' + esc(D.banner) + '" alt="' + esc(NAME) + '" loading="lazy"></div>'
     // two big banners: the two biggest categories (or two top products)
     var big = CATS.slice().sort(function (a, b) { return b.ids.length - a.ids.length })
     var pair = big.length >= 2 ? big.slice(0, 2).map(function (c) { return { img: imgOf(c.ids[0]), k: 'Collection', t: c.title, go: "stTab('c:" + c.slug.replace(/'/g, "\\'") + "')", cta: 'Shop ' + c.title.toLowerCase() } })
