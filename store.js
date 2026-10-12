@@ -212,7 +212,7 @@
   // kits: the seller's own products put together (one per category mix), added to the cart in one tap
   // pitch pages: the standard space kits (admin → Kit templates) = 2 of the prospect's products + one product from
   // other sellers on outrr for each other category of the kit, with the kit's styled picture
-  var TPL = null, FILL = {}
+  var TPL = null, FILL = {}, need0 = []
   function loadKits() {
     var H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon }
     return fetch(S.url + '/rest/v1/kit_templates?active=eq.true&select=slug,title,blurb,categories,image_url&order=sort', { headers: H })
@@ -220,7 +220,8 @@
         TPL = t || []
         var own = {}; IDS.forEach(function (id) { own[PRODS[id].col] = 1 })
         var need = []; TPL.forEach(function (k) { (k.categories || []).forEach(function (c) { if (!own[c] && need.indexOf(c) < 0) need.push(c) }) })
-        return need.length ? rpc('kit_fill', { p_cats: need, p_per: 6 }) : []
+        need0 = need
+        return need.length ? rpc('kit_fill', { p_cats: need, p_per: 6 }).catch(function () { return [] }) : []
       }).then(function (l) {
         FILL = {}
         ;(l || []).forEach(function (p) {
@@ -228,6 +229,12 @@
           PRODS[p.sku].sl = p.seller
           ;(FILL[p.collection_slug] = FILL[p.collection_slug] || []).push(p.sku)
         })
+        // before sellers go live the storefront shows the built-in catalog (made by Tersoro): use it for empty categories
+        need0.forEach(function (c) { if (FILL[c]) return
+          var l = Object.keys(PRODS).filter(function (k) { var x = PRODS[k]; return x.col === c && !x.pv && x.p > 0 && IDS.indexOf(k) < 0 && IMGS[x.img] })
+          l.forEach(function (k) { if (!PRODS[k].sl) PRODS[k].sl = 'Tersoro' }); if (l.length) FILL[c] = l })
+        // kits stay affordable: the lower-priced pieces of each category first
+        Object.keys(FILL).forEach(function (c) { FILL[c] = FILL[c].sort(function (a, b) { return PRODS[a].p - PRODS[b].p }).slice(0, 6) })
         renderBody()
       }).catch(function () { TPL = []; renderBody() })
   }
@@ -354,7 +361,17 @@
     CATS.map(function (c) { return { c: c, l: c.ids.filter(function (id) { return top.indexOf(id) < 0 }) } }).filter(function (o) { return o.l.length >= 3 }).slice(0, 3).forEach(function (o) { var c = o.c; h += sec(esc(c.title), '', tiles(o.l.slice(0, 4)), c.ids.length > 4 ? '<span class="pillv" onclick="stTab(\'c:' + c.slug.replace(/'/g, "\\'") + '\')">View all ' + c.ids.length + '</span>' : '') })
     if (!PITCH && D.rating_count) h += sec('What customers say', 'Verified buyers on outrr', '<div class="rvs" id="stRv"><div class="rvsum"><b>' + D.rating + '</b><div class="st">' + stars(Math.round(D.rating)) + '</div><small>' + D.rating_count + ' rating' + (D.rating_count > 1 ? 's' : '') + '</small></div></div>')
     h += aboutHTML() + faqHTML()
+    var more = moreOnOutrr()
+    if (more.length) h += sec('More on outrr', 'Complete the space with furniture, lighting and decor from other sellers', '<div class="hstrip">' + more.map(miniCard).join('') + '</div>', '<span class="pillv" onclick="location.href=\'/\'">Shop all of outrr</span>')
     return h
+  }
+  // other sellers' products, a few from each category the store doesn't sell
+  function moreOnOutrr() {
+    var own = {}; IDS.forEach(function (id) { own[PRODS[id].col] = 1 })
+    var by = {}; Object.keys(PRODS).forEach(function (k) { var x = PRODS[k]; if (x.pv || IDS.indexOf(k) >= 0 || !(x.p > 0) || !IMGS[x.img] || x.stock === false) return; (by[x.col] = by[x.col] || []).push(k) })
+    var cols = Object.keys(by).sort(function (a, b) { return (own[a] ? 1 : 0) - (own[b] ? 1 : 0) }), out = []
+    for (var i = 0; out.length < 12 && i < 4; i++) cols.forEach(function (c) { if (by[c][i] && out.length < 12) out.push(by[c][i]) })
+    return out
   }
   var stars = function (n) { return '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(n) }
   function aboutHTML() {
