@@ -125,3 +125,6 @@ The real store (per the build brief `claude_Replit_OutdoorStore_Build_Prompt.md`
   Claim this page". Its products go in the cart for real (the cart line carries the product: `CART[i].x`), but checkout
   stops with "Sample products can't be ordered yet" until the brand joins.
 - Old addresses `/seller/?s=` and `/preview/?s=` forward to these (built by `scripts/build-pages.mjs`).
+- Pitch-page kits come from admin → Pitch pages → Kit templates (`kit_templates`, one AI "Styled look" picture each): 2 of the
+  prospect's products + one live product of another seller per other category (`kit_fill()`, shows the seller's shop name).
+  On a pitch page the cart is grouped by seller (prospect first, marked sample).

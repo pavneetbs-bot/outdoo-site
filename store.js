@@ -70,6 +70,8 @@
     '.kit .pr small{display:block;font-size:10.5px;color:var(--muted);font-weight:600}',
     '.kit .bt{display:flex;gap:8px;margin-top:10px}.kit .bt button{flex:1;border-radius:10px;padding:10px 6px;font-weight:700;font-size:12px;font-family:inherit;border:1px solid var(--terra);background:#fff;color:var(--terra-deep);cursor:pointer}',
     '.kit .bt button.f{background:var(--terra-deep);color:#fff}',
+    '.kit .sty{position:absolute;right:10px;bottom:10px;background:rgba(255,255,255,.9);color:var(--char);font-size:10px;font-weight:700;padding:3px 8px;border-radius:99px}',
+    '.kit .kw{margin-bottom:8px}.kit .kw>span{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}.kit .kw b{color:var(--char)}.kit .kw .its{margin:0}',
     '.rvs{display:grid;grid-template-columns:240px repeat(3,1fr);gap:14px}',
     '.rvsum{background:var(--olive-soft);border-radius:16px;padding:18px}.rvsum b{font-size:40px;font-weight:800;display:block;line-height:1}',
     '.rvsum .st,.rvc .st{color:#E0A100;font-size:16px;margin:6px 0}.rvsum small{color:var(--muted);font-size:12px}',
@@ -126,7 +128,7 @@
     load = rpc('pitch_open', { p_slug: slug, p_sid: sid, p_device: /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop', p_count: !team })
   } else load = rpc('seller_page', { p_slug: slug, p_token: token })
   // seller pages use the live catalog: wait for it (max ~4 s)
-  var ready = new Promise(function (res) { var n = 0; (function w() { if (PITCH || window.__odLoaded || ++n > 40) res(); else setTimeout(w, 100) })() })
+  var ready = new Promise(function (res) { var n = 0; (function w() { if (window.__odLoaded || ++n > 40) res(); else setTimeout(w, 100) })() })
   Promise.all([load, ready]).then(function (r) {
     var d = r[0]
     if (!d || !d.available) {
@@ -181,6 +183,7 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-claim]'), function (a) { a.addEventListener('click', function () { if (window.otrack) otrack('pitch_claim', { path: '/preview/' + slug }) }) })
     if (window.otrack) otrack('page_view', { path: (PITCH ? '/preview/' : '/seller/') + slug })
     if (!PITCH && D.rating_count) reviews()
+    if (PITCH) loadKits()
   }
 
   // product page: their products show their name, and sample products show only their own photo
@@ -207,7 +210,43 @@
   var initials = function () { return String(NAME || '?').trim().split(/\s+/).map(function (x) { return x[0] }).slice(0, 2).join('').toUpperCase() }
 
   // kits: the seller's own products put together (one per category mix), added to the cart in one tap
+  // pitch pages: the standard space kits (admin → Kit templates) = 2 of the prospect's products + one product from
+  // other sellers on outrr for each other category of the kit, with the kit's styled picture
+  var TPL = null, FILL = {}
+  function loadKits() {
+    var H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon }
+    return fetch(S.url + '/rest/v1/kit_templates?active=eq.true&select=slug,title,blurb,categories,image_url&order=sort', { headers: H })
+      .then(function (r) { return r.ok ? r.json() : [] }).then(function (t) {
+        TPL = t || []
+        var own = {}; IDS.forEach(function (id) { own[PRODS[id].col] = 1 })
+        var need = []; TPL.forEach(function (k) { (k.categories || []).forEach(function (c) { if (!own[c] && need.indexOf(c) < 0) need.push(c) }) })
+        return need.length ? rpc('kit_fill', { p_cats: need, p_per: 6 }) : []
+      }).then(function (l) {
+        FILL = {}
+        ;(l || []).forEach(function (p) {
+          if (!PRODS[p.sku]) { PRODS[p.sku] = { n: p.name, p: Math.round(+p.price), m: p.mrp ? Math.round(+p.mrp) : 0, r: '4.5', c: 0, ship: 'Ships in 7-10 days', img: p.sku, col: p.collection_slug, stock: true, tier: 'select', mat: '', dim: '', kg: 0 }; IMGS[p.sku] = p.image_url || '' }
+          PRODS[p.sku].sl = p.seller
+          ;(FILL[p.collection_slug] = FILL[p.collection_slug] || []).push(p.sku)
+        })
+        renderBody()
+      }).catch(function () { TPL = []; renderBody() })
+  }
+  function pitchKits() {
+    var own = IDS.filter(function (id) { return priced(id) }), out = []
+    if (!own.length || !TPL) return []
+    TPL.forEach(function (t, i) {
+      var cats = t.categories || [], mine = own.filter(function (id) { return cats.indexOf(PRODS[id].col) >= 0 })
+      if (!mine.length) mine = own
+      var items = [mine[(i * 2) % mine.length]]; if (mine.length > 1) { var b = mine[(i * 2 + 1) % mine.length]; if (items.indexOf(b) < 0) items.push(b) }
+      var others = []
+      cats.forEach(function (c) { var l = FILL[c]; if (l && l.length && !own.some(function (id) { return PRODS[id].col === c })) others.push(l[i % l.length]) })
+      if (!others.length) return
+      out.push({ n: t.title, blurb: t.blurb, pic: t.image_url, own: items, others: others.slice(0, 3), items: items.concat(others.slice(0, 3)) })
+    })
+    return out
+  }
   function kits() {
+    if (PITCH) return pitchKits()
     var pool = CATS.map(function (c) { return c.ids.filter(function (id) { return priced(id) && PRODS[id].stock !== false }) }).filter(function (l) { return l.length })
     var all = [].concat.apply([], pool); if (all.length < 4) return []
     // round-robin across categories, then groups of 3: every product in at most one kit, kits mix categories
@@ -218,6 +257,7 @@
     return out.slice(0, 4)
   }
   function kitCard(k, i) {
+    if (k.own) return pitchKitCard(k, i)
     var tot = k.items.reduce(function (a, id) { return a + PRODS[id].p }, 0), mrp = k.items.reduce(function (a, id) { return a + Math.max(PRODS[id].m, PRODS[id].p) }, 0)
     var off = mrp > tot ? Math.round((1 - tot / mrp) * 100) : 0
     return '<div class="kit"><div class="im">' + (off >= 5 ? '<span class="save">SAVE ' + off + '%</span>' : '') + '<img src="' + esc(imgOf(k.items[0])) + '" alt="" loading="lazy"></div>'
@@ -225,6 +265,16 @@
       + '<div class="its">' + k.items.map(function (id) { return '<img src="' + esc(imgOf(id)) + '" alt="' + esc(PRODS[id].n) + '" title="' + esc(PRODS[id].n) + '" onclick="openProduct(\'' + id + '\')">' }).join('') + '<b>' + k.items.length + ' items</b></div>'
       + '<div class="pr"><small>Kit price</small>' + inr(tot) + (mrp > tot ? '<s>' + inr(mrp) + '</s>' : '') + '</div>'
       + '<div class="bt"><button onclick="openProduct(\'' + k.items[0] + '\')">View items</button><button class="f" onclick="stKit(' + i + ')">+ Add kit</button></div></div></div>'
+  }
+  function pitchKitCard(k, i) {
+    var tot = k.items.reduce(function (a, id) { return a + PRODS[id].p }, 0)
+    var by = {}; k.others.forEach(function (id) { var n = PRODS[id].sl || 'other sellers'; (by[n] = by[n] || []).push(id) })
+    var row = function (who, l) { return '<div class="kw"><span>From <b>' + esc(who) + '</b></span><div class="its">' + l.map(function (id) { return '<img src="' + esc(imgOf(id)) + '" alt="' + esc(PRODS[id].n) + '" title="' + esc(PRODS[id].n) + ' \u00b7 ' + inr(PRODS[id].p) + '" onclick="openProduct(\'' + id + '\')">' }).join('') + '</div></div>' }
+    return '<div class="kit"><div class="im">' + (k.pic ? '<span class="sty">Styled look</span><img src="' + esc(k.pic) + '" alt="" loading="lazy">' : '<img src="' + esc(imgOf(k.own[0])) + '" alt="" loading="lazy">') + '</div>'
+      + '<div class="bd"><h3>' + esc(k.n) + '</h3>' + (k.blurb ? '<div class="kn">' + esc(k.blurb) + '</div>' : '')
+      + row(NAME, k.own) + Object.keys(by).map(function (n) { return row(n, by[n]) }).join('')
+      + '<div class="pr"><small>' + k.items.length + ' items \u00b7 kit price</small>' + inr(tot) + '</div>'
+      + '<div class="bt"><button onclick="openProduct(\'' + k.own[0] + '\')">View items</button><button class="f" onclick="stKit(' + i + ')">+ Add kit</button></div></div></div>'
   }
   var KITS = []
   window.stKit = function (i) {
@@ -272,7 +322,7 @@
     document.getElementById('stTabs').innerHTML = tabsHTML()
     var b = document.getElementById('stBody'), h = ''
     if (TAB === 'home') h = homeHTML()
-    else if (TAB === 'kits') h = sec('Ready-made kits', 'Their products, put together. One tap adds the whole kit to your cart.', '<div class="kits">' + KITS.map(kitCard).join('') + '</div>')
+    else if (TAB === 'kits') h = sec('Ready-made kits', (PITCH ? 'Their products in a complete space, with pieces from other sellers on outrr. One tap adds the whole kit to your cart.' : 'Their products, put together. One tap adds the whole kit to your cart.'), '<div class="kits">' + KITS.map(kitCard).join('') + '</div>')
     else if (TAB === 'about') h = aboutHTML() + faqHTML()
     else {
       var cat = TAB.indexOf('c:') === 0 ? TAB.slice(2) : '', c = CATS.filter(function (x) { return x.slug === cat })[0]
@@ -296,7 +346,7 @@
     if (pair.length === 2) h += '<div class="sec2"><div class="prow">' + pair.map(function (p) { return '<div class="pban" onclick="' + p.go + '"><img src="' + esc(p.img) + '" alt="" loading="lazy"><div class="tx"><small>' + p.k + '</small><h3>' + esc(p.t) + '</h3><span>' + esc(p.cta) + ' →</span></div></div>' }).join('') + '</div></div>'
     if (CATS.length >= 3) h += sec('Shop by category', '', '<div class="stcats">' + CATS.map(function (c) { return '<div class="arch" onclick="stTab(\'c:' + c.slug.replace(/'/g, "\\'") + '\')"><div class="im"><img src="' + esc(imgOf(c.ids[0])) + '" alt="" loading="lazy"></div><span>' + esc(c.title) + '</span></div>' }).join('') + '</div>')
     h += sec('Bestsellers', 'Most loved from ' + esc(NAME), tiles(top))
-    if (KITS.length) h += sec('Ready-made kits', 'Their products, put together. One tap adds the whole kit to your cart.', '<div class="kits">' + KITS.map(kitCard).join('') + '</div>')
+    if (KITS.length) h += sec('Ready-made kits', (PITCH ? 'Their products in a complete space, with pieces from other sellers on outrr. One tap adds the whole kit to your cart.' : 'Their products, put together. One tap adds the whole kit to your cart.'), '<div class="kits">' + KITS.map(kitCard).join('') + '</div>')
     if (IDS.length >= 8) { var w = IDS[4]; h += '<div class="sec2"><div class="wide" onclick="stTab(\'all\')"><img src="' + esc(imgOf(w)) + '" alt="" loading="lazy"><div class="tx"><small>Made by ' + esc(NAME) + '</small><h3>' + esc(PRODS[w].n) + '</h3>' + (D.tagline ? '<p>' + esc(D.tagline) + '</p>' : '') + '<span class="cta">Shop all →</span></div></div></div>' }
     if (IDS.length > 4) h += sec('Trending now', 'Popular picks from ' + esc(NAME), '<div class="hstrip">' + IDS.slice(4, 14).filter(priced).map(miniCard).join('') + '</div>', '<span class="pillv" onclick="stTab(\'all\')">View all ' + IDS.length + ' products</span>')
     var deal = IDS.filter(function (id) { var x = PRODS[id]; return priced(id) && x.m > x.p }).sort(function (a, b) { return (1 - PRODS[a].p / PRODS[a].m) < (1 - PRODS[b].p / PRODS[b].m) ? 1 : -1 })[0]

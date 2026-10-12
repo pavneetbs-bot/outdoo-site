@@ -72,6 +72,7 @@ h1,h2,h3{font-weight:700;line-height:1.2;letter-spacing:-.01em}
   font-size:11.5px;padding:8px 12px;font-weight:600}
 .announce b{color:#ffe3c4}
 .pvnote{font-size:11px;color:var(--terra-deep);font-weight:600;margin-top:3px}
+.cgrp{font-size:12.5px;color:var(--muted);margin:14px 0 6px;padding-bottom:6px;border-bottom:1px solid var(--line)}.cgrp b{color:var(--char)}.cgrp span{color:var(--terra-deep);font-weight:600;font-size:11px}
 
 /* header */
 header{position:sticky;top:0;z-index:60;background:#fff;border-bottom:1px solid var(--line)}
@@ -2476,7 +2477,12 @@ setInterval(()=>{ ci=(ci+1)%slides.length;
 let CART=[]; try{CART=JSON.parse(localStorage.getItem('outrr_cart')||'[]').filter(c=>c&&c.id&&c.q>0)}catch(e){CART=[]}
 // products from a pitch (sample) page aren't in the catalog: the cart line carries them (x), and they can't be ordered yet
 function cartX(){CART.forEach(c=>{if(c.x&&!PRODS[c.id]){PRODS[c.id]={n:c.x.n,p:+c.x.p||0,m:+c.x.m||0,r:'4.5',c:0,ship:'Orders open when this brand joins outrr',img:c.id,col:c.x.col||'',pv:c.x.pv||'sample'};IMGS[c.id]=c.x.u||'';}});}
-function cartLine(id){const x=PRODS[id];return x&&x.pv?{id,q:1,x:{n:x.n,p:x.p,m:x.m,u:IMGS[x.img]||'',col:x.col,pv:x.pv}}:{id,q:1};}
+function cartLine(id){const x=PRODS[id];return x&&x.pv?{id,q:1,x:{n:x.n,p:x.p,m:x.m,u:IMGS[x.img]||'',col:x.col,pv:x.pv}}:x&&x.sl?{id,q:1,s:x.sl}:{id,q:1};}
+// on a pitch page the cart shows whose product is whose: the prospect's (sample) first, then other sellers
+function cartGroups(){if(!CART.some(c=>PRODS[c.id]&&PRODS[c.id].pv))return null;const g=[];
+ CART.forEach(c=>{const x=PRODS[c.id];if(!x)return;const k=x.pv||c.s||x.sl||'Other sellers on outrr';let e=g.find(y=>y.k===k);if(!e)g.push(e={k,pv:!!x.pv,l:[]});e.l.push(c);});
+ return g.sort((a,b)=>b.pv-a.pv);}
+const grpHead=e=>`<div class="cgrp">From <b>${String(e.k).replace(/</g,'&lt;')}</b>${e.pv?' <span>sample · orders open when they join</span>':''}</div>`;
 const pvNote=x=>x&&x.pv?`<div class="pvnote">Sample product from ${String(x.pv).replace(/</g,'&lt;')} · orders open when they join outrr</div>`:'';
 cartX();
 function updBadge(){try{localStorage.setItem('outrr_cart',JSON.stringify(CART))}catch(e){}const n=CART.reduce((a,c)=>a+c.q,0);['cartn','cartn2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n;});}
@@ -2499,12 +2505,13 @@ function renderCart(){
  const th=200000, pct=Math.min(100,Math.round(total/th*100));
  const progTxt = total>=th? '🎉 <b>Room package pricing unlocked</b> — best bundle rate applied to this order'
    : 'Add <b>'+inr(th-total)+'</b> more to unlock <b>room package pricing</b> - our best bundle rate';
- const lines=CART.map(c=>{const x=PRODS[c.id];
+ const line=c=>{const x=PRODS[c.id];
   return `<div class="cline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
    <div class="inf"><div class="nm">${x.n}</div>
    <div class="pr">${inr(x.p)}${x.m>x.p?`<span class="mr2">${inr(x.m)}</span>`:''}</div>${pvNote(x)}
    <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1)">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1)">+</button></div>
-   <span class="rm" onclick="cartRm('${c.id}')">Remove</span></div></div></div>`;}).join('');
+   <span class="rm" onclick="cartRm('${c.id}')">Remove</span></div></div></div>`;};
+ const grp=cartGroups(), lines=grp?grp.map(e=>grpHead(e)+e.l.map(line).join('')).join(''):CART.map(line).join('');
  // cross-sell: add-ons under 15K from cols not fully in cart
  const inCart=new Set(CART.map(c=>c.id));
  const xs=Object.keys(PRODS).filter(i=>!inCart.has(i)&&PRODS[i].p<=15000).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,8);
@@ -2537,11 +2544,12 @@ function miniTitle(t){const el=document.getElementById('mcTitle'); if(el) el.tex
 function renderMini(){
  const b=document.getElementById('mcBody');
  if(!CART.length){b.innerHTML='<div class="mcempty">Your cart is empty</div>';document.getElementById('mcSub').textContent='₹0';return;}
- b.innerHTML=CART.map(c=>{const x=PRODS[c.id];
+ const line=c=>{const x=PRODS[c.id];
   return `<div class="mcline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
    <div style="flex:1;min-width:0"><div class="nm">${x.n}</div><div class="pr">${inr(x.p)}</div>${pvNote(x)}
    <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1);renderMini()">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1);renderMini()">+</button></div>
-   <span class="rm" onclick="cartRm('${c.id}');renderMini()">Remove</span></div></div></div>`;}).join('');
+   <span class="rm" onclick="cartRm('${c.id}');renderMini()">Remove</span></div></div></div>`;};
+ const grp=cartGroups(); b.innerHTML=grp?grp.map(e=>grpHead(e)+e.l.map(line).join('')).join(''):CART.map(line).join('');
  document.getElementById('mcSub').textContent=inr(CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0));}
 
 // ---- marketplace strips ----
