@@ -23,6 +23,16 @@
     '.sthero img{width:100%;height:100%;object-fit:cover;display:block}',
     '.sthero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(20,18,14,.72) 0%,rgba(20,18,14,.35) 45%,rgba(20,18,14,0) 75%)}',
     '.sthero .tx{position:absolute;z-index:2;left:max(16px,calc((100vw - 1132px)/2));top:50%;transform:translateY(-62%);color:#fff;max-width:540px;padding-right:16px}',
+    '.sthero.own+.wrap .stcard{margin-top:14px}',
+    '.sthero.own{height:clamp(200px,31vw,470px);background:var(--sand-soft)}.sthero.own::after{display:none}.sthero.own img{object-position:center}',
+    '.stauto{display:grid;grid-template-columns:1fr 1.15fr;min-height:clamp(260px,32vw,460px);background:var(--bg)}',
+    '.stauto .tx{align-self:center;padding:28px 28px 64px max(16px,calc((100vw - 1132px)/2));color:var(--char)}',
+    '.stauto .k{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ac)}',
+    '.stauto h1{font-size:clamp(28px,4vw,50px);line-height:1.05;font-weight:800;margin:8px 0 10px;letter-spacing:-.02em;color:var(--ac)}',
+    '.stauto p{font-size:clamp(13px,1.2vw,15.5px);line-height:1.5;opacity:.85;max-width:460px}',
+    '.stauto .th{display:flex;gap:8px;margin-top:14px}.stauto .th img{width:58px;height:58px;border-radius:12px;object-fit:cover;border:2px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.1)}',
+    '.stauto .cta{display:inline-block;margin-top:16px;background:var(--ac);color:var(--bg);font-weight:700;font-size:13px;padding:11px 20px;border-radius:99px;cursor:pointer}',
+    '.stauto .pic{position:relative;overflow:hidden}.stauto .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}',
     '.sthero .k{font-size:11px;font-weight:800;letter-spacing:.12em;opacity:.85;text-transform:uppercase}',
     '.sthero h1{font-size:clamp(28px,4.2vw,52px);line-height:1.06;font-weight:800;margin:8px 0 10px;letter-spacing:-.02em;color:#fff}',
     '.sthero p{font-size:clamp(13px,1.3vw,16px);line-height:1.5;opacity:.92;color:#fff}',
@@ -88,6 +98,7 @@
     '.stload{padding:120px 0;text-align:center;color:var(--muted)}',
     '@media(min-width:900px){.otiles.st4{grid-template-columns:repeat(4,1fr)}}',
     '@media(max-width:760px){body.store .shopnav{display:none}',
+    ' .stauto{grid-template-columns:1fr}.stauto .pic{height:190px;order:-1}.stauto .tx{padding:18px 16px 56px}.sthero.own{height:auto;aspect-ratio:16/9}',
     ' .sthero{height:360px}.sthero::after{background:linear-gradient(180deg,rgba(20,18,14,.15),rgba(20,18,14,.75))}.sthero .tx{top:auto;bottom:58px;transform:none}',
     ' .stcard{margin-top:-34px;flex-wrap:wrap;padding:12px}.stcard .lg{width:54px;height:54px;font-size:18px}.stcard h2{font-size:18px}.stcard .acts{width:100%}.stcard .acts button{flex:1}',
     ' .stnav input,.stnav .lab{display:none}.prow{grid-template-columns:1fr}.stcats{grid-template-columns:repeat(3,1fr)}',
@@ -301,9 +312,7 @@
   // ---------- page ----------
   function render() {
     var since = D.since ? new Date(D.since).getFullYear() : null
-    var hero = D.banner || imgOf(IDS[0])
-    var h = '<div class="sthero">' + (hero ? '<img src="' + esc(hero) + '" alt="">' : '') + '<div class="tx"><div class="k">On outrr' + (D.city ? ' · ' + esc(D.city) : '') + '</div>'
-      + '<h1>' + esc(NAME) + '</h1>' + (D.tagline ? '<p>' + esc(D.tagline) + '</p>' : '') + '<span class="cta" onclick="stTab(\'all\')">Shop all ' + IDS.length + ' products →</span></div></div>'
+    var h = heroHTML()
     h += '<div class="wrap"><div class="stcard"><div class="lg">' + (D.logo ? '<img src="' + esc(D.logo) + '" alt="' + esc(NAME) + ' logo">' : esc(initials())) + '</div>'
       + '<div class="nm"><h2>' + esc(NAME) + '</h2><div class="mt">' + (PITCH ? '<span class="vf smp">Sample page</span>' : '<span class="vf">✓ Verified seller</span>')
       + (!PITCH && D.rating_count ? '<span>★ <b>' + D.rating + '</b> (' + D.rating_count + ' rating' + (D.rating_count > 1 ? 's' : '') + ')</span>' : '')
@@ -317,6 +326,21 @@
     if (foot) h += foot.outerHTML
     root.innerHTML = h
     renderBody()
+  }
+  // banner: the seller's own picture as it is (no text on top: banners often carry their own words), or,
+  // without one, an outrr banner made from a template for their main category
+  var THEME = { planters: ['#E6EDE0', '#3F5A35'], furniture: ['#EFE4D4', '#7A4A2E'], lighting: ['#2E2E2E', '#F2C76E'], shade: ['#E3E0D8', '#4B5A63'], art: ['#F3E3DA', '#A84F33'], furnishings: ['#F4EADF', '#8A4B5C'] }
+  function heroHTML() {
+    if (D.banner) return '<div class="sthero own"><img src="' + esc(D.banner) + '" alt="' + esc(NAME) + '"></div>'
+    var n = {}, main = ''; IDS.forEach(function (id) { var c = PRODS[id].col; n[c] = (n[c] || 0) + 1; if (!main || n[c] > n[main]) main = c })
+    var col = COLS[main] || {}, th = THEME[main] || ['#F4EADF', '#A84F33'], pic = IMGS[col.img] || imgOf(IDS[0])
+    var tag = String(D.tagline || col.tag || '').replace(/\s*\|.*$/, ''); if (tag.length > 110) tag = tag.slice(0, 107).replace(/\s+\S*$/, '') + '…'
+    var thumbs = IDS.filter(function (id) { return imgOf(id) }).slice(0, 3)
+    return '<div class="stauto" style="--bg:' + th[0] + ';--ac:' + th[1] + '"><div class="tx"><div class="k">Now on outrr · ' + esc(col.t || 'Outdoor living') + '</div>'
+      + '<h1>' + esc(NAME) + '</h1>' + (tag ? '<p>' + esc(tag) + '</p>' : '')
+      + (thumbs.length === 3 ? '<div class="th">' + thumbs.map(function (id) { return '<img src="' + esc(imgOf(id)) + '" alt="">' }).join('') + '</div>' : '')
+      + '<span class="cta" onclick="stTab(\'all\')">Shop all ' + IDS.length + ' products →</span></div>'
+      + '<div class="pic">' + (pic ? '<img src="' + esc(pic) + '" alt="">' : '') + '</div></div>'
   }
   function tabsHTML() {
     var t = [['home', 'Home'], ['all', 'All products']].concat(CATS.length > 1 ? CATS.map(function (c) { return ['c:' + c.slug, c.title] }) : [])
