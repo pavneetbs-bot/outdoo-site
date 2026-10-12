@@ -327,13 +327,12 @@
     root.innerHTML = h
     renderBody()
   }
-  // banner: the seller's own picture as it is (no text on top: banners often carry their own words), or,
-  // without one, an outrr banner made from a template for their main category
+  // banner: one template for every store: a coloured panel for their main category (name, tagline, product
+  // thumbnails) beside a picture: their own banner, or else the category photo. Text never sits on the picture.
   var THEME = { planters: ['#E6EDE0', '#3F5A35'], furniture: ['#EFE4D4', '#7A4A2E'], lighting: ['#2E2E2E', '#F2C76E'], shade: ['#E3E0D8', '#4B5A63'], art: ['#F3E3DA', '#A84F33'], furnishings: ['#F4EADF', '#8A4B5C'] }
   function heroHTML() {
-    if (D.banner) return '<div class="sthero own"><img src="' + esc(D.banner) + '" alt="' + esc(NAME) + '"></div>'
     var n = {}, main = ''; IDS.forEach(function (id) { var c = PRODS[id].col; n[c] = (n[c] || 0) + 1; if (!main || n[c] > n[main]) main = c })
-    var col = COLS[main] || {}, th = THEME[main] || ['#F4EADF', '#A84F33'], pic = IMGS[col.img] || imgOf(IDS[0])
+    var col = COLS[main] || {}, th = THEME[main] || ['#F4EADF', '#A84F33'], pic = D.banner || IMGS[col.img] || imgOf(IDS[0])
     var tag = String(D.tagline || col.tag || '').replace(/\s*\|.*$/, ''); if (tag.length > 110) tag = tag.slice(0, 107).replace(/\s+\S*$/, '') + '…'
     var thumbs = IDS.filter(function (id) { return imgOf(id) }).slice(0, 3)
     return '<div class="stauto" style="--bg:' + th[0] + ';--ac:' + th[1] + '"><div class="tx"><div class="k">Now on outrr · ' + esc(col.t || 'Outdoor living') + '</div>'
