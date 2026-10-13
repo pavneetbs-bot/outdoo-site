@@ -181,6 +181,8 @@ const compare = p => {
   return `<section class="cmpx"><h2>Compare with similar items</h2><div class="cw"><table>${body}</table></div></section>`
 }
 // ---------------------------------------------------------------- write pages
+// no live products yet (sellers not Active): keep the pages already in the repo instead of publishing an empty catalog
+if (!products.length) { console.log('SEO pages: no live products right now, keeping the existing product pages, sitemap and feed'); process.exit(0) }
 for (const d of ['p', 'c', 'feed']) if (existsSync(join(ROOT, d))) rmSync(join(ROOT, d), { recursive: true })
 const write = (rel, text) => { const f = join(ROOT, rel); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, text) }
 
