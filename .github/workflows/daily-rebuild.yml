@@ -1,0 +1,15 @@
+# Rebuilds outrr.in on Cloudflare Pages every morning, so product pages, sitemap and the Google feed
+# follow the live catalog (Cloudflare runs: node scripts/build-pages.mjs && node scripts/build-seo.mjs).
+# Needs GitHub → Settings → Secrets and variables → Actions: CF_DEPLOY_HOOK (Cloudflare Pages → Settings → Builds → Deploy hooks).
+name: Daily rebuild
+on:
+  schedule: [{ cron: '30 0 * * *' }]   # 6:00 am IST
+  workflow_dispatch: {}
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ -z "$HOOK" ]; then echo "CF_DEPLOY_HOOK not set"; exit 1; fi
+          curl -fsS -X POST "$HOOK" >/dev/null && echo "Rebuild started"
+        env: { HOOK: '${{ secrets.CF_DEPLOY_HOOK }}' }
