@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Meta Pixel -->
+<script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');window.__outrrPixel='2307680780051131';fbq('init','2307680780051131');fbq('track','PageView');</script>
+<!-- End Meta Pixel -->
 <script>/* brand change (outdoo → outrr): keep this browser's cart, address and sign-in */
 try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var o='out'+'doo_'+k,v=localStorage.getItem(o);if(v!=null&&localStorage.getItem('outrr_'+k)==null)localStorage.setItem('outrr_'+k,v);if(v!=null)localStorage.removeItem(o)});
 ['sid'].forEach(function(k){var o='out'+'doo_'+k,v=sessionStorage.getItem(o);if(v!=null&&sessionStorage.getItem('outrr_'+k)==null)sessionStorage.setItem('outrr_'+k,v)})}catch(e){}</script>
@@ -2637,7 +2640,9 @@ setTimeout(()=>{if(offShown)return;offShown=true;
     const w=document.getElementById('wachat'); if(w) w.classList.remove('open');
     document.body.classList.remove('flt-open');
   }
-  function push(st){ if(lock) return; history.pushState(st,'',location.pathname+location.search); }
+  // Meta Pixel: a new screen in this one-page shop counts as a page view (not pop-ups)
+  function pv(st){ try{ if(window.fbq && st && st.v!=='modal') fbq('track','PageView'); }catch(e){} }
+  function push(st){ if(lock) return; history.pushState(st,'',location.pathname+location.search); pv(st); }
 
   // view openers record history
   window.showHome=function(){ _home(); push({v:'home'}); };
@@ -2661,6 +2666,7 @@ setTimeout(()=>{if(offShown)return;offShown=true;
     lock=true;
     closeModals();
     const st=e.state||{v:'home'};
+    pv(st);
     if(st.v==='plp' && COLS[st.k]) _col(st.k);
     else if(st.v==='pdp' && PRODS[st.id]) _prod(st.id);
     else if(st.v==='cart') _cart();

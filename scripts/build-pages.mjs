@@ -2,6 +2,7 @@
 // Needed for Google Merchant Center, Meta Commerce and the Consumer Protection (E-Commerce) Rules.
 // No network needed. Run: node scripts/build-pages.mjs   (npm run update runs it too)
 // Edit the text in PAGES below, run the script, commit.
+import { PIXEL_HEAD } from './pixel.mjs'
 import { writeFileSync, mkdirSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -200,6 +201,7 @@ const page = (key, p) => `<!doctype html>
 <meta name="description" content="${esc(p.desc)}">
 <link rel="canonical" href="${SITE}/${key}/">
 <meta property="og:type" content="website"><meta property="og:site_name" content="outrr"><meta property="og:title" content="${esc(p.title)} | outrr"><meta property="og:url" content="${SITE}/${key}/">
+${PIXEL_HEAD}
 <link rel="icon" href="/favicon.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>${CSS}</style>
@@ -215,7 +217,7 @@ ${p.body.trim()}
 <footer><div class="wrap cols">
 <div><b>outrr</b><br>Every Outdoor Possibility<br>${CO.group}<br>Free delivery to top metros · Cash on delivery</div>
 <div><b>Shop</b>${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</div>
-<div><b>Help</b>${Object.entries(PAGES).map(([k, x]) => `<a href="/${k}/">${esc(x.title)}</a>`).join('')}<a href="https://seller.outrr.in">Sell on outrr</a></div>
+<div><b>Help</b>${Object.entries(PAGES).map(([k, x], i) => `<a href="/${k}/">${esc(x.title)}</a>` + (i ? '' : '<a href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=footer" target="_blank" rel="noopener">Sell on outrr</a>')).join('')}<a href="https://seller.outrr.in">Sell on outrr</a></div>
 </div></footer>
 <script>window.OUTRR_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
 <script src="/track.js"></script>

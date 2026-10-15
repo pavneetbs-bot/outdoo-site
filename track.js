@@ -39,7 +39,8 @@
       !function (f, b, e, v, n, t, s) { if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments) }
         if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = []; t = b.createElement(e); t.async = !0
         t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s) }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js')
-      fbq('init', tags.pixel); fbq('track', 'PageView')
+      // the outrr pixel is already in the page <head> (scripts/pixel.mjs): don't start it or count the page twice
+      if (window.__outrrPixel !== String(tags.pixel)) { fbq('init', tags.pixel); window.__outrrPixel ? fbq('trackSingle', tags.pixel, 'PageView') : fbq('track', 'PageView') }
     }
     var gid = tags.ga4 || tags.ads
     if (gid) {

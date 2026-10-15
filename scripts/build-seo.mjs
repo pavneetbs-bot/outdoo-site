@@ -3,6 +3,7 @@
 //   c/<category>/index.html  one page per category, linking to its products
 //   sitemap.xml, robots.txt, feed/google.xml (Google Merchant Center)
 // Run it whenever products change, then Republish:  node scripts/build-seo.mjs
+import { PIXEL_HEAD } from './pixel.mjs'
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -133,6 +134,7 @@ const page = ({ title, desc, path, image, body, jsonld = [], cur = '', view = nu
 <meta property="og:type" content="${path.startsWith('/p/') ? 'product' : 'website'}"><meta property="og:site_name" content="outrr">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${SITE}${path}">
 ${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">` : ''}
+${PIXEL_HEAD}
 <link rel="icon" href="/favicon.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>${CSS}</style>
