@@ -1911,7 +1911,7 @@ header{position:static!important}
 <!-- WA CHAT -->
 <div id="wachat">
   <div class="wch"><span class="av2">O</span><div><b>outrr Support</b><span>● Online · replies in minutes</span></div></div>
-  <div class="wcb"><div class="wmsg">Namaste! 👋 outrr mein swagat hai.<br>Furniture, delivery, bulk order ya custom size — kuch bhi poochhiye!</div></div>
+  <div class="wcb"><div class="wmsg">Hi! 👋 Welcome to outrr.<br>Ask us anything — furniture, delivery, bulk orders or custom sizes.</div></div>
   <button class="wcta" onclick="toast('Opens WhatsApp chat — mockup')">Start Chat on WhatsApp</button>
 </div>
 
@@ -2338,7 +2338,7 @@ function renderPLP(){
   document.getElementById('colCnt').textContent = nf? ids.length+' of '+total+' products' : ids.length+' products';
   if(!ids.length){document.getElementById('plpGrid').innerHTML= k==='__search'&&!total
     ? '<div class="noresult">Nothing found for “'+SQ.replace(/[<>&]/g,'')+'”. Try another word, or ask us on WhatsApp — we source on request.<br><a onclick="showHome()">Back to home</a></div>'
-    : '<div class="noresult">Is filter mein kuch nahi mila.<br><a onclick="fltClear()">Clear filters</a></div>';return;}
+    : '<div class="noresult">No products match these filters.<br><a onclick="fltClear()">Clear filters</a></div>';return;}
   document.getElementById('plpGrid').innerHTML = ids.map(id=>{
     const x=PRODS[id];
     const off = x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
