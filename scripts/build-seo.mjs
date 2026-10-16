@@ -31,7 +31,6 @@ export const slug = (name, sku) => {
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const inr = n => '₹' + Math.round(+n || 0).toLocaleString('en-IN')
-const TIER = { select: 'outrr Select', exclusive: 'outrr Exclusive', originals: 'outrr Originals' }
 const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : s
 
 const products = (await getAll('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at&order=name,sku'))
@@ -175,7 +174,6 @@ const compare = p => {
     ['Type', x => esc(subT[x.subcategory_slug] || colOf[x.collection_slug]?.title || '—')],
     ['Material', x => esc(x.material || '—')],
     ['Size', x => esc(x.dims || '—')],
-    ['Range', x => esc(TIER[x.tier] || TIER.select)],
     ['Delivery', x => esc(x.ship_text || 'Ships in 7-10 days') + ' · Free · COD'],
   ]
   const body = rows.map(([h, f, keep]) => { const c = L.map(f); if (!keep && c.every(v => v === '—')) return ''
@@ -210,7 +208,7 @@ for (const p of products) {
     title: `${p.name} | Buy Online at ${inr(p.price)} | outrr`, desc: clip(desc, 158), path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
     body: `<div class="crumbs"><a href="/">Home</a> › ${c ? `<a href="/c/${c.slug}/">${esc(c.title)}</a> › ` : ''}${esc(p.name)}</div>
 <div class="pd"><div class="pimg"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" width="800" height="800"></div>
-<div><span class="tier">${esc(TIER[p.tier] || TIER.select)}</span><h1>${esc(p.name)}</h1>
+<div><h1>${esc(p.name)}</h1>
 <div class="price"><b>${inr(p.price)}</b>${off ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>
 <div class="btns">${p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
 <ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Free delivery to top metros</li><li>Cash on delivery available</li><li>Weather-safe packing · assembly guide included</li></ul>
