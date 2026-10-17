@@ -2354,6 +2354,14 @@ function renderPLP(){
   }).join('');
 }
 let curPid=null;
+// product page gallery: main photo + the product's other photos (GAL, from product_images); one thumb when there are none
+var GAL = window.GAL || {}; window.GAL = GAL;
+function pdThumbs(id){
+  const x=PRODS[id], list=[IMGS[x.img], ...(GAL[id]||[])].filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
+  const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
+  box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdShow(this)"><img src="${u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
+}
+function pdShow(th){ document.querySelectorAll('.thumbs .th').forEach(t=>t.classList.remove('on')); th.classList.add('on'); document.getElementById('pdImg').src=th.querySelector('img').src; }
 function openProduct(id){
   if(lastCol==='__search' && SQ) _supaRpc('log_search',{p_kind:'click',p_q:SQ,p_sku:id}).catch(()=>{});
   curPid=id; setTimeout(()=>window.acWlPaint&&acWlPaint(),0);
@@ -2367,8 +2375,7 @@ function openProduct(id){
   document.getElementById('pdShip').textContent=x.ship;
   document.getElementById('pdDesc').textContent=COLDESC[x.col]||COLDESC['furniture'];
   document.getElementById('pdImg').src=IMGS[x.img];
-  document.getElementById('pdTh1').src=IMGS[x.img];
-  document.querySelectorAll('.thumbs .th').forEach((t,i)=>t.classList.toggle('on',i===0));
+  pdThumbs(id);
   document.getElementById('crumbPath').textContent='Home / '+c.t;
   // pepperfry-style extras
   qty=1; document.getElementById('pdQty').textContent='1';
@@ -3232,10 +3239,10 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const S = window.OUTRR_SUPA;
   if(!S.url || !S.anon) return;                    // static fallback — site works as before
   const H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon };
-  const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + '&order=sku&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
+  const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug,subcategory_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug,subcategory_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null)
     ]);
@@ -3277,6 +3284,12 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       if(PRODS[_pp]) try{ openProduct(_pp); }catch(e){}
     }
     cartX(); CART = CART.filter(c => PRODS[c.id]); updBadge();
+    // each product's other photos (Image Studio: side, front, close-up, measurements) for the product page gallery
+    try{
+      const gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort');
+      if(gr.ok){ const bySku = {}; prods.forEach(p => bySku[p.id] = p.sku);
+        (await gr.json()).sort((a,b) => (a.sort||0) - (b.sort||0)).forEach(g => { const k = bySku[g.product_id]; if(k){ (GAL[k] = GAL[k] || []).push(g.url); } }); }
+    }catch(e){}
     try{ window.dispatchEvent(new Event('outrr-catalog')); }catch(e){}
     console.log('[outrr] live catalog loaded:', prods.length, 'products');
   }catch(e){ console.warn('[outrr] Supabase load failed, using embedded catalog', e); }
@@ -3293,6 +3306,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     PRODS[id] = { n:String(x.n||'Product'), p:+x.p||0, m:+x.m||0, r:'4.5', c:0, ship:String(x.ship||'Ships in 10-14 days'), img:id, col,
       mat:String(x.mat||''), dim:String(x.dim||''), kg:0, stock:true, tier:x.tier||'select', sb:String(x.sb||'') };
     IMGS[id] = /^https:\/\//.test(x.img||'') ? x.img : '';
+    GAL[id] = (Array.isArray(x.g) ? x.g : []).filter(u => /^https:\/\//.test(u||'')).slice(0, 8);
     try{ openProduct(id); }catch(e){ console.warn(e); }
     const b = document.createElement('div');
     b.textContent = 'Preview — this product is not live on outrr.in yet' + (x.sku ? ' · ' + x.sku : '');
