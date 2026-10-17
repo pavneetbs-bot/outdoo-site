@@ -91,8 +91,9 @@ if (typeof _tb === 'function') window.tbHTML = tbHTML = function (id){
   var h = _tb(id), r = rank(id), x = PRODS[id] || {};
   if (!LOC) return (x.sp === false ? '<div class="near-lb">Local delivery only</div>' : '') + h;
   if (r === 9) return '<div class="near-lb no">Doesn\'t deliver to ' + esc(where()) + '</div>' + h;
-  if (r <= 2) return '<div class="near-lb ok">⚡ Local delivery in ' + esc(where()) + '</div>' + h;
-  return h };
+  var d = hasCh(x) ? '<div class="near-lb dlv">+ ' + inr(charge(x, LOC).fee) + ' packaging &amp; delivery</div>' : '<div class="near-lb dlv">Free delivery</div>';   // 076
+  if (r <= 2) return '<div class="near-lb ok">⚡ Local delivery in ' + esc(where()) + '</div>' + d + h;
+  return d + h };
 
 /* home strips + listings re-ordered when the place changes */
 var STRIPS = {};
@@ -102,6 +103,8 @@ function refresh(){
   Object.keys(STRIPS).forEach(function (el) { try { _fill(el, window.nearSort(STRIPS[el])) } catch (e) {} });
   try { var plp = document.getElementById('plp'); if (plp && plp.style.display !== 'none' && typeof lastCol !== 'undefined' && lastCol) renderPLP() } catch (e) {}
   try { if (document.getElementById('checkout') && document.getElementById('checkout').style.display === 'block') checkoutCheck() } catch (e) {}
+  try { if (typeof curPid !== 'undefined' && curPid && window.pdPaint) pdPaint(curPid) } catch (e) {}
+  try { var cb = document.getElementById('cartBody'); if (cb && cb.offsetParent && typeof renderCart === 'function') renderCart() } catch (e) {}
   pill();
 }
 
@@ -238,7 +241,9 @@ window.checkPin = function (){
   var loc = fromText(v); if (!loc) { ok.textContent = /^\d{6}$/.test(v) ? 'We don\'t recognise this pincode.' : 'Enter a valid 6-digit pincode'; return }
   var x = PRODS[curPid], place = loc.city ? city(loc.city).name : v;
   if (!shipsTo(x, loc)) { ok.textContent = '✗ Doesn\'t deliver to ' + v + ' (' + place + ')'; ok.style.color = '#a14f33' }
-  else { ok.style.color = ''; ok.textContent = '✓ Delivers to ' + v + ' (' + place + ')' + (loc.city && x && ((x.sc || []).indexOf(loc.city) >= 0) ? ' · local delivery, faster' : '') }
+  else { ok.style.color = ''; var c = charge(x, loc)
+    ok.textContent = '✓ Delivers to ' + v + ' (' + place + ')' + (loc.city && x && ((x.sc || []).indexOf(loc.city) >= 0) ? ' · local delivery, faster' : '')
+      + (hasCh(x) ? ' · Packaging & delivery ' + inr(c.fee) + ' · Total ' + inr(x.p + c.fee) : ' · Free delivery') }   // 076
   save(loc, null);
 };
 
@@ -261,6 +266,62 @@ if (typeof _rc === 'function') window.renderCheckout = renderCheckout = function
   var pinEl = document.getElementById('coPin');
   if (pinEl) { if (!pinEl.value && LOC && LOC.pincode) pinEl.value = LOC.pincode; pinEl.addEventListener('input', checkoutCheck); checkoutCheck() }
   return r };
+
+/* ---------------------------------------------------------------- 076: packaging + delivery charges (set by the seller)
+   x.ch = { pk: packaging, l: own city & nearby, s: same state, i: rest of India } per piece, incl. GST; x.os = state it ships from.
+   Same rule as the database (_ship_rate): empty rate → the next wider one; nothing set → free. The order total comes from the server. */
+function num(v){ return v == null || v === '' || isNaN(+v) ? null : +v }
+function zoneOf(x, loc){ if (!loc) return null; var c = loc.city, s = loc.state;
+  if (c && (c === x.oc || (x.sc || []).indexOf(c) >= 0 || (x.oc && near(x.oc).indexOf(c) >= 0))) return 'local';
+  return s && s === x.os ? 'state' : 'india' }
+function rateOf(x, z){ var c = x.ch || {}, l = num(c.l), s = num(c.s), i = num(c.i);
+  var r = z === 'local' ? (l != null ? l : s != null ? s : i) : z === 'state' ? (s != null ? s : i) : i; return r == null ? 0 : r }
+function hasCh(x){ var c = (x && x.ch) || {}; return [c.pk, c.l, c.s, c.i].some(function (v) { return num(v) > 0 }) }
+// per piece: { zone, pack, ship, fee }; without a place: the lowest it can be (from: true)
+function charge(x, loc){ var pk = num((x.ch || {}).pk) || 0;
+  if (!loc) { var lo = Math.min(rateOf(x, 'local'), rateOf(x, 'state'), rateOf(x, 'india')); return { zone: null, pack: pk, ship: lo, fee: pk + lo, from: true } }
+  var z = zoneOf(x, loc), sh = rateOf(x, z); return { zone: z, pack: pk, ship: sh, fee: pk + sh } }
+window.shipCharge = function (id, loc){ var x = PRODS[id]; return x ? charge(x, loc === undefined ? LOC : loc) : null };
+window.hasCharges = function (id){ return hasCh(PRODS[id]) };
+window.locFromPin = function (pin){ return /^[1-9][0-9]{5}$/.test(pin || '') ? { city: pinCity(pin), state: pinState(pin), pincode: pin } : null };
+window.nearLoc = function (){ return LOC };
+window.nearWhere = function (loc){ loc = loc || LOC; return loc ? (loc.city ? city(loc.city).name : loc.pincode || stateName(loc.state)) : '' };
+// the whole cart to a place (null = place not known and something in the cart has charges)
+window.cartShip = function (loc){ loc = loc === undefined ? LOC : loc; var t = 0, unknown = false;
+  CART.forEach(function (c) { var x = PRODS[c.id]; if (!x || !hasCh(x)) return; if (!loc) { unknown = true; return } t += charge(x, loc).fee * c.q });
+  return unknown ? null : Math.round(t * 100) / 100 };
+
+/* product page: "₹1,500 delivered to Mumbai" + "₹1,000 product + ₹500 packaging & delivery" (MRP only next to the product price) */
+function pdPaint(id){
+  var x = PRODS[id], el = document.getElementById('pdPrice'); if (!x || !el) return;
+  var br = document.getElementById('pdBreak');
+  if (!br) { br = document.createElement('div'); br.id = 'pdBreak'; br.className = 'dlv-br'; el.parentNode.insertBefore(br, el.nextSibling) }
+  var off = x.m > x.p ? Math.round((1 - x.p / x.m) * 100) : 0;
+  var mrp = off ? '<span class="mrplab">MRP</span><span class="mrp">' + inr(x.m) + '</span><span class="off">' + off + '% OFF</span>' : '';
+  var chip = document.getElementById('pdDlv'), ships = shipsTo(x), c = charge(x, LOC), check = ' · <a class="dlv-a" onclick="pinFocus()">Check delivery charge</a>';
+  if (!hasCh(x)) { el.innerHTML = inr(x.p) + mrp; br.innerHTML = LOC && ships ? 'Free delivery to ' + esc(where()) : 'Free delivery'; if (chip) chip.textContent = 'Free delivery'; return }
+  if (LOC && ships) {
+    el.innerHTML = inr(x.p + c.fee) + '<span class="dlv-to">delivered to ' + esc(where()) + '</span>';
+    br.innerHTML = '<span class="dlv-pp">' + inr(x.p) + ' product</span>' + mrp + '<span class="dlv-plus"> + ' + inr(c.fee) + ' packaging &amp; delivery</span>'
+      + ' · <a class="dlv-a" onclick="nearOpen(\'change\')">Change city</a>';
+    if (chip) chip.textContent = 'Packaging & delivery ' + inr(c.fee);
+  } else {
+    el.innerHTML = inr(x.p) + mrp;
+    br.innerHTML = (LOC && !ships ? '<b class="dlv-no">Doesn\'t deliver to ' + esc(where()) + '</b>' : '+ packaging &amp; delivery from ' + inr(c.fee)) + check;
+    if (chip) chip.textContent = 'Packaging & delivery extra';
+  }
+}
+window.pdPaint = pdPaint;
+window.pinFocus = function (){ var i = document.getElementById('pin'); if (!i) return; try { i.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch (e) {} setTimeout(function () { try { i.focus() } catch (e) {} }, 350) };
+var _op = window.openProduct;
+if (typeof _op === 'function') window.openProduct = openProduct = function (id){ var r = _op.apply(this, arguments); try { pdPaint(id) } catch (e) {} return r };
+window.addEventListener('outrr-loc', function () { try { if (typeof curPid !== 'undefined' && curPid) pdPaint(curPid) } catch (e) {} });
+var css2 = document.createElement('style');
+css2.textContent = '.dlv-to{font-size:13px;font-weight:600;color:#5b5750;margin-left:8px}.dlv-br{font-size:13px;color:#5b5750;margin:2px 0 4px;line-height:1.5}'
+ + '.dlv-br .mrplab{margin-left:6px}.dlv-br .mrp{font-size:12px;color:#8a857c;text-decoration:line-through;margin-left:4px}.dlv-br .off{font-size:11.5px;color:#a14f33;font-weight:800;margin-left:5px}'
+ + '.dlv-pp{font-weight:700;color:#2E2E2E}.dlv-a{color:#a14f33;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap}.dlv-no{color:#a14f33}'
+ + '.near-lb.dlv{color:#5b5750;font-weight:500}';
+document.head.appendChild(css2);
 
 /* ---------------------------------------------------------------- start */
 pill();

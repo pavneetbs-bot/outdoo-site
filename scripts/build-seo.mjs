@@ -33,7 +33,9 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const inr = n => '₹' + Math.round(+n || 0).toLocaleString('en-IN')
 const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : s
 
-const products = (await getAll('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at&order=name,sku'))
+// 076: packaging + the highest delivery charge the seller set (per piece, incl. GST) — what a buyer far away pays; 0 = free
+const shipOf = p => Math.round(((+p.pack_fee || 0) + Math.max(+p.ship_india || 0, +p.ship_state || 0, +p.ship_local || 0)) * 100) / 100
+const products = (await getAll('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at,pack_fee,ship_local,ship_state,ship_india&order=name,sku'))
   .filter(p => p.price > 0)
 const cols = await get('collections?active=eq.true&select=*&order=sort')
 const subs = await get('subcategories?active=eq.true&select=*&order=sort').catch(() => [])
@@ -46,7 +48,7 @@ const describe = p => p.description?.trim() || [
   `${p.name} from the outrr ${colOf[p.collection_slug]?.title || 'outdoor'} range${colOf[p.collection_slug]?.tagline ? ` (${colOf[p.collection_slug].tagline.toLowerCase()})` : ''}.`,
   p.material ? `Made in ${p.material}.` : 'Built for Indian weather: sun, rain and dust.',
   p.dims ? `Size: ${p.dims}.` : '',
-  `${p.ship_text || 'Ships in 7-10 days'}, free delivery to top metros, cash on delivery available.`,
+  `${p.ship_text || 'Ships in 7-10 days'}, delivered across India, cash on delivery available.`,
 ].filter(Boolean).join(' ')
 
 // category pages follow the admin ranking (Settings → Search & ranking); name order if it isn't available
@@ -144,7 +146,7 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 <a class="cart acc" href="/?account=1">Account</a><a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
 <main class="wrap">${body}</main>
 <footer><div class="wrap cols">
-<div><b>outrr</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Free delivery to top metros · Cash on delivery</div>
+<div><b>outrr</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Delivered across India · Cash on delivery</div>
 <div><b>Shop</b>${cols.map(c => `<a href="/c/${c.slug}/">${esc(c.title)}</a>`).join('')}</div>
 <div><b>outrr</b><a href="/">Home</a><a href="/about/">About outrr</a><a href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=footer" target="_blank" rel="noopener">Sell on outrr</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outrr.in">Sell on outrr</a></div>
 </div></footer>
@@ -174,7 +176,7 @@ const compare = p => {
     ['Type', x => esc(subT[x.subcategory_slug] || colOf[x.collection_slug]?.title || '—')],
     ['Material', x => esc(x.material || '—')],
     ['Size', x => esc(x.dims || '—')],
-    ['Delivery', x => esc(x.ship_text || 'Ships in 7-10 days') + ' · Free · COD'],
+    ['Delivery', x => esc(x.ship_text || 'Ships in 7-10 days') + ' · COD'],
   ]
   const body = rows.map(([h, f, keep]) => { const c = L.map(f); if (!keep && c.every(v => v === '—')) return ''
     return `<tr><th>${h}</th>${c.map((v, i) => `<td${i ? '' : ' class="me"'}>${v}</td>`).join('')}</tr>` }).join('')
@@ -197,7 +199,7 @@ for (const p of products) {
     offers: { '@type': 'Offer', url: SITE + url, priceCurrency: 'INR', price: (+p.price).toFixed(2), itemCondition: 'https://schema.org/NewCondition',
       availability: p.in_stock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
       seller: { '@type': 'Organization', name: 'outrr' },
-      shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'INR' }, shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' } } },
+      shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: shipOf(p), currency: 'INR' }, shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' } } },
   }, {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE + '/' },
@@ -211,7 +213,7 @@ for (const p of products) {
 <div><h1>${esc(p.name)}</h1>
 <div class="price"><b>${inr(p.price)}</b>${off ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>
 <div class="btns">${p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
-<ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Free delivery to top metros</li><li>Cash on delivery available</li><li>Weather-safe packing · assembly guide included</li></ul>
+<ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Packaging &amp; delivery shown for your pincode</li><li>Cash on delivery available</li><li>Weather-safe packing · assembly guide included</li></ul>
 <div class="desc"><h2>About this product</h2><p>${esc(desc)}</p>
 <dl>${c ? `<dt>Category</dt><dd><a href="/c/${c.slug}/">${esc(c.title)}</a></dd>` : ''}${p.material ? `<dt>Material</dt><dd>${esc(p.material)}</dd>` : ''}${p.dims ? `<dt>Size</dt><dd>${esc(p.dims)}</dd>` : ''}<dt>SKU</dt><dd>${esc(p.sku)}</dd></dl></div>
 </div></div>
@@ -226,12 +228,12 @@ for (const c of cols) {
   const url = `/c/${c.slug}/`
   write(`c/${c.slug}/index.html`, page({
     title: `${c.title} Online in India | ${list.length} Designs | outrr`,
-    desc: clip(`Shop ${c.title.toLowerCase()} online at outrr: ${c.tagline ? c.tagline.toLowerCase() + '. ' : ''}${list.length} designs built for Indian weather, free delivery to top metros, cash on delivery.`, 158),
+    desc: clip(`Shop ${c.title.toLowerCase()} online at outrr: ${c.tagline ? c.tagline.toLowerCase() + '. ' : ''}${list.length} designs built for Indian weather, delivered across India, cash on delivery.`, 158),
     path: url, image: list[0].image_url, cur: c.slug,
     jsonld: [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: c.title, url: SITE + url,
       mainEntity: { '@type': 'ItemList', itemListElement: list.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/p/${p.slug}/` })) } }],
     body: `<div class="crumbs"><a href="/">Home</a> › ${esc(c.title)}</div><section class="cat"><h1>${esc(c.title)}</h1>
-<p class="lead">${esc(c.tagline || '')}${c.tagline ? ' · ' : ''}${list.length} designs · free delivery to top metros · cash on delivery</p>
+<p class="lead">${esc(c.tagline || '')}${c.tagline ? ' · ' : ''}${list.length} designs · delivered across India · cash on delivery</p>
 ${(() => { const gs = groupsOf(c.slug); return gs.length > 1 ? gs.map(g => `<h2 class="sub-h" id="${g.slug}">${esc(g.title)}</h2><div class="grid">${g.items.map(card).join('')}</div>`).join('') : `<div class="grid">${list.map(card).join('')}</div>` })()}</section>`,
   }))
 }
@@ -252,7 +254,7 @@ ${products.map(p => `<item>
   <g:availability>${p.in_stock === false ? 'out_of_stock' : 'in_stock'}</g:availability><g:condition>new</g:condition>
   ${p.mrp > p.price ? `<g:price>${(+p.mrp).toFixed(2)} INR</g:price><g:sale_price>${(+p.price).toFixed(2)} INR</g:sale_price>` : `<g:price>${(+p.price).toFixed(2)} INR</g:price>`}
   <g:brand>outrr</g:brand><g:identifier_exists>no</g:identifier_exists><g:product_type>${x(colOf[p.collection_slug]?.title || 'Outdoor')}</g:product_type>
-  <g:shipping><g:country>IN</g:country><g:price>0 INR</g:price></g:shipping>
+  <g:shipping><g:country>IN</g:country><g:price>${shipOf(p).toFixed(2)} INR</g:price></g:shipping>
 </item>`).join('\n')}
 </channel></rss>
 `)
