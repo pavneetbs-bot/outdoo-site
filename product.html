@@ -1089,7 +1089,7 @@ function doSearch(){ const v=document.getElementById('q').value.trim(); if(!v){t
 function checkPin(){
   const v = document.getElementById('pin').value, ok = document.getElementById('pinok');
   ok.style.display='block';
-  ok.textContent = /^\d{6}$/.test(v) ? '✓ Delivered & assembled at '+v : 'Enter a valid 6-digit pincode';
+  ok.textContent = /^\d{6}$/.test(v) ? '✓ Delivery available at '+v : 'Enter a valid 6-digit pincode';
 }
 let tt;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');

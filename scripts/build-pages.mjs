@@ -120,6 +120,7 @@ const PAGES = {
 <h2>What we collect</h2>
 <ul><li><b>When you order:</b> name, mobile number, email (optional), delivery address, city, state and pincode, and what you bought.</li>
 <li><b>When you contact us:</b> what you write to us and your contact details.</li>
+<li><b>When you set your city:</b> the city or pincode you choose (or, only if you allow it, your device location, used once to find the nearest city), and your mobile number if you choose to give it. We use these to show products that deliver to your area and, for the number, to send delivery updates and offers. Giving a number is optional.</li>
 <li><b>When you browse:</b> pages and products viewed, items added to cart, device type, and where you came from (for example an Instagram post or a Google ad). We use a random visitor ID for this, not your name.</li></ul>
 <h2>Why we use it</h2>
 <ul><li>To deliver your order, call you to confirm it, and give support, returns and refunds.</li>
