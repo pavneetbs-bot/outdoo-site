@@ -1003,6 +1003,7 @@ header{position:static!important}
 .ao-bar i{display:block;width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid var(--line);margin:0 auto 4px;position:relative;z-index:1}
 .ao-bar div.on i{background:var(--olive);border-color:var(--olive)} .ao-bar div.on span{color:var(--char);font-weight:600}
 .ao-ship{background:var(--sand-soft);border-radius:10px;padding:8px 12px;font-size:13px;margin:10px 0}
+.ao-otp{display:grid;gap:2px;background:#fdf1ec;border:1px dashed #C26445;border-radius:12px;padding:10px 14px;margin:10px 0;text-align:center}.ao-otp span{font-size:12.5px;color:#5b5750}.ao-otp b{font:800 26px/1.2 ui-monospace,Menlo,monospace;letter-spacing:6px;color:#a14f33}.ao-otp small{font-size:11.5px;color:#7a756c}
 .ao-items{margin-top:8px}
 .ao-it{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
 .ao-it .im,.ac-ri .im{width:64px;height:64px;border-radius:10px;overflow:hidden;background:var(--sand-soft);flex:none}
@@ -3351,7 +3352,7 @@ async function shareProduct(){
   try{ await navigator.clipboard.writeText(url); toast('Link copied'); }catch(e){ toast(url); }
 }
 </script>
-<script src="/account.js?v=2"></script>
+<script src="/account.js?v=3"></script>
 <script src="/track.js"></script>
 <script src="/store.js?v=6"></script>
 <script src="/near.js?v=3"></script>

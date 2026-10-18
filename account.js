@@ -186,7 +186,8 @@
       <div class="ao-top"><div><b>${esc(o.order_no)}</b><span>${d8(o.created_at)} · ${rs(o.total)} · ${o.payment_method === 'cod' ? 'Cash on delivery' : 'Paid online'}</span></div>
         <span class="ao-st ${dead ? 'x' : st === 'delivered' ? 'ok' : ''}">${LABEL[st]}</span></div>
       ${dead ? '' : `<div class="ao-bar">${STEPS.map((s, i) => `<div class="${i <= k ? 'on' : ''}"><i></i><span>${s[1]}</span></div>`).join('')}</div>`}
-      ${ship ? `<div class="ao-ship">🚚 ${esc(ship.courier || 'Courier')} · AWB <b>${esc(ship.awb)}</b>${ship.tracking_url ? ` · <a href="${esc(ship.tracking_url)}" target="_blank" rel="noopener">Track shipment</a>` : ''}</div>` : ''}
+      ${ship && ship.ship_zone !== 'hyperlocal' ? `<div class="ao-ship">🚚 ${esc(ship.courier || 'Courier')} · AWB <b>${esc(ship.awb)}</b>${ship.tracking_url ? ` · <a href="${esc(ship.tracking_url)}" target="_blank" rel="noopener">Track shipment</a>` : ''}</div>` : ''}
+      ${[...new Set(o.items.filter(i => i.delivery_otp).map(i => i.delivery_otp))].map(c => `<div class="ao-otp"><span>Local delivery is on its way. Your delivery code</span><b>${esc(c)}</b><small>Give it to the delivery person only after you receive your items.</small></div>`).join('')}
       <div class="ao-items">${o.items.map(i => `<div class="ao-it">
           <div class="im">${i.image_url ? `<img src="${esc(i.image_url)}" alt="" loading="lazy">` : ''}</div>
           <div class="tx"><div class="nm">${esc(i.name)}</div><div class="mut sm">Qty ${i.qty} · ${rs(i.gross)} · <b class="${DEAD.includes(i.status) ? 'red' : ''}">${LABEL[i.status]}</b>${i.status === 'delivered' && i.delivered_at ? ' ' + d8(i.delivered_at) : ''}</div>
