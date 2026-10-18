@@ -2518,7 +2518,7 @@ function renderCart(){
  const line=c=>{const x=PRODS[c.id];
   return `<div class="cline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
    <div class="inf"><div class="nm">${x.n}</div>
-   <div class="pr">${inr(x.p)}${x.m>x.p?`<span class="mr2">${inr(x.m)}</span>`:''}</div>${pvNote(x)}
+   <div class="pr">${inr(x.p)}${x.m>x.p?`<span class="mr2">${inr(x.m)}</span>`:''}</div>${pvNote(x)}${window.etaLine?etaLine(c.id):''}
    <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1)">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1)">+</button></div>
    <span class="rm" onclick="cartRm('${c.id}')">Remove</span></div></div></div>`;};
  const grp=cartGroups(), lines=grp?grp.map(e=>grpHead(e)+e.l.map(line).join('')).join(''):CART.map(line).join('');
@@ -2929,6 +2929,7 @@ function coShipPaint(){
   if(r) r.outerHTML=shipRow(t.ship,t.loc,'coShipR');
   if(tot) tot.textContent=inr(t.total);
   if(b && !coBusy) b.textContent='Place order · Cash on delivery · '+inr(t.total);
+  if(window.etaFill) etaFill(t.loc);
   if(dv) dv.innerHTML=t.ship===null?'<b>Standard</b><span>Enter your pincode to see the packaging &amp; delivery charge</span>':t.ship>0?`<b>Standard — ${inr(t.ship)}</b><span>Packaging &amp; delivery set by each seller for your pincode · dispatch as per each item's timeline</span>`:'<b>Standard — FREE</b><span>Dispatch as per each item\'s timeline · weather-safe packing</span>';
 }
 function openCheckout(){
@@ -2943,7 +2944,7 @@ function renderCheckout(){
   const t=coTotals();
   const lines=CART.map(c=>{const x=PRODS[c.id];
     return `<div class="coline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
-      <div>${x.n}</div><div class="q">${c.q} × ${inr(x.p)}</div></div>`;}).join('');
+      <div>${x.n}<div class="co-eta" data-id="${c.id}"></div></div><div class="q">${c.q} × ${inr(x.p)}</div></div>`;}).join('');
   document.getElementById('coBody').innerHTML=`<div class="cowrap"><div>
     <div class="cobox"><h3>Contact &amp; delivery address</h3><div id="coAcct"></div>
       <div class="f2"><div class="fld"><label>FULL NAME</label><input id="coName" placeholder="Your name" value="${(coLast.name||'').replace(/"/g,'')}"><div class="msg">Please enter your name</div></div>
@@ -3263,7 +3264,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,image_url,collection_slug,subcategory_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null)
     ]);
@@ -3279,7 +3280,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     prods.forEach(p => {
       PRODS[p.sku] = { n:p.name, p:Math.round(+p.price), m:p.mrp?Math.round(+p.mrp):0,
         r:String(p.rating ?? '4.5'), c:p.rating_count ?? 0,
-        ship:p.ship_text || 'Ships in 7-10 days', img:p.sku, col:p.collection_slug,
+        ship:p.ship_text || 'Ships in 7-10 days', dd:p.dispatch_days||0, img:p.sku, col:p.collection_slug,
         mat:p.material||'', dim:p.dims||'', kg:p.weight_kg||0, stock:p.in_stock, tier:p.tier||'select',
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
@@ -3352,10 +3353,10 @@ async function shareProduct(){
   try{ await navigator.clipboard.writeText(url); toast('Link copied'); }catch(e){ toast(url); }
 }
 </script>
-<script src="/account.js?v=3"></script>
+<script src="/account.js?v=4"></script>
 <script src="/track.js"></script>
 <script src="/store.js?v=6"></script>
-<script src="/near.js?v=3"></script>
+<script src="/near.js?v=4"></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };

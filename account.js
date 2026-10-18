@@ -177,6 +177,9 @@
     const idx = Math.min(...live.map(i => STEPS.findIndex(s => s[0] === i.status)))
     return STEPS[Math.max(0, idx)][0]
   }
+  // 081: "24–27 Oct"
+  const etaR = (a, b) => { const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], A = new Date(a + 'T00:00:00'), B = new Date((b || a) + 'T00:00:00'), f = d => d.getDate() + ' ' + M[d.getMonth()]
+    return +A === +B ? f(A) : A.getMonth() === B.getMonth() ? A.getDate() + '–' + f(B) : f(A) + ' – ' + f(B) }
   function orderCard(o, full) {
     const st = stageOf(o), k = STEPS.findIndex(s => s[0] === st), dead = DEAD.includes(st)
     const ship = o.items.find(i => i.awb)
@@ -190,7 +193,7 @@
       ${[...new Set(o.items.filter(i => i.delivery_otp).map(i => i.delivery_otp))].map(c => `<div class="ao-otp"><span>Local delivery is on its way. Your delivery code</span><b>${esc(c)}</b><small>Give it to the delivery person only after you receive your items.</small></div>`).join('')}
       <div class="ao-items">${o.items.map(i => `<div class="ao-it">
           <div class="im">${i.image_url ? `<img src="${esc(i.image_url)}" alt="" loading="lazy">` : ''}</div>
-          <div class="tx"><div class="nm">${esc(i.name)}</div><div class="mut sm">Qty ${i.qty} · ${rs(i.gross)} · <b class="${DEAD.includes(i.status) ? 'red' : ''}">${LABEL[i.status]}</b>${i.status === 'delivered' && i.delivered_at ? ' ' + d8(i.delivered_at) : ''}</div>
+          <div class="tx"><div class="nm">${esc(i.name)}</div><div class="mut sm">Qty ${i.qty} · ${rs(i.gross)} · <b class="${DEAD.includes(i.status) ? 'red' : ''}">${LABEL[i.status]}</b>${i.status === 'delivered' && i.delivered_at ? ' ' + d8(i.delivered_at) : ''}${i.eta_to && !DEAD.includes(i.status) && i.status !== 'delivered' ? ` · Delivery by <b>${etaR(i.eta_from, i.eta_to)}</b>` : ''}</div>
             ${i.return ? `<div class="ao-ret ${i.return.status}">${RET[i.return.status]}${i.return.status === 'refunded' ? ` · ${rs(i.return.refund_amount)}` : ''}${i.return.seller_note && i.return.status === 'rejected' ? ` · ${esc(i.return.seller_note)}` : ''}${i.return.team_note && ['rejected', 'approved'].includes(i.return.status) ? ` · ${esc(i.return.team_note)}` : ''}
               ${full && ['requested', 'approved'].includes(i.return.status) ? ` <a onclick="acCancelReturn('${i.return.id}')">Withdraw</a>` : ''}</div>` : ''}
             ${full && i.can_return ? `<div class="sm"><a class="ao-act" onclick="acReturn('${o.id}','${i.id}')">Return this item</a> <span class="mut">until ${d8(i.return_until)}</span></div>` : ''}

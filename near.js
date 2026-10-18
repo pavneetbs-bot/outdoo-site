@@ -243,7 +243,7 @@ window.checkPin = function (){
   if (!shipsTo(x, loc)) { ok.textContent = '✗ Doesn\'t deliver to ' + v + ' (' + place + ')'; ok.style.color = '#a14f33' }
   else { ok.style.color = ''; var c = charge(x, loc), id = curPid
     var say = function (c, how) { ok.textContent = '✓ Delivers to ' + v + ' (' + place + ')' + (how ? ' · local delivery by ' + how : loc.city && x && ((x.sc || []).indexOf(loc.city) >= 0) ? ' · local delivery, faster' : '')
-      + (hasCh(x) ? ' · Packaging & delivery ' + inr(c.fee) + ' · Total ' + inr(x.p + c.fee) : ' · Free delivery') };   // 076
+      + (hasCh(x) ? ' · Packaging & delivery ' + inr(c.fee) + ' · Total ' + inr(x.p + c.fee) : ' · Free delivery') + (window.etaText ? ' · Delivery by ' + etaText(id, loc) : '') };   // 076 / 081
     say(c);
     if (localVehicle(x, loc)) { var use = function () { var q = quote([{ sku: id, qty: 1 }], loc), ln = q && q.lines && q.lines[0]; if (ln && ln.mode === 'vehicle') say({ fee: +ln.pack + +ln.ship }, String(ln.note || '').split(' · ')[0]) };   // 078
       if (quote([{ sku: id, qty: 1 }], loc, use)) use() } }
@@ -347,6 +347,45 @@ css2.textContent = '.dlv-to{font-size:13px;font-weight:600;color:#5b5750;margin-
  + '.dlv-pp{font-weight:700;color:#2E2E2E}.dlv-a{color:#a14f33;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap}.dlv-no{color:#a14f33}'
  + '.near-lb.dlv{color:#5b5750;font-weight:500}.dlv-veh{font-size:12px;font-weight:600;color:#3d5233;background:#eef3ea;border-radius:999px;padding:1px 8px;margin-left:6px}';
 document.head.appendChild(css2);
+
+/* ---------------------------------------------------------------- 081: delivery dates
+   Delivery by = order day (next day after the cut-off) + the product's "Ships in" days + transit days for the zone, Sundays skipped.
+   Same rule as the database (order_items_eta); the rates and days come from company_rates(). */
+var DT = { transit_days: { local: [1, 2], state: [2, 4], india: [4, 7], special: [7, 10], hyperlocal: [0, 1] }, cutoff_hour: 14, special_states: ['AS', 'AR', 'ML', 'MN', 'MZ', 'NL', 'TR', 'SK', 'JK', 'LA', 'AN'] };
+(function () { var S = window.OUTRR_SUPA || {}; if (!S.url || !S.anon) return;
+  fetch(S.url + '/rest/v1/rpc/company_rates', { method: 'POST', headers: { apikey: S.anon, Authorization: 'Bearer ' + S.anon, 'Content-Type': 'application/json' }, body: '{}' })
+    .then(function (r) { return r.ok ? r.json() : null }).then(function (j) { if (j && j.transit_days) { DT = { transit_days: j.transit_days, cutoff_hour: j.cutoff_hour == null ? 14 : j.cutoff_hour, special_states: j.special_states || DT.special_states }; refresh() } }, function () {}) })();
+function shipDaysOf(x){ if (+x.dd > 0) return +x.dd; var n = String(x.ship || '').match(/\d+/g); return n ? Math.max.apply(null, n.map(Number)) : 10 }
+function wd(d, n){ var r = new Date(d), k = 0; while (k < Math.max(+n || 0, 0)) { r.setDate(r.getDate() + 1); if (r.getDay() !== 0) k++ } while (r.getDay() === 0) r.setDate(r.getDate() + 1); return r }
+function etaOf(x, loc){ if (!x || !loc) return null;
+  var now = new Date(), ist = new Date(now.getTime() + (330 + now.getTimezoneOffset()) * 60000), start = new Date(ist.getFullYear(), ist.getMonth(), ist.getDate());
+  if (ist.getHours() >= DT.cutoff_hour) start.setDate(start.getDate() + 1);
+  var z = localVehicle(x, loc) ? 'hyperlocal' : zoneOf(x, loc); if (z === 'india' && DT.special_states.indexOf(loc.state) >= 0) z = 'special';
+  var t = DT.transit_days[z] || DT.transit_days.india || [4, 7], disp = wd(start, shipDaysOf(x));
+  return { from: wd(disp, t[0]), to: wd(disp, t[1]), zone: z } }
+var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function dRange(e){ var a = e.from, b = e.to, f = function (d) { return d.getDate() + ' ' + MON[d.getMonth()] };
+  if (+a === +b) return f(a); return a.getMonth() === b.getMonth() ? a.getDate() + '–' + f(b) : f(a) + ' – ' + f(b) }
+window.etaText = function (id, loc){ var e = etaOf(PRODS[id], loc === undefined ? LOC : loc); return e ? dRange(e) : '' };
+// cart line: "Delivery by 24–27 Oct" (or how long it ships in)
+window.etaLine = function (id){ var x = PRODS[id]; if (!x) return '';
+  var e = LOC && shipsTo(x) ? etaOf(x, LOC) : null;
+  return '<div class="eta-l">' + (e ? '🚚 Delivery by <b>' + dRange(e) + '</b>' : esc(x.ship || '')) + '</div>' };
+// checkout lines (by the address pincode)
+window.etaFill = function (loc){ loc = loc || LOC;
+  [].forEach.call(document.querySelectorAll('.co-eta'), function (el) { var x = PRODS[el.getAttribute('data-id')], e = x && loc && shipsTo(x, loc) ? etaOf(x, loc) : null;
+    el.innerHTML = e ? '🚚 Delivery by <b>' + dRange(e) + '</b>' : '<span>' + esc(x ? x.ship : '') + (loc ? '' : ' · enter pincode for the delivery date') + '</span>' }) };
+function pdEta(id){ var x = PRODS[id]; if (!x) return;
+  var el = document.getElementById('pdEtaLine'), br = document.getElementById('pdBreak');
+  if (!el && br) { el = document.createElement('div'); el.id = 'pdEtaLine'; el.className = 'dlv-eta'; br.parentNode.insertBefore(el, br.nextSibling) }
+  var e = LOC && shipsTo(x) ? etaOf(x, LOC) : null, big = document.getElementById('pdEta'), lb = big && big.previousElementSibling;
+  if (el) el.innerHTML = e ? '🚚 Delivery by <b>' + dRange(e) + '</b> to ' + esc(where()) + ' · <span>' + esc(x.ship) + '</span>'
+    : '<span>' + esc(x.ship) + '</span> · <a class="dlv-a" onclick="pinFocus()">Enter pincode for the delivery date</a>';
+  if (big) { big.textContent = e ? dRange(e) : String(x.ship || '').replace('Ships in ', '') + ' + delivery'; if (lb) lb.textContent = e ? 'Delivery by' : 'Ships in' } }
+var _pp = window.pdPaint; window.pdPaint = pdPaint = function (id){ _pp(id); try { pdEta(id) } catch (e) {} };
+var css3 = document.createElement('style');
+css3.textContent = '.dlv-eta{font-size:13px;color:#2E2E2E;margin:2px 0 6px}.dlv-eta span{color:#7a756c}.eta-l,.co-eta{font-size:12px;color:#3d5233;margin-top:2px}.co-eta span,.eta-l span{color:#7a756c}';
+document.head.appendChild(css3);
 
 /* ---------------------------------------------------------------- start */
 pill();
