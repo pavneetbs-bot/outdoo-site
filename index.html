@@ -226,6 +226,7 @@ section{padding:20px 0 8px}
 .fsec{border-bottom:1px solid var(--sand-soft);padding:12px 0}
 .fsec h4{font-size:12.5px;font-weight:800;margin-bottom:9px}
 .fopt{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12.5px;color:#4b473f;cursor:pointer}
+.fopt .fcnt{color:#8a857b;font-size:11.5px}
 .fopt input{width:17px;height:17px;accent-color:var(--terra-deep)}
 .fltacts{position:fixed;left:0;right:0;bottom:0;z-index:62;display:none;gap:10px;padding:12px 16px;
   background:#fff;border-top:1px solid var(--line)}
@@ -1702,6 +1703,7 @@ header{position:static!important}
     <aside>
       <div class="fltov" id="fltOv" onclick="fltToggle(false)"></div>
       <div id="fltPanel">
+        <div class="fsec" id="fTypeSec" hidden><h4>Type</h4><div id="fTypeOpts"></div></div>
         <div class="fsec"><h4>Price</h4>
           <label class="fopt"><input type="checkbox" data-f="price" value="0-10000" onchange="fltSet()"> Under ₹10,000</label>
           <label class="fopt"><input type="checkbox" data-f="price" value="10000-25000" onchange="fltSet()"> ₹10,000 – ₹25,000</label>
@@ -2291,27 +2293,38 @@ function subOf(id){const x=PRODS[id],n=x.n; if(x.sb) return x.sb;
  if(x.col==='art'){if(/Water|Fountain/i.test(n))return 'Water Features';if(/Wall|Panel|Screen/i.test(n))return 'Wall Art';
   if(/Lamp/i.test(n))return 'Sculpture Lamps';return 'Sculptures';}
  return 'All';}
-let FLT={sub:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
-function fltReset(){FLT={sub:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
+let FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
+function fltReset(){FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
  document.querySelectorAll('#fltPanel input').forEach(i=>{i.checked=false});}
 function fltSet(){
  FLT.price=new Set([...document.querySelectorAll('input[data-f=price]:checked')].map(i=>i.value));
  const r=document.querySelector('input[data-f=rating]:checked'); FLT.rating=r?parseFloat(r.value):0;
  const d=document.querySelector('input[data-f=dispatch]:checked'); FLT.dispatch=d?d.value:'';
  FLT.offer=!!document.querySelector('input[data-f=offer]:checked');
+ FLT.type=new Set([...document.querySelectorAll('input[data-f=type]:checked')].map(i=>i.value));
  renderPLP();}
 function fltClear(){fltReset();buildChips();renderPLP();}
 function fltToggle(open){document.getElementById('fltPanel').classList.toggle('open',open);
  document.getElementById('fltOv').classList.toggle('open',open);
  document.body.classList.toggle('flt-open',open);}
 function chipTap(sb){FLT.sub.has(sb)?FLT.sub.delete(sb):FLT.sub.add(sb);buildChips();renderPLP();}
+// 083: Type filter (lounge chairs, bar chairs…) from the products in view; follows the sub-category chips
+function buildTypes(ids){
+ const sec=document.getElementById('fTypeSec'), box=document.getElementById('fTypeOpts'); if(!sec||!box) return;
+ const m={}; ids.forEach(id=>{const x=PRODS[id]; if(x.ty && (!FLT.sub.size||FLT.sub.has(subOf(id)))) m[x.ty]=(m[x.ty]||0)+1});
+ const ts=Object.keys(m).sort((a,b)=>m[b]-m[a]||a.localeCompare(b));
+ [...FLT.type].forEach(t=>{ if(!m[t]) FLT.type.delete(t) });
+ sec.hidden = ts.length<2;
+ const esc=t=>t.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+ box.innerHTML = ts.map(t=>`<label class="fopt"><input type="checkbox" data-f="type" value="${esc(t)}"${FLT.type.has(t)?' checked':''} onchange="fltSet()"> ${esc(t)} <span class="fcnt">(${m[t]})</span></label>`).join('');}
 function buildChips(){
  const c0=COLS[lastCol];
  const ids=Object.keys(PRODS).filter(id=>c0&&c0.f?c0.f(PRODS[id],id):PRODS[id].col===lastCol);
  const m={}; ids.forEach(id=>{const sb=subOf(id);m[sb]=(m[sb]||0)+1});
  const subs=Object.keys(m).sort((a,b)=>m[b]-m[a]);
  document.getElementById('subChips').innerHTML = subs.length>1 ?
-  subs.map(sb=>`<span class="schip${FLT.sub.has(sb)?' on':''}" onclick="chipTap('${sb}')">${sb} (${m[sb]})</span>`).join('') : '';}
+  subs.map(sb=>`<span class="schip${FLT.sub.has(sb)?' on':''}" onclick="chipTap('${sb}')">${sb} (${m[sb]})</span>`).join('') : '';
+ buildTypes(ids);}
 
 function renderPLP(){
   const k=lastCol, sort=document.getElementById('colSort').value;
@@ -2321,6 +2334,7 @@ function renderPLP(){
     const x=PRODS[id];
     if(_c && _c.f ? !_c.f(x,id) : x.col!==k) return false;
     if(FLT.sub.size && !FLT.sub.has(subOf(id))) return false;
+    if(FLT.type.size && !FLT.type.has(x.ty)) return false;
     if(FLT.price.size){let ok=false;FLT.price.forEach(rg=>{const [lo,hi]=rg.split('-').map(Number);if(x.p>=lo&&x.p<=hi)ok=true});if(!ok)return false;}
     if(FLT.rating && parseFloat(x.r)<FLT.rating) return false;
     if(FLT.dispatch==='ready' && /order/i.test(x.ship)) return false;
@@ -2333,7 +2347,7 @@ function renderPLP(){
   if(sort==='hi') ids.sort((a,b)=>PRODS[b].p-PRODS[a].p);
   if(sort==='rat') ids.sort((a,b)=>parseFloat(PRODS[b].r)-parseFloat(PRODS[a].r));
   if(sort==='off') ids.sort((a,b)=>((PRODS[b].m>PRODS[b].p?1-PRODS[b].p/PRODS[b].m:0)-(PRODS[a].m>PRODS[a].p?1-PRODS[a].p/PRODS[a].m:0)));
-  const nf=FLT.sub.size+FLT.price.size+(FLT.rating?1:0)+(FLT.dispatch?1:0)+(FLT.offer?1:0);
+  const nf=FLT.sub.size+FLT.type.size+FLT.price.size+(FLT.rating?1:0)+(FLT.dispatch?1:0)+(FLT.offer?1:0);
   const fc=document.getElementById('fltCount');
   if(fc){fc.textContent=nf;fc.style.display=nf?'inline-block':'none';}
   document.getElementById('colCnt').textContent = nf? ids.length+' of '+total+' products' : ids.length+' products';
@@ -3263,11 +3277,13 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon };
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
-    const [pr, cr, sr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india'),
+    const [pr, cr, sr, tr] = await Promise.all([
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
-      fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null)
+      fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
+      fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
     ]);
+    const TYT = {}; if(tr && tr.ok) (await tr.json()).forEach(x => { TYT[x.slug] = x.title });
     const subsDB = sr && sr.ok ? await sr.json() : [], SUBT = {};
     subsDB.forEach(x => { SUBT[x.slug] = x.title;
       if(typeof MENU !== 'undefined') MENU.subs[x.category_slug + '|' + x.title] = { img: x.image_url || '', sort: x.sort ?? 100 }; });
@@ -3284,7 +3300,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         mat:p.material||'', dim:p.dims||'', kg:p.weight_kg||0, stock:p.in_stock, tier:p.tier||'select',
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
-        sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : '') };
+        sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '' };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
