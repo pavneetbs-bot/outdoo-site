@@ -241,9 +241,12 @@ window.checkPin = function (){
   var loc = fromText(v); if (!loc) { ok.textContent = /^\d{6}$/.test(v) ? 'We don\'t recognise this pincode.' : 'Enter a valid 6-digit pincode'; return }
   var x = PRODS[curPid], place = loc.city ? city(loc.city).name : v;
   if (!shipsTo(x, loc)) { ok.textContent = '✗ Doesn\'t deliver to ' + v + ' (' + place + ')'; ok.style.color = '#a14f33' }
-  else { ok.style.color = ''; var c = charge(x, loc)
-    ok.textContent = '✓ Delivers to ' + v + ' (' + place + ')' + (loc.city && x && ((x.sc || []).indexOf(loc.city) >= 0) ? ' · local delivery, faster' : '')
-      + (hasCh(x) ? ' · Packaging & delivery ' + inr(c.fee) + ' · Total ' + inr(x.p + c.fee) : ' · Free delivery') }   // 076
+  else { ok.style.color = ''; var c = charge(x, loc), id = curPid
+    var say = function (c, how) { ok.textContent = '✓ Delivers to ' + v + ' (' + place + ')' + (how ? ' · local delivery by ' + how : loc.city && x && ((x.sc || []).indexOf(loc.city) >= 0) ? ' · local delivery, faster' : '')
+      + (hasCh(x) ? ' · Packaging & delivery ' + inr(c.fee) + ' · Total ' + inr(x.p + c.fee) : ' · Free delivery') };   // 076
+    say(c);
+    if (localVehicle(x, loc)) { var use = function () { var q = quote([{ sku: id, qty: 1 }], loc), ln = q && q.lines && q.lines[0]; if (ln && ln.mode === 'vehicle') say({ fee: +ln.pack + +ln.ship }, String(ln.note || '').split(' · ')[0]) };   // 078
+      if (quote([{ sku: id, qty: 1 }], loc, use)) use() } }
   save(loc, null);
 };
 
@@ -286,10 +289,28 @@ window.hasCharges = function (id){ return hasCh(PRODS[id]) };
 window.locFromPin = function (pin){ return /^[1-9][0-9]{5}$/.test(pin || '') ? { city: pinCity(pin), state: pinState(pin), pincode: pin } : null };
 window.nearLoc = function (){ return LOC };
 window.nearWhere = function (loc){ loc = loc || LOC; return loc ? (loc.city ? city(loc.city).name : loc.pincode || stateName(loc.state)) : '' };
+/* 078: local orders of products that deliver locally go by vehicle (bike / auto / mini truck), priced by distance and load:
+   the server works that out (delivery_quote, the same plan the order uses). Asked once per place + cart, then cached. */
+function localVehicle(x, loc){ return !!loc && zoneOf(x, loc) === 'local' && (x.sp === false || (x.sc || []).length > 0) }
+var QC = {};
+function qkey(items, loc){ return [loc.pincode || '', loc.city || '', items.map(function (i) { return i.sku + ':' + i.qty }).join(',')].join('|') }
+function quote(items, loc, then){
+  var S = window.OUTRR_SUPA || {}, k = qkey(items, loc); if (QC[k]) return QC[k] === 'wait' ? null : QC[k];
+  if (!S.url || !S.anon) return null;
+  QC[k] = 'wait';
+  fetch(S.url + '/rest/v1/rpc/delivery_quote', { method: 'POST', headers: { apikey: S.anon, Authorization: 'Bearer ' + S.anon, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_items: items, p_pin: loc.pincode || null, p_city: loc.pincode ? null : (loc.city || null) }) })
+    .then(function (r) { return r.ok ? r.json() : null }).then(function (j) { QC[k] = j && j.lines ? j : { lines: [], failed: true }; then && then() }, function () { QC[k] = { lines: [], failed: true } });
+  return null }
+function cartRepaint(){
+  try { var co = document.getElementById('checkout'); if (co && co.style.display === 'block' && window.coShipPaint) coShipPaint() } catch (e) {}
+  try { var cb = document.getElementById('cartBody'); if (cb && cb.offsetParent && typeof renderCart === 'function') renderCart() } catch (e) {} }
 // the whole cart to a place (null = place not known and something in the cart has charges)
-window.cartShip = function (loc){ loc = loc === undefined ? LOC : loc; var t = 0, unknown = false;
-  CART.forEach(function (c) { var x = PRODS[c.id]; if (!x || !hasCh(x)) return; if (!loc) { unknown = true; return } t += charge(x, loc).fee * c.q });
-  return unknown ? null : Math.round(t * 100) / 100 };
+window.cartShip = function (loc){ loc = loc === undefined ? LOC : loc; var t = 0, unknown = false, local = false;
+  CART.forEach(function (c) { var x = PRODS[c.id]; if (!x || !hasCh(x)) return; if (!loc) { unknown = true; return } if (localVehicle(x, loc)) local = true; t += charge(x, loc).fee * c.q });
+  if (unknown) return null;
+  if (local) { var q = quote(CART.map(function (c) { return { sku: c.id, qty: c.q } }), loc, cartRepaint); if (q && !q.failed) return Math.round((+q.pack + +q.ship) * 100) / 100 }
+  return Math.round(t * 100) / 100 };
 
 /* product page: "₹1,500 delivered to Mumbai" + "₹1,000 product + ₹500 packaging & delivery" (MRP only next to the product price) */
 function pdPaint(id){
@@ -298,12 +319,16 @@ function pdPaint(id){
   if (!br) { br = document.createElement('div'); br.id = 'pdBreak'; br.className = 'dlv-br'; el.parentNode.insertBefore(br, el.nextSibling) }
   var off = x.m > x.p ? Math.round((1 - x.p / x.m) * 100) : 0;
   var mrp = off ? '<span class="mrplab">MRP</span><span class="mrp">' + inr(x.m) + '</span><span class="off">' + off + '% OFF</span>' : '';
-  var chip = document.getElementById('pdDlv'), ships = shipsTo(x), c = charge(x, LOC), check = ' · <a class="dlv-a" onclick="pinFocus()">Check delivery charge</a>';
+  var chip = document.getElementById('pdDlv'), ships = shipsTo(x), c = charge(x, LOC), check = ' · <a class="dlv-a" onclick="pinFocus()">Check delivery charge</a>', how = '';
+  if (LOC && ships && localVehicle(x, LOC)) {   // 078: local delivery by vehicle, 1 piece (the cart adds up the load)
+    var q = quote([{ sku: id, qty: 1 }], LOC, function () { if (typeof curPid !== 'undefined' && curPid === id) pdPaint(id) }), ln = q && q.lines && q.lines[0];
+    if (ln && ln.mode === 'vehicle') { c = { pack: +ln.pack, ship: +ln.ship, fee: +ln.pack + +ln.ship }; how = ' <span class="dlv-veh">local delivery by ' + esc(String(ln.note || '').split(' · ')[0]) + '</span>' }
+  }
   if (!hasCh(x)) { el.innerHTML = inr(x.p) + mrp; br.innerHTML = LOC && ships ? 'Free delivery to ' + esc(where()) : 'Free delivery'; if (chip) chip.textContent = 'Free delivery'; return }
   if (LOC && ships) {
     el.innerHTML = inr(x.p + c.fee) + '<span class="dlv-to">delivered to ' + esc(where()) + '</span>';
     br.innerHTML = '<span class="dlv-pp">' + inr(x.p) + ' product</span>' + mrp + '<span class="dlv-plus"> + ' + inr(c.fee) + ' packaging &amp; delivery</span>'
-      + ' · <a class="dlv-a" onclick="nearOpen(\'change\')">Change city</a>';
+      + how + ' · <a class="dlv-a" onclick="nearOpen(\'change\')">Change city</a>';
     if (chip) chip.textContent = 'Packaging & delivery ' + inr(c.fee);
   } else {
     el.innerHTML = inr(x.p) + mrp;
@@ -320,7 +345,7 @@ var css2 = document.createElement('style');
 css2.textContent = '.dlv-to{font-size:13px;font-weight:600;color:#5b5750;margin-left:8px}.dlv-br{font-size:13px;color:#5b5750;margin:2px 0 4px;line-height:1.5}'
  + '.dlv-br .mrplab{margin-left:6px}.dlv-br .mrp{font-size:12px;color:#8a857c;text-decoration:line-through;margin-left:4px}.dlv-br .off{font-size:11.5px;color:#a14f33;font-weight:800;margin-left:5px}'
  + '.dlv-pp{font-weight:700;color:#2E2E2E}.dlv-a{color:#a14f33;font-weight:600;cursor:pointer;text-decoration:underline;white-space:nowrap}.dlv-no{color:#a14f33}'
- + '.near-lb.dlv{color:#5b5750;font-weight:500}';
+ + '.near-lb.dlv{color:#5b5750;font-weight:500}.dlv-veh{font-size:12px;font-weight:600;color:#3d5233;background:#eef3ea;border-radius:999px;padding:1px 8px;margin-left:6px}';
 document.head.appendChild(css2);
 
 /* ---------------------------------------------------------------- start */
