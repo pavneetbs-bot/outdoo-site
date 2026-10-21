@@ -510,6 +510,20 @@ body.pdp-open .bottomnav,body.pdp-open .wafab{display:none}
 .review .nm2{font-size:11.5px;font-weight:700}
 .review .dt{font-size:9.5px;color:var(--muted)}
 .review p{font-size:11.5px;color:#4b473f}
+.setsec h3{font-size:15px;font-weight:800;margin:0 0 10px}
+.setrow{display:flex;gap:10px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.setrow::-webkit-scrollbar{display:none}
+.setc{flex:0 0 132px;border:1px solid var(--line);border-radius:12px;background:#fff;position:relative;cursor:pointer;overflow:hidden}
+.setc.this{border-color:var(--terra)}
+.setc .im{aspect-ratio:1;background:#f6f4f0}.setc .im img{width:100%;height:100%;object-fit:contain}
+.setc .bd{padding:7px 9px 9px}
+.setc .stag{font-size:10px;font-weight:700;color:var(--terra-deep);margin-bottom:2px}
+.setc .nm{font-size:11px;line-height:1.3;min-height:28px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.setc .pr{font-size:12px;font-weight:800;margin-top:3px}.setc .pr s{font-weight:400;color:#888;margin-left:4px;font-size:10.5px}.setc .pr i{font-style:normal;color:#1d8a4a;margin-left:4px;font-size:10.5px}
+.setc .tk{position:absolute;z-index:2;box-shadow:0 1px 3px rgba(0,0,0,.15);top:7px;right:7px;width:22px;height:22px;border-radius:6px;border:1.5px solid #bbb;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+.setc.on .tk{background:var(--terra);border-color:var(--terra)}
+.setc:not(.on):not(.this){opacity:.6}
+.setbuy{width:100%;margin-top:10px}
+.setsum{font-size:11.5px;color:#666;margin-top:6px;text-align:center}
 .simrow{display:flex;gap:11px;overflow-x:auto;padding:4px 0 14px;scrollbar-width:none}
 .simrow::-webkit-scrollbar{display:none}
 .sim{flex:0 0 128px;border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;background:#fff}
@@ -1774,6 +1788,7 @@ header{position:static!important}
   <span class="hurry" id="pdHurry">Hurry! Only 3 left</span>
 </div>
       </div>
+      <div class="pcard setsec" id="setSec" style="display:none"></div>
       <div class="pcard">
       <div class="chips"><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip" id="pdDlv">Free delivery</span><span class="chip terra">Self-assembly</span></div>
       <p class="pdp-desc" id="pdDesc">Powder-coated aluminium frame with UV-stabilised weave and quick-dry cushions — built for Indian summers and monsoons alike.</p>
@@ -2405,10 +2420,37 @@ function openProduct(id){
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
     return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt=""></div>
       <div class="bd"><div class="nm">${y.n}</div><div class="pr">${inr(y.p)}</div>${tbHTML(i)}</div></div>`;}).join('');
+  try{setRender(id);}catch(e){console.warn(e)}
   try{cmpRender(id);}catch(e){console.warn(e)}
   try{const rl=document.getElementById('pdRevList'); if(rl) rl.innerHTML='<p class="rv-none">Loading reviews…</p>'; window.rvPdp&&rvPdp(id);}catch(e){}
   showView('pdp');
 }
+// ---- Buy This Set (089): pieces of one set are separate products sharing set_key ----
+let SETOFF={};
+function setIds(id){const x=PRODS[id]; if(!x||!x.sk) return [];
+  return Object.keys(PRODS).filter(i=>{const y=PRODS[i]; return y.sk===x.sk && y.os===x.os && y.oc===x.oc && y.stock!==false;})
+    .sort((a,b)=>(a===id?-1:b===id?1:(PRODS[a].so-PRODS[b].so)));}
+function setRender(id){const box=document.getElementById('setSec'); if(!box) return;
+  const ids=setIds(id); if(ids.length<2){box.style.display='none';box.innerHTML='';return;}
+  SETOFF={};
+  const card=i=>{const y=PRODS[i], on=!SETOFF[i], off=y.m>y.p?Math.round((1-y.p/y.m)*100):0, me=i===id;
+    return `<div class="setc ${me?'this':''} ${on?'on':''}" onclick="${me?'':`setTick('${i}')`}">
+      <span class="tk">${on?'✓':''}</span>
+      <div class="im"><img src="${IMGS[y.img]||''}" alt="" loading="lazy"></div>
+      <div class="bd"><div class="stag">${me?'This product':(y.spc||'Set piece').replace(/</g,'&lt;')}</div>
+        <div class="nm">${y.n.replace(/</g,'&lt;')}</div>
+        <div class="pr">${inr(y.p)}${off?`<s>${inr(y.m)}</s><i>${off}% off</i>`:''}</div>
+        ${me?'':`<div style="font-size:10.5px;margin-top:4px"><a onclick="event.stopPropagation();openProduct('${i}')" style="color:var(--terra-deep);font-weight:700;cursor:pointer">View</a></div>`}</div></div>`;};
+  const draw=()=>{const sel=ids.filter(i=>!SETOFF[i]), tot=sel.reduce((a,i)=>a+PRODS[i].p,0), mrp=sel.reduce((a,i)=>a+(PRODS[i].m>PRODS[i].p?PRODS[i].m:PRODS[i].p),0);
+    box.innerHTML=`<h3>Buy This Set</h3><div class="setrow">${ids.map(card).join('')}</div>
+      <button class="btn setbuy" onclick="setBuy()" ${sel.length?'':'disabled'}>BUY ${sel.length===ids.length?'SET ':''}FOR ${inr(tot)}</button>
+      <div class="setsum">${sel.length} of ${ids.length} pieces selected${mrp>tot?` · you save ${inr(mrp-tot)}`:''}</div>`;};
+  window._setDraw=draw; window._setIds=ids; draw(); box.style.display='';}
+function setTick(i){SETOFF[i]=!SETOFF[i]; window._setDraw&&_setDraw();}
+function setBuy(){const sel=(window._setIds||[]).filter(i=>!SETOFF[i]&&PRODS[i]); if(!sel.length) return;
+  sel.forEach(i=>{const f=CART.find(c=>c.id===i); f?f.q++:CART.push(cartLine(i));});
+  updBadge(); try{window.otrack&&otrack('add_to_cart',{sku:sel.join(','),value:sel.reduce((a,i)=>a+PRODS[i].p,0)})}catch(e){}
+  openCart();}
 // ---- compare with similar items (Amazon-style) ----
 function similarFor(id,n){const x=PRODS[id], sb=subOf(id), R=(typeof MENU!=='undefined'&&MENU.rank)||null;
   return Object.keys(PRODS).filter(i=>i!==id&&PRODS[i].col===x.col).map(i=>{const y=PRODS[i];
@@ -3278,7 +3320,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3300,7 +3342,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         mat:p.material||'', dim:p.dims||'', kg:p.weight_kg||0, stock:p.in_stock, tier:p.tier||'select',
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
-        sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '' };
+        sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0 };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
