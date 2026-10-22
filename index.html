@@ -2454,7 +2454,10 @@ const VCOL={black:'#1f1f1f',charcoal:'#3d3d3d',grey:'#8a8a8a',silver:'#c4c6c8',w
 const VK=[['vs','Size'],['vc','Colour'],['vm','Material'],['vo','']];
 function vLabel(x){return x?[x.vs,x.vc,x.vm,x.vo&&((x.von?x.von+' ':'')+x.vo)].filter(Boolean).join(' · '):'';}
 function vSibs(id){const x=PRODS[id]; if(!x||!x.vg) return [id]; return Object.keys(PRODS).filter(i=>PRODS[i].vg===x.vg);}
-function vOnePerGroup(ids){const seen={}; return ids.filter(i=>{const g=PRODS[i].vg; if(!g) return true; if(seen[g]) return false; seen[g]=1; return true;});}
+// the group's main product stands for it when it matches the filters; otherwise the first variant that does
+function vOnePerGroup(ids){const inl=new Set(ids), rep={};
+  ids.forEach(i=>{const g=PRODS[i].vg; if(g&&!rep[g]) rep[g]=Object.keys(PRODS).find(j=>PRODS[j].vg===g&&PRODS[j].vmn&&inl.has(j))||i;});
+  return ids.filter(i=>{const g=PRODS[i].vg; return !g||rep[g]===i;});}
 function vCardNote(id){const sib=vSibs(id); if(sib.length<2) return '';
   const cols=[...new Set(sib.map(i=>PRODS[i].vc).filter(Boolean))], sizes=[...new Set(sib.map(i=>PRODS[i].vs).filter(Boolean))];
   const bits=[cols.length>1?cols.length+' colours':'', sizes.length>1?sizes.length+' sizes':''].filter(Boolean);
@@ -3368,7 +3371,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3391,7 +3394,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0,
-        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'' };
+        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
