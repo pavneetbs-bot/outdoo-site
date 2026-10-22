@@ -186,8 +186,10 @@
     const invSellers = full ? [...new Set(o.items.filter(i => i.invoice_no && i.seller_id).map(i => i.seller_id))] : []
     const canCancel = full && o.items.some(i => i.can_cancel)
     return `<div class="ac-order" id="ord-${o.id}">
-      <div class="ao-top"><div><b>${esc(o.order_no)}</b><span>${d8(o.created_at)} · ${rs(o.total)} · ${o.payment_method === 'cod' ? 'Cash on delivery' : 'Paid online'}</span></div>
-        <span class="ao-st ${dead ? 'x' : st === 'delivered' ? 'ok' : ''}">${LABEL[st]}</span></div>
+      <div class="ao-top"><div><b>${esc(o.order_no)}</b><span>${d8(o.created_at)} · ${rs(o.total)} · ${o.payment_method === 'cod' ? 'Cash on delivery' : o.payment_status === 'paid' ? 'Paid online' : o.payment_status === 'expired' ? 'Payment not completed' : 'Payment pending'}</span></div>
+        <span class="ao-st ${dead || o.payment_status === 'expired' ? 'x' : st === 'delivered' ? 'ok' : ''}">${o.payment_method === 'prepaid' && o.payment_status === 'pending' ? 'Awaiting payment' : o.payment_method === 'prepaid' && o.payment_status === 'expired' ? 'Not paid' : LABEL[st]}</span></div>
+      ${o.payment_method === 'prepaid' && ['pending', 'expired'].includes(o.payment_status) ? `<div class="ao-otp" style="background:#FBF0DC"><span>${o.payment_status === 'expired' ? 'This order was not paid within 24 hours, so it was not sent to the seller. You can still pay to place it.' : 'Your payment is not complete yet. The order goes to the seller as soon as it is paid.'}</span>
+        ${window.outrrPay ? `<button class="btn" style="margin-top:8px;padding:10px 18px" onclick="this.disabled=true;this.textContent='Opening secure payment…';outrrPay('${o.id}',()=>location.reload(),w=>{alert(w);location.reload()})">Pay ${rs(o.total)} now</button>` : ''}</div>` : ''}
       ${dead ? '' : `<div class="ao-bar">${STEPS.map((s, i) => `<div class="${i <= k ? 'on' : ''}"><i></i><span>${s[1]}</span></div>`).join('')}</div>`}
       ${ship && ship.ship_zone !== 'hyperlocal' ? `<div class="ao-ship">🚚 ${esc(ship.courier || 'Courier')} · AWB <b>${esc(ship.awb)}</b>${ship.tracking_url ? ` · <a href="${esc(ship.tracking_url)}" target="_blank" rel="noopener">Track shipment</a>` : ''}</div>` : ''}
       ${[...new Set(o.items.filter(i => i.delivery_otp).map(i => i.delivery_otp))].map(c => `<div class="ao-otp"><span>Local delivery is on its way. Your delivery code</span><b>${esc(c)}</b><small>Give it to the delivery person only after you receive your items.</small></div>`).join('')}
@@ -243,7 +245,7 @@
   const CANCEL_WHY = ['Ordered by mistake', 'Found a better price', 'Delivery is taking too long', 'Want to change the product', 'Other']
   window.acCancel = function (oid) {
     const o = orders.find(x => x.id === oid), can = o.items.filter(i => i.can_cancel)
-    modal('Cancel items', `<p class="mut sm">Items that haven't shipped yet can be cancelled. Cash on delivery: nothing to refund.</p>
+    modal('Cancel items', `<p class="mut sm">Items that haven't shipped yet can be cancelled. ${o.payment_method === 'cod' ? 'Cash on delivery: nothing to refund.' : 'Paid online: the amount is refunded to your original payment method.'}</p>
       ${can.map(i => `<label class="ac-chk"><input type="checkbox" value="${i.id}" checked> ${esc(i.name)} <span class="mut">× ${i.qty}</span></label>`).join('')}
       <div class="fld"><label>REASON</label><select id="acWhy">${CANCEL_WHY.map(w => `<option>${w}</option>`).join('')}</select></div>
       <div class="ac-err" hidden></div>`,
@@ -356,7 +358,7 @@
           <div class="box"><b>Bill to / ship to</b><br>${o.company_name ? `<b>${esc(o.company_name)}</b><br>` : ''}${esc(o.customer_name)}<br>${esc(o.address)}<br>${esc(o.city)}, ${esc(o.state)} ${esc(o.pincode)}${o.gstin ? `<br>GSTIN <b>${esc(o.gstin)}</b>` : ''}<br>Place of supply: ${esc(o.state)}${SC[o.state] ? ' (' + SC[o.state] + ')' : ''}</div></div>
         <table><thead><tr><th>#</th><th>Item</th><th>HSN</th><th class=n>Qty</th><th class=n>Taxable</th><th class=n>GST</th>${intra ? '<th class=n>CGST</th><th class=n>SGST</th>' : '<th class=n>IGST</th>'}<th class=n>Total</th></tr></thead>
         <tbody>${rows}<tr class="tot"><td colspan="4">Total</td><td class=n>${m(tx)}</td><td></td>${intra ? `<td class=n>${m(gs / 2)}</td><td class=n>${m(gs / 2)}</td>` : `<td class=n>${m(gs)}</td>`}<td class=n>${m(tt)}</td></tr></tbody></table>
-        <p class="mut">Amounts include GST. Payment: ${o.payment_method === 'cod' ? 'Cash on delivery' : 'Prepaid'}.${+o.discount ? ' Coupon discounts are given by the marketplace and do not reduce this invoice.' : ''}</p>
+        <p class="mut">Amounts include GST. Payment: ${o.payment_method === 'cod' ? 'Cash on delivery' : 'Paid online'}.${+o.discount ? ' Coupon discounts are given by the marketplace and do not reduce this invoice.' : ''}</p>
         <p style="margin-top:30px">For ${esc(s.legal_name || s.name)}<br><small>Authorised signatory</small></p>
         <p class="mut" style="border-top:1px solid #eee;padding-top:8px">Sold through ${esc(co.brand_name || 'outrr')} (${esc(co.legal_name || '')}${co.gstin && !co.gstin_is_dummy ? ', GSTIN ' + esc(co.gstin) : ''}), an e-commerce operator. Computer-generated invoice.</p></body></html>`
       if (w) { w.document.open(); w.document.write(html); w.document.close() }

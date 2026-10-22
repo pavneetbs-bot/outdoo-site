@@ -382,7 +382,7 @@
     if (IDS.length >= 8) { var w = IDS[4]; h += '<div class="sec2"><div class="wide" onclick="stTab(\'all\')"><img src="' + esc(imgOf(w)) + '" alt="" loading="lazy"><div class="tx"><small>Made by ' + esc(NAME) + '</small><h3>' + esc(PRODS[w].n) + '</h3>' + (D.tagline ? '<p>' + esc(D.tagline) + '</p>' : '') + '<span class="cta">Shop all →</span></div></div></div>' }
     if (IDS.length > 4) h += sec('Trending now', 'Popular picks from ' + esc(NAME), '<div class="hstrip">' + IDS.slice(4, 14).filter(priced).map(miniCard).join('') + '</div>', '<span class="pillv" onclick="stTab(\'all\')">View all ' + IDS.length + ' products</span>')
     var deal = IDS.filter(function (id) { var x = PRODS[id]; return priced(id) && x.m > x.p }).sort(function (a, b) { return (1 - PRODS[a].p / PRODS[a].m) < (1 - PRODS[b].p / PRODS[b].m) ? 1 : -1 })[0]
-    if (deal) { var x = PRODS[deal]; h += '<div class="sec2"><div class="shl"><h2>Best value</h2><span class="view">' + Math.round((1 - x.p / x.m) * 100) + '% off MRP</span></div><div class="deal" onclick="openProduct(\'' + deal + '\')"><div class="im"><img src="' + esc(imgOf(deal)) + '" alt=""></div><div class="tx"><span class="db">BEST VALUE</span><h3>' + esc(x.n) + '</h3><div class="dp">' + inr(x.p) + '<span class="dm">' + inr(x.m) + '</span></div><div class="tm">Cash on delivery</div></div></div></div>' }
+    if (deal) { var x = PRODS[deal]; h += '<div class="sec2"><div class="shl"><h2>Best value</h2><span class="view">' + Math.round((1 - x.p / x.m) * 100) + '% off MRP</span></div><div class="deal" onclick="openProduct(\'' + deal + '\')"><div class="im"><img src="' + esc(imgOf(deal)) + '" alt=""></div><div class="tx"><span class="db">BEST VALUE</span><h3>' + esc(x.n) + '</h3><div class="dp">' + inr(x.p) + '<span class="dm">' + inr(x.m) + '</span></div><div class="tm">Secure online payment</div></div></div></div>' }
     CATS.map(function (c) { return { c: c, l: c.ids.filter(function (id) { return top.indexOf(id) < 0 }) } }).filter(function (o) { return o.l.length >= 3 }).slice(0, 3).forEach(function (o) { var c = o.c; h += sec(esc(c.title), '', tiles(o.l.slice(0, 4)), c.ids.length > 4 ? '<span class="pillv" onclick="stTab(\'c:' + c.slug.replace(/'/g, "\\'") + '\')">View all ' + c.ids.length + '</span>' : '') })
     if (!PITCH && D.rating_count) h += sec('What customers say', 'Verified buyers on outrr', '<div class="rvs" id="stRv"><div class="rvsum"><b>' + D.rating + '</b><div class="st">' + stars(Math.round(D.rating)) + '</div><small>' + D.rating_count + ' rating' + (D.rating_count > 1 ? 's' : '') + '</small></div></div>')
     h += aboutHTML() + faqHTML()
@@ -408,7 +408,7 @@
   function faqHTML() {
     var q = [['Who delivers my order?', NAME + ' packs your order; outrr tracks the delivery and keeps you updated by email.'],
       ['What if something arrives damaged?', 'Share a photo at delivery and outrr sorts out a replacement or refund.'],
-      ['How can I pay?', 'UPI, cards, netbanking or cash on delivery at checkout.']]
+      ['How can I pay?', 'Online at checkout: UPI, cards, netbanking or wallets, secured by Razorpay.']]
     return sec('Buying from ' + esc(NAME) + ' on outrr', '', q.map(function (x) { return '<div class="acc"><div class="acc-h" onclick="accT(this)">' + esc(x[0]) + '<span class="pm">+</span></div><div class="acc-b">' + esc(x[1]) + '</div></div>' }).join(''))
   }
   // a few recent published reviews of their products

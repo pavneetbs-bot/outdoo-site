@@ -14,7 +14,7 @@ try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var 
 <title>outrr — Every Outdoor Possibility | Outdoor Furniture, Lighting & Decor Online</title>
 <meta name="description" content="India's destination for outdoor living — furniture, shade, planters, lighting & soft furnishings. Curated by the team behind 300+ luxury outdoor projects. A LifeWall Group company.">
 <meta property="og:title" content="outrr — Every Outdoor Possibility">
-<meta property="og:description" content="Outdoor furniture, lighting, planters & more, delivered across India. Cash on delivery.">
+<meta property="og:description" content="Outdoor furniture, lighting, planters & more, delivered across India. Secure online payment.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://outrr.in/">
 <meta property="og:site_name" content="outrr">
@@ -1375,7 +1375,7 @@ header{position:static!important}
   </defs>
 </svg>
 
-<div class="announce">Launch offer — <b>extra 5% off</b> with code <b>OUTRR5</b> · Cash on delivery</div>
+<div class="announce">Launch offer — <b>extra 5% off</b> with code <b>OUTRR5</b> · Secure online payment</div>
 
 <header>
   <div class="wrap hd">
@@ -1663,7 +1663,7 @@ header{position:static!important}
   <div class="fcols">
     <div style="max-width:270px">
       <span class="logochip"><img src="img/outrr-lockup-white.png?v=3" alt="outrr — Every Outdoor Possibility"></span>
-      <p style="margin-top:10px;font-size:11.5px">Every outdoor possibility — outdoor furniture, shade, lighting, planters, art & furnishings. Delivered across India, cash on delivery.</p>
+      <p style="margin-top:10px;font-size:11.5px">Every outdoor possibility — outdoor furniture, shade, lighting, planters, art & furnishings. Delivered across India, secure online payment.</p>
       <div class="ftag">A LIFEWALL GROUP COMPANY</div>
       <div class="fsoc"><a href="https://www.instagram.com/lifewall_official/" target="_blank" rel="noopener">Instagram</a></div>
       <p style="margin-top:12px;font-size:11.5px">WhatsApp support · support@outrr.in<br>Delhi NCR, India</p>
@@ -1701,7 +1701,7 @@ header{position:static!important}
       <a href="/privacy/">Privacy Policy</a>
       <a href="/terms/">Terms of Service</a></div>
   </div>
-  <div class="fpay"><span>Cash on Delivery</span><span>UPI on Delivery</span><span>Free Delivery to Top Metros</span></div>
+  <div class="fpay"><span>UPI</span><span>Cards &amp; Netbanking</span><span>Secured by Razorpay</span><span>Free Delivery to Top Metros</span></div>
   <div class="fcity">Outdoor furniture & decor online in Delhi NCR, Gurugram, Noida, Mumbai, Bengaluru, Hyderabad, Chennai, Pune, Chandigarh, Jaipur & Lucknow — luxury terrace, balcony, garden & poolside living by outrr.</div>
   <div class="fnote">© 2026 outrr · LifeWall Greentech Private Limited · Made in India</div>
 </div></footer>
@@ -1810,7 +1810,7 @@ header{position:static!important}
   <span class="tchip"><svg viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 H6z"/><path d="M9 12 h6 M9 16 h6"/></svg>GST Invoice</span>
   <span class="tchip"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10 V7 a4 4 0 0 1 8 0 v3"/></svg>Secure Payments</span>
 </div>
-<div class="secline" style="margin-top:8px">Pay on delivery · Cash or UPI · Packaging &amp; delivery shown for your pincode</div>
+<div class="secline" style="margin-top:8px">Secure online payment · UPI, cards, netbanking · Packaging &amp; delivery shown for your pincode</div>
       </div>
       <div class="etamod">
         <div class="top">
@@ -2521,7 +2521,7 @@ function cmpRender(id){const box=document.getElementById('cmpSec'); if(!box) ret
     ['Material', y=>_esc(y.mat||d.mat||'—')],
     ['Size', y=>_esc(y.dim||d.dim||'—')],
     ['Weight', y=>y.kg?`${+y.kg} kg`:'<span class="mut">—</span>'],
-    ['Delivery', y=>_esc(y.ship||'')+'<br><span class="mut">Free · COD available</span>'],
+    ['Delivery', y=>_esc(y.ship||'')+'<br><span class="mut">Pay securely online</span>'],
     ['Warranty', ()=>_esc(d.warr||'—')],
   ];
   const body=rows.map(([lab,f,keep])=>{const cells=P.map((y,i)=>f(y,i)); const same=!keep&&cells.every(c=>c===cells[0]); if(!keep&&cells.every(c=>/^(<span class="mut">)?—(<\/span>)?$/.test(c))) return '';
@@ -2565,7 +2565,7 @@ async function doSearch(){
   catch(e){ ids=_localSearch(q); }
   RANK={}; ids.forEach((id,i)=>RANK[id]=i); RANK_FOR='__search';
   _supaRpc('log_search',{p_kind:'search',p_q:q,p_results:ids.length}).catch(()=>{});
-  COLS.__search={t:'“'+q+'”',tag:ids.length?ids.length+' matching products':'No products found',off:'SEARCH',offer:'Delivered across India · Cash on delivery',
+  COLS.__search={t:'“'+q+'”',tag:ids.length?ids.length+' matching products':'No products found',off:'SEARCH',offer:'Delivered across India · Secure online payment',
     img:ids.length?PRODS[ids[0]].img:Object.keys(IMGS)[0],f:(x,id)=>id in RANK};
   openCol('__search');
 }
@@ -3035,7 +3035,7 @@ function coShipPaint(){
   const t=coTotals(), r=document.getElementById('coShipR'), tot=document.getElementById('coTot'), b=document.getElementById('coPlace'), dv=document.getElementById('coDlvTxt');
   if(r) r.outerHTML=shipRow(t.ship,t.loc,'coShipR');
   if(tot) tot.textContent=inr(t.total);
-  if(b && !coBusy) b.textContent='Place order · Cash on delivery · '+inr(t.total);
+  if(b && !coBusy) b.textContent='Pay securely · '+inr(t.total);
   if(window.etaFill) etaFill(t.loc);
   if(dv) dv.innerHTML=t.ship===null?'<b>Standard</b><span>Enter your pincode to see the packaging &amp; delivery charge</span>':t.ship>0?`<b>Standard — ${inr(t.ship)}</b><span>Packaging &amp; delivery set by each seller for your pincode · dispatch as per each item's timeline</span>`:'<b>Standard — FREE</b><span>Dispatch as per each item\'s timeline · weather-safe packing</span>';
 }
@@ -3073,7 +3073,7 @@ function renderCheckout(){
       <div class="secline">Assembly is by you — fittings and a step-by-step guide ship with every piece.</div>
     </div>
     <div class="cobox"><h3>Payment</h3>
-      <div class="payopt on"><input type="radio" name="pay" checked><div><b>Cash on delivery</b><span>Pay in cash or UPI to the delivery partner when your order arrives</span></div></div>
+      <div class="payopt on"><input type="radio" name="pay" checked><div><b>Pay online</b><span>UPI, cards, netbanking or wallets · secure payment by Razorpay</span></div></div>
       <div class="secline">Online payment (UPI · cards · net banking) is coming soon.</div>
     </div>
    </div>
@@ -3087,8 +3087,8 @@ function renderCheckout(){
         ${shipRow(t.ship,t.loc,'coShipR')}
         <div class="r tot"><span>Total payable</span><span id="coTot">${inr(t.total)}</span></div>
       </div>
-      <button class="btn" id="coPlace" style="width:100%;margin-top:13px;padding:14px" onclick="placeOrder()">Place order · Cash on delivery · ${inr(t.total)}</button>
-      <div class="secline" style="text-align:center">Inclusive of all taxes · GST invoice from the seller · pay on delivery</div>
+      <button class="btn" id="coPlace" style="width:100%;margin-top:13px;padding:14px" onclick="placeOrder()">Pay securely · ${inr(t.total)}</button>
+      <div class="secline" style="text-align:center">Inclusive of all taxes · GST invoice from the seller · 100% secure payment by Razorpay</div>
     </div>
    </div></div>`;
   if(window.acCheckoutExtras) acCheckoutExtras();
@@ -3130,22 +3130,54 @@ async function placeOrder(){
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
   coBusy=false;
-  if(err){ if(btn){btn.disabled=false;btn.textContent='Place order · Cash on delivery';} toast(err); return; }
-  const t=coTotals();
-  try{ if(window.otrack) otrack('purchase',{value:res.total,ref:res.order_no,skus:CART.map(c=>c.id)}) }catch(e){}
+  if(err){ if(btn){btn.disabled=false;btn.textContent='Pay securely · '+inr(coTotals().total);} toast(err); return; }
+  const skus=CART.map(c=>c.id);
+  CART=[]; updBadge();   // the order exists now: paying again later uses the order, not the cart
+  window.__coLast={res,customer,utok,skus};
+  if(btn){btn.disabled=true;btn.textContent='Opening secure payment…';}
+  outrrPay(res.id,()=>coPaid(),why=>coUnpaid(why));
+}
+// 094: Razorpay Checkout for an order (checkout page, "Pay now" on the order page)
+function loadRzp(){return window.Razorpay?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://checkout.razorpay.com/v1/checkout.js';s.onload=ok;s.onerror=()=>no(new Error('Could not load the payment window. Check your connection.'));document.head.appendChild(s);});}
+async function payFn(body){const S=window.OUTRR_SUPA||{};const r=await fetch(S.url+'/functions/v1/charges',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok||j.error)throw new Error(j.error||'Payment service unavailable');return j;}
+async function outrrPay(orderId,onPaid,onFail){
+  try{
+    const [p]=await Promise.all([payFn({action:'order_pay',order_id:orderId}),loadRzp()]);
+    if(p.paid) return onPaid&&onPaid();
+    let done=false;
+    const rz=new Razorpay({key:p.key,order_id:p.rzp_order_id,amount:p.amount,currency:p.currency,name:'outrr',description:'Order '+p.order_no,
+      prefill:p.prefill,notes:p.notes,theme:{color:'#BE5633'},
+      handler:async r=>{done=true;try{toast('Confirming your payment…');await payFn({action:'order_verify',order_id:orderId,...r});onPaid&&onPaid();}
+        catch(e){onFail&&onFail('We received your payment but could not confirm it yet. Don\'t pay again: it will show on your order within a few minutes.');}},
+      modal:{ondismiss:()=>{if(!done)onFail&&onFail('Payment not completed.');}}});
+    rz.on('payment.failed',r=>{done=true;onFail&&onFail('Payment failed'+(r&&r.error&&r.error.description?': '+r.error.description:'.')+' You can try again.');});
+    rz.open();
+  }catch(e){onFail&&onFail(e.message||'Payment could not start.');}
+}
+function coPaid(){const {res,customer,utok,skus}=window.__coLast||{};if(!res)return;
+  try{ if(window.otrack) otrack('purchase',{value:res.total,ref:res.order_no,skus}) }catch(e){}
   document.getElementById('coS2').classList.add('on');
   document.getElementById('coS3').classList.add('on');
   document.getElementById('coBody').innerHTML=`<div class="cosucc"><div class="tick">✓</div>
-    <h2>Order placed</h2>
-    <p>Thank you, ${customer.name.split(' ')[0].replace(/[<>&]/g,'')}! Your order number is <b>${res.order_no}</b>. Pay ${inr(res.total)} in cash or UPI when it's delivered. We'll call you on ${customer.phone} to confirm.</p>
+    <h2>Payment received · order placed</h2>
+    <p>Thank you, ${customer.name.split(' ')[0].replace(/[<>&]/g,'')}! Your order number is <b>${res.order_no}</b>. We've emailed your confirmation to ${customer.email.replace(/[<>&]/g,'')}.</p>
     <div class="osum" style="max-width:340px;margin:0 auto 18px;text-align:left">
       <div class="r"><span>Order</span><span>${res.order_no}</span></div>
-      <div class="r"><span>Pay on delivery</span><span>${inr(res.total)}</span></div>
+      <div class="r"><span>Paid online</span><span>${inr(res.total)}</span></div>
       <div class="r"><span>Items</span><span>${res.items}</span></div>
       <div class="r"><span>Packaging &amp; delivery</span>${+res.shipping>0?`<span>${inr(+res.shipping)}</span>`:'<span class="grn">FREE</span>'}</div></div>
     <button class="btn" style="padding:13px 26px" onclick="showHome()">Continue shopping</button>
     <p class="secline" style="margin-top:14px">${utok?'Track, cancel or return it from <a onclick="acOpen()">My account</a>.':'Track it any time: <a onclick="acTrack(\''+res.order_no+'\')">Track order</a> · or <a onclick="acOpen()">sign in</a> with '+(customer.email?customer.email.replace(/[<>&]/g,''):'your email')+' to manage it.'}</p></div>`;
-  CART=[]; updBadge();
+  window.scrollTo(0,0);
+}
+function coUnpaid(why){const {res}=window.__coLast||{};if(!res)return;
+  document.getElementById('coBody').innerHTML=`<div class="cosucc"><div class="tick" style="background:#B7791F">!</div>
+    <h2>Payment not completed</h2>
+    <p>${String(why||'').replace(/[<>&]/g,'')}</p>
+    <p>Your order <b>${res.order_no}</b> is saved for 24 hours. It's sent to the seller as soon as it's paid.</p>
+    <button class="btn" style="padding:13px 26px" onclick="this.disabled=true;this.textContent='Opening secure payment…';outrrPay('${res.id}',()=>coPaid(),w=>coUnpaid(w))">Pay ${inr(res.total)} now</button>
+    <p class="secline" style="margin-top:14px">Money taken but this page says not paid? Don't pay again: it updates by itself within a few minutes. Need help? WhatsApp us with ${res.order_no}.</p></div>`;
   window.scrollTo(0,0);
 }
 
@@ -3463,9 +3495,9 @@ async function shareProduct(){
   try{ await navigator.clipboard.writeText(url); toast('Link copied'); }catch(e){ toast(url); }
 }
 </script>
-<script src="/account.js?v=4"></script>
+<script src="/account.js?v=5"></script>
 <script src="/track.js"></script>
-<script src="/store.js?v=6"></script>
+<script src="/store.js?v=7"></script>
 <script src="/near.js?v=4"></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
@@ -3542,7 +3574,7 @@ async function shareProduct(){
   var an = document.querySelector('.announce');
   if(an && Date.now() < LAUNCH){
     an.className = 'announce obn-tick';
-    an.innerHTML = '<span class="mq"><span>Launching this Dussehra · 20 Oct &nbsp;✦&nbsp; Wishlist your favourites now &nbsp;✦&nbsp; Festive deals unlock on launch day &nbsp;✦&nbsp; Cash on delivery</span></span>';
+    an.innerHTML = '<span class="mq"><span>Launching this Dussehra · 20 Oct &nbsp;✦&nbsp; Wishlist your favourites now &nbsp;✦&nbsp; Festive deals unlock on launch day &nbsp;✦&nbsp; Secure online payment</span></span>';
   }
   // 5. vertical images as tiles inside product grids (re-applied whenever a grid is re-rendered)
   function tileHTML(x, strip){ return '<div class="obn-tile' + (strip ? ' mpc' : '') + '" data-obn-tile role="link" tabindex="0" aria-label="' + x.alt.replace(/"/g, '&quot;') + '"><img src="img/banners/' + x.img + '.jpg" alt="' + x.alt.replace(/"/g, '&quot;') + '" loading="lazy" decoding="async"></div>'; }
