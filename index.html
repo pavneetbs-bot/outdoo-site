@@ -511,6 +511,15 @@ body.pdp-open .bottomnav,body.pdp-open .wafab{display:none}
 .review .dt{font-size:9.5px;color:var(--muted)}
 .review p{font-size:11.5px;color:#4b473f}
 .setsec h3{font-size:15px;font-weight:800;margin:0 0 10px}
+.vsec{margin:12px 0 4px}.vsec .vg{margin:0 0 10px}.vsec .vl{font-size:12px;color:#6b665c;margin-bottom:6px}.vsec .vl b{color:#2e2e2e}
+.vsec .vo{display:flex;flex-wrap:wrap;gap:8px}
+.vsec .vb{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:7px 12px;font:600 12.5px Inter,sans-serif;color:#2e2e2e;cursor:pointer}
+.vsec .vb.on{border-color:var(--terra-deep);color:var(--terra-deep);box-shadow:0 0 0 1px var(--terra-deep) inset}
+.vsec .vb.na{opacity:.45;border-style:dashed}
+.vsec .sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px var(--line);cursor:pointer;padding:0}
+.vsec .sw.on{box-shadow:0 0 0 2px var(--terra-deep)}.vsec .sw.na{opacity:.4}
+.pc .vopt{display:flex;align-items:center;gap:4px;font-size:11px;color:#6b665c;margin-top:4px}.pc .vopt i{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.15);display:inline-block}
+.cline .vlab{font-size:11.5px;color:#6b665c;margin-top:2px}
 .setrow{display:flex;gap:10px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.setrow::-webkit-scrollbar{display:none}
 .setc{flex:0 0 132px;border:1px solid var(--line);border-radius:12px;background:#fff;position:relative;cursor:pointer;overflow:hidden}
 .setc.this{border-color:var(--terra)}
@@ -1780,6 +1789,7 @@ header{position:static!important}
       <div class="skuline" id="pdSku">SKU OD-FUR-0114 · Outdoor Furniture</div>
       <div class="pricebig" id="pdPrice">₹86,999<span class="mrp">₹1,04,000</span><span class="off">16% off</span></div>
       <div class="taxline">Inclusive of all taxes</div>
+      <div id="vSec" class="vsec" style="display:none"></div>
 <div class="cashback"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><line x1="6.5" y1="12" x2="6.5" y2="12.01"/><line x1="17.5" y1="12" x2="17.5" y2="12.01"/></svg>
   <span>Only for today: get cashback worth <b id="pdCash">₹4,350</b> + extra 5% off with OUTRR5</span></div>
 <div class="qtyrow">
@@ -2356,6 +2366,7 @@ function renderPLP(){
     if(FLT.dispatch==='mto' && !/order/i.test(x.ship)) return false;
     if(FLT.offer && !(x.m>x.p)) return false;
     return true;});
+  ids=vOnePerGroup(ids);   // 092: one card per variant group (the first that matches the filters)
   if(sort==='pop' && RANK_FOR===k) ids.sort((a,b)=>(a in RANK?RANK[a]:1e9)-(b in RANK?RANK[b]:1e9));
   if(sort==='pop' && window.nearSort) ids=nearSort(ids);   // near.js: nearest first once the visitor set their city
   if(sort==='lo') ids.sort((a,b)=>PRODS[a].p-PRODS[b].p);
@@ -2379,7 +2390,7 @@ function renderPLP(){
       <div class="bd"><div class="nm">${x.n}</div>
         <div class="rate"><span class="st">${x.r} ★</span>${x.c}</div>
         <div><span class="pr">${inr(x.p)}</span>${x.m>x.p?`<span class="mrp">${inr(x.m)}</span>`:''}</div>
-        <div class="ship">${x.ship}</div>${tbHTML(id)}</div>
+        <div class="ship">${x.ship}</div>${vCardNote(id)}${tbHTML(id)}</div>
     </div>`;
   }).join('');
 }
@@ -2420,6 +2431,7 @@ function openProduct(id){
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
     return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt=""></div>
       <div class="bd"><div class="nm">${y.n}</div><div class="pr">${inr(y.p)}</div>${tbHTML(i)}</div></div>`;}).join('');
+  try{vRender(id);}catch(e){console.warn(e)}
   try{setRender(id);}catch(e){console.warn(e)}
   try{cmpRender(id);}catch(e){console.warn(e)}
   try{const rl=document.getElementById('pdRevList'); if(rl) rl.innerHTML='<p class="rv-none">Loading reviews…</p>'; window.rvPdp&&rvPdp(id);}catch(e){}
@@ -2428,8 +2440,44 @@ function openProduct(id){
 // ---- Buy This Set (089): pieces of one set are separate products sharing set_key ----
 let SETOFF={};
 function setIds(id){const x=PRODS[id]; if(!x||!x.sk) return [];
-  return Object.keys(PRODS).filter(i=>{const y=PRODS[i]; return y.sk===x.sk && y.os===x.os && y.oc===x.oc && y.stock!==false;})
+  const all=Object.keys(PRODS).filter(i=>{const y=PRODS[i]; return y.sk===x.sk && y.os===x.os && y.oc===x.oc && y.stock!==false;});
+  // 092: one piece each — the other pieces follow this one's colour / material / other (a piece without that variant is left out)
+  const look=['vc','vm','vo'].filter(k=>x[k]), byPiece={};
+  all.forEach(i=>{const y=PRODS[i], k=y.spc||i; (byPiece[k]=byPiece[k]||[]).push(i)});
+  const pick=list=>{ if(list.includes(id)) return id;
+    const ok=list.filter(i=>look.every(k=>!PRODS[i][k]||PRODS[i][k].toLowerCase()===x[k].toLowerCase()));
+    return ok.sort((a,b)=>PRODS[a].p-PRODS[b].p)[0]||null; };
+  return Object.values(byPiece).map(pick).filter(Boolean)
     .sort((a,b)=>(a===id?-1:b===id?1:(PRODS[a].so-PRODS[b].so)));}
+// ---- Variants (092): one design in several sizes / colours / materials; each variant is its own product sharing vg ----
+const VCOL={black:'#1f1f1f',charcoal:'#3d3d3d',grey:'#8a8a8a',silver:'#c4c6c8',white:'#ffffff','off-white':'#f4efe6',cream:'#efe3c8',beige:'#d9c4a3',sand:'#c9b18a',taupe:'#8b7d6b',natural:'#c8a878',teak:'#a0692f',walnut:'#5c3b23',brown:'#6b4428',terracotta:'#be5633',rust:'#9c3f1d',red:'#c0392b',orange:'#e67e22',mustard:'#d4a017',yellow:'#f1c40f',olive:'#6b7a3a',green:'#3f8f4f',teal:'#1f7a7a',blue:'#2f6db5',navy:'#1f2f55',pink:'#e8a1b3',purple:'#7d4f9e',gold:'#c9a646',copper:'#b87333',bronze:'#8c6a3f',multicolour:'conic-gradient(#e74c3c,#f1c40f,#2ecc71,#3498db,#9b59b6,#e74c3c)'};
+const VK=[['vs','Size'],['vc','Colour'],['vm','Material'],['vo','']];
+function vLabel(x){return x?[x.vs,x.vc,x.vm,x.vo&&((x.von?x.von+' ':'')+x.vo)].filter(Boolean).join(' · '):'';}
+function vSibs(id){const x=PRODS[id]; if(!x||!x.vg) return [id]; return Object.keys(PRODS).filter(i=>PRODS[i].vg===x.vg);}
+function vOnePerGroup(ids){const seen={}; return ids.filter(i=>{const g=PRODS[i].vg; if(!g) return true; if(seen[g]) return false; seen[g]=1; return true;});}
+function vCardNote(id){const sib=vSibs(id); if(sib.length<2) return '';
+  const cols=[...new Set(sib.map(i=>PRODS[i].vc).filter(Boolean))], sizes=[...new Set(sib.map(i=>PRODS[i].vs).filter(Boolean))];
+  const bits=[cols.length>1?cols.length+' colours':'', sizes.length>1?sizes.length+' sizes':''].filter(Boolean);
+  return `<div class="vopt">${cols.slice(0,5).map(c=>`<i style="background:${VCOL[c.toLowerCase()]||'#ccc'}"></i>`).join('')}<span>${bits.join(' · ')||sib.length+' options'}</span></div>`;}
+function vRender(id){const box=document.getElementById('vSec'); if(!box) return;
+  const x=PRODS[id], sib=vSibs(id); if(sib.length<2){box.style.display='none';box.innerHTML='';return;}
+  const keys=VK.filter(([k])=>sib.some(i=>PRODS[i][k]) && new Set(sib.map(i=>(PRODS[i][k]||'').toLowerCase())).size>1);
+  const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  box.innerHTML=keys.map(([k,lab])=>{
+    const name=lab||(sib.map(i=>PRODS[i].von).find(Boolean)||'Option');
+    const vals=[...new Set(sib.map(i=>PRODS[i][k]).filter(Boolean))];
+    const opt=v=>{const on=(x[k]||'').toLowerCase()===v.toLowerCase();
+      // available with the other choices kept?
+      const exact=sib.some(i=>(PRODS[i][k]||'').toLowerCase()===v.toLowerCase() && keys.every(([k2])=>k2===k||(PRODS[i][k2]||'')===(x[k2]||'')));
+      const cls=(on?' on':'')+(exact?'':' na'), js=`vPick('${id}','${k}','${encodeURIComponent(v).replace(/'/g,'%27')}')`;
+      return k==='vc'&&VCOL[v.toLowerCase()]?`<button class="sw${cls}" title="${esc(v)}" aria-label="${esc(v)}" style="background:${VCOL[v.toLowerCase()]}" onclick="${js}"></button>`
+        :`<button class="vb${cls}" onclick="${js}">${esc(v)}</button>`;};
+    return `<div class="vg"><div class="vl">${esc(name)}: <b>${esc(x[k]||'—')}</b></div><div class="vo">${vals.map(opt).join('')}</div></div>`;}).join('');
+  box.style.display=keys.length?'':'none';}
+// switch to the variant with this value, keeping the other choices where that variant exists
+function vPick(id,k,v){v=decodeURIComponent(v); const x=PRODS[id], sib=vSibs(id).filter(i=>(PRODS[i][k]||'').toLowerCase()===String(v).toLowerCase()); if(!sib.length) return;
+  const score=i=>VK.reduce((a,[k2])=>a+(k2!==k&&(PRODS[i][k2]||'')===(x[k2]||'')?1:0),0)+(PRODS[i].stock===false?-5:0);
+  const best=sib.sort((a,b)=>score(b)-score(a))[0]; if(best&&best!==id){openProduct(best); try{history.replaceState(history.state,'',location.pathname+location.search+location.hash)}catch(e){}}}
 function setRender(id){const box=document.getElementById('setSec'); if(!box) return;
   const ids=setIds(id); if(ids.length<2){box.style.display='none';box.innerHTML='';return;}
   SETOFF={};
@@ -2573,7 +2621,7 @@ function renderCart(){
    : 'Add <b>'+inr(th-total)+'</b> more to unlock <b>room package pricing</b> - our best bundle rate';
  const line=c=>{const x=PRODS[c.id];
   return `<div class="cline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
-   <div class="inf"><div class="nm">${x.n}</div>
+   <div class="inf"><div class="nm">${x.n}</div>${vLabel(x)?`<div class="vlab">${_esc(vLabel(x))}</div>`:''}
    <div class="pr">${inr(x.p)}${x.m>x.p?`<span class="mr2">${inr(x.m)}</span>`:''}</div>${pvNote(x)}${window.etaLine?etaLine(c.id):''}
    <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1)">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1)">+</button></div>
    <span class="rm" onclick="cartRm('${c.id}')">Remove</span></div></div></div>`;};
@@ -3320,7 +3368,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3342,7 +3390,8 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         mat:p.material||'', dim:p.dims||'', kg:p.weight_kg||0, stock:p.in_stock, tier:p.tier||'select',
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
-        sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0 };
+        sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0,
+        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'' };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
