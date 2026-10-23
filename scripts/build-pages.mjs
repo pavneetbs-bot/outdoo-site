@@ -36,7 +36,7 @@ const PAGES = {
 <p>${CO.brand} is ${CO.group.charAt(0).toLowerCase() + CO.group.slice(1)}. LifeWall designs and builds luxury outdoor spaces across Delhi NCR and has completed 300+ projects: pergolas, terraces, water features and more. The same team picks what goes on ${CO.brand}, choosing pieces that hold up to Indian sun, rain and dust.</p>
 <h2>What you can expect</h2>
 <ul>
-<li>Delivery across India with cash on delivery. Packaging and delivery charges, set by each seller, are shown on the product page for your pincode before you order.</li>
+<li>Delivery across India with cash on delivery. Delivery charges are shown on the product page for your pincode before you order.</li>
 <li>${CO.returnDays}-day returns. See <a href="/returns/">Returns, Refunds &amp; Cancellations</a>.</li>
 <li>Damage-free promise: report transit damage within ${CO.damageHours} hours and we sort it out.</li>
 </ul>
@@ -46,12 +46,12 @@ const PAGES = {
 <p>${CO.brand} is operated by ${CO.legal}, Delhi NCR, India. Questions? Write to <a href="mailto:${CO.email}">${CO.email}</a>.</p>`,
   },
   shipping: {
-    title: 'Shipping & Delivery', desc: 'Where we deliver, packaging and delivery charges, dispatch timelines, cash on delivery and what to check when your outrr order arrives.',
+    title: 'Shipping & Delivery', desc: 'Where we deliver, delivery charges, dispatch timelines, cash on delivery and what to check when your outrr order arrives.',
     body: `
 <h2>Where we deliver</h2>
 <p>We deliver across India. Each product page shows where it can be delivered: some pieces ship anywhere by courier, some only within the maker's city and nearby. Enter your pincode on the product page to check. If your pincode can't be served, we call you before dispatch and cancel the order at no cost to you.</p>
-<h2>Packaging and delivery charges</h2>
-<p>Each seller sets a packaging and delivery charge per product, which depends on how far you are from where it ships: the seller's own city and nearby, the same state, or the rest of India. Many products deliver free. The product page shows the total delivered to your city, for example <b>“₹1,500 delivered to Mumbai”</b> (₹1,000 product + ₹500 packaging &amp; delivery), and the cart and checkout add it by your pincode. Charges include GST and appear on the seller's tax invoice. Coupons apply to the product price.</p>
+<h2>Delivery charges</h2>
+<p>Each product has a delivery charge, worked out from its packed size and weight, which depends on how far you are from where it ships: the seller's own city and nearby, the same state, or the rest of India. Many products deliver free. The product page shows the total delivered to your city, for example <b>“₹1,500 delivered to Mumbai”</b> (₹1,000 product + ₹500 packaging &amp; delivery), and the cart and checkout add it by your pincode. Charges include GST and appear on the seller's tax invoice. Coupons apply to the product price.</p>
 <h2>When it ships</h2>
 <p>Every product page shows its dispatch time (for example “Ships in 7–10 days”). Many pieces are finished to order by the maker, so this is the time to get it ready and hand it to the courier. After dispatch, delivery usually takes 3–7 days depending on your city. We share tracking details once it's on the way.</p>
 <p>If an order has products from more than one seller, they may arrive in separate deliveries.</p>

@@ -213,7 +213,7 @@ for (const p of products) {
 <div><h1>${esc(p.name)}</h1>
 <div class="price"><b>${inr(p.price)}</b>${off ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>
 <div class="btns">${p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
-<ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Packaging &amp; delivery shown for your pincode</li><li>Cash on delivery available</li><li>Weather-safe packing · assembly guide included</li></ul>
+<ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Delivery charge shown for your pincode</li><li>Cash on delivery available</li><li>Weather-safe packing · assembly guide included</li></ul>
 <div class="desc"><h2>About this product</h2><p>${esc(desc)}</p>
 <dl>${c ? `<dt>Category</dt><dd><a href="/c/${c.slug}/">${esc(c.title)}</a></dd>` : ''}${p.material ? `<dt>Material</dt><dd>${esc(p.material)}</dd>` : ''}${p.dims ? `<dt>Size</dt><dd>${esc(p.dims)}</dd>` : ''}<dt>SKU</dt><dd>${esc(p.sku)}</dd></dl></div>
 </div></div>

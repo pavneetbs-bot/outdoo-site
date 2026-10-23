@@ -91,7 +91,7 @@ if (typeof _tb === 'function') window.tbHTML = tbHTML = function (id){
   var h = _tb(id), r = rank(id), x = PRODS[id] || {};
   if (!LOC) return (x.sp === false ? '<div class="near-lb">Local delivery only</div>' : '') + h;
   if (r === 9) return '<div class="near-lb no">Doesn\'t deliver to ' + esc(where()) + '</div>' + h;
-  var d = hasCh(x) ? '<div class="near-lb dlv">+ ' + inr(charge(x, LOC).fee) + ' packaging &amp; delivery</div>' : '<div class="near-lb dlv">Free delivery</div>';   // 076
+  var d = hasCh(x) ? '<div class="near-lb dlv">+ ' + inr(charge(x, LOC).fee) + ' delivery</div>' : '<div class="near-lb dlv">Free delivery</div>';   // 076
   if (r <= 2) return '<div class="near-lb ok">⚡ Local delivery in ' + esc(where()) + '</div>' + d + h;
   return d + h };
 
@@ -243,7 +243,7 @@ window.checkPin = function (){
   if (!shipsTo(x, loc)) { ok.textContent = '✗ Doesn\'t deliver to ' + v + ' (' + place + ')'; ok.style.color = '#a14f33' }
   else { ok.style.color = ''; var c = charge(x, loc), id = curPid
     var say = function (c, how) { ok.textContent = '✓ Delivers to ' + v + ' (' + place + ')' + (how ? ' · local delivery by ' + how : loc.city && x && ((x.sc || []).indexOf(loc.city) >= 0) ? ' · local delivery, faster' : '')
-      + (hasCh(x) ? ' · Packaging & delivery ' + inr(c.fee) + ' · Total ' + inr(x.p + c.fee) : ' · Free delivery') + (window.etaText ? ' · Delivery by ' + etaText(id, loc) : '') };   // 076 / 081
+      + (hasCh(x) ? ' · Delivery ' + inr(c.fee) + ' · Total ' + inr(x.p + c.fee) : ' · Free delivery') + (window.etaText ? ' · Delivery by ' + etaText(id, loc) : '') };   // 076 / 081
     say(c);
     if (localVehicle(x, loc)) { var use = function () { var q = quote([{ sku: id, qty: 1 }], loc), ln = q && q.lines && q.lines[0]; if (ln && ln.mode === 'vehicle') say({ fee: +ln.pack + +ln.ship }, String(ln.note || '').split(' · ')[0]) };   // 078
       if (quote([{ sku: id, qty: 1 }], loc, use)) use() } }
@@ -327,13 +327,13 @@ function pdPaint(id){
   if (!hasCh(x)) { el.innerHTML = inr(x.p) + mrp; br.innerHTML = LOC && ships ? 'Free delivery to ' + esc(where()) : 'Free delivery'; if (chip) chip.textContent = 'Free delivery'; return }
   if (LOC && ships) {
     el.innerHTML = inr(x.p + c.fee) + '<span class="dlv-to">delivered to ' + esc(where()) + '</span>';
-    br.innerHTML = '<span class="dlv-pp">' + inr(x.p) + ' product</span>' + mrp + '<span class="dlv-plus"> + ' + inr(c.fee) + ' packaging &amp; delivery</span>'
+    br.innerHTML = '<span class="dlv-pp">' + inr(x.p) + ' product</span>' + mrp + '<span class="dlv-plus"> + ' + inr(c.fee) + ' delivery</span>'
       + how + ' · <a class="dlv-a" onclick="nearOpen(\'change\')">Change city</a>';
-    if (chip) chip.textContent = 'Packaging & delivery ' + inr(c.fee);
+    if (chip) chip.textContent = 'Delivery ' + inr(c.fee);
   } else {
     el.innerHTML = inr(x.p) + mrp;
-    br.innerHTML = (LOC && !ships ? '<b class="dlv-no">Doesn\'t deliver to ' + esc(where()) + '</b>' : '+ packaging &amp; delivery from ' + inr(c.fee)) + check;
-    if (chip) chip.textContent = 'Packaging & delivery extra';
+    br.innerHTML = (LOC && !ships ? '<b class="dlv-no">Doesn\'t deliver to ' + esc(where()) + '</b>' : '+ delivery from ' + inr(c.fee)) + check;
+    if (chip) chip.textContent = 'Delivery extra';
   }
 }
 window.pdPaint = pdPaint;
