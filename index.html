@@ -511,6 +511,8 @@ body.pdp-open .bottomnav,body.pdp-open .wafab{display:none}
 .review .dt{font-size:9.5px;color:var(--muted)}
 .review p{font-size:11.5px;color:#4b473f}
 .setsec h3{font-size:15px;font-weight:800;margin:0 0 10px}
+.pdclosed{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:#fbefe8;color:#A84F33;font-size:12.5px;font-weight:600}
+.colshare{margin-top:12px;background:#fff;color:#2e2e2e;border:0;border-radius:99px;padding:8px 14px;font:700 12px Inter,sans-serif;cursor:pointer}
 .vsec{margin:12px 0 4px}.vsec .vg{margin:0 0 10px}.vsec .vl{font-size:12px;color:#6b665c;margin-bottom:6px}.vsec .vl b{color:#2e2e2e}
 .vsec .vo{display:flex;flex-wrap:wrap;gap:8px}
 .vsec .vb{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:7px 12px;font:600 12.5px Inter,sans-serif;color:#2e2e2e;cursor:pointer}
@@ -2294,6 +2296,7 @@ function showView(v){
 function showHome(){ lastCol=null; showView('home'); }
 function openCol(k){
   lastCol=k; const c=COLS[k];
+  const shb=document.getElementById('colShare'); if(shb) shb.style.display=k==='__seller'?'':'none';   // 099: copy link on a seller's catalogue only
   document.getElementById('colImg').src=IMGS[c.img];
   document.getElementById('colTitle').textContent=c.t;
   document.getElementById('colTag').textContent=c.tag;
@@ -2318,6 +2321,8 @@ function subOf(id){const x=PRODS[id],n=x.n; if(x.sb) return x.sb;
  if(x.col==='art'){if(/Water|Fountain/i.test(n))return 'Water Features';if(/Wall|Panel|Screen/i.test(n))return 'Wall Art';
   if(/Lamp/i.test(n))return 'Sculpture Lamps';return 'Sculptures';}
  return 'All';}
+// the chips above the grid: sub-categories; on a seller's catalogue, its categories (099)
+function chipOf(id){return lastCol==='__seller'?((COLS[PRODS[id].col]||{}).t||'Other'):subOf(id);}
 let FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
 function fltReset(){FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
  document.querySelectorAll('#fltPanel input').forEach(i=>{i.checked=false});}
@@ -2336,7 +2341,7 @@ function chipTap(sb){FLT.sub.has(sb)?FLT.sub.delete(sb):FLT.sub.add(sb);buildChi
 // 083: Type filter (lounge chairs, bar chairs…) from the products in view; follows the sub-category chips
 function buildTypes(ids){
  const sec=document.getElementById('fTypeSec'), box=document.getElementById('fTypeOpts'); if(!sec||!box) return;
- const m={}; ids.forEach(id=>{const x=PRODS[id]; if(x.ty && (!FLT.sub.size||FLT.sub.has(subOf(id)))) m[x.ty]=(m[x.ty]||0)+1});
+ const m={}; ids.forEach(id=>{const x=PRODS[id]; if(x.ty && (!FLT.sub.size||FLT.sub.has(chipOf(id)))) m[x.ty]=(m[x.ty]||0)+1});
  const ts=Object.keys(m).sort((a,b)=>m[b]-m[a]||a.localeCompare(b));
  [...FLT.type].forEach(t=>{ if(!m[t]) FLT.type.delete(t) });
  sec.hidden = ts.length<2;
@@ -2345,7 +2350,7 @@ function buildTypes(ids){
 function buildChips(){
  const c0=COLS[lastCol];
  const ids=Object.keys(PRODS).filter(id=>c0&&c0.f?c0.f(PRODS[id],id):PRODS[id].col===lastCol);
- const m={}; ids.forEach(id=>{const sb=subOf(id);m[sb]=(m[sb]||0)+1});
+ const m={}; ids.forEach(id=>{const sb=chipOf(id);m[sb]=(m[sb]||0)+1});
  const subs=Object.keys(m).sort((a,b)=>m[b]-m[a]);
  document.getElementById('subChips').innerHTML = subs.length>1 ?
   subs.map(sb=>`<span class="schip${FLT.sub.has(sb)?' on':''}" onclick="chipTap('${sb}')">${sb} (${m[sb]})</span>`).join('') : '';
@@ -2358,7 +2363,7 @@ function renderPLP(){
   let ids=Object.keys(PRODS).filter(id=>{
     const x=PRODS[id];
     if(_c && _c.f ? !_c.f(x,id) : x.col!==k) return false;
-    if(FLT.sub.size && !FLT.sub.has(subOf(id))) return false;
+    if(FLT.sub.size && !FLT.sub.has(chipOf(id))) return false;
     if(FLT.type.size && !FLT.type.has(x.ty)) return false;
     if(FLT.price.size){let ok=false;FLT.price.forEach(rg=>{const [lo,hi]=rg.split('-').map(Number);if(x.p>=lo&&x.p<=hi)ok=true});if(!ok)return false;}
     if(FLT.rating && parseFloat(x.r)<FLT.rating) return false;
@@ -2367,6 +2372,7 @@ function renderPLP(){
     if(FLT.offer && !(x.m>x.p)) return false;
     return true;});
   ids=vOnePerGroup(ids);   // 092: one card per variant group (the first that matches the filters)
+  if(sort==='pop' && k==='__seller'){const ord=Object.keys(COLS); ids.sort((a,b)=>ord.indexOf(PRODS[a].col)-ord.indexOf(PRODS[b].col)||String(PRODS[a].n).localeCompare(PRODS[b].n));}
   if(sort==='pop' && RANK_FOR===k) ids.sort((a,b)=>(a in RANK?RANK[a]:1e9)-(b in RANK?RANK[b]:1e9));
   if(sort==='pop' && window.nearSort) ids=nearSort(ids);   // near.js: nearest first once the visitor set their city
   if(sort==='lo') ids.sort((a,b)=>PRODS[a].p-PRODS[b].p);
@@ -2433,6 +2439,9 @@ function openProduct(id){
     return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt=""></div>
       <div class="bd"><div class="nm">${y.n}</div><div class="pr">${inr(y.p)}</div>${tbHTML(i)}</div></div>`;}).join('');
   try{vRender(id);}catch(e){console.warn(e)}
+  try{const closed=x.oo===false; document.querySelectorAll('button[onclick="addCart()"],button[onclick="buyNow()"]').forEach(b=>{b.style.opacity=closed?'.45':'';b.title=closed?'Orders open soon':''});
+    let n=document.getElementById('pdClosed'); if(!n){n=document.createElement('div');n.id='pdClosed';n.className='pdclosed';document.getElementById('pdPrice').after(n);}
+    n.textContent=closed?'Orders for this maker open soon — the catalogue is here to browse.':''; n.style.display=closed?'':'none';}catch(e){}
   try{setRender(id);}catch(e){console.warn(e)}
   try{cmpRender(id);}catch(e){console.warn(e)}
   try{const rl=document.getElementById('pdRevList'); if(rl) rl.innerHTML='<p class="rv-none">Loading reviews…</p>'; window.rvPdp&&rvPdp(id);}catch(e){}
@@ -2499,7 +2508,7 @@ function setRender(id){const box=document.getElementById('setSec'); if(!box) ret
       <div class="setsum">${sel.length} of ${ids.length} pieces selected${mrp>tot?` · you save ${inr(mrp-tot)}`:''}</div>`;};
   window._setDraw=draw; window._setIds=ids; draw(); box.style.display='';}
 function setTick(i){SETOFF[i]=!SETOFF[i]; window._setDraw&&_setDraw();}
-function setBuy(){const sel=(window._setIds||[]).filter(i=>!SETOFF[i]&&PRODS[i]); if(!sel.length) return;
+function setBuy(){const sel=(window._setIds||[]).filter(i=>!SETOFF[i]&&PRODS[i]); if(!sel.length) return; if(sel.some(i=>PRODS[i].oo===false)){ordersClosed(sel.find(i=>PRODS[i].oo===false));return;}
   sel.forEach(i=>{const f=CART.find(c=>c.id===i); f?f.q++:CART.push(cartLine(i));});
   updBadge(); try{window.otrack&&otrack('add_to_cart',{sku:sel.join(','),value:sel.reduce((a,i)=>a+PRODS[i].p,0)})}catch(e){}
   openCart();}
@@ -2570,6 +2579,23 @@ async function doSearch(){
     img:ids.length?PRODS[ids[0]].img:Object.keys(IMGS)[0],f:(x,id)=>id in RANK};
   openCol('__search');
 }
+// ---- 099: a seller's catalogue — /?catalog=<page slug> (outrr.in/catalog/?s=): its products by category, with the filters ----
+function openCatalog(d){
+  const pre=d&&d.available?d.sku_prefix:null, ids=pre?Object.keys(PRODS).filter(id=>id.startsWith(pre)):[];
+  COLS.__seller={t:d&&d.available?(d.brand||d.name):'Catalogue not available',
+    tag:d&&d.available?[d.tagline||'', d.city?'From '+d.city:'', ids.length+' product'+(ids.length===1?'':'s')].filter(Boolean).join(' · '):'This maker\'s catalogue isn\'t public yet.',
+    off:'CATALOGUE', offer:d&&d.available&&!d.orders_open?'Orders open soon · browse the full catalogue now':'Delivered across India · Secure online payment',
+    img:ids.length?PRODS[ids[0]].img:Object.keys(IMGS)[0], f:(x,id)=>!!pre&&id.startsWith(pre)};
+  let b=document.getElementById('colShare');
+  if(!b){b=document.createElement('button');b.id='colShare';b.className='colshare';document.getElementById('colTitle').parentNode.appendChild(b);}
+  b.textContent='Copy link';
+  b.onclick=()=>{const u=location.origin+'/catalog/?s='+encodeURIComponent(d.slug); (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Link copied'),()=>prompt('Copy this link',u));};
+  openCol('__seller'); if(!pre) b.style.display='none';
+  document.title=COLS.__seller.t+' | outrr';
+}
+(function(){const slug=new URLSearchParams(location.search).get('catalog'); if(!slug) return;
+  const ready=new Promise(r=>{let n=0;(function w(){if(window.__odLoaded||++n>80) r(); else setTimeout(w,100)})()});
+  ready.then(()=>_supaRpc('seller_catalog',{p_slug:slug}).catch(()=>null)).then(d=>openCatalog(d));})();   // after the catalogue (and the database address) has loaded
 function checkPin(){
   const v = document.getElementById('pin').value, ok = document.getElementById('pinok');
   ok.style.display='block';
@@ -2603,10 +2629,12 @@ const grpHead=e=>`<div class="cgrp">From <b>${String(e.k).replace(/</g,'&lt;')}<
 const pvNote=x=>x&&x.pv?`<div class="pvnote">Sample product from ${String(x.pv).replace(/</g,'&lt;')} · orders open when they join outrr</div>`:'';
 cartX();
 function updBadge(){try{localStorage.setItem('outrr_cart',JSON.stringify(CART))}catch(e){}const n=CART.reduce((a,c)=>a+c.q,0);['cartn','cartn2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n;});}
-function addCart(id){id=id||curPid;if(!id||!PRODS[id]){toast('Added to cart');return;}
+// 099: a maker listed before going live — the product can be seen but not ordered yet
+function ordersClosed(id){const x=PRODS[id]; if(x&&x.oo===false){toast('Orders for this maker open soon. Save it to your wishlist!');return true;} return false;}
+function addCart(id){id=id||curPid;if(!id||!PRODS[id]){toast('Added to cart');return;} if(ordersClosed(id)) return;
  const f=CART.find(c=>c.id===id); f?f.q++:CART.push(cartLine(id));
  updBadge(); miniCart(true); miniTitle('Added to cart ✓');}
-function buyNow(){const id=curPid;if(id&&PRODS[id]){const f=CART.find(c=>c.id===id);f?f.q++:CART.push(cartLine(id));updBadge();}openCart();}
+function buyNow(){const id=curPid;if(id&&ordersClosed(id)) return; if(id&&PRODS[id]){const f=CART.find(c=>c.id===id);f?f.q++:CART.push(cartLine(id));updBadge();}openCart();}
 function openCart(){renderCart();showView('cart');}
 function cartQty(id,d){const f=CART.find(c=>c.id===id);if(!f)return;f.q=Math.max(1,Math.min(10,f.q+d));updBadge();renderCart();}
 function cartRm(id){CART=CART.filter(c=>c.id!==id);updBadge();renderCart();}
@@ -3404,7 +3432,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,image_alt,seo_description'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,image_alt,seo_description,orders_open'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3427,7 +3455,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0, alt:p.image_alt||'', md:p.seo_description||'',
-        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main };
+        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, oo:p.orders_open!==false };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
