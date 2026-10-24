@@ -1,6 +1,6 @@
 // Pages: /about/ /shipping/ /returns/ /privacy/ /terms/ /contact/
 // Needed for Google Merchant Center, Meta Commerce and the Consumer Protection (E-Commerce) Rules.
-// No network needed. Run: node scripts/build-pages.mjs   (npm run update runs it too)
+// Network: reads the category list from the database (falls back to the built-in list). Run: node scripts/build-pages.mjs   (npm run update runs it too)
 // Edit the text in PAGES below, run the script, commit.
 import { PIXEL_HEAD } from './pixel.mjs'
 import { writeFileSync, mkdirSync, readFileSync } from 'fs'
@@ -23,7 +23,16 @@ const CO = {
   damageHours: 48,
   updated: '7 October 2026',
 }
-const CATS = [['furniture', 'Furniture'], ['shade', 'Shade'], ['lighting', 'Lighting'], ['planters', 'Planters'], ['art', 'Art'], ['furnishings', 'Furnishings']]
+let CATS = [['furniture', 'Furniture'], ['shade', 'Shade'], ['lighting', 'Lighting'], ['planters', 'Planters'], ['art', 'Art'], ['furnishings', 'Furnishings']]
+// categories made in the admin show up here too (new ones once they have products on the site); offline → the list above
+try {
+  const H = { apikey: SUPA.anon, Authorization: 'Bearer ' + SUPA.anon }
+  const cols = await (await fetch(`${SUPA.url}/rest/v1/collections?active=eq.true&select=slug,title&order=sort`, { headers: H })).json()
+  const used = new Set((await (await fetch(`${SUPA.url}/rest/v1/products?status=eq.published&select=collection_slug&limit=5000`, { headers: H })).json()).map(p => p.collection_slug))
+  const short = Object.fromEntries(CATS)
+  const live = cols.filter(c => short[c.slug] || used.has(c.slug)).map(c => [c.slug, short[c.slug] || c.title])
+  if (live.length) CATS = live
+} catch (e) { console.warn('categories: using the built-in list', e.message) }
 
 const PAGES = {
   about: {

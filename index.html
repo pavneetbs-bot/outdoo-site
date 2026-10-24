@@ -1670,7 +1670,7 @@ header{position:static!important}
       <div class="fsoc"><a href="https://www.instagram.com/lifewall_official/" target="_blank" rel="noopener">Instagram</a></div>
       <p style="margin-top:12px;font-size:11.5px">WhatsApp support · support@outrr.in<br>Delhi NCR, India</p>
     </div>
-    <div><div class="fh">Shop Outdoor</div>
+    <div id="ftShop"><div class="fh">Shop Outdoor</div>
       <a href="/c/furniture/" onclick="event.preventDefault();openCol('furniture')">Outdoor Sofa Sets</a>
       <a href="/c/furniture/" onclick="event.preventDefault();openCol('furniture')">Outdoor Dining Sets</a>
       <a href="/c/furniture/" onclick="event.preventDefault();openCol('furniture')">Hanging Swings & Egg Chairs</a>
@@ -2420,7 +2420,7 @@ function openProduct(id){
   const off = x.m>x.p ? Math.round((1-x.p/x.m)*100) : 0;
   document.getElementById('pdPrice').innerHTML = inr(x.p) + (off?`<span class="mrplab">MRP</span><span class="mrp">${inr(x.m)}</span><span class="off">${off}% OFF</span>`:'');
   document.getElementById('pdShip').textContent=x.ship;
-  document.getElementById('pdDesc').textContent=x.ds||COLDESC[x.col]||COLDESC['furniture'];   // the product's own description first
+  document.getElementById('pdDesc').textContent=x.ds||COLDESC[x.col]||'';   // the product's own description first
   document.getElementById('pdImg').src=IMGS[x.img]; document.getElementById('pdImg').alt=x.alt||x.n;
   try{ document.title=x.n+' | outrr'; const md=document.querySelector('meta[name=description]'); if(md&&x.md) md.setAttribute('content',x.md); }catch(e){}
   pdThumbs(id);
@@ -2432,7 +2432,7 @@ function openProduct(id){
   document.getElementById('pdCash').textContent = inr(Math.round(x.p*0.05/10)*10);
   document.getElementById('pdRevAvg').textContent = x.r;
   document.getElementById('pdRevCnt').textContent = x.c + ' ratings';
-  const d = COLDET[x.col] || COLDET['furniture'];   // a category made in the admin later has no write-up of its own
+  const d = COLDET[x.col] || COLDET._any;   // a category made in the admin later has no write-up of its own
   fillPDPv2(x, d, document.getElementById('pdSku').textContent.split(' · ')[0].replace('SKU ',''));
   const sims = Object.keys(PRODS).filter(i=>PRODS[i].col===x.col && PRODS[i]!==x).slice(0,6);
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
@@ -2548,14 +2548,16 @@ let qty=1;
 function qch(d){ qty=Math.max(1,Math.min(10,qty+d)); document.getElementById('pdQty').textContent=qty; }
 function accT(h){ const a=h.parentElement; a.classList.toggle('open');
   h.querySelector('.pm').textContent = a.classList.contains('open')?'−':'+'; }
-const COLDESC = {"art": "Handcrafted outdoor sculpture in weather-proof composite with M.S. base plate. Made to order in multiple sizes and colour finishes — built to live outdoors year-round.", "furniture": "Powder-coated aluminium frame with UV-stabilised weave and quick-dry cushions — built for Indian summers and monsoons alike. Delivered across India; simple self-assembly.", "shade": "UV-proof canopy on a powder-coated frame — engineered for Indian sun and pre-monsoon winds. Delivered across India.", "lighting": "IP44 weatherproof outdoor lighting with warm, fade-free glow. Safe for open terraces and gardens through rain and summer.", "planters": "Frost-proof, fade-resistant planters that hold their finish outdoors season after season.", "furnishings": "All-weather outdoor fabric — quick-dry, fade-resistant and easy to clean. Made for open terraces, balconies and poolside use."};
+const COLDESC = {"art": "Handcrafted outdoor sculpture in weather-proof composite with M.S. base plate. Made to order in multiple sizes and colour finishes — built to live outdoors year-round.", "furniture": "Powder-coated aluminium frame with UV-stabilised weave and quick-dry cushions — built for Indian summers and monsoons alike. Delivered across India; simple self-assembly.", "shade": "UV-proof canopy on a powder-coated frame — engineered for Indian sun and pre-monsoon winds. Delivered across India.", "lighting": "IP44 weatherproof outdoor lighting with warm, fade-free glow. Safe for open terraces and gardens through rain and summer.", "planters": "Frost-proof, fade-resistant planters that hold their finish outdoors season after season.", "furnishings": "All-weather outdoor fabric — quick-dry, fade-resistant and easy to clean. Made for open terraces, balconies and poolside use.", "fire-pits": "Heat-resistant metal fire pits and grills for bonfire evenings on the lawn, terrace or farmhouse. Delivered across India; simple self-assembly."};
 const COLDET = {
  art: {mat:'Outdoor-grade composite, M.S. base plate', asm:'Self-assembly - guide included', dim:'Multiple sizes — see options', warr:'1 year'},
  furniture:  {mat:'Aluminium / solid acacia, all-weather fabric', asm:'Self-assembly (guide included)', dim:'Set-specific — see pack', warr:'3 years frame, 1 year fabric'},
  shade:      {mat:'Powder-coated steel, UV-proof canopy',         asm:'Self-assembly (guide included)', dim:'3m span (approx.)',       warr:'2 years frame, 1 year fabric'},
  lighting:   {mat:'Copper wire / metal, IP44 weatherproof',       asm:'No assembly required', dim:'See pack details',     warr:'1 year'},
  planters:   {mat:'Fibre clay / ceramic, frost-proof',            asm:'No assembly required', dim:'See pack details',     warr:'6 months'},
- furnishings:{mat:'Olefin / PET all-weather fabric',              asm:'No assembly required', dim:'See pack details',     warr:'6 months'}
+ furnishings:{mat:'Olefin / PET all-weather fabric',              asm:'No assembly required', dim:'See pack details',     warr:'6 months'},
+ 'fire-pits':{mat:'Heat-resistant metal, outdoor finish',          asm:'Simple self-assembly', dim:'See pack details',     warr:'As per maker'},
+ _any:       {mat:'See description',                              asm:'See description',      dim:'See pack details',     warr:'As per maker'}
 };
 function goCats(){ showHome(); setTimeout(()=>document.querySelector('.catgrid').scrollIntoView({behavior:'smooth'}),60); }
 function showPDP(){ openProduct('lounge'); }
@@ -2928,10 +2930,10 @@ Object.assign(COLS, {
    f:(x,id)=>((x.col==='planters'||x.col==='furnishings'||x.col==='lighting')||(x.col==='furniture'&&x.p<=90000))},
  'sp-terrace':{t:'Terrace',tag:'Sofa sets, dining, shade & statement lighting',off:'SHOP BY SPACE',img:'BFURN',
    offer:'Built for open terraces and rooftop evenings',
-   f:(x)=>(x.col==='furniture'||x.col==='shade'||x.col==='lighting')},
+   f:(x)=>(x.col==='furniture'||x.col==='shade'||x.col==='lighting'||x.col==='fire-pits')},
  'sp-garden':{t:'Garden',tag:'Sculpture, water features, green walls & planters',off:'SHOP BY SPACE',img:'BDINE',
    offer:'Landscape elements from our art & planter studios',
-   f:(x)=>(x.col==='art'||x.col==='planters')},
+   f:(x)=>(x.col==='art'||x.col==='planters'||x.col==='fire-pits')},
  'sp-poolside':{t:'Poolside',tag:'Loungers, umbrellas & weather-proof furnishings',off:'SHOP BY SPACE',img:'COURTYARD',
    offer:'Quick-dry, fade-resistant, chlorine-safe',
    f:(x)=>(x.col==='shade'||/Lounger|Daybed|Cabana/i.test(x.n)||x.col==='furnishings')},
@@ -3005,7 +3007,7 @@ function navOpen(kind,el,hover){
     p.innerHTML=`<div class="mm"><div class="mm-cats">${cats.map(c=>{const top=_byRank(_idsOf(c[1])).find(id=>_pimg(id));
       return `<a data-k="${c[1]}" onmouseenter="mmCat('${c[1]}')" onclick="if(matchMedia('(hover:hover) and (min-width:900px)').matches){navPick();openCol('${c[1]}')}else mmCat('${c[1]}')"><img loading="lazy" src="${_pimg(top)||IMGS[COLS[c[1]].img]||''}" alt="">${_esc(COLS[c[1]].t||c[0])}<i>›</i></a>`}).join('')}</div>
       <div class="mm-body"></div><a class="mm-feat"></a></div>`;
-    mmCat(cats[0][1]);
+    mmCat((cats.find(c=>_idsOf(c[1]).length)||cats[0])[1]);   // open on the first category that has products
   } else if(kind==='pkg'){
     p.innerHTML=`<div class="mm-grid g5">${PKGS.map((k,i)=>tile(`openPkg(${i})`,IMGS[k.img]||_pimg(k.items.find(id=>PRODS[id])),k.n,k.inc)).join('')}</div>`;
   } else {
@@ -3396,12 +3398,14 @@ const SIZEROWS = {
  lighting:[['Standard','1 lamp + fitting','See pack · IP44 rated']],
  planters:[['As listed','1 planter / set as described','Frost-proof composite']],
  furnishings:[['Standard','1 rug','Sizes from 60×36 in · custom on request']],
- art:[['Multiple','1 sculpture + M.S. base plate','Made to order — sizes on request']]
+ art:[['Multiple','1 sculpture + M.S. base plate','Made to order — sizes on request']],
+ 'fire-pits':[['As listed','1 piece as described','See dimensions']]
 };
 function revTab(el,k){document.querySelectorAll('.rtabs button').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
   toast(k==='p'?'Showing reviews for this product':'Showing reviews across this category');}
 function fillPDPv2(x,d,sku){
+  d={...d, mat:x.mat||d.mat, dim:x.dim||d.dim};   // the product's own material and size first
   const mat=document.getElementById('pdMat'); if(mat) mat.textContent=d.mat;
   const eta=document.getElementById('pdEta'); if(eta) eta.textContent=x.ship.replace('Ships in ','').replace('Made to order · ','Made to order · ');
   const kv=document.getElementById('pdKV');
@@ -3410,7 +3414,7 @@ function fillPDPv2(x,d,sku){
     ['Dispatch',x.ship],['SKU',sku+' · Made in India']]
     .map(r=>`<div class="k">${r[0]}</div><div class="v">${r[1]}</div>`).join('');
   const sz=document.getElementById('pdSize');
-  if(sz){const rows=SIZEROWS[x.col]||SIZEROWS.furniture;
+  if(sz){const rows=x.dim?[['As listed','1 piece / set as described',x.dim]]:(SIZEROWS[x.col]||SIZEROWS.furniture);
     sz.innerHTML='<tr><th>Size</th><th>Includes</th><th>Measurement</th></tr>'+
       rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');}
   const mf=document.getElementById('pdMfr');
@@ -3463,7 +3467,14 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       const ids = Object.keys(PRODS).filter(k => PRODS[k].col === c.slug), first = ids.find(k => IMGS[PRODS[k].img]);
       COLS[c.slug] = { t: c.title, tag: c.tagline || '', off: c.offer_badge || '', offer: c.offer_text || 'Delivered across India · Secure online payment',
         img: first ? PRODS[first].img : Object.keys(IMGS)[0], mimg: c.menu_image || '', mnote: c.menu_note || '' };
-      if(ids.length && typeof NAVSETS !== 'undefined' && !NAVSETS.cat.some(x => x[1] === c.slug)) NAVSETS.cat.push([c.title, c.slug]);
+      if(!ids.length) return;
+      if(typeof NAVSETS !== 'undefined' && !NAVSETS.cat.some(x => x[1] === c.slug)) NAVSETS.cat.splice(1, 0, [c.title, c.slug]);
+      const ft = document.getElementById('ftShop');
+      if(ft && !ft.querySelector(`a[data-col="${c.slug}"]`)){ const a = document.createElement('a'); a.href = '/c/' + c.slug + '/'; a.dataset.col = c.slug;
+        a.textContent = c.title; a.onclick = e => { e.preventDefault(); openCol(c.slug); }; ft.querySelector('.fh').after(a); }
+      const img = COLS[c.slug].img;
+      if(typeof ARCH !== 'undefined' && !ARCH.some(x => x[1] === c.slug)){ ARCH.splice(1, 0, [c.title, c.slug, img]); try{ fillArch(); }catch(e){} }
+      if(typeof DTABS !== 'undefined' && !DTABS.some(x => x[1] === c.slug)){ DTABS.unshift([c.title.split(' & ')[0], c.slug, img]); try{ fillDealTabs(); }catch(e){} }
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
       COLS[c.slug].t = c.title || COLS[c.slug].t;
