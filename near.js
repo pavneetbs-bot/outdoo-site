@@ -47,7 +47,59 @@ const CITIES=[{ slug: 'delhi', name: 'Delhi', state: 'DL', lat: 28.6139, lng: 77
   { slug: 'bhubaneswar', name: 'Bhubaneswar', state: 'OR', lat: 20.2961, lng: 85.8245, pins: ['751'], sort: 90 },
   { slug: 'patna', name: 'Patna', state: 'BR', lat: 25.5941, lng: 85.1376, pins: ['800'], sort: 91 },
   { slug: 'ranchi', name: 'Ranchi', state: 'JH', lat: 23.3441, lng: 85.3096, pins: ['834'], sort: 92 },
-  { slug: 'guwahati', name: 'Guwahati', state: 'AS', lat: 26.1445, lng: 91.7362, pins: ['781'], sort: 93 }];
+  { slug: 'guwahati', name: 'Guwahati', state: 'AS', lat: 26.1445, lng: 91.7362, pins: ['781'], sort: 93 },
+  { slug: 'meerut', name: 'Meerut', state: 'UP', lat: 28.9845, lng: 77.7064, pins: ['2500'], sort: 100 },
+  { slug: 'muzaffarnagar', name: 'Muzaffarnagar', state: 'UP', lat: 29.4727, lng: 77.7085, pins: ['2510'], sort: 101 },
+  { slug: 'moradabad', name: 'Moradabad', state: 'UP', lat: 28.8386, lng: 78.7733, pins: ['2440'], sort: 102 },
+  { slug: 'bareilly', name: 'Bareilly', state: 'UP', lat: 28.3670, lng: 79.4304, pins: ['2430'], sort: 103 },
+  { slug: 'aligarh', name: 'Aligarh', state: 'UP', lat: 27.8974, lng: 78.0880, pins: ['2020'], sort: 104 },
+  { slug: 'mathura', name: 'Mathura', state: 'UP', lat: 27.4924, lng: 77.6737, pins: ['2810'], sort: 105 },
+  { slug: 'prayagraj', name: 'Prayagraj', state: 'UP', lat: 25.4358, lng: 81.8463, pins: ['211'], sort: 106 },
+  { slug: 'gorakhpur', name: 'Gorakhpur', state: 'UP', lat: 26.7606, lng: 83.3732, pins: ['273'], sort: 107 },
+  { slug: 'jhansi', name: 'Jhansi', state: 'UP', lat: 25.4484, lng: 78.5685, pins: ['2840'], sort: 108 },
+  { slug: 'panipat', name: 'Panipat', state: 'HR', lat: 29.3909, lng: 76.9635, pins: ['1321'], sort: 109 },
+  { slug: 'karnal', name: 'Karnal', state: 'HR', lat: 29.6857, lng: 76.9905, pins: ['1320'], sort: 110 },
+  { slug: 'rohtak', name: 'Rohtak', state: 'HR', lat: 28.8955, lng: 76.6066, pins: ['1240'], sort: 111 },
+  { slug: 'hisar', name: 'Hisar', state: 'HR', lat: 29.1492, lng: 75.7217, pins: ['1250'], sort: 112 },
+  { slug: 'ambala', name: 'Ambala', state: 'HR', lat: 30.3782, lng: 76.7767, pins: ['1330'], sort: 113 },
+  { slug: 'jalandhar', name: 'Jalandhar', state: 'PB', lat: 31.3260, lng: 75.5762, pins: ['1440'], sort: 114 },
+  { slug: 'patiala', name: 'Patiala', state: 'PB', lat: 30.3398, lng: 76.3869, pins: ['1470'], sort: 115 },
+  { slug: 'bathinda', name: 'Bathinda', state: 'PB', lat: 30.2110, lng: 74.9455, pins: ['1510'], sort: 116 },
+  { slug: 'haridwar', name: 'Haridwar', state: 'UK', lat: 29.9457, lng: 78.1642, pins: ['2494'], sort: 117 },
+  { slug: 'rishikesh', name: 'Rishikesh', state: 'UK', lat: 30.0869, lng: 78.2676, pins: ['2492'], sort: 118 },
+  { slug: 'shimla', name: 'Shimla', state: 'HP', lat: 31.1048, lng: 77.1734, pins: ['1710'], sort: 119 },
+  { slug: 'jammu', name: 'Jammu', state: 'JK', lat: 32.7266, lng: 74.8570, pins: ['1800'], sort: 120 },
+  { slug: 'srinagar', name: 'Srinagar', state: 'JK', lat: 34.0837, lng: 74.7973, pins: ['1900'], sort: 121 },
+  { slug: 'kota', name: 'Kota', state: 'RJ', lat: 25.2138, lng: 75.8648, pins: ['3240'], sort: 122 },
+  { slug: 'ajmer', name: 'Ajmer', state: 'RJ', lat: 26.4499, lng: 74.6399, pins: ['3050'], sort: 123 },
+  { slug: 'bikaner', name: 'Bikaner', state: 'RJ', lat: 28.0229, lng: 73.3119, pins: ['3340'], sort: 124 },
+  { slug: 'rajkot', name: 'Rajkot', state: 'GJ', lat: 22.3039, lng: 70.8022, pins: ['3600'], sort: 125 },
+  { slug: 'jamnagar', name: 'Jamnagar', state: 'GJ', lat: 22.4707, lng: 70.0577, pins: ['3610'], sort: 126 },
+  { slug: 'bhavnagar', name: 'Bhavnagar', state: 'GJ', lat: 21.7645, lng: 72.1519, pins: ['3640'], sort: 127 },
+  { slug: 'aurangabad', name: 'Aurangabad', state: 'MH', lat: 19.8762, lng: 75.3433, pins: ['4310'], sort: 128 },
+  { slug: 'kolhapur', name: 'Kolhapur', state: 'MH', lat: 16.7050, lng: 74.2433, pins: ['4160'], sort: 129 },
+  { slug: 'solapur', name: 'Solapur', state: 'MH', lat: 17.6599, lng: 75.9064, pins: ['4130'], sort: 130 },
+  { slug: 'jabalpur', name: 'Jabalpur', state: 'MP', lat: 23.1815, lng: 79.9864, pins: ['4820'], sort: 131 },
+  { slug: 'gwalior', name: 'Gwalior', state: 'MP', lat: 26.2183, lng: 78.1828, pins: ['4740'], sort: 132 },
+  { slug: 'ujjain', name: 'Ujjain', state: 'MP', lat: 23.1765, lng: 75.7885, pins: ['4560'], sort: 133 },
+  { slug: 'bilaspur', name: 'Bilaspur', state: 'CG', lat: 22.0797, lng: 82.1409, pins: ['4950'], sort: 134 },
+  { slug: 'madurai', name: 'Madurai', state: 'TN', lat: 9.9252, lng: 78.1198, pins: ['6250'], sort: 135 },
+  { slug: 'trichy', name: 'Tiruchirappalli', state: 'TN', lat: 10.7905, lng: 78.7047, pins: ['6200'], sort: 136 },
+  { slug: 'salem', name: 'Salem', state: 'TN', lat: 11.6643, lng: 78.1460, pins: ['6360'], sort: 137 },
+  { slug: 'pondicherry', name: 'Puducherry', state: 'PY', lat: 11.9416, lng: 79.8083, pins: ['6050'], sort: 138 },
+  { slug: 'mangalore', name: 'Mangaluru', state: 'KA', lat: 12.9141, lng: 74.8560, pins: ['5750'], sort: 139 },
+  { slug: 'hubli', name: 'Hubballi', state: 'KA', lat: 15.3647, lng: 75.1240, pins: ['5800'], sort: 140 },
+  { slug: 'belgaum', name: 'Belagavi', state: 'KA', lat: 15.8497, lng: 74.4977, pins: ['5900'], sort: 141 },
+  { slug: 'kozhikode', name: 'Kozhikode', state: 'KL', lat: 11.2588, lng: 75.7804, pins: ['6730'], sort: 142 },
+  { slug: 'thrissur', name: 'Thrissur', state: 'KL', lat: 10.5276, lng: 76.2144, pins: ['6800'], sort: 143 },
+  { slug: 'guntur', name: 'Guntur', state: 'AP', lat: 16.3067, lng: 80.4365, pins: ['5220'], sort: 144 },
+  { slug: 'tirupati', name: 'Tirupati', state: 'AP', lat: 13.6288, lng: 79.4192, pins: ['5175'], sort: 145 },
+  { slug: 'warangal', name: 'Warangal', state: 'TG', lat: 17.9689, lng: 79.5941, pins: ['5060'], sort: 146 },
+  { slug: 'cuttack', name: 'Cuttack', state: 'OR', lat: 20.4625, lng: 85.8830, pins: ['7530'], sort: 147 },
+  { slug: 'jamshedpur', name: 'Jamshedpur', state: 'JH', lat: 22.8046, lng: 86.2029, pins: ['8310'], sort: 148 },
+  { slug: 'dhanbad', name: 'Dhanbad', state: 'JH', lat: 23.7957, lng: 86.4304, pins: ['8260'], sort: 149 },
+  { slug: 'siliguri', name: 'Siliguri', state: 'WB', lat: 26.7271, lng: 88.3953, pins: ['7340'], sort: 150 },
+  { slug: 'durgapur', name: 'Durgapur', state: 'WB', lat: 23.5204, lng: 87.3119, pins: ['7132'], sort: 151 }];
 /* outrr near.js — hyperlocal + courier delivery on the storefront (admin 069)
    • "Where should we deliver?" 3 s after landing (once; Skip → a small floating "Set your city" button)
    • the choice (city / pincode / device location, optional mobile) is kept in this browser and sent to
@@ -191,7 +243,7 @@ function open(mode, opt){
     if (t.dataset.c) { var c = city(t.dataset.c); picked = { city: c.slug, state: c.state, pincode: null, src: 'city' }; q.value = c.name; sug.hidden = true; if (t.closest('.near-chips')) done(picked); return }
     var a = t.dataset.a;
     if (a === 'skip') return gate ? close() : skip();
-    if (a === 'go') { var loc = picked || fromText(q.value); if (!loc) return fail(/^\d+$/.test(q.value.trim()) ? 'Enter a valid 6-digit pincode.' : 'Pick your city from the list or enter your pincode.'); return done(loc) }
+    if (a === 'go') { var loc = picked || fromText(q.value); if (!loc) return fail(/^\d+$/.test(q.value.trim()) ? (/^\d{6}$/.test(q.value.trim()) ? 'We don\'t recognise this pincode. Check it, or pick your city.' : 'Enter a valid 6-digit pincode.') : q.value.trim() ? '“' + q.value.trim() + '” isn\'t in our city list yet. Enter your 6-digit pincode instead, it works everywhere in India.' : 'Enter your city or 6-digit pincode.'); return done(loc) }
     if (a === 'gps') {
       if (!navigator.geolocation) return fail('Location is not available on this device. Pick your city instead.');
       t.textContent = 'Finding you…';
