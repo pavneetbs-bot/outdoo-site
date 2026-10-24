@@ -1428,6 +1428,31 @@ header{position:static!important}
 .ob-tri span{border-radius:12px;overflow:hidden;aspect-ratio:3/4}
 .ob-tri span:nth-child(2){transform:translateY(-10px)}
 .ob-tri img{display:block;width:100%;height:100%;object-fit:cover}
+/* winter outdoor furniture */
+.ob-winter{background:#EFE6D8;color:#2E2A24;min-height:560px;display:flex;align-items:flex-end}
+.ob-winter>img.ob-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%}
+.ob-winter::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(247,240,229,.97) 22%,rgba(247,240,229,.55) 50%,rgba(247,240,229,0) 72%)}
+.ob-winter .ob-tx{position:relative;z-index:3;padding:22px 22px 54px}
+.ob-winter .ob-eye{color:#8A6A3C}.ob-winter .ob-h em{color:#C26445}
+.ob-winter .ob-btn{background:#2E2A24;color:#F7F0E5}
+.ob-winsec{background:#F3ECE1;color:#2E2A24;display:flex;flex-direction:column}
+.ob-winsec .ob-tx{padding:24px 22px 8px}
+.ob-winsec .ob-eye{color:#8A6A3C}.ob-winsec .ob-h em{color:#C26445}
+.ob-winsec .ob-btn{background:#C26445;color:#fff}
+.ob-wgrid{display:grid;grid-template-columns:1.4fr 1fr;grid-template-rows:1fr 1fr;gap:8px;padding:12px 16px 18px;min-height:300px}
+.ob-wgrid span{border-radius:12px;overflow:hidden}.ob-wgrid span:first-child{grid-row:1/3}
+.ob-wgrid img{display:block;width:100%;height:100%;object-fit:cover}
+@media(min-width:760px){
+  .ob-winter{min-height:480px;align-items:center}
+  .ob-winter>img.ob-bg{width:68%;left:auto;right:0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%);mask-image:linear-gradient(90deg,transparent,#000 22%)}
+  .ob-winter::after{display:none}
+  .ob-winter .ob-tx{padding:40px 0 40px 6%;max-width:500px}
+  .ob-winsec{flex-direction:row;align-items:stretch;min-height:400px}
+  .ob-winsec .ob-tx{flex:0 0 36%;align-self:center;padding:36px 0 36px 5%}
+  .ob-winsec .ob-h{font-size:36px}
+  .ob-wgrid{flex:1;grid-template-columns:1.5fr 1fr 1fr;grid-template-rows:1fr;padding:24px}
+  .ob-wgrid span:first-child{grid-row:auto}
+}
 /* top strip during the sale */
 .announce.obn-fest{background:#1E1209;color:#FBF3E6}
 .announce.obn-fest b{color:#F2C46D}
@@ -1525,6 +1550,15 @@ header{position:static!important}
         <span class="ob-fc c"><img src="img/banners/lt-tiered.jpg" alt="" fetchpriority="high"></span>
       </div>
     </div>
+    <a class="obn ob-winter" data-from="" data-to="" data-act="col:furniture" role="link" tabindex="0" aria-label="Winter is outdoor season. Shop outdoor furniture">
+      <img class="ob-bg" src="img/banners/fu-wicker-lawn.jpg" alt="Wicker three-seater sofa under a pergola on a sunny lawn" loading="lazy">
+      <div class="ob-tx">
+        <span class="ob-eye">Outdoor furniture · New collection</span>
+        <h2 class="ob-h">Winter is<br><em>outdoor season.</em></h2>
+        <p class="ob-p">Soak up the winter sun on rope, wicker and teak sofas, lounge chairs and dining sets, built to live outside.</p>
+        <span class="ob-btn">Shop outdoor furniture →</span>
+      </div>
+    </a>
     <a class="obn ob-fire" data-from="" data-to="" data-act="col:fire-pits" role="link" tabindex="0" aria-label="Gather round the fire. Shop fire pits and BBQ, from ₹4,500">
       <img class="ob-bg" src="img/banners/fp-teardrop.jpg" alt="Teardrop steel fire pit glowing on a terrace at dusk" loading="lazy">
       <div class="ob-tx">
@@ -1582,6 +1616,22 @@ header{position:static!important}
     <div class="archrow" id="archTop"></div>
   </div>
 
+
+<div class="sec2">
+    <div class="obn-sec" style="margin-top:0"><a class="obn ob-winsec" data-from="" data-to="" data-act="col:furniture" role="link" tabindex="0" aria-label="Enjoy the winter sun outdoors. Shop sofas, lounge chairs and dining sets">
+      <div class="ob-tx">
+        <span class="ob-eye">Sunny afternoons, cool evenings</span>
+        <h2 class="ob-h">Enjoy the winter<br><em>outdoors.</em></h2>
+        <p class="ob-p">Terrace sofas, lawn lounges and dining sets in all-weather rope and teak. Pair them with a fire pit for the evenings.</p>
+        <span class="ob-btn">Shop outdoor furniture →</span>
+      </div>
+      <div class="ob-wgrid" aria-hidden="true"><span><img src="img/banners/fu-pergola.jpg" alt="" loading="lazy"></span><span><img src="img/banners/fu-chair.jpg" alt="" loading="lazy"></span><span><img src="img/banners/fu-lawn.jpg" alt="" loading="lazy"></span></div>
+    </a></div>
+    <div class="sh"><h2>Winter-ready outdoor furniture</h2><p>All-weather rope, wicker and teak, made to stay outside.</p></div>
+    <div style="height:12px"></div>
+    <div class="hstrip" id="stripWinter"></div>
+    <span class="pillv" onclick="openCol('furniture')">View all outdoor furniture</span>
+  </div>
 
   <div class="sec2 spaces4">
     <div class="sh"><h2>Shop by space</h2><p>Start with where you live outdoors — we'll show you what belongs there.</p></div>
@@ -2865,6 +2915,8 @@ function fillStrip(el, ids){const d=document.getElementById(el); if(d) d.innerHT
 function byCol(c,n,skip=0){return Object.keys(PRODS).filter(i=>PRODS[i].col===c).slice(skip,skip+n);}
 function byPrice(max,n){return Object.keys(PRODS).filter(i=>PRODS[i].p<=max).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,n);}
 fillStrip('stripSofas', byCol('furniture',10,4));
+function winterIds(){const one=l=>(window.vOnePerGroup?vOnePerGroup(l):l); const f=one(Object.keys(PRODS).filter(i=>PRODS[i].col==='furniture'&&PRODS[i].p>0&&(!window.IMGS||IMGS[PRODS[i].img]))); const r=i=>/sofa/i.test(PRODS[i].n)?0:/lounge|chair/i.test(PRODS[i].n)?1:2; return f.sort((a,b)=>r(a)-r(b)).slice(0,12);}
+fillStrip('stripWinter', winterIds());
 fillStrip('stripLight', byCol('lighting',10));
 fillStrip('stripRugs', byPrice(12000,10));
 fillStrip('stripPlant', byCol('planters',10));
@@ -3689,6 +3741,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         fillTiles('tilesWeather', pick(['lounge','accent','stool','throws'], big, 4));
         fillTiles('tilesBest', pick(['lounge','dining','umbp12','awl124'], null, 4));
         fillTiles('tilesNew', pick(['pl119c','orm03','awl37','tusker'], null, 4, 4));
+        fillStrip('stripWinter', winterIds());
         fillStrip('stripTrend', pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8).length ? pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8) : pool.slice(0, 8));
         if(typeof fillDealTabs === 'function'){ const f = DTABS.findIndex(d => Object.keys(PRODS).some(i => PRODS[i].col === d[1])); if(f >= 0 && !Object.keys(PRODS).some(i => PRODS[i].col === DTABS[dtabOn][1])) dtabOn = f; fillDealTabs(); }
       }catch(e){ console.warn(e) }
