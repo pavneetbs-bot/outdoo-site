@@ -1362,6 +1362,99 @@ header{position:static!important}
 .obn-tick .rm{flex:none;margin:0 10px;background:#F4C76B;color:#1E1D1B;border:0;border-radius:999px;font:700 10.5px 'Poppins',sans-serif;letter-spacing:.06em;padding:6px 12px;cursor:pointer}
 @keyframes obnMq{to{transform:translateX(-100%)}}
 @media (prefers-reduced-motion:reduce){.obn-tick .mq span{animation:none;padding-left:12px}}
+/* ---- Festive sale + Fire pits + Cane & wicker lights (24 Oct 2026) ---- */
+.ob-btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.ob-btns .ob-btn{margin:0}
+.ob-btn.ghost{background:transparent;border:1.5px solid currentColor}
+.ob-gold{color:#F2C46D}
+/* festive sale */
+.ob-fest{background:radial-gradient(120% 90% at 85% 30%,#5A2E1A 0%,#2A1710 45%,#140D09 100%);color:#FBF3E6;min-height:560px;display:flex;flex-direction:column;overflow:hidden}
+.ob-fest .ob-tx{position:relative;z-index:3;padding:26px 22px 0}
+.ob-fest .ob-eye{color:#F2C46D}
+.ob-fest .ob-h{font-size:34px}
+.ob-fest .ob-h b{display:block;font-size:46px;line-height:1;color:#F2C46D;letter-spacing:-.03em;margin-top:8px;white-space:nowrap}
+.ob-fest .ob-h b small{display:block;font-size:.42em;letter-spacing:.02em;margin-bottom:2px;color:#FBF3E6}
+.ob-fest .ob-p{opacity:.88}
+.ob-code{display:inline-flex;align-items:center;gap:10px;margin-top:14px;border:1.5px dashed rgba(242,196,109,.75);border-radius:12px;padding:8px 8px 8px 14px;font-size:12px;letter-spacing:.06em}
+.ob-code b{font-size:16px;letter-spacing:.14em;color:#F2C46D}
+.ob-code button{border:0;background:#F2C46D;color:#1E1209;font:700 11.5px Poppins,sans-serif;border-radius:8px;padding:7px 11px;cursor:pointer}
+.ob-fest .ob-btn{background:#F2C46D;color:#1E1209}
+.ob-fest .ob-btn.ghost{background:transparent;color:#FBF3E6}
+.ob-ends{font-size:12px;opacity:.8;margin-top:12px;font-variant-numeric:tabular-nums}
+.ob-fest .ob-art{position:relative;flex:1;min-height:260px;margin-top:8px}
+.ob-fc{position:absolute;border-radius:16px;overflow:hidden;border:4px solid #F2C46D;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.ob-fc img{display:block;width:100%;height:100%;object-fit:cover}
+.ob-fc.a{left:6%;bottom:30px;width:34%;aspect-ratio:3/4;transform:rotate(-5deg)}
+.ob-fc.b{left:33%;bottom:52px;width:36%;aspect-ratio:3/4;transform:rotate(2deg);z-index:2}
+.ob-fc.c{left:62%;bottom:24px;width:32%;aspect-ratio:3/4;transform:rotate(6deg)}
+.ob-spark{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,#F2C46D 1.2px,transparent 1.6px),radial-gradient(circle,rgba(242,196,109,.55) 1px,transparent 1.4px);background-size:90px 90px,53px 53px;background-position:10px 20px,30px 5px;opacity:.35}
+/* fire pits */
+.ob-fire{background:#120D0A;color:#fff;min-height:560px;display:flex;align-items:flex-end}
+.ob-fire>img.ob-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:60% center}
+.ob-fire::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(14,9,6,.92) 8%,rgba(14,9,6,.35) 55%,rgba(14,9,6,0) 80%)}
+.ob-fire .ob-tx{position:relative;z-index:3;padding:22px 22px 54px}
+.ob-fire .ob-eye{color:#FFB46B}
+.ob-fire .ob-h em{color:#FF8A3D}
+.ob-fire .ob-btn{background:#FF8A3D;color:#1A0E06}
+.ob-thumbs{display:none}
+/* cane & wicker lights */
+.ob-cane{background:#F3E9DA;color:#2E2A24;min-height:560px;display:flex;flex-direction:column}
+.ob-cane .ob-tx{padding:26px 22px 0;position:relative;z-index:2}
+.ob-cane .ob-eye{color:#9A6A2F}
+.ob-cane .ob-h em{color:#B3742B}
+.ob-cane .ob-btn{background:#2E2A24;color:#F3E9DA}
+.ob-mosaic{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:1fr 1fr;gap:8px;padding:16px 16px 40px;flex:1;min-height:260px}
+.ob-mosaic span{border-radius:14px;overflow:hidden}
+.ob-mosaic span:first-child{grid-row:1/3}
+.ob-mosaic img{display:block;width:100%;height:100%;object-fit:cover}
+.ob-from{display:inline-block;margin-top:10px;font-size:13px;font-weight:600}
+.ob-from b{font-size:17px}
+/* section: fire pits collage */
+.ob-firesec{background:#1B1511;color:#FBF3E6;display:flex;flex-direction:column}
+.ob-firesec .ob-tx{padding:24px 22px 8px}
+.ob-firesec .ob-eye{color:#FFB46B}.ob-firesec .ob-h em{color:#FF8A3D}
+.ob-firesec .ob-btn{background:#FF8A3D;color:#1A0E06}
+.ob-quad{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 16px 18px}
+.ob-quad figure{margin:0;position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1}
+.ob-quad img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.ob-firesec:hover .ob-quad img{transform:scale(1.04)}
+.ob-quad figcaption{position:absolute;left:8px;bottom:8px;background:rgba(18,13,10,.75);color:#fff;font-size:11px;font-weight:600;border-radius:999px;padding:4px 10px}
+/* section: lights for Diwali */
+.ob-lights{background:linear-gradient(120deg,#2B1F14,#3D2A18);color:#FBF3E6;display:flex;flex-direction:column}
+.ob-lights .ob-tx{padding:24px 22px 8px}
+.ob-lights .ob-eye,.ob-lights .ob-h em{color:#F2C46D}
+.ob-lights .ob-btn{background:#F2C46D;color:#1E1209}
+.ob-tri{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 16px 18px}
+.ob-tri span{border-radius:12px;overflow:hidden;aspect-ratio:3/4}
+.ob-tri span:nth-child(2){transform:translateY(-10px)}
+.ob-tri img{display:block;width:100%;height:100%;object-fit:cover}
+/* top strip during the sale */
+.announce.obn-fest{background:#1E1209;color:#FBF3E6}
+.announce.obn-fest b{color:#F2C46D}
+@media(min-width:760px){
+  .ob-fest{flex-direction:row;align-items:center;min-height:480px}
+  .ob-fest .ob-tx{flex:0 0 50%;padding:40px 0 40px 6%}
+  .ob-fest .ob-h{font-size:40px}.ob-fest .ob-h b{font-size:60px}
+  .ob-fest .ob-art{align-self:stretch;margin:0}
+  .ob-fc.a{left:4%;bottom:70px;width:32%}.ob-fc.b{left:32%;bottom:110px;width:34%}.ob-fc.c{left:62%;bottom:60px;width:30%}
+  .ob-fire{min-height:480px;align-items:center}
+  .ob-fire::after{background:linear-gradient(90deg,rgba(14,9,6,.95) 30%,rgba(14,9,6,.5) 44%,rgba(14,9,6,0) 58%)}
+  .ob-fire>img.ob-bg{object-position:38% 55%;width:66%;left:auto;right:0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%);mask-image:linear-gradient(90deg,transparent,#000 22%)}
+  .ob-fire::after{display:none}
+  .ob-fire .ob-tx{padding:40px 0 40px 6%;max-width:520px}
+  .ob-thumbs{display:flex;gap:10px;position:absolute;right:28px;bottom:26px;z-index:3}
+  .ob-thumbs img{width:86px;height:86px;object-fit:cover;border-radius:12px;border:2px solid rgba(255,255,255,.85)}
+  .ob-cane{flex-direction:row;align-items:stretch;min-height:480px}
+  .ob-cane .ob-tx{flex:0 0 46%;align-self:center;padding:40px 0 40px 6%}
+  .ob-mosaic{flex:1;padding:22px 22px 22px 10px}
+  .ob-firesec,.ob-lights{flex-direction:row;align-items:center;min-height:380px}
+  .ob-firesec .ob-h,.ob-lights .ob-h{font-size:36px}
+  .ob-firesec .ob-tx,.ob-lights .ob-tx{flex:0 0 38%;padding:36px 0 36px 5%}
+  .ob-quad{flex:1;grid-template-columns:repeat(4,1fr);padding:24px}
+  .ob-quad figure{aspect-ratio:3/4}
+  .ob-tri{flex:1;padding:30px 24px 24px}
+}
+@media(min-width:1100px){.ob-fest .ob-h b{font-size:72px}}
 @media(max-width:760px){.obn{border-radius:12px}.obn-hero{border-radius:14px}.obn-sec{margin:14px 0}.obn-tick .tg{padding:8px 9px;font-size:9.5px;letter-spacing:.08em}}
 </style>
 </head>
@@ -1416,6 +1509,43 @@ header{position:static!important}
 <div class="wrap">
 
 <div class="obn-hero" id="obnHero" hidden><div class="obn-track">
+    <div class="obn ob-fest" data-from="" data-to="2026-11-10T00:00:00+05:30" data-act="" aria-label="The Festive Sale: flat ₹1,000 off on orders above ₹8,000 with code FESTIVE1000, till 9 November">
+      <span class="ob-spark" aria-hidden="true"></span>
+      <div class="ob-tx">
+        <span class="ob-eye">The Festive Sale · till 9 Nov</span>
+        <h2 class="ob-h">Light up Diwali.<b><small>Flat</small> ₹1,000 off</b></h2>
+        <p class="ob-p">On every order above ₹8,000: fire pits, BBQs and handwoven cane lights.</p>
+        <span class="ob-code">Use code <b>FESTIVE1000</b><button type="button" data-copy="FESTIVE1000">Copy</button></span>
+        <div class="ob-btns"><span class="ob-btn" data-go="col:fire-pits" role="link" tabindex="0">Shop fire pits →</span><span class="ob-btn ghost" data-go="col:lighting" role="link" tabindex="0">Shop cane lights</span></div>
+        <div class="ob-ends" data-ends="2026-11-10T00:00:00+05:30"></div>
+      </div>
+      <div class="ob-art" aria-hidden="true">
+        <span class="ob-fc a"><img src="img/banners/lt-lotus.jpg" alt="" fetchpriority="high"></span>
+        <span class="ob-fc b"><img src="img/banners/fp-flame.jpg" alt="" fetchpriority="high"></span>
+        <span class="ob-fc c"><img src="img/banners/lt-tiered.jpg" alt="" fetchpriority="high"></span>
+      </div>
+    </div>
+    <a class="obn ob-fire" data-from="" data-to="" data-act="col:fire-pits" role="link" tabindex="0" aria-label="Gather round the fire. Shop fire pits and BBQ, from ₹4,500">
+      <img class="ob-bg" src="img/banners/fp-teardrop.jpg" alt="Teardrop steel fire pit glowing on a terrace at dusk" loading="lazy">
+      <div class="ob-tx">
+        <span class="ob-eye">New on outrr · Fire Pits &amp; BBQ</span>
+        <h2 class="ob-h">Gather round<br><em>the fire.</em></h2>
+        <p class="ob-p">Hand-cut steel fire pits and barbecues, made for terraces, lawns and long winter evenings.</p>
+        <span class="ob-from">From <b>₹4,500</b></span><br>
+        <span class="ob-btn">Shop fire pits →</span>
+      </div>
+      <div class="ob-thumbs" aria-hidden="true"><img src="img/banners/fp-orb.jpg" alt="" loading="lazy"><img src="img/banners/fp-forest.jpg" alt="" loading="lazy"><img src="img/banners/fp-lantern.jpg" alt="" loading="lazy"></div>
+    </a>
+    <a class="obn ob-cane" data-from="" data-to="" data-act="col:lighting" role="link" tabindex="0" aria-label="Cane and wicker lights, handwoven by artisans. Shop lights from ₹1,450">
+      <div class="ob-tx">
+        <span class="ob-eye">Handwoven by artisans</span>
+        <h2 class="ob-h">Cane &amp; wicker<br><em>lights.</em></h2>
+        <p class="ob-p">Pendants and lanterns that throw a warm, woven glow across balconies, verandas and pergolas.</p>
+        <span class="ob-from">From <b>₹1,450</b></span><br>
+        <span class="ob-btn">Shop the lights →</span>
+      </div>
+      <div class="ob-mosaic" aria-hidden="true"><span><img src="img/banners/lt-globe.jpg" alt="" loading="lazy"></span><span><img src="img/banners/lt-petal.jpg" alt="" loading="lazy"></span><span><img src="img/banners/lt-gourd.jpg" alt="" loading="lazy"></span></div>
+    </a>
     <a class="obn ob-peek" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="Take a sneak peek. Shop this Dussehra. Explore the store">
       <div class="ob-tx">
         <span class="ob-pill">India's first marketplace for outdoors</span>
@@ -1472,6 +1602,21 @@ header{position:static!important}
       <div class="tx"><h3>The Garden</h3></div><span class="sn">Shop garden →</span></div>
   </div>
 
+<div class="obn-sec"><a class="obn ob-firesec" data-from="" data-to="" data-act="col:fire-pits" role="link" tabindex="0" aria-label="Winter evenings, sorted. Shop fire pits and BBQ">
+      <div class="ob-tx">
+        <span class="ob-eye">Fire Pits &amp; BBQ</span>
+        <h2 class="ob-h">Winter evenings,<br><em>sorted.</em></h2>
+        <p class="ob-p">37 designs in powder-coated steel: fire bowls, chimeneas, braziers and grills.</p>
+        <span class="ob-btn">See all fire pits →</span>
+      </div>
+      <div class="ob-quad" aria-hidden="true">
+        <figure><img src="img/banners/fp-star.jpg" alt="" loading="lazy"><figcaption>Fire bowls</figcaption></figure>
+        <figure><img src="img/banners/fp-orb.jpg" alt="" loading="lazy"><figcaption>Fire globes</figcaption></figure>
+        <figure><img src="img/banners/fp-hex.jpg" alt="" loading="lazy"><figcaption>Grill tops</figcaption></figure>
+        <figure><img src="img/banners/fp-lantern.jpg" alt="" loading="lazy"><figcaption>Braziers</figcaption></figure>
+      </div>
+    </a></div>
+
 <div class="obn-sec"><a class="obn ob-kit" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="pkg" role="link" tabindex="0" aria-label="Pick a theme. Get the whole look. See room packages">
       <div class="ob-ph"><img src="img/banners/ph-lounge.jpg" alt="Terrace lounge with planters" loading="lazy"></div>
       <div class="ob-tx">
@@ -1499,16 +1644,16 @@ header{position:static!important}
   </div>
 
   <div class="sec2">
-    <a class="obn ob-diwali" data-from="" data-to="2026-11-09T00:00:00+05:30" data-act="col:lighting" role="link" tabindex="0" aria-label="Light up your balcony for Diwali. Shop festive lighting">
-      <div class="ob-ph"><img src="img/banners/ph-diwali-balcony.jpg" alt="Balcony with glowing lanterns and string lights" loading="lazy"></div>
+    <a class="obn ob-lights" data-from="" data-to="2026-11-10T00:00:00+05:30" data-act="col:lighting" role="link" tabindex="0" aria-label="Light up your Diwali, the handwoven way. Shop cane and wicker lights">
       <div class="ob-tx">
         <span class="ob-eye">Dussehra to Diwali</span>
-        <h2 class="ob-h">Light up your<br><em>balcony for Diwali.</em></h2>
-        <p class="ob-p">Lanterns, string lights, planters and seating to make your balcony glow this festive season.</p>
-        <span class="ob-btn">Shop festive lighting →</span>
+        <h2 class="ob-h">Light up Diwali,<br><em>the handwoven way.</em></h2>
+        <p class="ob-p">Cane pendants and wicker lanterns for a warm festive glow. Flat ₹1,000 off above ₹8,000 with <b>FESTIVE1000</b>.</p>
+        <span class="ob-btn">Shop festive lights →</span>
       </div>
+      <div class="ob-tri" aria-hidden="true"><span><img src="img/banners/lt-oval.jpg" alt="" loading="lazy"></span><span><img src="img/banners/lt-drum.jpg" alt="" loading="lazy"></span><span><img src="img/banners/lt-lotus.jpg" alt="" loading="lazy"></span></div>
     </a>
-    <div class="bcard big" data-obn-alt onclick="openCol('lighting')" style="margin-bottom:0">
+        <div class="bcard big" data-obn-alt onclick="openCol('lighting')" style="margin-bottom:0">
       <div class="im"><img data-img="PARTY" alt="Diwali"></div>
       <div class="tx"><h3>Light up this Diwali</h3></div><span class="sn">Festive lighting →</span></div>
   </div>
@@ -1959,6 +2104,17 @@ header{position:static!important}
     </div>
   </div>
 </div>
+<script>/* festive sale: the welcome pop-up shows the sale offer until 9 Nov */
+(function(){ if(Date.now() >= new Date('2026-11-10T00:00:00+05:30').getTime()) return;
+  var b = document.querySelector('#offpop .opbd'); if(!b) return;
+  document.querySelector('#offpop .opim img').src = 'img/banners/fp-flame.jpg';
+  b.querySelector('.ob').textContent = '🪔 THE FESTIVE SALE · TILL 9 NOV';
+  b.querySelector('h3').textContent = 'Flat ₹1,000 off on orders above ₹8,000';
+  b.querySelector('p').innerHTML = 'Code <b>FESTIVE1000</b> is applied by itself at checkout. Below ₹8,000, <b>OUTRR5</b> gives you 5% off.';
+  var i = b.querySelector('input'); if(i) i.remove();
+  var btn = b.querySelector('.btn'); btn.textContent = 'Shop the sale'; btn.setAttribute('onclick', "offClose();openCol('fire-pits')");
+  b.querySelector('.opno').textContent = 'Maybe later';
+})();</script>
 
 
 <!-- CHECKOUT -->
@@ -2647,7 +2803,7 @@ function renderCart(){
  const sub=CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0);
  const mrp=CART.reduce((a,c)=>a+(PRODS[c.id].m>PRODS[c.id].p?PRODS[c.id].m:PRODS[c.id].p)*c.q,0);
  const save=mrp-sub;
- const coup=Math.round(sub*0.05);
+ const bc=bestCoupon(sub), coup=bc.amt;
  const ship=window.cartShip?cartShip():0;   // 076: packaging + delivery to the visitor's city (null = city not set yet)
  const total=sub-coup+(ship||0);
  const th=200000, pct=Math.min(100,Math.round(total/th*100));
@@ -2673,7 +2829,7 @@ function renderCart(){
    <div class="csum">
     <div class="r"><span>Subtotal (${CART.reduce((a,c)=>a+c.q,0)} items)</span><span>${inr(sub)}</span></div>
     ${save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(save)}</span></div>`:''}
-    <div class="r"><span>Coupon OUTRR5 <span class="grn">(auto-applied)</span></span><span class="grn">− ${inr(coup)}</span></div>
+    ${bc.code?`<div class="r"><span>Coupon ${bc.code} <span class="grn">(auto-applied)</span></span><span class="grn">− ${inr(coup)}</span></div>`:''}
     ${shipRow(ship)}
     <div class="r tot"><span>Total</span><span>${inr(total)}</span></div>
     <div class="secline" style="margin-top:6px">Inclusive of all taxes · GST invoice available</div>
@@ -3077,16 +3233,25 @@ document.addEventListener('click',function(e){
 },true);
 window.addEventListener('scroll',function(){ if(navCur) navPick(); },{passive:true});
 
+// ================= coupons: the best live offer is applied by itself (OUTRR5 5%, festive flat ₹ offers…) =================
+var COUPONS=[{code:'OUTRR5',pct_off:5,flat_off:0,min_order:0,starts_at:null,ends_at:null}];
+(function(){ var S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon) return;
+  fetch(S.url+'/rest/v1/coupons?active=eq.true&select=code,pct_off,flat_off,min_order,starts_at,ends_at',{headers:{apikey:S.anon,Authorization:'Bearer '+S.anon}})
+    .then(function(r){return r.ok?r.json():null}).then(function(j){ if(Array.isArray(j)&&j.length){ COUPONS=j; try{ if(document.getElementById('cartBody')&&typeof renderCart==='function') renderCart(); }catch(e){} } },function(){}); })();
+function bestCoupon(sub){ var n=Date.now(), best={code:null,amt:0};
+  COUPONS.forEach(function(c){ if((c.starts_at&&new Date(c.starts_at)>n)||(c.ends_at&&new Date(c.ends_at)<=n)||sub<(+c.min_order||0)) return;
+    var a=Math.min(sub,Math.round(sub*(+c.pct_off||0)/100)+(+c.flat_off||0)); if(a>best.amt) best={code:c.code,amt:a}; });
+  return best; }
 // ================= checkout =================
 function coTotals(){
   const sub=CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0);
   const mrp=CART.reduce((a,c)=>a+(PRODS[c.id].m>PRODS[c.id].p?PRODS[c.id].m:PRODS[c.id].p)*c.q,0);
-  const coup=Math.round(sub*0.05);
+  const bc=bestCoupon(sub), coup=bc.amt;
   // 076: packaging + delivery by the address pincode (else the city the visitor picked)
   const pinEl=document.getElementById('coPin'), pin=pinEl?pinEl.value.trim():(coLast.pincode||'');
   const loc=(window.locFromPin&&locFromPin(pin))||(window.nearLoc&&nearLoc())||null;
   const ship=window.cartShip?cartShip(loc):0;
-  return {sub,mrp,save:mrp-sub,coup,ship,loc,total:sub-coup+(ship||0),items:CART.reduce((a,c)=>a+c.q,0)};
+  return {sub,mrp,save:mrp-sub,coup,code:bc.code,ship,loc,total:sub-coup+(ship||0),items:CART.reduce((a,c)=>a+c.q,0)};
 }
 // "Delivery" row: amount for the place, FREE, or "enter pincode"
 function shipRow(ship,loc,id){
@@ -3147,7 +3312,7 @@ function renderCheckout(){
       <div class="osum" style="margin-top:12px">
         <div class="r"><span>Subtotal</span><span>${inr(t.sub)}</span></div>
         ${t.save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(t.save)}</span></div>`:''}
-        <div class="r"><span>Coupon OUTRR5</span><span class="grn">− ${inr(t.coup)}</span></div>
+        ${t.code?`<div class="r"><span>Coupon ${t.code}</span><span class="grn">− ${inr(t.coup)}</span></div>`:''}
         ${shipRow(t.ship,t.loc,'coShipR')}
         <div class="r tot"><span>Total payable</span><span id="coTot">${inr(t.total)}</span></div>
       </div>
@@ -3189,7 +3354,7 @@ async function placeOrder(){
   let res, err;
   try{
     const r=await fetch(S.url+'/rest/v1/rpc/place_order',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(utok||S.anon),'Content-Type':'application/json'},
-      body:JSON.stringify({p:{items:CART.map(c=>({sku:c.id,qty:c.q})),customer,coupon:'OUTRR5'}})});
+      body:JSON.stringify({p:{items:CART.map(c=>({sku:c.id,qty:c.q})),customer,coupon:coTotals().code}})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
@@ -3663,6 +3828,27 @@ async function shareProduct(){
   if(an && Date.now() < LAUNCH){
     an.className = 'announce obn-tick';
     an.innerHTML = '<span class="mq"><span>Launching this Dussehra · 20 Oct &nbsp;✦&nbsp; Wishlist your favourites now &nbsp;✦&nbsp; Festive deals unlock on launch day &nbsp;✦&nbsp; Secure online payment</span></span>';
+  }
+  // 6. festive sale: buttons inside a slide, copy the code, "ends in", and the top strip
+  document.querySelectorAll('.obn [data-go]').forEach(function(b){
+    var go = function(e){ e.stopPropagation(); obnGo(b.getAttribute('data-go')); };
+    b.addEventListener('click', go); b.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ go(e); } });
+  });
+  document.querySelectorAll('[data-copy]').forEach(function(b){
+    b.addEventListener('click', function(e){ e.stopPropagation(); var c = b.getAttribute('data-copy');
+      try{ navigator.clipboard.writeText(c); }catch(x){} b.textContent = 'Copied ✓'; setTimeout(function(){ b.textContent = 'Copy'; }, 1800); });
+  });
+  var SALE_END = t('2026-11-10T00:00:00+05:30');
+  document.querySelectorAll('[data-ends]').forEach(function(el){
+    var end = t(el.getAttribute('data-ends'));
+    var paint = function(){ var ms = end - Date.now(); if(ms <= 0){ el.textContent = ''; return; }
+      var d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+      el.textContent = 'Ends in ' + (d ? d + 'd ' : '') + h + 'h ' + m + 'm'; };
+    paint(); setInterval(paint, 30000);
+  });
+  if(an && Date.now() < SALE_END){
+    an.className = 'announce obn-fest';
+    an.innerHTML = '<b>The Festive Sale</b> · Flat ₹1,000 off on ₹8,000+ with code <b>FESTIVE1000</b> · till 9 Nov';
   }
   // 5. vertical images as tiles inside product grids (re-applied whenever a grid is re-rendered)
   function tileHTML(x, strip){ return '<div class="obn-tile' + (strip ? ' mpc' : '') + '" data-obn-tile role="link" tabindex="0" aria-label="' + x.alt.replace(/"/g, '&quot;') + '"><img src="img/banners/' + x.img + '.jpg" alt="' + x.alt.replace(/"/g, '&quot;') + '" loading="lazy" decoding="async"></div>'; }
