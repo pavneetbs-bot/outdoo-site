@@ -1550,9 +1550,9 @@ header{position:static!important}
   <div class="sec2">
     <div class="tband">
       <div class="ti"><b>300+</b><span>Outdoor projects delivered</span></div>
-      <div class="ti"><b>Est. 1992</b><span>Made in India factory</span></div>
+      <div class="ti"><b>Made in India</b><span>Verified Indian makers</span></div>
       <div class="ti"><b>200K+</b><span>Outdoor community</span></div>
-      <div class="ti"><b>127</b><span>Weather-tested pieces</span></div>
+      <div class="ti"><b id="statPieces">100+</b><span>Outdoor pieces</span></div>
     </div>
   </div>
 
@@ -1595,7 +1595,7 @@ header{position:static!important}
     <div class="founder">
       <div class="fav">PS</div>
       <div><h3>From the makers of LifeWall</h3>
-        <p>outrr is built by the team behind LifeWall — 300+ luxury terraces, farmhouses and outdoor spaces across Delhi NCR since 2015 — in partnership with India's largest outdoor furniture manufacturer, making in India since 1992.</p>
+        <p>outrr is built by the team behind LifeWall — 300+ luxury terraces, farmhouses and outdoor spaces across Delhi NCR since 2015, with outdoor makers from across India.</p>
         <span class="fw" onclick="window.open('https://www.instagram.com/lifewall_official/','_blank','noopener')">Follow the journey →</span></div>
     </div>
   </div>
@@ -1633,7 +1633,7 @@ header{position:static!important}
     <div class="acc"><div class="acc-h" onclick="accT(this)">Do you deliver across India?<span class="pm">+</span></div>
       <div class="acc-b">Delivered across India; the delivery charge for your pincode shows on the product page. Assembly is simple and done by you — every piece ships with fittings and a step-by-step guide, and our team is on WhatsApp if you get stuck.</div></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">Will products survive rain &amp; sun?<span class="pm">+</span></div>
-      <div class="acc-b">Everything on outrr is built for the outdoors — powder-coated frames, UV-stabilised weaves, quick-dry foam and weatherproof composites, made in India since 1992.</div></div>
+      <div class="acc-b">Everything on outrr is built for the outdoors — powder-coated frames, UV-stabilised weaves, quick-dry foam and weatherproof composites, made in India.</div></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">What about warranty &amp; returns?<span class="pm">+</span></div>
       <div class="acc-b">Frames carry up to 3-year warranty and every delivery has a damage-free promise — issues at unboxing are replaced, no questions asked.</div></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">Can I customise a room package?<span class="pm">+</span></div>
@@ -1643,7 +1643,7 @@ header{position:static!important}
   <div class="sec2">
     <div class="seotext">
       <h3>Outdoor furniture &amp; decor online in India — outrr</h3>
-      <p>outrr brings every outdoor possibility to your doorstep — luxury outdoor sofa sets, terrace dining, hanging swings, sun loungers, garden umbrellas, all-weather lamps, sculptural art, water features, planters and outdoor rugs. Curated by the team behind 300+ luxury outdoor projects at LifeWall, and manufactured in India by the country's largest outdoor furniture maker, est. 1992.</p>
+      <p>outrr brings every outdoor possibility to your doorstep — luxury outdoor sofa sets, terrace dining, hanging swings, sun loungers, garden umbrellas, all-weather lamps, sculptural art, water features, planters and outdoor rugs. Curated by the team behind 300+ luxury outdoor projects at LifeWall, and made in India by verified outdoor makers.</p>
       <h3>Built for Indian weather</h3>
       <p>Delhi NCR summers, Mumbai monsoons or Bengaluru sun — every product is engineered outdoors-first with powder-coated aluminium, UV-stabilised braids, quick-dry cushions and frost-proof composites, delivered across India.</p>
     </div>
@@ -1851,7 +1851,7 @@ header{position:static!important}
         <div class="acc-b">
           <ul class="speclist">
             <li><b>Curated by the team behind 300+ outdoor projects</b> — we pick what actually survives Indian weather</li>
-            <li><b>Made in India since 1992</b> — by the country's largest outdoor furniture manufacturer</li>
+            <li><b>Made in India</b> — by verified Indian makers, sold direct</li>
             <li><b>200K+ outdoor community</b> follows our work on Instagram</li>
             <li><b>Room packages</b> — build a full balcony or terrace in one order, at bundle pricing</li>
           </ul>
@@ -2643,7 +2643,7 @@ function cartRm(id){CART=CART.filter(c=>c.id!==id);updBadge();renderCart();}
 function renderCart(){
  const body=document.getElementById('cartBody');
  document.getElementById('cartCnt').textContent=CART.length?CART.reduce((a,c)=>a+c.q,0)+' items':'';
- if(!CART.length){body.innerHTML=`<div class="cempty"><h3>Your cart is empty</h3>Explore 127 outdoor pieces made for Indian weather<br><button class="btn" onclick="showHome()">Start shopping</button></div>`;return;}
+ if(!CART.length){body.innerHTML=`<div class="cempty"><h3>Your cart is empty</h3>Explore outdoor pieces made for Indian weather<br><button class="btn" onclick="showHome()">Start shopping</button></div>`;return;}
  const sub=CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0);
  const mrp=CART.reduce((a,c)=>a+(PRODS[c.id].m>PRODS[c.id].p?PRODS[c.id].m:PRODS[c.id].p)*c.q,0);
  const save=mrp-sub;
@@ -2835,11 +2835,44 @@ const ARCH = [
  ['Planters','planters','PPL119C'],['Rugs','furnishings','RORM03'],['Art & Sculpture','art','ABUDDHA'],
  ['Green Walls','planters','PPL25'],['Water Features','art','ANADINE'],['Festive','lighting','LAWL78']
 ];
-function archHTML(list){return list.map(a=>`<div class="arch" onclick="openCol('${a[1]}')">
+function archHTML(list){return list.map(a=>`<div class="arch" onclick="${a[3]?`openSub('${a[1]}','${String(a[3]).replace(/'/g,"\\'")}')`:`openCol('${a[1]}')`}">
   <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');}
 function fillArch(){
   const t=document.getElementById('archTop'); if(t) t.innerHTML=archHTML(ARCH.slice(0,6));
   const a=document.getElementById('archAll'); if(a) a.innerHTML=archHTML(ARCH);
+}
+
+// ---- live catalogue on the home page: category tiles, photos and packages come from what is on the store ----
+var LIVE_HOME = false;
+function liveHome(){
+  const ids = Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0);
+  if(!ids.length) return;
+  LIVE_HOME = true;
+  const one = l => (window.vOnePerGroup ? vOnePerGroup(l) : l);
+  // category / sub-category tiles, biggest first
+  const g = {}; one(ids).forEach(i => { const x = PRODS[i], sb = x.sb && x.sb !== 'More' ? x.sb : ''; (g[x.col + '|' + sb] = g[x.col + '|' + sb] || []).push(i) });
+  const tiles = Object.entries(g).sort((a, b) => b[1].length - a[1].length).map(([k, l]) => { const [col, sb] = k.split('|'); return [sb || (COLS[col] ? COLS[col].t : col), col, PRODS[l[0]].img, sb] });
+  if(tiles.length){ ARCH.length = 0; tiles.slice(0, 12).forEach(t => ARCH.push(t)); fillArch(); }
+  // photos of the old sample catalogue → a live product's photo (furniture where it shows furniture)
+  const used = new Set(), pickImg = col => { const l = one(ids).filter(i => !used.has(i) && (!col || PRODS[i].col === col)); const i = l[0] || one(ids).find(x => !used.has(x)); if(!i) return null; used.add(i); return IMGS[PRODS[i].img]; };
+  const SAMPLE = { BFURN: 'furniture', BDINE: 'furniture', TCASSIO: 'furniture', SOFA: 'furniture', STOOL: 'furniture', TGIULIAA: 'furniture', CHAIR: 'furniture' };
+  document.querySelectorAll('#home img[data-img], .home img[data-img], img[data-img]').forEach(im => {
+    const k = im.getAttribute('data-img'); if(!(k in SAMPLE) || im.id === 'pdImg' || im.closest('#pdp')) return;
+    const u = pickImg(SAMPLE[k]); if(u) im.src = u;
+  });
+  // room packages only when their pieces are on the store
+  const pk = typeof PKGS !== 'undefined' ? PKGS.filter(p => p.items.every(id => PRODS[id])) : [];
+  if(typeof PKGS !== 'undefined' && pk.length < PKGS.length){ PKGS.length = 0; pk.forEach(p => PKGS.push(p)); try{ fillPkgs(); }catch(e){} }
+  if(typeof PKGS !== 'undefined' && !PKGS.length){
+    const pr = document.getElementById('pkgRow'); if(pr) pr.closest('.sec2').style.display = 'none';
+    document.querySelectorAll('.sn2[onclick^="navOpen(\'pkg\'"]').forEach(e => e.style.display = 'none');
+  }
+  // deals tabs: only categories that have products, with their photo
+  if(typeof DTABS !== 'undefined'){
+    const dt = Object.entries(g).reduce((m, [k, l]) => { const col = k.split('|')[0]; if(!m.some(d => d[1] === col)) m.push([(COLS[col] ? COLS[col].t : col).split(' & ')[0], col, PRODS[l[0]].img]); return m }, []);
+    if(dt.length){ DTABS.length = 0; dt.slice(0, 6).forEach(d => DTABS.push(d)); dtabOn = 0; try{ fillDealTabs(); }catch(e){} }
+  }
+  const sp = document.getElementById('statPieces'); if(sp) sp.textContent = ids.length + '+';
 }
 
 // ---- room packages ----
@@ -3012,7 +3045,7 @@ function navOpen(kind,el,hover){
     p.innerHTML=`<div class="mm-grid g5">${PKGS.map((k,i)=>tile(`openPkg(${i})`,IMGS[k.img]||_pimg(k.items.find(id=>PRODS[id])),k.n,k.inc)).join('')}</div>`;
   } else {
     p.innerHTML=`<div class="mm-grid${NAVSETS[kind].length>4?' g5':''}">${NAVSETS[kind].map(c=>{const C=COLS[c[1]]||{};
-      const img=IMGS[C.img]||_pimg(_byRank(_idsOf(c[1])).find(id=>_pimg(id)));
+      const img=(LIVE_HOME&&_pimg(_byRank(_idsOf(c[1])).find(id=>_pimg(id))))||IMGS[C.img]||_pimg(_byRank(_idsOf(c[1])).find(id=>_pimg(id)));
       return tile(`openCol('${c[1]}')`,img,c[0],C.tag);}).join('')}</div>`;
   }
   p.classList.add('open','mega');
@@ -3418,9 +3451,7 @@ function fillPDPv2(x,d,sku){
     sz.innerHTML='<tr><th>Size</th><th>Includes</th><th>Measurement</th></tr>'+
       rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');}
   const mf=document.getElementById('pdMfr');
-  if(mf) mf.innerHTML=`Made in India by our manufacturing partner — <b>established 1992</b>, India's largest outdoor furniture
-    range, producing in-house across furniture, shade, lighting, planters and art.
-    Curated and sold by <b>LifeWall Greentech Private Limited</b>, Delhi NCR. GST invoice issued on every order.`;
+  if(mf) mf.innerHTML=`Made in India by a verified outrr seller, direct from their workshop. GST invoice issued on every order.`;
   const ec=document.getElementById('expCats');
   if(ec) ec.innerHTML=ARCH.slice(0,8).map(a=>`<div class="ec" onclick="openCol('${a[1]}')">
     <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');
@@ -3496,6 +3527,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         fillStrip('stripTrend', pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8).length ? pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8) : pool.slice(0, 8));
         if(typeof fillDealTabs === 'function'){ const f = DTABS.findIndex(d => Object.keys(PRODS).some(i => PRODS[i].col === d[1])); if(f >= 0 && !Object.keys(PRODS).some(i => PRODS[i].col === DTABS[dtabOn][1])) dtabOn = f; fillDealTabs(); }
       }catch(e){ console.warn(e) }
+      try{ liveHome(); }catch(e){ console.warn(e) }
     }
     if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
       try{ renderPLP(lastCol); }catch(e){}
