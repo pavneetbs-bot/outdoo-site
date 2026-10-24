@@ -2420,7 +2420,7 @@ function openProduct(id){
   const off = x.m>x.p ? Math.round((1-x.p/x.m)*100) : 0;
   document.getElementById('pdPrice').innerHTML = inr(x.p) + (off?`<span class="mrplab">MRP</span><span class="mrp">${inr(x.m)}</span><span class="off">${off}% OFF</span>`:'');
   document.getElementById('pdShip').textContent=x.ship;
-  document.getElementById('pdDesc').textContent=COLDESC[x.col]||COLDESC['furniture'];
+  document.getElementById('pdDesc').textContent=x.ds||COLDESC[x.col]||COLDESC['furniture'];   // the product's own description first
   document.getElementById('pdImg').src=IMGS[x.img]; document.getElementById('pdImg').alt=x.alt||x.n;
   try{ document.title=x.n+' | outrr'; const md=document.querySelector('meta[name=description]'); if(md&&x.md) md.setAttribute('content',x.md); }catch(e){}
   pdThumbs(id);
@@ -2432,7 +2432,7 @@ function openProduct(id){
   document.getElementById('pdCash').textContent = inr(Math.round(x.p*0.05/10)*10);
   document.getElementById('pdRevAvg').textContent = x.r;
   document.getElementById('pdRevCnt').textContent = x.c + ' ratings';
-  const d = COLDET[x.col];
+  const d = COLDET[x.col] || COLDET['furniture'];   // a category made in the admin later has no write-up of its own
   fillPDPv2(x, d, document.getElementById('pdSku').textContent.split(' · ')[0].replace('SKU ',''));
   const sims = Object.keys(PRODS).filter(i=>PRODS[i].col===x.col && PRODS[i]!==x).slice(0,6);
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
@@ -2744,7 +2744,7 @@ function qvOpen(id){qvId=id;const x=PRODS[id];
  document.getElementById('qvP').textContent=inr(x.p);
  document.getElementById('qvM').textContent=x.m>x.p?inr(x.m):'';
  document.getElementById('qvShip').textContent=x.ship+(window.hasCharges&&hasCharges(qvId)?' · + delivery':' · Free delivery');
- document.getElementById('qvDesc').textContent=(typeof COLDESC!=='undefined'&&COLDESC[x.col])?COLDESC[x.col]:'';
+ document.getElementById('qvDesc').textContent=x.ds||((typeof COLDESC!=='undefined'&&COLDESC[x.col])?COLDESC[x.col]:'');
  document.getElementById('qvAdd').setAttribute('onclick',`qvClose();addCart('${id}')`);
  document.getElementById('qvFull').setAttribute('onclick',`qvClose();openProduct('${id}')`);
  document.getElementById('qv').classList.add('open');document.getElementById('qvov').classList.add('open');
@@ -3432,7 +3432,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,image_alt,seo_description,orders_open'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,image_alt,seo_description,orders_open,description'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3455,8 +3455,15 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0, alt:p.image_alt||'', md:p.seo_description||'',
-        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, oo:p.orders_open!==false };
+        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, oo:p.orders_open!==false, ds:p.description||'' };
       if(p.image_url) IMGS[p.sku] = p.image_url;
+    });
+    // a category made in the admin (not one of the built-in six): its own page, menu entry and filters
+    if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]) return;
+      const ids = Object.keys(PRODS).filter(k => PRODS[k].col === c.slug), first = ids.find(k => IMGS[PRODS[k].img]);
+      COLS[c.slug] = { t: c.title, tag: c.tagline || '', off: c.offer_badge || '', offer: c.offer_text || 'Delivered across India · Secure online payment',
+        img: first ? PRODS[first].img : Object.keys(IMGS)[0], mimg: c.menu_image || '', mnote: c.menu_note || '' };
+      if(ids.length && typeof NAVSETS !== 'undefined' && !NAVSETS.cat.some(x => x[1] === c.slug)) NAVSETS.cat.push([c.title, c.slug]);
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
       COLS[c.slug].t = c.title || COLS[c.slug].t;
