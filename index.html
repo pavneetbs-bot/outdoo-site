@@ -3661,14 +3661,14 @@ function fillPDPv2(x,d,sku){
   const kv=document.getElementById('pdKV');
   if(kv) kv.innerHTML=[['Material',d.mat],['Assembly',d.asm],['Dimensions',d.dim],
     ['Weather rating','Outdoor-grade · UV & rain tested'],['Warranty',d.warr],
-    ['Dispatch',x.ship],['SKU',sku+' · Made in India']]
+    ['Dispatch',x.ship],...(x.br?[['Brand / maker',_esc(x.br)]]:[]),['SKU',sku+' · Made in India']]
     .map(r=>`<div class="k">${r[0]}</div><div class="v">${r[1]}</div>`).join('');
   const sz=document.getElementById('pdSize');
   if(sz){const rows=x.dim?[['As listed','1 piece / set as described',x.dim]]:(SIZEROWS[x.col]||SIZEROWS.furniture);
     sz.innerHTML='<tr><th>Size</th><th>Includes</th><th>Measurement</th></tr>'+
       rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');}
   const mf=document.getElementById('pdMfr');
-  if(mf) mf.innerHTML=`Made in India by a verified outrr seller, direct from their workshop. GST invoice issued on every order.`;
+  if(mf) mf.innerHTML=`Made in India by ${x.br?_esc(x.br)+', a verified outrr seller,':'a verified outrr seller,'} direct from their workshop. GST invoice issued on every order.`;
   const ec=document.getElementById('expCats');
   if(ec) ec.innerHTML=ARCH.slice(0,8).map(a=>`<div class="ec" onclick="openCol('${a[1]}')">
     <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');
@@ -3684,7 +3684,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,image_alt,seo_description,orders_open,description'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,image_alt,seo_description,orders_open,description,brand_name'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3707,7 +3707,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0, alt:p.image_alt||'', md:p.seo_description||'',
-        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, oo:p.orders_open!==false, ds:p.description||'' };
+        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'' };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     // a category made in the admin (not one of the built-in six): its own page, menu entry and filters
