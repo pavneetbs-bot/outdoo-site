@@ -35,7 +35,7 @@ const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length 
 
 // 076: packaging + the highest delivery charge the seller set (per piece, incl. GST) — what a buyer far away pays; 0 = free
 const shipOf = p => Math.round(((+p.pack_fee || 0) + Math.max(+p.ship_india || 0, +p.ship_state || 0, +p.ship_local || 0)) * 100) / 100
-const products = (await getAll('products?status=eq.published&select=sku,name,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at,pack_fee,ship_local,ship_state,ship_india&order=name,sku'))
+const products = (await getAll('products?status=eq.published&select=id,sku,name,seo_title,seo_description,seo_keywords,image_alt,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at,pack_fee,ship_local,ship_state,ship_india&order=name,sku'))
   .filter(p => p.price > 0)
 const cols = await get('collections?active=eq.true&select=*&order=sort')
 const subs = await get('subcategories?active=eq.true&select=*&order=sort').catch(() => [])
@@ -44,11 +44,13 @@ const taken = new Set()
 for (const p of products) { let sl = slug(p.name, p.sku); if (taken.has(sl)) sl = `${sl}-${String(p.sku).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`; taken.add(sl); p.slug = sl }
 const today = new Date().toISOString().slice(0, 10)
 
+// 098: ratings from published customer reviews (search-result stars)
+const RATE = Object.fromEntries((await fetch(`${SUPA.url}/rest/v1/rpc/seo_ratings`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.ok ? r.json() : []).catch(() => [])).map(r => [r.product_id, r]))
 const describe = p => p.description?.trim() || [
   `${p.name} from the outrr ${colOf[p.collection_slug]?.title || 'outdoor'} range${colOf[p.collection_slug]?.tagline ? ` (${colOf[p.collection_slug].tagline.toLowerCase()})` : ''}.`,
   p.material ? `Made in ${p.material}.` : 'Built for Indian weather: sun, rain and dust.',
   p.dims ? `Size: ${p.dims}.` : '',
-  `${p.ship_text || 'Ships in 7-10 days'}, delivered across India, cash on delivery available.`,
+  `${p.ship_text || 'Ships in 7-10 days'}, delivered across India, secure online payment.`,
 ].filter(Boolean).join(' ')
 
 // category pages follow the admin ranking (Settings → Search & ranking); name order if it isn't available
@@ -126,11 +128,12 @@ function _cs(c){try{localStorage.setItem('outrr_cart',JSON.stringify(c))}catch(e
 function addCart(id,v){var c=_c(),f=c.find(function(x){return x.id===id});f?f.q=Math.min(10,f.q+1):c.push({id:id,q:1});_cs(c);if(window.otrack)otrack('add_to_cart',{sku:id,value:v});var t=document.getElementById('toast');t.textContent='Added to cart';t.classList.add('on');setTimeout(function(){t.classList.remove('on')},1600)}
 _cs(_c());`
 
-const page = ({ title, desc, path, image, body, jsonld = [], cur = '', view = null }) => `<!doctype html>
+const page = ({ title, desc, path, image, body, jsonld = [], cur = '', view = null, keywords = [] }) => `<!doctype html>
 <html lang="en-IN"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
+${keywords.length ? `<meta name="keywords" content="${esc(keywords.join(', '))}">` : ''}
 <link rel="canonical" href="${SITE}${path}">
 <meta property="og:type" content="${path.startsWith('/p/') ? 'product' : 'website'}"><meta property="og:site_name" content="outrr">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${SITE}${path}">
@@ -146,7 +149,7 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 <a class="cart acc" href="/?account=1">Account</a><a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
 <main class="wrap">${body}</main>
 <footer><div class="wrap cols">
-<div><b>outrr</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Delivered across India · Cash on delivery</div>
+<div><b>outrr</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Delivered across India · Secure online payment</div>
 <div><b>Shop</b>${cols.map(c => `<a href="/c/${c.slug}/">${esc(c.title)}</a>`).join('')}</div>
 <div><b>outrr</b><a href="/">Home</a><a href="/about/">About outrr</a><a href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=footer" target="_blank" rel="noopener">Sell on outrr</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outrr.in">Sell on outrr</a></div>
 </div></footer>
@@ -157,7 +160,7 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 ${view ? `<script>if(window.otrack)otrack('view_item',{sku:${JSON.stringify(view.sku)},value:${Math.round(+view.price || 0)}})</script>` : ''}
 </body></html>`
 
-const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" width="400" height="400"></div>
+const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" loading="lazy" width="400" height="400"></div>
 <div class="n">${esc(p.name)}</div><div class="p">${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}</div></a>`
 
 
@@ -176,7 +179,7 @@ const compare = p => {
     ['Type', x => esc(subT[x.subcategory_slug] || colOf[x.collection_slug]?.title || '—')],
     ['Material', x => esc(x.material || '—')],
     ['Size', x => esc(x.dims || '—')],
-    ['Delivery', x => esc(x.ship_text || 'Ships in 7-10 days') + ' · COD'],
+    ['Delivery', x => esc(x.ship_text || 'Ships in 7-10 days')],
   ]
   const body = rows.map(([h, f, keep]) => { const c = L.map(f); if (!keep && c.every(v => v === '—')) return ''
     return `<tr><th>${h}</th>${c.map((v, i) => `<td${i ? '' : ' class="me"'}>${v}</td>`).join('')}</tr>` }).join('')
@@ -196,6 +199,7 @@ for (const p of products) {
     '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.sku, image: [p.image_url], description: desc,
     brand: { '@type': 'Brand', name: 'outrr' }, category: c?.title,
     ...(p.material ? { material: p.material } : {}),
+    ...(RATE[p.id]?.n > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: +RATE[p.id].rating, reviewCount: RATE[p.id].n, bestRating: 5, worstRating: 1 } } : {}),
     offers: { '@type': 'Offer', url: SITE + url, priceCurrency: 'INR', price: (+p.price).toFixed(2), itemCondition: 'https://schema.org/NewCondition',
       availability: p.in_stock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
       seller: { '@type': 'Organization', name: 'outrr' },
@@ -207,13 +211,13 @@ for (const p of products) {
       { '@type': 'ListItem', position: c ? 3 : 2, name: p.name, item: SITE + url }],
   }]
   write(`p/${p.slug}/index.html`, page({
-    title: `${p.name} | Buy Online at ${inr(p.price)} | outrr`, desc: clip(desc, 158), path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
+    title: p.seo_title ? `${p.seo_title} | outrr` : `${p.name} | Buy Online at ${inr(p.price)} | outrr`, desc: clip(p.seo_description || desc, 158), keywords: p.seo_keywords || [], path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
     body: `<div class="crumbs"><a href="/">Home</a> › ${c ? `<a href="/c/${c.slug}/">${esc(c.title)}</a> › ` : ''}${esc(p.name)}</div>
-<div class="pd"><div class="pimg"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" width="800" height="800"></div>
-<div><h1>${esc(p.name)}</h1>
+<div class="pd"><div class="pimg"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" width="800" height="800"></div>
+<div><h1>${esc(p.name)}</h1>${RATE[p.id]?.n > 0 ? `<div class="tax">★ ${RATE[p.id].rating} · ${RATE[p.id].n} customer review${RATE[p.id].n === 1 ? '' : 's'}</div>` : ''}
 <div class="price"><b>${inr(p.price)}</b>${off ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>
 <div class="btns">${p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
-<ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Delivery charge shown for your pincode</li><li>Cash on delivery available</li><li>Weather-safe packing · assembly guide included</li></ul>
+<ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Delivery charge shown for your pincode</li><li>Secure online payment: UPI, cards, netbanking</li><li>Weather-safe packing · assembly guide included</li></ul>
 <div class="desc"><h2>About this product</h2><p>${esc(desc)}</p>
 <dl>${c ? `<dt>Category</dt><dd><a href="/c/${c.slug}/">${esc(c.title)}</a></dd>` : ''}${p.material ? `<dt>Material</dt><dd>${esc(p.material)}</dd>` : ''}${p.dims ? `<dt>Size</dt><dd>${esc(p.dims)}</dd>` : ''}<dt>SKU</dt><dd>${esc(p.sku)}</dd></dl></div>
 </div></div>
@@ -228,12 +232,12 @@ for (const c of cols) {
   const url = `/c/${c.slug}/`
   write(`c/${c.slug}/index.html`, page({
     title: `${c.title} Online in India | ${list.length} Designs | outrr`,
-    desc: clip(`Shop ${c.title.toLowerCase()} online at outrr: ${c.tagline ? c.tagline.toLowerCase() + '. ' : ''}${list.length} designs built for Indian weather, delivered across India, cash on delivery.`, 158),
+    desc: clip(`Shop ${c.title.toLowerCase()} online at outrr: ${c.tagline ? c.tagline.toLowerCase() + '. ' : ''}${list.length} designs built for Indian weather, delivered across India, secure online payment.`, 158),
     path: url, image: list[0].image_url, cur: c.slug,
     jsonld: [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: c.title, url: SITE + url,
       mainEntity: { '@type': 'ItemList', itemListElement: list.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/p/${p.slug}/` })) } }],
     body: `<div class="crumbs"><a href="/">Home</a> › ${esc(c.title)}</div><section class="cat"><h1>${esc(c.title)}</h1>
-<p class="lead">${esc(c.tagline || '')}${c.tagline ? ' · ' : ''}${list.length} designs · delivered across India · cash on delivery</p>
+<p class="lead">${esc(c.tagline || '')}${c.tagline ? ' · ' : ''}${list.length} designs · delivered across India · secure online payment</p>
 ${(() => { const gs = groupsOf(c.slug); return gs.length > 1 ? gs.map(g => `<h2 class="sub-h" id="${g.slug}">${esc(g.title)}</h2><div class="grid">${g.items.map(card).join('')}</div>`).join('') : `<div class="grid">${list.map(card).join('')}</div>` })()}</section>`,
   }))
 }
@@ -243,6 +247,11 @@ const POLICY = ['about', 'shipping', 'warranty', 'payments', 'returns', 'privacy
 const urls = [[`${SITE}/`, today, '1.0'], ...POLICY, ...cols.filter(c => products.some(p => p.collection_slug === c.slug)).map(c => [`${SITE}/c/${c.slug}/`, today, '0.8']),
   ...products.map(p => [`${SITE}/p/${p.slug}/`, (p.updated_at || today).slice(0, 10), '0.7'])]
 write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d, pr]) => `  <url><loc>${u}</loc><lastmod>${d}</lastmod><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`)
+// 098: renamed products keep their old links: every earlier /p/<slug>/ → the current one (Cloudflare Pages _redirects)
+const slugRows = await getAll('product_slugs?select=slug,product_id&order=slug').catch(() => [])
+const curSlug = Object.fromEntries(products.map(p => [p.id, p.slug]))
+const redir = slugRows.filter(r => curSlug[r.product_id] && r.slug !== curSlug[r.product_id]).map(r => `/p/${r.slug}/ /p/${curSlug[r.product_id]}/ 301\n/p/${r.slug} /p/${curSlug[r.product_id]}/ 301`)
+write('_redirects', redir.length ? redir.join('\n') + '\n' : '# no renamed products yet\n')
 write('robots.txt', `User-agent: *\nAllow: /\nDisallow: /preview/\n\nSitemap: ${SITE}/sitemap.xml\n`)
 const x = s => esc(s)
 write('feed/google.xml', `<?xml version="1.0" encoding="UTF-8"?>

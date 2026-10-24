@@ -36,7 +36,7 @@ const PAGES = {
 <p>${CO.brand} is ${CO.group.charAt(0).toLowerCase() + CO.group.slice(1)}. LifeWall designs and builds luxury outdoor spaces across Delhi NCR and has completed 300+ projects: pergolas, terraces, water features and more. The same team picks what goes on ${CO.brand}, choosing pieces that hold up to Indian sun, rain and dust.</p>
 <h2>What you can expect</h2>
 <ul>
-<li>Delivery across India with cash on delivery. Delivery charges are shown on the product page for your pincode before you order.</li>
+<li>Delivery across India. Pay securely online at checkout (UPI, cards, netbanking). Delivery charges are shown on the product page for your pincode before you order.</li>
 <li>${CO.returnDays}-day returns. See <a href="/returns/">Returns, Refunds &amp; Cancellations</a>.</li>
 <li>Damage-free promise: report transit damage within ${CO.damageHours} hours and we sort it out.</li>
 </ul>
@@ -46,7 +46,7 @@ const PAGES = {
 <p>${CO.brand} is operated by ${CO.legal}, Delhi NCR, India. Questions? Write to <a href="mailto:${CO.email}">${CO.email}</a>.</p>`,
   },
   shipping: {
-    title: 'Shipping & Delivery', desc: 'Where we deliver, delivery charges, dispatch timelines, cash on delivery and what to check when your outrr order arrives.',
+    title: 'Shipping & Delivery', desc: 'Where we deliver, delivery charges, dispatch timelines, online payment and what to check when your outrr order arrives.',
     body: `
 <h2>Where we deliver</h2>
 <p>We deliver across India. Each product page shows where it can be delivered: some pieces ship anywhere by courier, some only within the maker's city and nearby. Enter your pincode on the product page to check. If your pincode can't be served, we call you before dispatch and cancel the order at no cost to you.</p>
@@ -56,7 +56,7 @@ const PAGES = {
 <p>Every product page shows its dispatch time (for example “Ships in 7–10 days”). Many pieces are finished to order by the maker, so this is the time to get it ready and hand it to the courier. After dispatch, delivery usually takes 3–7 days depending on your city. We share tracking details once it's on the way.</p>
 <p>If an order has products from more than one seller, they may arrive in separate deliveries.</p>
 <h2>Paying</h2>
-<p>Pay by <b>cash or UPI on delivery</b>. Online payment is coming soon. Prices include GST; the GST invoice comes from the seller.</p>
+<p>Pay <b>securely online at checkout</b>: UPI, debit or credit card, net banking or wallets, through Razorpay. Prices include GST; the GST invoice comes from the seller.</p>
 <h2>When it arrives</h2>
 <ul><li>Check the outer packaging before signing. If it's badly damaged, note it on the delivery slip or refuse the delivery.</li>
 <li>Please record a short <b>unboxing video</b> — it makes any damage claim quick (see <a href="/returns/#damage">Damage-free promise</a>).</li>
@@ -75,7 +75,7 @@ const PAGES = {
 <p>You can return a product within <b>${CO.returnDays} days of delivery</b> if it's unused, unassembled and in its original packaging. For change-of-mind returns the return shipping cost is paid by you; we tell you the amount before pickup.</p>
 <p>Not returnable: items made or cut to your size, plants and live items, and anything that has been assembled, installed or used.</p>
 <h2>Refunds</h2>
-<p>Once the returned item reaches the seller and passes a quick check, we refund within <b>7 working days</b>. Cash-on-delivery orders are refunded by UPI or bank transfer to an account you give us.</p>
+<p>Once the returned item reaches the seller and passes a quick check, we refund within <b>7 working days</b>. The refund goes back to the account or card you paid with; banks usually show it in 5–7 working days.</p>
 <h2>How to start</h2>
 <p>Email <a href="mailto:${CO.email}">${CO.email}</a> with your order number, the product, the reason and photos.</p>`,
   },
@@ -102,16 +102,16 @@ const PAGES = {
 <p>Outdoor pieces last longer with a little care: cover or store cushions when it rains, wipe off dust and bird droppings, and follow the care guide that ships with your product.</p>`,
   },
   payments: {
-    title: 'Payments', desc: 'How to pay for your outrr order: cash or UPI on delivery today, with online payment coming soon.',
+    title: 'Payments', desc: 'How to pay for your outrr order: secure online payment at checkout by UPI, card, net banking or wallet through Razorpay.',
     body: `
-<h2>Pay on delivery</h2>
-<p>Right now every ${CO.brand} order is paid on delivery. Pay the delivery partner in cash or by UPI when your order arrives. There's nothing to pay when you place the order.</p>
-<h2>Online payment</h2>
-<p>Card, UPI and net-banking payments at checkout are coming soon. We'll update this page when they go live.</p>
+<h2>Pay online at checkout</h2>
+<p>Every ${CO.brand} order is paid online when you place it: UPI, debit or credit card, net banking or wallets. Payments are processed securely by Razorpay; ${CO.brand} never sees or stores your card details. Cash on delivery is not available.</p>
+<h2>If a payment doesn't go through</h2>
+<p>Your order is kept for 24 hours. Pay again from the order page (My account → Orders). If money left your account but the order still shows unpaid, don't pay again: it updates by itself within a few minutes, or the bank returns it.</p>
 <h2>Prices and GST</h2>
 <p>All prices on ${CO.brand} include GST. Your GST invoice comes from the seller. Business buyers can add their GSTIN at checkout to get a B2B invoice; it can be changed until the invoice is generated.</p>
 <h2>Refunds</h2>
-<p>Refunds for pay-on-delivery orders go by UPI or bank transfer to an account you give us, within 7 working days of the return passing the seller's check. See <a href="/returns/">Returns, Refunds &amp; Cancellations</a>.</p>
+<p>Refunds go back to the account or card you paid with, started within 2 working days of a cancellation or of the return passing the seller's check; banks usually show them in 5–7 working days. See <a href="/returns/">Returns, Refunds &amp; Cancellations</a>.</p>
 <h2>Stay safe</h2>
 <p>${CO.brand} will never ask for your card details, UPI PIN or OTP over phone, email or WhatsApp. Report anything suspicious to <a href="mailto:${CO.email}">${CO.email}</a>.</p>`,
   },
@@ -155,7 +155,7 @@ const PAGES = {
 <li>Photos may be styled or AI-assisted to show the product in a setting. Colours, wood grain and finishes can vary slightly; sizes are approximate (about ±2 cm).</li>
 <li>If a price or detail is listed wrongly, we may cancel the order and refund anything paid.</li></ul>
 <h2>Orders and payment</h2>
-<p>An order is confirmed when we call or message you to confirm it. Payment is by cash or UPI on delivery for now. We may cancel orders we can't deliver, suspected fake orders, or bulk orders meant for resale.</p>
+<p>An order is confirmed once its payment is received. Payment is made online at checkout. We may cancel orders we can't deliver, suspected fake orders, or bulk orders meant for resale.</p>
 <h2>Delivery, returns and refunds</h2>
 <p>See <a href="/shipping/">Shipping & Delivery</a> and <a href="/returns/">Returns, Refunds & Cancellations</a>.</p>
 <h2>Use of the site</h2>
@@ -218,7 +218,7 @@ ${p.body.trim()}
 <nav class="side" aria-label="Policies">${Object.entries(PAGES).map(([k, x]) => `<a href="/${k}/"${k === key ? ' class="on"' : ''}>${esc(x.title)}</a>`).join('')}</nav>
 </article></main>
 <footer><div class="wrap cols">
-<div><b>outrr</b><br>Every Outdoor Possibility<br>${CO.group}<br>Delivered across India · Cash on delivery</div>
+<div><b>outrr</b><br>Every Outdoor Possibility<br>${CO.group}<br>Delivered across India · Secure online payment</div>
 <div><b>Shop</b>${CATS.map(([s, t]) => `<a href="/c/${s}/">${t}</a>`).join('')}</div>
 <div><b>Help</b>${Object.entries(PAGES).map(([k, x], i) => `<a href="/${k}/">${esc(x.title)}</a>` + (i ? '' : '<a href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=footer" target="_blank" rel="noopener">Sell on outrr</a>')).join('')}<a href="https://seller.outrr.in">Sell on outrr</a></div>
 </div></footer>
