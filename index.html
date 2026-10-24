@@ -3466,9 +3466,18 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       COLS[c.slug].mimg = c.menu_image || ''; COLS[c.slug].mnote = c.menu_note || '';
     }});
     document.querySelectorAll('img[data-img]').forEach(im => { const k = im.getAttribute('data-img'); if(IMGS[k]) im.src = IMGS[k]; });
-    if(typeof fillStrip === 'function'){
-      const trend = ['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'].filter(id => PRODS[id]);
-      if(trend.length) try{ fillStrip('stripTrend', trend); }catch(e){}
+    if(typeof fillStrip === 'function'){   // the home tiles / strips show the live catalogue (one card per variant group) when their sample products are gone
+      try{
+        const one = l => (window.vOnePerGroup ? vOnePerGroup(l) : l);
+        const pool = one(Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0));
+        const pick = (keep, f, n, skip) => keep.filter(id => PRODS[id]).length === keep.length ? keep : pool.filter(f || (() => true)).slice(skip || 0, (skip || 0) + n);
+        const big = i => ['furniture', 'shade'].includes(PRODS[i].col);
+        fillTiles('tilesWeather', pick(['lounge','accent','stool','throws'], big, 4));
+        fillTiles('tilesBest', pick(['lounge','dining','umbp12','awl124'], null, 4));
+        fillTiles('tilesNew', pick(['pl119c','orm03','awl37','tusker'], null, 4, 4));
+        fillStrip('stripTrend', pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8).length ? pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8) : pool.slice(0, 8));
+        if(typeof fillDealTabs === 'function'){ const f = DTABS.findIndex(d => Object.keys(PRODS).some(i => PRODS[i].col === d[1])); if(f >= 0 && !Object.keys(PRODS).some(i => PRODS[i].col === DTABS[dtabOn][1])) dtabOn = f; fillDealTabs(); }
+      }catch(e){ console.warn(e) }
     }
     if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
       try{ renderPLP(lastCol); }catch(e){}
