@@ -520,6 +520,12 @@ body.pdp-open .bottomnav,body.pdp-open .wafab{display:none}
 .vsec .vb.na{opacity:.45;border-style:dashed}
 .vsec .sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px var(--line);cursor:pointer;padding:0}
 .vsec .sw.on{box-shadow:0 0 0 2px var(--terra-deep)}.vsec .sw.na{opacity:.4}
+.vsec .vb small{display:block;font-weight:500;font-size:11px;color:#6b665c;margin-top:2px}.vsec .vb{text-align:left;min-width:92px}
+.vsec .vb.so,.vsec .sw.so{position:relative;opacity:.5;overflow:hidden}
+.vsec .vb.so::after,.vsec .sw.so::after{content:'';position:absolute;left:-10%;right:-10%;top:50%;height:1.5px;background:#2e2e2e;transform:rotate(-14deg)}
+.vsec .sw.so::after{transform:rotate(-45deg)}
+.vsec .vso{color:#A84F33;font-weight:700;margin-left:6px}
+.vfrom{font-size:.78em;font-weight:500;color:#6b665c;margin-right:2px}
 .pc .vopt{display:flex;align-items:center;gap:4px;font-size:11px;color:#6b665c;margin-top:4px}.pc .vopt i{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.15);display:inline-block}
 .cline .vlab{font-size:11.5px;color:#6b665c;margin-top:2px}
 .setrow{display:flex;gap:10px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none}.setrow::-webkit-scrollbar{display:none}
@@ -2601,9 +2607,9 @@ function renderPLP(){
       ${off?`<span class="offb">${off}</span>`:''}
       <span class="heart" onclick="event.stopPropagation();this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></span>
       <div class="im"><img src="${IMGS[x.img]}" alt=""></div>
-      <div class="bd"><div class="nm">${x.n}</div>
+      <div class="bd"><div class="nm">${vName(id)}</div>
         <div class="rate"><span class="st">${x.r} ★</span>${x.c}</div>
-        <div><span class="pr">${inr(x.p)}</span>${x.m>x.p?`<span class="mrp">${inr(x.m)}</span>`:''}</div>
+        <div><span class="pr">${vFrom(id)!=null?`<span class="vfrom">From</span> ${inr(vFrom(id))}`:inr(x.p)}</span>${x.m>x.p&&vFrom(id)==null?`<span class="mrp">${inr(x.m)}</span>`:''}</div>
         <div class="ship">${x.ship}</div>${vCardNote(id)}${tbHTML(id)}</div>
     </div>`;
   }).join('');
@@ -2672,6 +2678,10 @@ const VCOL={black:'#1f1f1f',charcoal:'#3d3d3d',grey:'#8a8a8a',silver:'#c4c6c8',w
 const VK=[['vs','Size'],['vc','Colour'],['vm','Material'],['vo','']];
 function vLabel(x){return x?[x.vs,x.vc,x.vm,x.vo&&((x.von?x.von+' ':'')+x.vo)].filter(Boolean).join(' · '):'';}
 function vSibs(id){const x=PRODS[id]; if(!x||!x.vg) return [id]; return Object.keys(PRODS).filter(i=>PRODS[i].vg===x.vg);}
+// 116: cards show the design ("From ₹…" when the variants' prices differ, the name without the variant ending)
+function vFrom(id){const s=vSibs(id); if(s.length<2) return null; const ps=s.map(i=>PRODS[i].p).filter(v=>v>0); if(!ps.length) return null; const lo=Math.min(...ps); return ps.some(v=>v!==lo)?lo:null;}
+function vName(id){const x=PRODS[id]; return vSibs(id).length>1?String(x.n).replace(/ – [^–]+$/,''):x.n;}
+function vPriceHTML(id,mrCls){const x=PRODS[id], f=vFrom(id); return f!=null?`<span class="vfrom">From</span> ${inr(f)}`:`${inr(x.p)}${x.m>x.p?`<span class="${mrCls||'mr2'}">${inr(x.m)}</span>`:''}`;}
 // the group's main product stands for it when it matches the filters; otherwise the first variant that does
 function vOnePerGroup(ids){const inl=new Set(ids), rep={};
   ids.forEach(i=>{const g=PRODS[i].vg; if(g&&!rep[g]) rep[g]=Object.keys(PRODS).find(j=>PRODS[j].vg===g&&PRODS[j].vmn&&inl.has(j))||i;});
@@ -2682,18 +2692,28 @@ function vCardNote(id){const sib=vSibs(id); if(sib.length<2) return '';
   return `<div class="vopt">${cols.slice(0,5).map(c=>`<i style="background:${VCOL[c.toLowerCase()]||'#ccc'}"></i>`).join('')}<span>${bits.join(' · ')||sib.length+' options'}</span></div>`;}
 function vRender(id){const box=document.getElementById('vSec'); if(!box) return;
   const x=PRODS[id], sib=vSibs(id); if(sib.length<2){box.style.display='none';box.innerHTML='';return;}
-  const keys=VK.filter(([k])=>sib.some(i=>PRODS[i][k]) && new Set(sib.map(i=>(PRODS[i][k]||'').toLowerCase())).size>1);
+  // 116: options in the order the seller set (Size, Colour…), values in their order
+  const vop=sib.map(i=>PRODS[i].vop).find(Boolean)||null, KM={size:'vs',colour:'vc',material:'vm',other:'vo'};
+  let keys=VK.filter(([k])=>sib.some(i=>PRODS[i][k]) && new Set(sib.map(i=>(PRODS[i][k]||'').toLowerCase())).size>1);
+  if(vop) keys=keys.slice().sort((a,b)=>{const ia=vop.findIndex(o=>KM[o.k]===a[0]), ib=vop.findIndex(o=>KM[o.k]===b[0]); return (ia<0?9:ia)-(ib<0?9:ib);});
   const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   box.innerHTML=keys.map(([k,lab])=>{
-    const name=lab||(sib.map(i=>PRODS[i].von).find(Boolean)||'Option');
-    const vals=[...new Set(sib.map(i=>PRODS[i][k]).filter(Boolean))];
+    const o=vop&&vop.find(q=>KM[q.k]===k);
+    const name=lab||(o&&o.name)||(sib.map(i=>PRODS[i].von).find(Boolean)||'Option');
+    let vals=[...new Set(sib.map(i=>PRODS[i][k]).filter(Boolean))];
+    if(o&&o.values) vals=vals.sort((a,b)=>{const ia=o.values.findIndex(v=>v.toLowerCase()===a.toLowerCase()), ib=o.values.findIndex(v=>v.toLowerCase()===b.toLowerCase()); return (ia<0?99:ia)-(ib<0?99:ib);});
+    // price per value (shown on size / material buttons when it differs)
+    const lowOf=v=>Math.min(...sib.filter(i=>(PRODS[i][k]||'').toLowerCase()===v.toLowerCase()).map(i=>PRODS[i].p));
+    const showP=k!=='vc'&&new Set(vals.map(lowOf)).size>1;
     const opt=v=>{const on=(x[k]||'').toLowerCase()===v.toLowerCase();
-      // available with the other choices kept?
-      const exact=sib.some(i=>(PRODS[i][k]||'').toLowerCase()===v.toLowerCase() && keys.every(([k2])=>k2===k||(PRODS[i][k2]||'')===(x[k2]||'')));
-      const cls=(on?' on':'')+(exact?'':' na'), js=`vPick('${id}','${k}','${encodeURIComponent(v).replace(/'/g,'%27')}')`;
-      return k==='vc'&&VCOL[v.toLowerCase()]?`<button class="sw${cls}" title="${esc(v)}" aria-label="${esc(v)}" style="background:${VCOL[v.toLowerCase()]}" onclick="${js}"></button>`
-        :`<button class="vb${cls}" onclick="${js}">${esc(v)}</button>`;};
-    return `<div class="vg"><div class="vl">${esc(name)}: <b>${esc(x[k]||'—')}</b></div><div class="vo">${vals.map(opt).join('')}</div></div>`;}).join('');
+      // with the other choices kept: does it exist, and is it in stock?
+      const hit=sib.find(i=>(PRODS[i][k]||'').toLowerCase()===v.toLowerCase() && keys.every(([k2])=>k2===k||(PRODS[i][k2]||'')===(x[k2]||'')));
+      const so=hit&&PRODS[hit].stock===false;
+      const cls=(on?' on':'')+(hit?'':' na')+(so?' so':''), js=`vPick('${id}','${k}','${encodeURIComponent(v).replace(/'/g,'%27')}')`;
+      const tip=esc(v)+(so?' · sold out':hit?'':' · not in this combination');
+      return k==='vc'&&VCOL[v.toLowerCase()]?`<button class="sw${cls}" title="${tip}" aria-label="${tip}" style="background:${VCOL[v.toLowerCase()]}" onclick="${js}"></button>`
+        :`<button class="vb${cls}" title="${tip}" onclick="${js}">${esc(v)}${showP?`<small>${inr(lowOf(v))}</small>`:''}</button>`;};
+    return `<div class="vg"><div class="vl">${esc(name)}: <b>${esc(x[k]||'—')}</b>${x.stock===false&&k===keys[keys.length-1][0]?' <span class="vso">Sold out</span>':''}</div><div class="vo">${vals.map(opt).join('')}</div></div>`;}).join('');
   box.style.display=keys.length?'':'none';}
 // switch to the variant with this value, keeping the other choices where that variant exists
 function vPick(id,k,v){v=decodeURIComponent(v); const x=PRODS[id], sib=vSibs(id).filter(i=>(PRODS[i][k]||'').toLowerCase()===String(v).toLowerCase()); if(!sib.length) return;
@@ -2910,9 +2930,8 @@ function renderMini(){
 
 // ---- marketplace strips ----
 function miniCard(id){const x=PRODS[id];
-  const mr=x.m>x.p? `<span class="mr2">${inr(x.m)}</span>`:'';
   return `<div class="mpc" onclick="openProduct('${id}')"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
-    <div class="bd"><div class="nm">${x.n}</div><div class="pr">${inr(x.p)}${mr}</div>${tbHTML(id)}</div></div>`;}
+    <div class="bd"><div class="nm">${vName(id)}</div><div class="pr">${vPriceHTML(id)}</div>${vCardNote(id)}${tbHTML(id)}</div></div>`;}
 function fillStrip(el, ids){const d=document.getElementById(el); if(d) d.innerHTML=ids.map(miniCard).join('');}
 function byCol(c,n,skip=0){return Object.keys(PRODS).filter(i=>PRODS[i].col===c).slice(skip,skip+n);}
 function byPrice(max,n){return Object.keys(PRODS).filter(i=>PRODS[i].p<=max).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,n);}
@@ -3686,7 +3705,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,image_alt,seo_description,orders_open,description,brand_name'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,variant_options,image_alt,seo_description,orders_open,description,brand_name'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3709,7 +3728,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0, alt:p.image_alt||'', md:p.seo_description||'',
-        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'' };
+        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, vop:Array.isArray(p.variant_options)?p.variant_options:null, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'' };
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     // a category made in the admin (not one of the built-in six): its own page, menu entry and filters
