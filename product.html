@@ -366,18 +366,18 @@ footer{background:var(--char);color:#cfcbc2;padding:30px 0 22px;font-size:12px}
 /* ---------- desktop (900px+) ---------- */
 @media(min-width:900px){
   body{padding-bottom:0;font-size:14px}
-  .wrap{max-width:1180px;padding:0 24px}
+  .wrap{max-width:var(--page,1440px);padding:0 24px}
   header{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:40px;
     padding:0;border-bottom:1px solid var(--line)}
   header>.hd{max-width:none;padding:0 0 0 24px;height:66px;gap:22px;justify-content:flex-start}
   header .logoimg{height:31px}
   .searchrow{padding:0 24px 0 0;display:flex;justify-content:flex-end}
   .search{max-width:560px;width:100%;margin:0}
-  .circmenu .in{max-width:1180px;justify-content:center;gap:22px;padding:14px 24px 12px}
+  .circmenu .in{max-width:var(--page,1440px);justify-content:center;gap:22px;padding:14px 24px 12px}
   .circ{width:78px}
   .circ .im{width:66px;height:66px}
   .circ span{font-size:11px}
-  .cattabs .in{max-width:1180px;justify-content:center;gap:8px}
+  .cattabs .in{max-width:var(--page,1440px);justify-content:center;gap:8px}
   .cattabs a{padding:13px 18px;font-size:13.5px}
   .catgrid{grid-template-columns:repeat(10,1fr);gap:14px;padding:24px 0 8px}
   .cg span{font-size:11.5px}
