@@ -293,7 +293,7 @@
   window.acReturn = function (oid, iid) {
     const o = orders.find(x => x.id === oid), i = o.items.find(x => x.id === iid); retFiles = []
     modal('Return item', `<div class="ac-ri"><div class="im">${i.image_url ? `<img src="${esc(i.image_url)}" alt="">` : ''}</div><div><b>${esc(i.name)}</b><div class="mut sm">Return by ${d8(i.return_until)}</div></div></div>
-      <div class="fld"><label>REASON</label><select id="acRw">${RET_WHY.map(w => `<option>${w}</option>`).join('')}</select></div>
+      <div class="fld"><label>REASON</label><select id="acRw">${RET_WHY.filter(w => !i.made_to_order || !['Doesn\'t fit my space', 'Changed my mind'].includes(w)).map(w => `<option>${w}</option>`).join('')}</select>${i.made_to_order ? '<div class="mut sm">Made to order for you: returns only if it arrived damaged, defective or not as ordered.</div>' : ''}</div>
       <div class="fld"><label>DETAILS (optional)</label><textarea id="acRd" rows="2" placeholder="What's wrong? This helps us approve faster."></textarea></div>
       <div class="fld"><label>PHOTOS (up to 4, helps for damage)</label><input type="file" accept="image/*" multiple onchange="acPick(this)"><div id="acPh" class="ac-ph"></div></div>
       ${o.payment_method === 'cod' ? `<div class="fld"><label>YOUR UPI ID FOR THE REFUND</label><input id="acUpi" placeholder="name@okicici"></div>` : ''}
