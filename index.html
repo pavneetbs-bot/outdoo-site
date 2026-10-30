@@ -3337,10 +3337,20 @@ function coShipPaint(){
   const t=coTotals(), r=document.getElementById('coShipR'), tot=document.getElementById('coTot'), b=document.getElementById('coPlace'), dv=document.getElementById('coDlvTxt');
   if(r) r.outerHTML=shipRow(t.ship,t.loc,'coShipR');
   if(tot) tot.textContent=inr(t.total);
-  if(b && !coBusy) b.textContent='Pay securely · '+inr(t.total);
+  const sp=document.getElementById('coSplit'); if(sp) sp.innerHTML=coSplitHTML(t);
+  if(b && !coBusy) b.textContent=coPayLabel(t);
   if(window.etaFill) etaFill(t.loc);
   if(dv) dv.innerHTML=t.ship===null?'<b>Standard</b><span>Enter your pincode to see the delivery charge</span>':t.ship>0?`<b>Standard — ${inr(t.ship)}</b><span>Delivery for your pincode · dispatch as per each item's timeline</span>`:'<b>Standard — FREE</b><span>Dispatch as per each item\'s timeline · weather-safe packing</span>';
 }
+// 122: orders above ₹1.5 lakh can pay 50% now and the balance before dispatch
+const SPLIT_ABOVE=150000, SPLIT_PCT=50; let coSplitOn=false;
+const coSplitOk=t=>t.ship!==null&&t.total>SPLIT_ABOVE;
+const coAdv=t=>Math.round(t.total*SPLIT_PCT)/100;
+function coPayLabel(t){return coSplitOk(t)&&coSplitOn?'Pay '+SPLIT_PCT+'% now · '+inr(coAdv(t)):'Pay securely · '+inr(t.total);}
+function coSplitHTML(t){if(!coSplitOk(t))return '';
+  return `<div class="osum" style="margin-top:10px;padding:10px 12px"><label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="radio" name="coSp" ${coSplitOn?'':'checked'} onchange="coSplitSet(false)"><span><b>Pay in full</b> · ${inr(t.total)}</span></label>
+    <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin-top:6px"><input type="radio" name="coSp" ${coSplitOn?'checked':''} onchange="coSplitSet(true)"><span><b>Pay ${SPLIT_PCT}% now</b> · ${inr(coAdv(t))}<br><small style="color:#6b6b6b">The balance of ${inr(t.total-coAdv(t))} is paid before dispatch: we email you the link when your order is ready.</small></span></label></div>`;}
+function coSplitSet(on){coSplitOn=on;const b=document.getElementById('coPlace');if(b&&!coBusy)b.textContent=coPayLabel(coTotals());}
 function openCheckout(){
   if(!CART.length){toast('Your cart is empty');return;}
   const smp=CART.find(c=>PRODS[c.id]&&PRODS[c.id].pv);
@@ -3389,7 +3399,8 @@ function renderCheckout(){
         ${shipRow(t.ship,t.loc,'coShipR')}
         <div class="r tot"><span>Total payable</span><span id="coTot">${inr(t.total)}</span></div>
       </div>
-      <button class="btn" id="coPlace" style="width:100%;margin-top:13px;padding:14px" onclick="placeOrder()">Pay securely · ${inr(t.total)}</button>
+      <div id="coSplit">${coSplitHTML(t)}</div>
+      <button class="btn" id="coPlace" style="width:100%;margin-top:13px;padding:14px" onclick="placeOrder()">${coPayLabel(t)}</button>
       <div class="secline" style="text-align:center">Inclusive of all taxes · GST invoice from the seller · 100% secure payment by Razorpay</div>
     </div>
    </div></div>`;
@@ -3427,12 +3438,12 @@ async function placeOrder(){
   let res, err;
   try{
     const r=await fetch(S.url+'/rest/v1/rpc/place_order',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(utok||S.anon),'Content-Type':'application/json'},
-      body:JSON.stringify({p:{items:CART.map(c=>({sku:c.id,qty:c.q})),customer,coupon:coTotals().code}})});
+      body:JSON.stringify({p:{items:CART.map(c=>({sku:c.id,qty:c.q})),customer,coupon:coTotals().code,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
   coBusy=false;
-  if(err){ if(btn){btn.disabled=false;btn.textContent='Pay securely · '+inr(coTotals().total);} toast(err); return; }
+  if(err){ if(btn){btn.disabled=false;btn.textContent=coPayLabel(coTotals());} toast(err); return; }
   const skus=CART.map(c=>c.id);
   CART=[]; updBadge();   // the order exists now: paying again later uses the order, not the cart
   window.__coLast={res,customer,utok,skus};
@@ -3443,14 +3454,14 @@ async function placeOrder(){
 function loadRzp(){return window.Razorpay?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://checkout.razorpay.com/v1/checkout.js';s.onload=ok;s.onerror=()=>no(new Error('Could not load the payment window. Check your connection.'));document.head.appendChild(s);});}
 async function payFn(body){const S=window.OUTRR_SUPA||{};const r=await fetch(S.url+'/functions/v1/charges',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:JSON.stringify(body)});
   const j=await r.json().catch(()=>({}));if(!r.ok||j.error)throw new Error(j.error||'Payment service unavailable');return j;}
-async function outrrPay(orderId,onPaid,onFail){
+async function outrrPay(orderId,onPaid,onFail,part){
   try{
-    const [p]=await Promise.all([payFn({action:'order_pay',order_id:orderId}),loadRzp()]);
+    const [p]=await Promise.all([payFn({action:'order_pay',order_id:orderId,part}),loadRzp()]);
     if(p.paid) return onPaid&&onPaid();
     let done=false;
-    const rz=new Razorpay({key:p.key,order_id:p.rzp_order_id,amount:p.amount,currency:p.currency,name:'outrr',description:'Order '+p.order_no,
+    const rz=new Razorpay({key:p.key,order_id:p.rzp_order_id,amount:p.amount,currency:p.currency,name:'outrr',description:(part==='balance'?'Balance, order ':'Order ')+p.order_no,
       prefill:p.prefill,notes:p.notes,theme:{color:'#BE5633'},
-      handler:async r=>{done=true;try{toast('Confirming your payment…');await payFn({action:'order_verify',order_id:orderId,...r});onPaid&&onPaid();}
+      handler:async r=>{done=true;try{toast('Confirming your payment…');await payFn({action:'order_verify',order_id:orderId,part,...r});onPaid&&onPaid();}
         catch(e){onFail&&onFail('We received your payment but could not confirm it yet. Don\'t pay again: it will show on your order within a few minutes.');}},
       modal:{ondismiss:()=>{if(!done)onFail&&onFail('Payment not completed.');}}});
     rz.on('payment.failed',r=>{done=true;onFail&&onFail('Payment failed'+(r&&r.error&&r.error.description?': '+r.error.description:'.')+' You can try again.');});
@@ -3466,7 +3477,7 @@ function coPaid(){const {res,customer,utok,skus}=window.__coLast||{};if(!res)ret
     <p>Thank you, ${customer.name.split(' ')[0].replace(/[<>&]/g,'')}! Your order number is <b>${res.order_no}</b>. We've emailed your confirmation to ${customer.email.replace(/[<>&]/g,'')}.</p>
     <div class="osum" style="max-width:340px;margin:0 auto 18px;text-align:left">
       <div class="r"><span>Order</span><span>${res.order_no}</span></div>
-      <div class="r"><span>Paid online</span><span>${inr(res.total)}</span></div>
+      ${res.pay_plan==='split'?`<div class="r"><span>Paid online</span><span>${inr(res.advance_amount)}</span></div><div class="r"><span>Balance, before dispatch</span><span>${inr(res.balance_amount)}</span></div>`:`<div class="r"><span>Paid online</span><span>${inr(res.total)}</span></div>`}
       <div class="r"><span>Items</span><span>${res.items}</span></div>
       <div class="r"><span>Delivery</span>${+res.shipping>0?`<span>${inr(+res.shipping)}</span>`:'<span class="grn">FREE</span>'}</div></div>
     <button class="btn" style="padding:13px 26px" onclick="showHome()">Continue shopping</button>
@@ -3478,7 +3489,7 @@ function coUnpaid(why){const {res}=window.__coLast||{};if(!res)return;
     <h2>Payment not completed</h2>
     <p>${String(why||'').replace(/[<>&]/g,'')}</p>
     <p>Your order <b>${res.order_no}</b> is saved for 24 hours. It's sent to the seller as soon as it's paid.</p>
-    <button class="btn" style="padding:13px 26px" onclick="this.disabled=true;this.textContent='Opening secure payment…';outrrPay('${res.id}',()=>coPaid(),w=>coUnpaid(w))">Pay ${inr(res.total)} now</button>
+    <button class="btn" style="padding:13px 26px" onclick="this.disabled=true;this.textContent='Opening secure payment…';outrrPay('${res.id}',()=>coPaid(),w=>coUnpaid(w))">Pay ${inr(res.pay_plan==='split'?res.advance_amount:res.total)} now</button>
     <p class="secline" style="margin-top:14px">Money taken but this page says not paid? Don't pay again: it updates by itself within a few minutes. Need help? WhatsApp us with ${res.order_no}.</p></div>`;
   window.scrollTo(0,0);
 }

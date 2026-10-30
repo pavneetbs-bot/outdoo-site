@@ -186,10 +186,12 @@
     const invSellers = full ? [...new Set(o.items.filter(i => i.invoice_no && i.seller_id).map(i => i.seller_id))] : []
     const canCancel = full && o.items.some(i => i.can_cancel)
     return `<div class="ac-order" id="ord-${o.id}">
-      <div class="ao-top"><div><b>${esc(o.order_no)}</b><span>${d8(o.created_at)} · ${rs(o.total)} · ${o.payment_method === 'cod' ? 'Cash on delivery' : o.payment_status === 'paid' ? 'Paid online' : o.payment_status === 'expired' ? 'Payment not completed' : 'Payment pending'}</span></div>
+      <div class="ao-top"><div><b>${esc(o.order_no)}</b><span>${d8(o.created_at)} · ${rs(o.total)} · ${o.payment_method === 'cod' ? 'Cash on delivery' : o.payment_status === 'paid' && o.pay_plan === 'split' && o.balance_status === 'pending' ? `Paid ${rs(o.advance_amount)} · ${rs(o.balance_amount)} due before dispatch` : o.payment_status === 'paid' ? 'Paid online' : o.payment_status === 'expired' ? 'Payment not completed' : 'Payment pending'}</span></div>
         <span class="ao-st ${dead || o.payment_status === 'expired' ? 'x' : st === 'delivered' ? 'ok' : ''}">${o.payment_method === 'prepaid' && o.payment_status === 'pending' ? 'Awaiting payment' : o.payment_method === 'prepaid' && o.payment_status === 'expired' ? 'Not paid' : LABEL[st]}</span></div>
       ${o.payment_method === 'prepaid' && ['pending', 'expired'].includes(o.payment_status) ? `<div class="ao-otp" style="background:#FBF0DC"><span>${o.payment_status === 'expired' ? 'This order was not paid within 24 hours, so it was not sent to the seller. You can still pay to place it.' : 'Your payment is not complete yet. The order goes to the seller as soon as it is paid.'}</span>
-        ${window.outrrPay ? `<button class="btn" style="margin-top:8px;padding:10px 18px" onclick="this.disabled=true;this.textContent='Opening secure payment…';outrrPay('${o.id}',()=>location.reload(),w=>{alert(w);location.reload()})">Pay ${rs(o.total)} now</button>` : ''}</div>` : ''}
+        ${window.outrrPay ? `<button class="btn" style="margin-top:8px;padding:10px 18px" onclick="this.disabled=true;this.textContent='Opening secure payment…';outrrPay('${o.id}',()=>location.reload(),w=>{alert(w);location.reload()})">Pay ${rs(o.pay_plan === 'split' ? o.advance_amount : o.total)} now</button>` : ''}</div>` : ''}
+      ${full && o.pay_plan === 'split' && o.payment_status === 'paid' && o.balance_status === 'pending' && !dead ? `<div class="ao-otp" style="background:#FBF0DC"><span>You paid ${rs(o.advance_amount)}. The balance of <b>${rs(o.balance_amount)}</b> is due before dispatch; we email you when your order is ready.</span>
+        ${window.outrrPay ? `<button class="btn" style="margin-top:8px;padding:10px 18px" onclick="this.disabled=true;this.textContent='Opening secure payment…';outrrPay('${o.id}',()=>location.reload(),w=>{alert(w);location.reload()},'balance')">Pay balance ${rs(o.balance_amount)}</button>` : ''}</div>` : ''}
       ${dead ? '' : `<div class="ao-bar">${STEPS.map((s, i) => `<div class="${i <= k ? 'on' : ''}"><i></i><span>${s[1]}</span></div>`).join('')}</div>`}
       ${ship && ship.ship_zone !== 'hyperlocal' ? `<div class="ao-ship">🚚 ${esc(ship.courier || 'Courier')} · AWB <b>${esc(ship.awb)}</b>${ship.tracking_url ? ` · <a href="${esc(ship.tracking_url)}" target="_blank" rel="noopener">Track shipment</a>` : ''}</div>` : ''}
       ${[...new Set(o.items.filter(i => i.delivery_otp).map(i => i.delivery_otp))].map(c => `<div class="ao-otp"><span>Local delivery is on its way. Your delivery code</span><b>${esc(c)}</b><small>Give it to the delivery person only after you receive your items.</small></div>`).join('')}
@@ -532,6 +534,8 @@
     const h = window.__initHash || location.hash; window.__initHash = ''
     const m = h.match(/^#review=([0-9a-f-]{36})/i); if (m) setTimeout(() => rvOpen(m[1]), 400)
     const t = h.match(/^#track=([A-Z0-9-]+)/i); if (t) setTimeout(() => acTrack(decodeURIComponent(t[1])), 400)
+    const b = h.match(/^#paybal=([0-9a-f-]{36})/i)   // 122: balance link from the email
+    if (b && window.outrrPay) setTimeout(() => outrrPay(b[1], () => { history.replaceState(null, '', location.pathname); alert('Thank you! The balance is paid and your order will be dispatched.') }, w => alert(w), 'balance'), 400)
   }
   rvHash(); addEventListener('hashchange', rvHash)
 })()
