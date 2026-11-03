@@ -124,7 +124,11 @@ function near(slug){ if (NEAR[slug]) return NEAR[slug]; var a = city(slug); retu
 function where(){ return LOC ? (LOC.city ? city(LOC.city).name : LOC.pincode ? LOC.pincode : stateName(LOC.state)) : '' }
 
 /* ---------------------------------------------------------------- delivery rules */
+// 127 bundles: a bundle's delivery is its products' (expanded where the cart is added up)
+function bunParts(x){ return x && x.bun ? x.bun.items.map(function (i) { return { x: PRODS[i.sku], q: i.qty } }).filter(function (o) { return o.x }) : null }
+window.cartFlat = function (){ var out = []; CART.forEach(function (c) { var b = bunParts(PRODS[c.id]); if (b) b.forEach(function (o) { var k = PRODS[c.id].bun.items.find(function (i) { return PRODS[i.sku] === o.x }).sku; out.push({ id: k, q: o.q * c.q }) }); else out.push(c) }); return out };
 function shipsTo(x, loc){ loc = loc || LOC; if (!x || !loc) return true;
+  if (x.bun) return bunParts(x).every(function (o) { return shipsTo(o.x, loc) });
   if (x.sp !== false) return true;
   return (!!loc.city && (x.sc || []).indexOf(loc.city) >= 0) || (!!loc.state && (x.ss || []).indexOf(loc.state) >= 0) }
 // 0 same city · 1 nearby · 2 local zone · 3 ships here by courier · 9 doesn't deliver
@@ -359,9 +363,10 @@ function cartRepaint(){
   try { var cb = document.getElementById('cartBody'); if (cb && cb.offsetParent && typeof renderCart === 'function') renderCart() } catch (e) {} }
 // the whole cart to a place (null = place not known and something in the cart has charges)
 window.cartShip = function (loc){ loc = loc === undefined ? LOC : loc; var t = 0, unknown = false, local = false;
-  CART.forEach(function (c) { var x = PRODS[c.id]; if (!x || !hasCh(x)) return; if (!loc) { unknown = true; return } if (localVehicle(x, loc)) local = true; t += charge(x, loc).fee * c.q });
+  var lines = window.cartFlat ? cartFlat() : CART;   // 127: bundles count as their products
+  lines.forEach(function (c) { var x = PRODS[c.id]; if (!x || !hasCh(x)) return; if (!loc) { unknown = true; return } if (localVehicle(x, loc)) local = true; t += charge(x, loc).fee * c.q });
   if (unknown) return null;
-  if (local) { var q = quote(CART.map(function (c) { return { sku: c.id, qty: c.q } }), loc, cartRepaint); if (q && !q.failed) return Math.round((+q.pack + +q.ship) * 100) / 100 }
+  if (local) { var q = quote(lines.map(function (c) { return { sku: c.id, qty: c.q } }), loc, cartRepaint); if (q && !q.failed) return Math.round((+q.pack + +q.ship) * 100) / 100 }
   return Math.round(t * 100) / 100 };
 
 /* product page: "₹1,500 delivered to Mumbai" + "₹1,000 product + ₹500 packaging & delivery" (MRP only next to the product price) */
@@ -410,6 +415,7 @@ var DT = { transit_days: { local: [1, 2], state: [2, 4], india: [4, 7], special:
 function shipDaysOf(x){ if (+x.dd > 0) return +x.dd; var n = String(x.ship || '').match(/\d+/g); return n ? Math.max.apply(null, n.map(Number)) : 10 }
 function wd(d, n){ var r = new Date(d), k = 0; while (k < Math.max(+n || 0, 0)) { r.setDate(r.getDate() + 1); if (r.getDay() !== 0) k++ } while (r.getDay() === 0) r.setDate(r.getDate() + 1); return r }
 function etaOf(x, loc){ if (!x || !loc) return null;
+  if (x.bun) return bunParts(x).map(function (o) { return etaOf(o.x, loc) }).filter(Boolean).sort(function (a, b) { return b.to - a.to })[0] || null;
   var now = new Date(), ist = new Date(now.getTime() + (330 + now.getTimezoneOffset()) * 60000), start = new Date(ist.getFullYear(), ist.getMonth(), ist.getDate());
   if (ist.getHours() >= DT.cutoff_hour) start.setDate(start.getDate() + 1);
   var z = localVehicle(x, loc) ? 'hyperlocal' : zoneOf(x, loc); if (z === 'india' && DT.special_states.indexOf(loc.state) >= 0) z = 'special';

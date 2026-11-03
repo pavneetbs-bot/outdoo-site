@@ -155,6 +155,17 @@ section{padding:20px 0 8px}
 .prods{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .pc{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;position:relative}
 .pc .im{aspect-ratio:1}
+.bun-b{background:var(--terra,#C26445)!important}.bun-l{font-size:11.5px;color:#7a746c;margin:3px 0 4px;line-height:1.35}.bun-sv{font-size:12px;color:#3a7d44;font-weight:600;margin-top:2px}
+.bun-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}.bun-ov.open{display:flex}
+.bun-box{background:#fff;border-radius:16px;max-width:980px;width:100%;max-height:92vh;overflow:auto;display:grid;grid-template-columns:1.1fr 1fr;position:relative}
+.bun-im{position:relative;background:#f3efe8}.bun-im img{width:100%;height:100%;object-fit:cover;display:block;min-height:320px}.bun-im .offb{position:absolute;top:12px;left:12px}
+.bun-in{padding:22px}.bun-in h2{margin:4px 0 8px;font-size:22px}.bun-sl{font-size:12px;color:#7a746c}.bun-pr{font-size:22px;font-weight:700}.bun-pr s{font-size:15px;color:#7a746c;font-weight:400}.bun-pr span{font-size:14px;color:#3a7d44}
+.bun-nt{font-size:12px;color:#7a746c;margin:6px 0 10px}.bun-ds{font-size:13.5px}.bun-in h4{margin:14px 0 4px}
+.bun-it{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eee;font-size:13.5px}.bun-it img{width:50px;height:50px;border-radius:8px;object-fit:cover}.bun-it div{flex:1}.bun-it div div{font-size:12px;color:#7a746c}.bun-it a{color:var(--terra,#C26445);cursor:pointer;font-weight:600;font-size:12.5px}
+.bun-im .offb{color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px}
+.bun-add{width:100%;margin-top:14px;padding:14px}.bun-x{position:absolute;top:10px;right:12px;border:0;background:#fff;border-radius:50%;width:32px;height:32px;cursor:pointer;z-index:2}
+.bun-note{display:block;font-size:13px;color:var(--terra,#C26445);margin:6px 0;cursor:pointer}
+@media(max-width:760px){.bun-box{grid-template-columns:1fr}.bun-im img{min-height:220px;max-height:260px}}
 .pc .offb{position:absolute;top:9px;left:9px;background:var(--olive);color:#fff;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:6px;z-index:2}
 .pc .heart{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:#fff;z-index:2;
   display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15)}
@@ -2005,7 +2016,7 @@ header{position:static!important}
       </div>
       <div class="pcard setsec" id="setSec" style="display:none"></div>
       <div class="pcard">
-      <div class="chips"><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip" id="pdMto" hidden title="Made for you after you order. It can't be cancelled once ordered and can be returned only if it arrives damaged, defective or not as ordered.">Made to order · returns only for defects</span><span class="chip" id="pdDlv">Free delivery</span><span class="chip terra">Self-assembly</span></div>
+      <div class="chips"><div id="pdBun"></div><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip" id="pdMto" hidden title="Made for you after you order. It can't be cancelled once ordered and can be returned only if it arrives damaged, defective or not as ordered.">Made to order · returns only for defects</span><span class="chip" id="pdDlv">Free delivery</span><span class="chip terra">Self-assembly</span></div>
       <p class="pdp-desc" id="pdDesc">Powder-coated aluminium frame with UV-stabilised weave and quick-dry cushions — built for Indian summers and monsoons alike.</p>
       
 <div class="trustrow">
@@ -2570,6 +2581,30 @@ function buildChips(){
   subs.map(sb=>`<span class="schip${FLT.sub.has(sb)?' on':''}" onclick="chipTap('${sb}')">${sb} (${m[sb]})</span>`).join('') : '';
  buildTypes(ids);}
 
+// ---- 127 Bundles: a seller's products at one price (coupons never apply) ----
+function bunCard(id){const x=PRODS[id];
+  return `<div class="pc bun-pc" onclick="openBundle('${id}')"><span class="offb bun-b">BUNDLE · ${x.bun.count} items</span>
+    <div class="im"><img src="${IMGS[x.img]}" alt=""></div>
+    <div class="bd"><div class="nm">${_esc(x.n)}</div><div class="bun-l">${x.bun.items.map(i=>_esc((PRODS[i.sku]||{}).n||i.name)+(i.qty>1?' ×'+i.qty:'')).join(' · ')}</div>
+      <div><span class="pr">${inr(x.p)}</span><span class="mrp">${inr(x.m)}</span></div><div class="bun-sv">Save ${inr(x.m-x.p)}</div></div></div>`;}
+function bundlesWith(sku){return Object.keys(PRODS).filter(k=>PRODS[k].bun&&PRODS[k].bun.items.some(i=>i.sku===sku));}
+function openBundle(id){const x=PRODS[id]; if(!x||!x.bun) return; let ov=document.getElementById('bunOv');
+  if(!ov){ov=document.createElement('div');ov.id='bunOv';ov.className='bun-ov';ov.onclick=e=>{if(e.target===ov)closeBundle()};document.body.appendChild(ov);}
+  const off=Math.round((1-x.p/x.m)*100);
+  ov.innerHTML=`<div class="bun-box" role="dialog" aria-label="${_esc(x.n)}"><button class="bun-x" onclick="closeBundle()" aria-label="Close">✕</button>
+    <div class="bun-im"><img src="${IMGS[x.img]}" alt=""><span class="offb bun-b">BUNDLE · SAVE ${off}%</span></div>
+    <div class="bun-in"><div class="bun-sl">${_esc(x.br||'')}${x.br?' · ':''}${_esc((COLS[x.col]||{}).t||'')}</div><h2>${_esc(x.n)}</h2>
+      <div class="bun-pr">${inr(x.p)} <s>${inr(x.m)}</s> <span>You save ${inr(x.m-x.p)}</span></div>
+      <div class="bun-nt">Delivered together by the seller · GST invoice from the seller · coupons don't apply (the bundle is already discounted)</div>
+      ${x.ds?`<p class="bun-ds">${_esc(x.ds)}</p>`:''}
+      <h4>In this bundle (${x.bun.count} items)</h4>
+      ${x.bun.items.map(i=>{const y=PRODS[i.sku]||{};return `<div class="bun-it"><img src="${IMGS[y.img]||''}" alt=""><div><b>${_esc(y.n||i.name)}</b><div>${_esc(y.dim||'')}</div></div><span>× ${i.qty}</span><a onclick="closeBundle();openProduct('${i.sku}')">View</a></div>`}).join('')}
+      <button class="btn bun-add" onclick="addBundle('${id}')">${x.oo===false?'Orders open soon':'Add bundle to cart · '+inr(x.p)}</button></div></div>`;
+  ov.classList.add('open'); document.body.classList.add('flt-open');}
+function closeBundle(){const ov=document.getElementById('bunOv'); if(ov) ov.classList.remove('open'); document.body.classList.remove('flt-open');}
+function addBundle(id){const x=PRODS[id]; if(!x||x.oo===false){toast('Orders for this bundle open soon');return;}
+  const f=CART.find(c=>c.id===id); f?f.q++:CART.push({id,q:1}); updBadge(); closeBundle(); toast('Bundle added to cart'); try{miniCart(true)}catch(e){}}
+function nbSub(){return CART.reduce((a,c)=>a+(PRODS[c.id]&&PRODS[c.id].bun?0:PRODS[c.id].p*c.q),0);}   // coupons: everything except bundles
 function renderPLP(){
   const k=lastCol, sort=document.getElementById('colSort').value;
   const total=Object.keys(PRODS).filter(id=>{const c=COLS[k];return c&&c.f?c.f(PRODS[id],id):PRODS[id].col===k;}).length;
@@ -2602,6 +2637,7 @@ function renderPLP(){
     : '<div class="noresult">No products match these filters.<br><a onclick="fltClear()">Clear filters</a></div>';return;}
   document.getElementById('plpGrid').innerHTML = ids.map(id=>{
     const x=PRODS[id];
+    if(x.bun) return bunCard(id);   // 127
     const off = x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
     return `<div class="pc" onclick="openProduct('${id}')">
       ${off?`<span class="offb">${off}</span>`:''}
@@ -2624,6 +2660,8 @@ function pdThumbs(id){
 }
 function pdShow(th){ document.querySelectorAll('.thumbs .th').forEach(t=>t.classList.remove('on')); th.classList.add('on'); document.getElementById('pdImg').src=th.querySelector('img').src; }
 function openProduct(id){
+  if(PRODS[id]&&PRODS[id].bun) return openBundle(id);   // 127
+  setTimeout(()=>{const el=document.getElementById('pdBun'), bs=bundlesWith(id); if(!el) return; el.innerHTML=bs.map(k=>`<a class="bun-note" onclick="openBundle('${k}')">Save ${Math.round((1-PRODS[k].p/PRODS[k].m)*100)}% in the <b>${_esc(PRODS[k].n)}</b> →</a>`).join('');},0);
   if(lastCol==='__search' && SQ) _supaRpc('log_search',{p_kind:'click',p_q:SQ,p_sku:id}).catch(()=>{});
   curPid=id; setTimeout(()=>window.acWlPaint&&acWlPaint(),0);
   const x=PRODS[id], c=COLS[x.col];
@@ -2875,7 +2913,7 @@ function renderCart(){
  const sub=CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0);
  const mrp=CART.reduce((a,c)=>a+(PRODS[c.id].m>PRODS[c.id].p?PRODS[c.id].m:PRODS[c.id].p)*c.q,0);
  const save=mrp-sub;
- const bc=bestCoupon(sub), coup=bc.amt;
+ const bc=bestCoupon(nbSub()), coup=bc.amt;   // 127: never on bundles
  const ship=window.cartShip?cartShip():0;   // 076: packaging + delivery to the visitor's city (null = city not set yet)
  const total=sub-coup+(ship||0);
  const th=200000, pct=Math.min(100,Math.round(total/th*100));
@@ -2883,7 +2921,7 @@ function renderCart(){
    : 'Add <b>'+inr(th-total)+'</b> more to unlock <b>room package pricing</b> - our best bundle rate';
  const line=c=>{const x=PRODS[c.id];
   return `<div class="cline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
-   <div class="inf"><div class="nm">${x.n}</div>${vLabel(x)?`<div class="vlab">${_esc(vLabel(x))}</div>`:''}
+   <div class="inf"><div class="nm">${x.n}</div>${vLabel(x)?`<div class="vlab">${_esc(vLabel(x))}</div>`:''}${x.bun?`<div class="vlab">Bundle · ${x.bun.items.map(i=>_esc((PRODS[i.sku]||{}).n||i.name)+(i.qty>1?' ×'+i.qty:'')).join(' · ')}</div>`:''}
    <div class="pr">${inr(x.p)}${x.m>x.p?`<span class="mr2">${inr(x.m)}</span>`:''}</div>${pvNote(x)}${window.etaLine?etaLine(c.id):''}
    <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1)">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1)">+</button></div>
    <span class="rm" onclick="cartRm('${c.id}')">Remove</span></div></div></div>`;};
@@ -3319,7 +3357,7 @@ function bestCoupon(sub){ var n=Date.now(), best={code:null,amt:0};
 function coTotals(){
   const sub=CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0);
   const mrp=CART.reduce((a,c)=>a+(PRODS[c.id].m>PRODS[c.id].p?PRODS[c.id].m:PRODS[c.id].p)*c.q,0);
-  const bc=bestCoupon(sub), coup=bc.amt;
+  const bc=bestCoupon(nbSub()), coup=bc.amt;   // 127: never on bundles
   // 076: packaging + delivery by the address pincode (else the city the visitor picked)
   const pinEl=document.getElementById('coPin'), pin=pinEl?pinEl.value.trim():(coLast.pincode||'');
   const loc=(window.locFromPin&&locFromPin(pin))||(window.nearLoc&&nearLoc())||null;
@@ -3438,7 +3476,7 @@ async function placeOrder(){
   let res, err;
   try{
     const r=await fetch(S.url+'/rest/v1/rpc/place_order',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(utok||S.anon),'Content-Type':'application/json'},
-      body:JSON.stringify({p:{items:CART.map(c=>({sku:c.id,qty:c.q})),customer,coupon:coTotals().code,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
+      body:JSON.stringify({p:{items:CART.map(c=>PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().code,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
@@ -3786,6 +3824,14 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     if(_pp && typeof openProduct === 'function' && document.getElementById('pdp')){
       if(PRODS[_pp]) try{ openProduct(_pp); }catch(e){}
     }
+    // 127: bundles (a seller's products at one price) — live ones only, every product in it live
+    try{ const bj = await _supaRpc('bundles_public', {});
+      (bj || []).forEach(b => { if(!b.items.every(i => PRODS[i.sku])) return; const k = 'B-' + b.id;
+        PRODS[k] = { n: b.title, p: +b.price, m: +b.sum, r: '', c: 0, ship: 'Ships with its products', dd: Math.max(...b.items.map(i => PRODS[i.sku].dd || 0)), img: k, col: b.collection_slug || PRODS[b.items[0].sku].col,
+          ch: {}, sp: true, sc: [], ss: [], stock: true, oo: b.items.every(i => PRODS[i.sku].oo !== false), ds: b.description || '', br: b.seller || '', bun: { id: b.id, items: b.items, count: +b.count } };
+        IMGS[k] = b.image_url || IMGS[PRODS[b.items[0].sku].img]; });
+      if(bj && bj.length && typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none') try{ renderPLP(lastCol) }catch(e){}
+    }catch(e){ console.warn('[outrr] bundles', e) }
     cartX(); CART = CART.filter(c => PRODS[c.id]); updBadge();
     // each product's other photos (Image Studio: side, front, close-up, measurements) for the product page gallery
     try{
@@ -3836,7 +3882,7 @@ async function shareProduct(){
 <script src="/account.js?v=5"></script>
 <script src="/track.js"></script>
 <script src="/store.js?v=7"></script>
-<script src="/near.js?v=4"></script>
+<script src="/near.js?v=5"></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };
