@@ -374,6 +374,7 @@ function pdPaint(id){
   var x = PRODS[id], el = document.getElementById('pdPrice'); if (!x || !el) return;
   var br = document.getElementById('pdBreak');
   if (!br) { br = document.createElement('div'); br.id = 'pdBreak'; br.className = 'dlv-br'; el.parentNode.insertBefore(br, el.nextSibling) }
+  if (x.oo === false) { el.innerHTML = '<span class="soonb">Coming soon</span>'; br.innerHTML = ''; var ch0 = document.getElementById('pdDlv'); if (ch0) ch0.textContent = ''; return }   // 135: not on sale yet — no price
   var off = x.m > x.p ? Math.round((1 - x.p / x.m) * 100) : 0;
   var mrp = off ? '<span class="mrplab">MRP</span><span class="mrp">' + inr(x.m) + '</span><span class="off">' + off + '% OFF</span>' : '';
   var chip = document.getElementById('pdDlv'), ships = shipsTo(x), c = charge(x, LOC), check = ' · <a class="dlv-a" onclick="pinFocus()">Check delivery charge</a>', how = '';

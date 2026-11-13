@@ -35,8 +35,11 @@ const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length 
 
 // 076: packaging + the highest delivery charge the seller set (per piece, incl. GST) — what a buyer far away pays; 0 = free
 const shipOf = p => Math.round(((+p.pack_fee || 0) + Math.max(+p.ship_india || 0, +p.ship_state || 0, +p.ship_local || 0)) * 100) / 100
-const products = (await getAll('products?status=eq.published&select=id,sku,name,seo_title,seo_description,seo_keywords,image_alt,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at,pack_fee,ship_local,ship_state,ship_india&order=name,sku'))
+const products = (await getAll('products?status=eq.published&select=id,sku,name,seo_title,seo_description,seo_keywords,image_alt,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at,pack_fee,ship_local,ship_state,ship_india,orders_open&order=name,sku'))
   .filter(p => p.price > 0)
+// 135: listed but not on sale yet (seller not live / preview only) — "Coming soon": no price, no cart, not in the Google feed
+const soon = p => p.orders_open === false
+const SOON = '<span class="soon">Coming soon</span>'
 const cols = await get('collections?active=eq.true&select=*&order=sort')
 const subs = await get('subcategories?active=eq.true&select=*&order=sort').catch(() => [])
 const colOf = Object.fromEntries(cols.map(c => [c.slug, c]))
@@ -112,6 +115,7 @@ header{border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff
 h1{font-size:27px;line-height:1.2;margin:4px 0 10px;letter-spacing:-.01em}
 .tier{display:inline-block;font-size:11.5px;font-weight:600;background:var(--sand-soft);color:var(--olive);border-radius:99px;padding:3px 10px}
 .price{display:flex;align-items:baseline;gap:10px;margin:14px 0 4px}.price b{font-size:28px}.price s{color:var(--muted)}.price em{font-style:normal;color:#A84F33;font-weight:600}
+.soon{display:inline-block;padding:4px 12px;border-radius:999px;background:#fbefe8;color:#A84F33;font-size:13px;font-weight:700}
 .tax{font-size:12px;color:var(--muted)}
 .btns{display:flex;gap:10px;margin:20px 0}.btn{flex:1;display:inline-flex;justify-content:center;align-items:center;border:0;border-radius:11px;padding:14px 18px;font:600 15px Poppins,sans-serif;cursor:pointer;background:var(--terra);color:#fff}.btn.alt{background:var(--olive)}.btn:disabled{opacity:.5}
 .perks{list-style:none;display:grid;gap:7px;font-size:13.5px;border:1px solid var(--line);border-radius:12px;padding:14px 16px}.perks li:before{content:'✓';color:var(--olive);font-weight:700;margin-right:8px}
@@ -161,7 +165,7 @@ ${view ? `<script>if(window.otrack)otrack('view_item',{sku:${JSON.stringify(view
 </body></html>`
 
 const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" loading="lazy" width="400" height="400"></div>
-<div class="n">${esc(p.name)}</div><div class="p">${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}</div></a>`
+<div class="n">${esc(p.name)}</div><div class="p">${soon(p) ? SOON : `${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}`}</div></a>`
 
 
 // Amazon-style "Compare with similar items": same sub-category first, then closest price
@@ -171,11 +175,11 @@ const similar = (p, n = 4) => (ranked[p.collection_slug] || []).filter(x => x.sk
 const subT = Object.fromEntries(subs.map(x => [x.slug, x.title]))
 const compare = p => {
   const L = [p, ...similar(p)]; if (L.length < 2) return ''
-  const low = Math.min(...L.map(x => +x.price)), off = x => x.mrp > x.price ? Math.round((1 - x.price / x.mrp) * 100) : 0
+  const low = Math.min(...L.filter(x => !soon(x)).map(x => +x.price)), off = x => x.mrp > x.price ? Math.round((1 - x.price / x.mrp) * 100) : 0
   const rows = [
     ['', (x, i) => `<a href="/p/${x.slug}/">${i ? '' : '<span class="tg">THIS ITEM</span>'}<img src="${esc(x.image_url)}" alt="${esc(x.name)}" loading="lazy" width="200" height="200"><b>${esc(x.name)}</b></a>`, 1],
-    ['Price', x => `<strong>${inr(x.price)}</strong>${+x.price === low && L.some(y => +y.price !== low) ? '<em>Lowest price</em>' : ''}`, 1],
-    ['MRP · discount', x => off(x) ? `<s>${inr(x.mrp)}</s> · ${off(x)}% off` : '—'],
+    ['Price', x => soon(x) ? SOON : `<strong>${inr(x.price)}</strong>${+x.price === low && L.some(y => +y.price !== low) ? '<em>Lowest price</em>' : ''}`, 1],
+    ['MRP · discount', x => !soon(x) && off(x) ? `<s>${inr(x.mrp)}</s> · ${off(x)}% off` : '—'],
     ['Type', x => esc(subT[x.subcategory_slug] || colOf[x.collection_slug]?.title || '—')],
     ['Material', x => esc(x.material || '—')],
     ['Size', x => esc(x.dims || '—')],
@@ -195,7 +199,7 @@ for (const p of products) {
   const c = colOf[p.collection_slug], url = `/p/${p.slug}/`, desc = describe(p)
   const off = p.mrp > p.price ? Math.round((1 - p.price / p.mrp) * 100) : 0
   const related = products.filter(x => x.collection_slug === p.collection_slug && x.sku !== p.sku).slice(0, 8)
-  const jsonld = [{
+  const jsonld = [...(soon(p) ? [] : [{
     '@context': 'https://schema.org', '@type': 'Product', name: p.name, sku: p.sku, image: [p.image_url], description: desc,
     brand: { '@type': 'Brand', name: 'outrr' }, category: c?.title,
     ...(p.material ? { material: p.material } : {}),
@@ -204,19 +208,19 @@ for (const p of products) {
       availability: p.in_stock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
       seller: { '@type': 'Organization', name: 'outrr' },
       shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: shipOf(p), currency: 'INR' }, shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' } } },
-  }, {
+  }]), {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE + '/' },
       ...(c ? [{ '@type': 'ListItem', position: 2, name: c.title, item: `${SITE}/c/${c.slug}/` }] : []),
       { '@type': 'ListItem', position: c ? 3 : 2, name: p.name, item: SITE + url }],
   }]
   write(`p/${p.slug}/index.html`, page({
-    title: p.seo_title ? `${p.seo_title} | outrr` : `${p.name} | Buy Online at ${inr(p.price)} | outrr`, desc: clip(p.seo_description || desc, 158), keywords: p.seo_keywords || [], path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
+    title: p.seo_title ? `${p.seo_title} | outrr` : (soon(p) ? `${p.name} | Coming soon | outrr` : `${p.name} | Buy Online at ${inr(p.price)} | outrr`), desc: clip(p.seo_description || desc, 158), keywords: p.seo_keywords || [], path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
     body: `<div class="crumbs"><a href="/">Home</a> › ${c ? `<a href="/c/${c.slug}/">${esc(c.title)}</a> › ` : ''}${esc(p.name)}</div>
 <div class="pd"><div class="pimg"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" width="800" height="800"></div>
 <div><h1>${esc(p.name)}</h1>${RATE[p.id]?.n > 0 ? `<div class="tax">★ ${RATE[p.id].rating} · ${RATE[p.id].n} customer review${RATE[p.id].n === 1 ? '' : 's'}</div>` : ''}
-<div class="price"><b>${inr(p.price)}</b>${off ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>
-<div class="btns">${p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
+${soon(p) ? `<div class="price">${SOON}</div><div class="tax">Not on sale yet. Check back soon.</div>` : `<div class="price"><b>${inr(p.price)}</b>${off ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>`}
+<div class="btns">${soon(p) ? '<button class="btn" disabled>Coming soon</button>' : p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
 <ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Delivery charge shown for your pincode</li><li>Secure online payment: UPI, cards, netbanking</li><li>Weather-safe packing · assembly guide included</li></ul>
 <div class="desc"><h2>About this product</h2><p>${esc(desc)}</p>
 <dl>${c ? `<dt>Category</dt><dd><a href="/c/${c.slug}/">${esc(c.title)}</a></dd>` : ''}${p.material ? `<dt>Material</dt><dd>${esc(p.material)}</dd>` : ''}${p.dims ? `<dt>Size</dt><dd>${esc(p.dims)}</dd>` : ''}<dt>SKU</dt><dd>${esc(p.sku)}</dd></dl></div>
@@ -257,7 +261,7 @@ const x = s => esc(s)
 write('feed/google.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>
 <title>outrr</title><link>${SITE}/</link><description>outrr outdoor furniture, lighting and decor</description>
-${products.map(p => `<item>
+${products.filter(p => !soon(p)).map(p => `<item>
   <g:id>${x(p.sku)}</g:id><g:title>${x(clip(p.name, 150))}</g:title><g:description>${x(clip(describe(p), 4900))}</g:description>
   <g:link>${SITE}/p/${p.slug}/</g:link><g:image_link>${x(p.image_url)}</g:image_link>
   <g:availability>${p.in_stock === false ? 'out_of_stock' : 'in_stock'}</g:availability><g:condition>new</g:condition>
@@ -267,4 +271,4 @@ ${products.map(p => `<item>
 </item>`).join('\n')}
 </channel></rss>
 `)
-console.log(`SEO pages built: ${products.length} products, ${cols.length} categories, sitemap ${urls.length} URLs, Google feed ${products.length} items`)
+console.log(`SEO pages built: ${products.length} products, ${cols.length} categories, sitemap ${urls.length} URLs, Google feed ${products.filter(p => !soon(p)).length} items`)

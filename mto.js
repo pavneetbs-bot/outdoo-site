@@ -186,7 +186,7 @@
       (x.ds ? '<p style="font-size:15px;line-height:1.65;color:#4A4640;margin-top:16px">' + esc(x.ds) + '</p>' : '') + '</section>' +
       '<section class="mto-cfg" aria-label="Build your design"><span class="mto-badge">Made to Order</span><h1>' + esc(x.n) + '</h1>' +
       '<p class="mto-by">by <b>' + esc(x.br || 'outrr') + '</b>' + (x.mat ? ' · ' + esc(x.mat) : '') + '</p>' +
-      '<p class="mto-from">From <b>' + rs(x.p) + '</b>' + (u !== 'fixed' ? ' · ' + rs(Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; }))) + ' / ' + uw : '') + ' · incl. GST</p>' +
+      (x.oo === false ? '<p class="mto-from"><span class="soonb">Coming soon</span></p>' : '<p class="mto-from">From <b>' + rs(x.p) + '</b>' + (u !== 'fixed' ? ' · ' + rs(Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; }))) + ' / ' + uw : '') + ' · incl. GST</p>') +
       '<div class="mto-box"><h3>1 · Your size</h3>' + size + '</div>' +
       '<div class="mto-box"><h3>2 · Material &amp; finish</h3>' + matHtml + colHtml + '</div>' + addHtml + instHtml +
       '<div class="mto-sum" id="mtoSum"></div></section>' +

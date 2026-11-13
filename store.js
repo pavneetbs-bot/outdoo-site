@@ -209,11 +209,11 @@
   // ---------- pieces ----------
   var priced = function (id) { return PRODS[id].p > 0 }
   function tile(id) {
-    var x = PRODS[id], ok = priced(id) && x.stock !== false
+    var x = PRODS[id], cs = x.oo === false, ok = priced(id) && x.stock !== false && !cs
     return '<div class="otile" onclick="' + (priced(id) ? 'openProduct(\'' + id + '\')' : '') + '"><div class="im"><img src="' + esc(IMGS[x.img] || '') + '" alt="' + esc(x.n) + '" loading="lazy">'
       + (x.smp ? '<span class="smp">Sample image</span>' : '')
       + (ok ? '<span class="addp" onclick="event.stopPropagation();addCart(\'' + id + '\')">+ Add</span>' : '') + '</div>'
-      + '<div class="nm2">' + esc(x.n) + '</div><div class="pw">' + (priced(id) ? inr(x.p) + (x.m > x.p ? '<s>' + inr(x.m) + '</s>' : '') : '<span class="pol">Price on listing</span>') + (x.stock === false ? ' <span class="pol">Out of stock</span>' : '') + '</div></div>'
+      + '<div class="nm2">' + esc(x.n) + '</div><div class="pw">' + (cs ? '<span class="soonb">Coming soon</span>' : priced(id) ? inr(x.p) + (x.m > x.p ? '<s>' + inr(x.m) + '</s>' : '') : '<span class="pol">Price on listing</span>') + (x.stock === false ? ' <span class="pol">Out of stock</span>' : '') + '</div></div>'
   }
   var tiles = function (l, cls) { return '<div class="otiles ' + (cls || 'st4') + '">' + l.map(tile).join('') + '</div>' }
   var sec = function (h, p, body, more) { return '<div class="sec2"><div class="sh"><h2>' + h + '</h2>' + (p ? '<p>' + p + '</p>' : '') + '</div><div style="height:14px"></div>' + body + (more || '') + '</div>' }
@@ -265,7 +265,7 @@
   }
   function kits() {
     if (PITCH) return pitchKits()
-    var pool = CATS.map(function (c) { return c.ids.filter(function (id) { return priced(id) && PRODS[id].stock !== false }) }).filter(function (l) { return l.length })
+    var pool = CATS.map(function (c) { return c.ids.filter(function (id) { return priced(id) && PRODS[id].stock !== false && PRODS[id].oo !== false }) }).filter(function (l) { return l.length })
     var all = [].concat.apply([], pool); if (all.length < 4) return []
     // round-robin across categories, then groups of 3: every product in at most one kit, kits mix categories
     var mix = [], i = 0, more = true
@@ -381,7 +381,7 @@
     if (KITS.length) h += sec('Ready-made kits', (PITCH ? 'Their products in a complete space, with pieces from other sellers on outrr. One tap adds the whole kit to your cart.' : 'Their products, put together. One tap adds the whole kit to your cart.'), '<div class="kits">' + KITS.map(kitCard).join('') + '</div>')
     if (IDS.length >= 8) { var w = IDS[4]; h += '<div class="sec2"><div class="wide" onclick="stTab(\'all\')"><img src="' + esc(imgOf(w)) + '" alt="" loading="lazy"><div class="tx"><small>Made by ' + esc(NAME) + '</small><h3>' + esc(PRODS[w].n) + '</h3>' + (D.tagline ? '<p>' + esc(D.tagline) + '</p>' : '') + '<span class="cta">Shop all →</span></div></div></div>' }
     if (IDS.length > 4) h += sec('Trending now', 'Popular picks from ' + esc(NAME), '<div class="hstrip">' + IDS.slice(4, 14).filter(priced).map(miniCard).join('') + '</div>', '<span class="pillv" onclick="stTab(\'all\')">View all ' + IDS.length + ' products</span>')
-    var deal = IDS.filter(function (id) { var x = PRODS[id]; return priced(id) && x.m > x.p }).sort(function (a, b) { return (1 - PRODS[a].p / PRODS[a].m) < (1 - PRODS[b].p / PRODS[b].m) ? 1 : -1 })[0]
+    var deal = IDS.filter(function (id) { var x = PRODS[id]; return priced(id) && x.oo !== false && x.m > x.p }).sort(function (a, b) { return (1 - PRODS[a].p / PRODS[a].m) < (1 - PRODS[b].p / PRODS[b].m) ? 1 : -1 })[0]
     if (deal) { var x = PRODS[deal]; h += '<div class="sec2"><div class="shl"><h2>Best value</h2><span class="view">' + Math.round((1 - x.p / x.m) * 100) + '% off MRP</span></div><div class="deal" onclick="openProduct(\'' + deal + '\')"><div class="im"><img src="' + esc(imgOf(deal)) + '" alt=""></div><div class="tx"><span class="db">BEST VALUE</span><h3>' + esc(x.n) + '</h3><div class="dp">' + inr(x.p) + '<span class="dm">' + inr(x.m) + '</span></div><div class="tm">Secure online payment</div></div></div></div>' }
     CATS.map(function (c) { return { c: c, l: c.ids.filter(function (id) { return top.indexOf(id) < 0 }) } }).filter(function (o) { return o.l.length >= 3 }).slice(0, 3).forEach(function (o) { var c = o.c; h += sec(esc(c.title), '', tiles(o.l.slice(0, 4)), c.ids.length > 4 ? '<span class="pillv" onclick="stTab(\'c:' + c.slug.replace(/'/g, "\\'") + '\')">View all ' + c.ids.length + '</span>' : '') })
     if (!PITCH && D.rating_count) h += sec('What customers say', 'Verified buyers on outrr', '<div class="rvs" id="stRv"><div class="rvsum"><b>' + D.rating + '</b><div class="st">' + stars(Math.round(D.rating)) + '</div><small>' + D.rating_count + ' rating' + (D.rating_count > 1 ? 's' : '') + '</small></div></div>')

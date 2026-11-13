@@ -147,8 +147,8 @@
       view(`<div class="ac-card"><h2>My wishlist</h2>${list.length ? `<p class="mut">${list.length} saved item${list.length > 1 ? 's' : ''}</p>
         <div id="wlGrid" class="wl-grid">${list.map(id => { const x = PRODS[id]; return `<div class="wl-item">
           <div class="wl-img" onclick="openProduct('${esc(id)}')"><img src="${esc((typeof IMGS !== 'undefined' && IMGS[x.img]) || '')}" alt=""></div>
-          <div class="wl-n" onclick="openProduct('${esc(id)}')">${esc(x.n)}</div><div class="wl-p">${inr0(x.p)}</div>
-          <div class="wl-a"><button class="btn" onclick="addCart('${esc(id)}')">Add to cart</button><button class="btn ghost" onclick="acWishToggle('${esc(id)}')">Remove</button></div></div>` }).join('')}</div>`
+          <div class="wl-n" onclick="openProduct('${esc(id)}')">${esc(x.n)}</div><div class="wl-p">${x.oo === false ? 'Coming soon' : inr0(x.p)}</div>
+          <div class="wl-a">${x.oo === false ? '' : `<button class="btn" onclick="addCart('${esc(id)}')">Add to cart</button>`}<button class="btn ghost" onclick="acWishToggle('${esc(id)}')">Remove</button></div></div>` }).join('')}</div>`
         : `<p class="mut" id="wlGrid">Nothing saved yet. Tap <b>Save</b> on any product to keep it here.</p><button class="btn" onclick="showHome()">Browse products</button>`}</div>`)
     }, 'Sign in to see your wishlist')
   }

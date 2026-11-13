@@ -522,6 +522,9 @@ body.pdp-open .bottomnav,body.pdp-open .wafab{display:none}
 .review .dt{font-size:9.5px;color:var(--muted)}
 .review p{font-size:11.5px;color:#4b473f}
 .setsec h3{font-size:15px;font-weight:800;margin:0 0 10px}
+.soonb{display:inline-block;padding:3px 10px;border-radius:999px;background:#fbefe8;color:#A84F33;font-size:12px;font-weight:700;letter-spacing:.02em}
+.pricebig .soonb{font-size:15px;padding:6px 14px}
+button.soonbtn,.tb .soonbtn{opacity:.55;cursor:not-allowed}
 .pdclosed{margin:8px 0 2px;padding:8px 12px;border-radius:10px;background:#fbefe8;color:#A84F33;font-size:12.5px;font-weight:600}
 .colshare{margin-top:12px;background:#fff;color:#2e2e2e;border:0;border-radius:99px;padding:8px 14px;font:700 12px Inter,sans-serif;cursor:pointer}
 .vsec{margin:12px 0 4px}.vsec .vg{margin:0 0 10px}.vsec .vl{font-size:12px;color:#6b665c;margin-bottom:6px}.vsec .vl b{color:#2e2e2e}
@@ -2586,23 +2589,23 @@ function bunCard(id){const x=PRODS[id];
   return `<div class="pc bun-pc" onclick="openBundle('${id}')"><span class="offb bun-b">BUNDLE · ${x.bun.count} items</span>
     <div class="im"><img src="${IMGS[x.img]}" alt=""></div>
     <div class="bd"><div class="nm">${_esc(x.n)}</div><div class="bun-l">${x.bun.items.map(i=>_esc((PRODS[i.sku]||{}).n||i.name)+(i.qty>1?' ×'+i.qty:'')).join(' · ')}</div>
-      <div><span class="pr">${inr(x.p)}</span><span class="mrp">${inr(x.m)}</span></div><div class="bun-sv">Save ${inr(x.m-x.p)}</div></div></div>`;}
+      ${soon(x)?`<div>${soonH()}</div>`:`<div><span class="pr">${inr(x.p)}</span><span class="mrp">${inr(x.m)}</span></div><div class="bun-sv">Save ${inr(x.m-x.p)}</div>`}</div></div>`;}
 function bundlesWith(sku){return Object.keys(PRODS).filter(k=>PRODS[k].bun&&PRODS[k].bun.items.some(i=>i.sku===sku));}
 function openBundle(id){const x=PRODS[id]; if(!x||!x.bun) return; let ov=document.getElementById('bunOv');
   if(!ov){ov=document.createElement('div');ov.id='bunOv';ov.className='bun-ov';ov.onclick=e=>{if(e.target===ov)closeBundle()};document.body.appendChild(ov);}
   const off=Math.round((1-x.p/x.m)*100);
   ov.innerHTML=`<div class="bun-box" role="dialog" aria-label="${_esc(x.n)}"><button class="bun-x" onclick="closeBundle()" aria-label="Close">✕</button>
-    <div class="bun-im"><img src="${IMGS[x.img]}" alt=""><span class="offb bun-b">BUNDLE · SAVE ${off}%</span></div>
+    <div class="bun-im"><img src="${IMGS[x.img]}" alt=""><span class="offb bun-b">${soon(x)?'BUNDLE · COMING SOON':`BUNDLE · SAVE ${off}%`}</span></div>
     <div class="bun-in"><div class="bun-sl">${_esc(x.br||'')}${x.br?' · ':''}${_esc((COLS[x.col]||{}).t||'')}</div><h2>${_esc(x.n)}</h2>
-      <div class="bun-pr">${inr(x.p)} <s>${inr(x.m)}</s> <span>You save ${inr(x.m-x.p)}</span></div>
+      <div class="bun-pr">${soon(x)?soonH():`${inr(x.p)} <s>${inr(x.m)}</s> <span>You save ${inr(x.m-x.p)}</span>`}</div>
       <div class="bun-nt">Delivered together by the seller · GST invoice from the seller · coupons don't apply (the bundle is already discounted)</div>
       ${x.ds?`<p class="bun-ds">${_esc(x.ds)}</p>`:''}
       <h4>In this bundle (${x.bun.count} items)</h4>
       ${x.bun.items.map(i=>{const y=PRODS[i.sku]||{};return `<div class="bun-it"><img src="${IMGS[y.img]||''}" alt=""><div><b>${_esc(y.n||i.name)}</b><div>${_esc(y.dim||'')}</div></div><span>× ${i.qty}</span><a onclick="closeBundle();openProduct('${i.sku}')">View</a></div>`}).join('')}
-      <button class="btn bun-add" onclick="addBundle('${id}')">${x.oo===false?'Orders open soon':'Add bundle to cart · '+inr(x.p)}</button></div></div>`;
+      <button class="btn bun-add${soon(x)?' soonbtn':''}" ${soon(x)?'disabled':''} onclick="addBundle('${id}')">${soon(x)?'Coming soon':'Add bundle to cart · '+inr(x.p)}</button></div></div>`;
   ov.classList.add('open'); document.body.classList.add('flt-open');}
 function closeBundle(){const ov=document.getElementById('bunOv'); if(ov) ov.classList.remove('open'); document.body.classList.remove('flt-open');}
-function addBundle(id){const x=PRODS[id]; if(!x||x.oo===false){toast('Orders for this bundle open soon');return;}
+function addBundle(id){const x=PRODS[id]; if(!x||x.oo===false){toast('Coming soon');return;}
   const f=CART.find(c=>c.id===id); f?f.q++:CART.push({id,q:1}); updBadge(); closeBundle(); toast('Bundle added to cart'); try{miniCart(true)}catch(e){}}
 function nbSub(){return CART.reduce((a,c)=>a+(PRODS[c.id]&&PRODS[c.id].bun?0:PRODS[c.id].p*c.q),0);}   // coupons: everything except bundles
 function renderPLP(){
@@ -2638,14 +2641,14 @@ function renderPLP(){
   document.getElementById('plpGrid').innerHTML = ids.map(id=>{
     const x=PRODS[id];
     if(x.bun) return bunCard(id);   // 127
-    const off = !x.cz && x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
+    const off = !soon(x) && !x.cz && x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
     return `<div class="pc" onclick="openProduct('${id}')">
       ${off?`<span class="offb">${off}</span>`:''}
       <span class="heart" onclick="event.stopPropagation();this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></span>
       <div class="im"><img src="${IMGS[x.img]}" alt=""></div>
       <div class="bd"><div class="nm">${vName(id)}</div>
         <div class="rate"><span class="st">${x.r} ★</span>${x.c}</div>
-        <div><span class="pr">${x.cz?`<span class="vfrom">From</span> ${inr(x.p)}`:vFrom(id)!=null?`<span class="vfrom">From</span> ${inr(vFrom(id))}`:inr(x.p)}</span>${!x.cz&&x.m>x.p&&vFrom(id)==null?`<span class="mrp">${inr(x.m)}</span>`:''}</div>
+        <div>${soon(x)?soonH():`<span class="pr">${x.cz?`<span class="vfrom">From</span> ${inr(x.p)}`:vFrom(id)!=null?`<span class="vfrom">From</span> ${inr(vFrom(id))}`:inr(x.p)}</span>${!x.cz&&x.m>x.p&&vFrom(id)==null?`<span class="mrp">${inr(x.m)}</span>`:''}`}</div>
         <div class="ship">${x.ship}</div>${vCardNote(id)}${tbHTML(id)}</div>
     </div>`;
   }).join('');
@@ -2671,7 +2674,7 @@ function openProduct(id){
   document.getElementById('pdC').textContent=x.c+' ratings';
   document.getElementById('pdSku').textContent='SKU OD-'+x.col.slice(0,3).toUpperCase()+'-0'+(100+x.c)+' · '+c.t;
   const off = x.m>x.p ? Math.round((1-x.p/x.m)*100) : 0;
-  document.getElementById('pdPrice').innerHTML = inr(x.p) + (off?`<span class="mrplab">MRP</span><span class="mrp">${inr(x.m)}</span><span class="off">${off}% OFF</span>`:'');
+  document.getElementById('pdPrice').innerHTML = soon(x) ? soonH() : inr(x.p) + (off?`<span class="mrplab">MRP</span><span class="mrp">${inr(x.m)}</span><span class="off">${off}% OFF</span>`:'');
   document.getElementById('pdShip').textContent=x.ship; document.getElementById('pdMto').hidden=!x.mto;
   document.getElementById('pdDesc').textContent=x.ds||COLDESC[x.col]||'';   // the product's own description first
   document.getElementById('pdImg').src=IMGS[x.img]; document.getElementById('pdImg').alt=x.alt||x.n;
@@ -2683,6 +2686,7 @@ function openProduct(id){
   document.getElementById('pdView').textContent = 40 + (x.c % 260);
   document.getElementById('pdHurry').textContent = 'Hurry! Only ' + (2 + x.c % 6) + ' left';
   document.getElementById('pdCash').textContent = inr(Math.round(x.p*0.05/10)*10);
+  try{const cb=document.querySelector('#pdp .cashback')||document.querySelector('.cashback'); if(cb) cb.style.display=soon(x)?'none':''; document.getElementById('pdHurry').style.display=soon(x)?'none':''; const tl=document.querySelector('.taxline'); if(tl) tl.style.display=soon(x)?'none':'';}catch(e){}
   document.getElementById('pdRevAvg').textContent = x.r;
   document.getElementById('pdRevCnt').textContent = x.c + ' ratings';
   const d = COLDET[x.col] || COLDET._any;   // a category made in the admin later has no write-up of its own
@@ -2690,11 +2694,11 @@ function openProduct(id){
   const sims = Object.keys(PRODS).filter(i=>PRODS[i].col===x.col && PRODS[i]!==x).slice(0,6);
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
     return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt=""></div>
-      <div class="bd"><div class="nm">${y.n}</div><div class="pr">${inr(y.p)}</div>${tbHTML(i)}</div></div>`;}).join('');
+      <div class="bd"><div class="nm">${y.n}</div><div class="pr">${soon(y)?soonH():inr(y.p)}</div>${tbHTML(i)}</div></div>`;}).join('');
   try{vRender(id);}catch(e){console.warn(e)}
-  try{const closed=x.oo===false; document.querySelectorAll('button[onclick="addCart()"],button[onclick="buyNow()"]').forEach(b=>{b.style.opacity=closed?'.45':'';b.title=closed?'Orders open soon':''});
+  try{const closed=x.oo===false; document.querySelectorAll('button[onclick="addCart()"],button[onclick="buyNow()"]').forEach(b=>{if(!b.dataset.t0) b.dataset.t0=b.textContent; const buy=b.getAttribute('onclick')==='buyNow()'; b.style.display=closed&&buy?'none':''; b.textContent=closed?'Coming soon':b.dataset.t0; b.disabled=closed; b.classList.toggle('soonbtn',closed); b.title=closed?'Coming soon':''});
     let n=document.getElementById('pdClosed'); if(!n){n=document.createElement('div');n.id='pdClosed';n.className='pdclosed';document.getElementById('pdPrice').after(n);}
-    n.textContent=closed?'Orders for this maker open soon — the catalogue is here to browse.':''; n.style.display=closed?'':'none';}catch(e){}
+    n.textContent=closed?'Coming soon — this product isn\'t on sale yet. Save it to your wishlist and check back.':''; n.style.display=closed?'':'none';}catch(e){}
   try{setRender(id);}catch(e){console.warn(e)}
   try{cmpRender(id);}catch(e){console.warn(e)}
   try{const rl=document.getElementById('pdRevList'); if(rl) rl.innerHTML='<p class="rv-none">Loading reviews…</p>'; window.rvPdp&&rvPdp(id);}catch(e){}
@@ -2720,7 +2724,7 @@ function vSibs(id){const x=PRODS[id]; if(!x||!x.vg) return [id]; return Object.k
 // 116: cards show the design ("From ₹…" when the variants' prices differ, the name without the variant ending)
 function vFrom(id){const s=vSibs(id); if(s.length<2) return null; const ps=s.map(i=>PRODS[i].p).filter(v=>v>0); if(!ps.length) return null; const lo=Math.min(...ps); return ps.some(v=>v!==lo)?lo:null;}
 function vName(id){const x=PRODS[id]; return vSibs(id).length>1?String(x.n).replace(/ – [^–]+$/,''):x.n;}
-function vPriceHTML(id,mrCls){const x=PRODS[id], f=vFrom(id); return f!=null?`<span class="vfrom">From</span> ${inr(f)}`:`${inr(x.p)}${x.m>x.p?`<span class="${mrCls||'mr2'}">${inr(x.m)}</span>`:''}`;}
+function vPriceHTML(id,mrCls){const x=PRODS[id], f=vFrom(id); if(soon(x)) return soonH(); return f!=null?`<span class="vfrom">From</span> ${inr(f)}`:`${inr(x.p)}${x.m>x.p?`<span class="${mrCls||'mr2'}">${inr(x.m)}</span>`:''}`;}
 // the group's main product stands for it when it matches the filters; otherwise the first variant that does
 function vOnePerGroup(ids){const inl=new Set(ids), rep={};
   ids.forEach(i=>{const g=PRODS[i].vg; if(g&&!rep[g]) rep[g]=Object.keys(PRODS).find(j=>PRODS[j].vg===g&&PRODS[j].vmn&&inl.has(j))||i;});
@@ -2767,12 +2771,12 @@ function setRender(id){const box=document.getElementById('setSec'); if(!box) ret
       <div class="im"><img src="${IMGS[y.img]||''}" alt="" loading="lazy"></div>
       <div class="bd"><div class="stag">${me?'This product':(y.spc||'Set piece').replace(/</g,'&lt;')}</div>
         <div class="nm">${y.n.replace(/</g,'&lt;')}</div>
-        <div class="pr">${inr(y.p)}${off?`<s>${inr(y.m)}</s><i>${off}% off</i>`:''}</div>
+        <div class="pr">${soon(y)?soonH():`${inr(y.p)}${off?`<s>${inr(y.m)}</s><i>${off}% off</i>`:''}`}</div>
         ${me?'':`<div style="font-size:10.5px;margin-top:4px"><a onclick="event.stopPropagation();openProduct('${i}')" style="color:var(--terra-deep);font-weight:700;cursor:pointer">View</a></div>`}</div></div>`;};
   const draw=()=>{const sel=ids.filter(i=>!SETOFF[i]), tot=sel.reduce((a,i)=>a+PRODS[i].p,0), mrp=sel.reduce((a,i)=>a+(PRODS[i].m>PRODS[i].p?PRODS[i].m:PRODS[i].p),0);
     box.innerHTML=`<h3>Buy This Set</h3><div class="setrow">${ids.map(card).join('')}</div>
-      <button class="btn setbuy" onclick="setBuy()" ${sel.length?'':'disabled'}>BUY ${sel.length===ids.length?'SET ':''}FOR ${inr(tot)}</button>
-      <div class="setsum">${sel.length} of ${ids.length} pieces selected${mrp>tot?` · you save ${inr(mrp-tot)}`:''}</div>`;};
+      ${sel.some(soon)?`<button class="btn setbuy soonbtn" disabled>COMING SOON</button><div class="setsum">${sel.length} of ${ids.length} pieces selected</div>`:`<button class="btn setbuy" onclick="setBuy()" ${sel.length?'':'disabled'}>BUY ${sel.length===ids.length?'SET ':''}FOR ${inr(tot)}</button>
+      <div class="setsum">${sel.length} of ${ids.length} pieces selected${mrp>tot?` · you save ${inr(mrp-tot)}`:''}</div>`}`;};
   window._setDraw=draw; window._setIds=ids; draw(); box.style.display='';}
 function setTick(i){SETOFF[i]=!SETOFF[i]; window._setDraw&&_setDraw();}
 function setBuy(){const sel=(window._setIds||[]).filter(i=>!SETOFF[i]&&PRODS[i]); if(!sel.length) return; if(sel.some(i=>PRODS[i].oo===false)){ordersClosed(sel.find(i=>PRODS[i].oo===false));return;}
@@ -2787,13 +2791,13 @@ function similarFor(id,n){const x=PRODS[id], sb=subOf(id), R=(typeof MENU!=='und
 function cmpRender(id){const box=document.getElementById('cmpSec'); if(!box) return;
   const ids=[id,...similarFor(id,4)]; if(ids.length<2){box.innerHTML='';return;}
   const P=ids.map(i=>PRODS[i]), d=COLDET[PRODS[id].col]||{};
-  const low=Math.min(...P.map(y=>y.p));
+  const low=Math.min(...P.filter(y=>!soon(y)).map(y=>y.p));
   const off=y=>y.m>y.p?Math.round((1-y.p/y.m)*100):0;
   const rows=[
     ['', (y,i)=>`<div class="ci" onclick="openProduct('${ids[i]}');scrollTo(0,0)">${i===0?'<span class="tag">THIS ITEM</span>':''}<div class="im"><img src="${IMGS[y.img]||''}" alt=""></div><div class="nm">${_esc(y.n)}</div></div>`, true],
-    ['', (y,i)=>y.stock===false?'<span class="mut">Out of stock</span>':`<button class="cadd${i?'':' alt'}" onclick="addCart('${ids[i]}')">Add to cart</button>`, true],
-    ['Price', y=>`<span class="pr">${inr(y.p)}</span>${y.p===low&&P.some(z=>z.p!==low)?'<span class="best">Lowest price</span>':''}`],
-    ['MRP · discount', y=>off(y)?`<s class="mut">${inr(y.m)}</s> · <b style="color:#A84F33">${off(y)}% off</b>`:'<span class="mut">—</span>'],
+    ['', (y,i)=>soon(y)?soonH():y.stock===false?'<span class="mut">Out of stock</span>':`<button class="cadd${i?'':' alt'}" onclick="addCart('${ids[i]}')">Add to cart</button>`, true],
+    ['Price', y=>soon(y)?soonH():`<span class="pr">${inr(y.p)}</span>${y.p===low&&P.some(z=>z.p!==low)?'<span class="best">Lowest price</span>':''}`],
+    ['MRP · discount', y=>!soon(y)&&off(y)?`<s class="mut">${inr(y.m)}</s> · <b style="color:#A84F33">${off(y)}% off</b>`:'<span class="mut">—</span>'],
     ['Type', (y,i)=>_esc(subOf(ids[i]))],
     ['Material', y=>_esc(y.mat||d.mat||'—')],
     ['Size', y=>_esc(y.dim||d.dim||'—')],
@@ -2899,7 +2903,10 @@ const pvNote=x=>x&&x.pv?`<div class="pvnote">Sample product from ${String(x.pv).
 cartX();
 function updBadge(){try{localStorage.setItem('outrr_cart',JSON.stringify(CART))}catch(e){}const n=CART.reduce((a,c)=>a+c.q,0);['cartn','cartn2'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=n;});}
 // 099: a maker listed before going live — the product can be seen but not ordered yet
-function ordersClosed(id){const x=PRODS[id]; if(x&&x.oo===false){toast('Orders for this maker open soon. Save it to your wishlist!');return true;} return false;}
+// 135: not ready to sell yet (seller not live / preview) — no price, no add to cart, "Coming soon" everywhere
+function soon(id){const x=typeof id==='object'?id:PRODS[id]; return !!x&&x.oo===false;}
+function soonH(){return '<span class="soonb">Coming soon</span>';}
+function ordersClosed(id){const x=PRODS[id]; if(x&&x.oo===false){toast('Coming soon. Save it to your wishlist!');return true;} return false;}
 function addCart(id){id=id||curPid;if(!id||!PRODS[id]){toast('Added to cart');return;} if(ordersClosed(id)) return;
  const f=CART.find(c=>c.id===id); f?f.q++:CART.push(cartLine(id));
  updBadge(); miniCart(true); miniTitle('Added to cart ✓');}
@@ -2929,7 +2936,7 @@ function renderCart(){
  const grp=cartGroups(), lines=grp?grp.map(e=>grpHead(e)+e.l.map(line).join('')).join(''):CART.map(line).join('');
  // cross-sell: add-ons under 15K from cols not fully in cart
  const inCart=new Set(CART.map(c=>c.id));
- const xs=Object.keys(PRODS).filter(i=>!inCart.has(i)&&PRODS[i].p<=15000).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,8);
+ const xs=Object.keys(PRODS).filter(i=>!inCart.has(i)&&!soon(i)&&PRODS[i].p<=15000).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,8);
  const xsHtml=xs.length?`<div class="sec-head" style="margin-top:18px"><h2 style="font-size:15px">Complete your setup</h2></div>
    <div class="hstrip">${xs.map(i=>{const x=PRODS[i];
     return `<div class="mpc"><div class="im" onclick="openProduct('${i}')"><img src="${IMGS[x.img]}" alt=""></div>
@@ -2983,8 +2990,8 @@ fillStrip('stripPlant', byCol('planters',10));
 fillStrip('stripArt', byCol('art',10));
 // deal of the day: rotates daily
 (function(){
-  const ids=Object.keys(PRODS).filter(i=>PRODS[i].m>PRODS[i].p);
-  const pool=ids.length?ids:Object.keys(PRODS);
+  const ids=Object.keys(PRODS).filter(i=>!soon(i)&&PRODS[i].m>PRODS[i].p);
+  const pool=ids.length?ids:Object.keys(PRODS).filter(i=>!soon(i));
   const day=Math.floor(Date.now()/864e5);
   const id=pool[day%pool.length]; const x=PRODS[id];
   const mr=x.m>x.p? `<span class="dm">${inr(x.m)}</span>`:'';
@@ -3004,18 +3011,18 @@ fillStrip('stripArt', byCol('art',10));
 
 
 // ---- tile buttons + quick view ----
-function tbHTML(id){return `<div class="tb"><button class="qvb" onclick="event.stopPropagation();qvOpen('${id}')">Quick view</button><button class="adb" onclick="event.stopPropagation();addCart('${id}')">+ Add</button></div>`;}
+function tbHTML(id){return `<div class="tb"><button class="qvb" onclick="event.stopPropagation();qvOpen('${id}')">Quick view</button>${soon(id)?`<button class="adb soonbtn" disabled onclick="event.stopPropagation()">Coming soon</button>`:`<button class="adb" onclick="event.stopPropagation();addCart('${id}')">+ Add</button>`}</div>`;}
 let qvId=null;
 function qvOpen(id){qvId=id;const x=PRODS[id];
  document.getElementById('qvImg').src=IMGS[x.img];
  document.getElementById('qvName').textContent=x.n;
  document.getElementById('qvR').textContent=x.r+' ★';
  document.getElementById('qvC').textContent=x.c+' ratings';
- document.getElementById('qvP').textContent=inr(x.p);
- document.getElementById('qvM').textContent=x.m>x.p?inr(x.m):'';
+ document.getElementById('qvP').textContent=soon(x)?'Coming soon':inr(x.p);
+ document.getElementById('qvM').textContent=!soon(x)&&x.m>x.p?inr(x.m):'';
  document.getElementById('qvShip').textContent=x.ship+(window.hasCharges&&hasCharges(qvId)?' · + delivery':' · Free delivery');
  document.getElementById('qvDesc').textContent=x.ds||((typeof COLDESC!=='undefined'&&COLDESC[x.col])?COLDESC[x.col]:'');
- document.getElementById('qvAdd').setAttribute('onclick',`qvClose();addCart('${id}')`);
+ document.getElementById('qvAdd').setAttribute('onclick',soon(x)?'':`qvClose();addCart('${id}')`); document.getElementById('qvAdd').textContent=soon(x)?'Coming soon':'Add to Cart'; document.getElementById('qvAdd').disabled=soon(x); document.getElementById('qvAdd').classList.toggle('soonbtn',soon(x));
  document.getElementById('qvFull').setAttribute('onclick',`qvClose();openProduct('${id}')`);
  document.getElementById('qv').classList.add('open');document.getElementById('qvov').classList.add('open');
  document.body.classList.add('flt-open');}
@@ -3178,9 +3185,9 @@ function goSpaces(){const el=document.querySelectorAll('.sec2')[1];
 function oTile(id){const x=PRODS[id];
  return `<div class="otile" onclick="openProduct('${id}')">
    <div class="im"><img src="${IMGS[x.img]}" alt="">
-     <span class="addp" onclick="event.stopPropagation();addCart('${id}')">+ Add</span></div>
+     ${soon(x)?'':`<span class="addp" onclick="event.stopPropagation();addCart('${id}')">+ Add</span>`}</div>
    <div class="nm2">${x.n}</div>
-   <div class="pw">${inr(x.p)}${x.m>x.p?`<s>${inr(x.m)}</s>`:''}</div></div>`;}
+   <div class="pw">${soon(x)?soonH():`${inr(x.p)}${x.m>x.p?`<s>${inr(x.m)}</s>`:''}`}</div></div>`;}
 function fillTiles(el,ids){const d=document.getElementById(el); if(d) d.innerHTML=ids.map(oTile).join('');}
 
 // ---- deals tabs ----
