@@ -82,7 +82,8 @@
     if (!mat) return { ok: false, error: 'Choose a material' };
     var rate = num(mat.rate) || 0, col = null;
     if (o.colour) { col = arr(mat.colours).filter(function (x) { return x.name === o.colour; })[0]; if (!col) return { ok: false, error: 'Choose a colour' }; rate += num(col.extra) || 0; }
-    var base = u === 'fixed' ? (num(sz.price) || 0) + rate : (num(mat.base) || 0) + Math.round(qty * rate + (pn ? pn.width * (num(mat.rate_rft) || 0) + pn.posts * h * (num(mat.rate_postft) || 0) + pn.posts * (num(mat.rate_post) || 0) : 0)), minUsed = false, minc = num(m.min_charge) || 0;
+    var own = u === 'fixed' && mat.prices ? num(mat.prices[sz.label]) : null;   // 147: this finish's own price for this size
+    var base = u === 'fixed' ? (own != null ? own + rate - (num(mat.rate) || 0) : (num(sz.price) || 0) + rate) : (num(mat.base) || 0) + Math.round(qty * rate + (pn ? pn.width * (num(mat.rate_rft) || 0) + pn.posts * h * (num(mat.rate_postft) || 0) + pn.posts * (num(mat.rate_post) || 0) : 0)), minUsed = false, minc = num(m.min_charge) || 0;
     if (base < minc) { base = minc; minUsed = true; }
     var picked = arr(o.addons), addons = [];
     arr(m.addons).forEach(function (a) { if (picked.indexOf(a.name) >= 0) addons.push({ name: a.name, amount: Math.round((num(a.price) || 0) * (a.charge === 'unit' ? qty : 1)) }); });
@@ -104,6 +105,8 @@
       addons: addons, product: product, install: install, install_fee: instFee, total: product + instFee + dlv, pay_now: payNow, before_dispatch: product - payNow + instFee + dlv };
   }
   window.mtoPrice = price;
+  // 147: a finish's price at one size (its own price when set, else size price + extra)
+  function fixedAt(m, mat, sz) { var own = mat && mat.prices ? num(mat.prices[sz.label]) : null; return own != null ? own : (num(sz.price) || 0) + (num(mat && mat.rate) || 0); }
   // delivery zone from the maker's pincode (the order is priced again by the database, nearby cities included)
   function zoneOf(from, to) {
     if (!/^[1-9][0-9]{5}$/.test(to || '') || !window.locFromPin) return null;
@@ -174,14 +177,14 @@
     var size = u === 'seat'
       ? '<p style="font-size:13px;color:#4A4640;margin:0 0 8px">How many seats?</p><div class="mto-sw">' + (function () { var b = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) b.push('<button type="button" data-n="' + i + '" class="' + (String(o.n) === String(i) ? 'on' : '') + '">' + i + '</button>'); return b.join(''); })() + '</div>'
       : u === 'fixed'
-      ? '<div class="mto-sw">' + arr(m.sizes).map(function (s) { return '<button type="button" data-size="' + esc(s.label) + '" class="' + (o.size === s.label ? 'on' : '') + '">' + esc(s.label) + ' · ' + rs(s.price) + '</button>'; }).join('') + '</div>'
+      ? '<div class="mto-sw">' + arr(m.sizes).map(function (s) { return '<button type="button" data-size="' + esc(s.label) + '" class="' + (o.size === s.label ? 'on' : '') + '">' + esc(s.label) + ' · ' + rs(fixedAt(m, mat, s)) + '</button>'; }).join('') + '</div>'
       : '<div class="mto-g">' +
         ((u === 'area' || u === 'length') ? '<label>Length (ft)<input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>' : '') +
         ((u === 'area' || u === 'face') ? '<label>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '<input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>' : '') +
         (hOpts.length ? '<label>Height (ft)<select data-k="h">' + hOpts.map(function (h) { return '<option' + (String(h) === String(o.h) ? ' selected' : '') + '>' + esc(h) + '</option>'; }).join('') + '</select></label>'
           : u === 'face' ? '<label>Height (ft)<input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>' : '') +
         '</div><p style="font-size:13px;color:#6A6258;margin:8px 0 0">Measure the space in feet. ' + (u === 'area' ? 'Length × width is the area it covers.' : u === 'face' && m.panels ? 'Total length of the wall or parapet to cover. It is made in standard ' + panelSizes(m).join(' / ') + ' ft panels, rounded up to the next foot.' : u === 'face' ? 'Width × height of the opening or wall.' : 'Total running length.') + '</p>';
-    var matHtml = mats.length > 1 ? mats.map(function (y) { return '<label class="mto-opt' + (y === mat ? ' on' : '') + '"><input type="radio" name="mtoMat" data-mat="' + esc(y.name) + '"' + (y === mat ? ' checked' : '') + '><span><b>' + esc(y.name) + '</b><br><span style="color:#6A6258">' + (u === 'fixed' ? (+y.rate ? '+ ' + rs(y.rate) : 'Standard') : m.panels ? 'Panels, frame and posts' : rs(y.rate) + ' / ' + uw) + '</span></span></label>'; }).join('') : '<p style="margin:0 0 8px;font-size:14px"><b>' + esc(mat.name) + '</b></p>';
+    var matHtml = mats.length > 1 ? mats.map(function (y) { return '<label class="mto-opt' + (y === mat ? ' on' : '') + '"><input type="radio" name="mtoMat" data-mat="' + esc(y.name) + '"' + (y === mat ? ' checked' : '') + '><span><b>' + esc(y.name) + '</b><br><span style="color:#6A6258">' + (u === 'fixed' ? (y.prices && Object.keys(y.prices).length ? 'From ' + rs(Math.min.apply(null, arr(m.sizes).map(function (z) { return fixedAt(m, y, z); }))) : +y.rate ? '+ ' + rs(y.rate) : 'Standard') : m.panels ? 'Panels, frame and posts' : rs(y.rate) + ' / ' + uw) + '</span></span></label>'; }).join('') : '<p style="margin:0 0 8px;font-size:14px"><b>' + esc(mat.name) + '</b></p>';
     var cols = arr(mat.colours);
     var colHtml = cols.length ? '<p style="font-size:13px;color:#4A4640;margin:6px 0">Colour</p><div class="mto-sw">' + cols.map(function (c) { return '<button type="button" data-col="' + esc(c.name) + '" class="' + (o.colour === c.name ? 'on' : '') + '">' + esc(c.name) + (+c.extra ? ' (+' + rs(c.extra) + '/' + uw + ')' : '') + '</button>'; }).join('') + '</div>' : '';
     var adds = arr(m.addons).filter(function (a) { return a.name; });
@@ -236,7 +239,7 @@
     if (!q.ok) { el.innerHTML = '<p class="mto-err" style="margin:0">' + esc(q.error) + '</p><button class="mto-go" type="button" disabled>Enter your size</button>'; return; }
     var ins = o.install && q.install && q.install.available;
     var needOk = !o.drawing && !o.size_ok, closed = x.oo === false, needPin = q.delivery && q.delivery.fee == null;
-    el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate ? ' + ' + esc(q.material) : '') : m.unit === 'seat' ? q.qty + '-seat bench' : q.panels ? q.panels.width + ' ft × ' + esc(o.h) + ' ft high, ' + esc(q.material) : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
+    el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate || arr(m.materials).length > 1 ? ' + ' + esc(q.material) : '') : m.unit === 'seat' ? q.qty + '-seat bench' : q.panels ? q.panels.width + ' ft × ' + esc(o.h) + ' ft high, ' + esc(q.material) : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
       (q.panels ? '<div class="rw" style="font-size:12.5px;color:#6A6258"><span>' + esc(panelsText(q.panels)) + '</span><span></span></div>' : '') +
       q.addons.map(function (a) { return '<div class="rw"><span>' + esc(a.name) + '</span><span>' + rs(a.amount) + '</span></div>'; }).join('') +
       (ins ? '<div class="rw"><span>Installation (' + esc(q.install.city) + ')</span><span>' + rs(q.install_fee) + '</span></div>' : '') +
