@@ -7,22 +7,23 @@
   var arr = function (v) { return Array.isArray(v) ? v : []; };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var rs = function (n) { return '₹' + Math.round(+n || 0).toLocaleString('en-IN'); };
-  var UW = function (u) { return u === 'length' ? 'running ft' : u === 'fixed' ? 'piece' : 'sq ft'; };
+  var UW = function (u) { return u === 'length' ? 'running ft' : u === 'fixed' ? 'piece' : u === 'seat' ? 'seat' : 'sq ft'; };
   var PCT = 50;
 
   function missing(m) {
     if (!m || typeof m !== 'object') return ['setup'];
     var u = m.unit, r = [];
-    if (['area', 'face', 'length', 'fixed'].indexOf(u) < 0) return ['pricing'];
+    if (['area', 'face', 'length', 'fixed', 'seat'].indexOf(u) < 0) return ['pricing'];
     var lim = function (d) { return (num(m[d] && m[d].min) || 0) > 0 && (num(m[d] && m[d].max) || 0) >= (num(m[d] && m[d].min) || 0); };
     if (u === 'fixed') { if (!arr(m.sizes).length) r.push('sizes'); }
+    else if (u === 'seat') { if (!((num(m.n && m.n.min) || 0) >= 1 && (num(m.n && m.n.max) || 0) >= (num(m.n && m.n.min) || 0))) r.push('n'); }
     else {
       if ((u === 'area' || u === 'length') && !lim('l')) r.push('l');
       if ((u === 'area' || u === 'face') && !lim('w')) r.push('w');
       if (u === 'face' && !arr(m.h && m.h.options).length && !lim('h')) r.push('h');
     }
     if (!arr(m.materials).some(function (x) { return String(x && x.name || '').trim() && ((num(x.rate) || 0) > 0 || u === 'fixed'); })) r.push('material');
-    if (u !== 'fixed' && !((num(m.min_charge) || 0) > 0)) r.push('min');
+    if (u !== 'fixed' && u !== 'seat' && !((num(m.min_charge) || 0) > 0)) r.push('min');
     var md = arr(m.make_days); if (!(((num(md[1]) != null ? num(md[1]) : num(md[0])) || 0) > 0)) r.push('days');
     if (m.install && m.install.offered && !arr(m.install.cities).length) r.push('cities');
     return r;
@@ -45,6 +46,7 @@
     if (missing(m).length) return { ok: false, error: 'This design is not ready to order yet' };
     var u = m.unit, l = num(o.l), w = num(o.w), h = num(o.h), qty, sz = null;
     if (u === 'fixed') { sz = arr(m.sizes).filter(function (x) { return x.label === o.size; })[0]; if (!sz) return { ok: false, error: 'Choose a size' }; qty = 1; }
+    else if (u === 'seat') { var nn = num(o.n), nlo = num(m.n.min), nhi = num(m.n.max); if (nn == null || nn !== Math.floor(nn) || nn < nlo || nn > nhi) return { ok: false, error: 'Choose ' + nlo + ' to ' + nhi + ' seats' }; qty = nn; }
     else {
       var chk = function (d, v, word) { var lo = num(m[d] && m[d].min), hi = num(m[d] && m[d].max); return v == null || v < lo || v > hi ? word + ' must be ' + lo + ' to ' + hi + ' ft' : null; };
       var e;
@@ -58,7 +60,7 @@
     if (!mat) return { ok: false, error: 'Choose a material' };
     var rate = num(mat.rate) || 0, col = null;
     if (o.colour) { col = arr(mat.colours).filter(function (x) { return x.name === o.colour; })[0]; if (!col) return { ok: false, error: 'Choose a colour' }; rate += num(col.extra) || 0; }
-    var base = u === 'fixed' ? (num(sz.price) || 0) + rate : Math.round(qty * rate), minUsed = false, minc = num(m.min_charge) || 0;
+    var base = u === 'fixed' ? (num(sz.price) || 0) + rate : (num(mat.base) || 0) + Math.round(qty * rate), minUsed = false, minc = num(m.min_charge) || 0;
     if (base < minc) { base = minc; minUsed = true; }
     var picked = arr(o.addons), addons = [];
     arr(m.addons).forEach(function (a) { if (picked.indexOf(a.name) >= 0) addons.push({ name: a.name, amount: Math.round((num(a.price) || 0) * (a.charge === 'unit' ? qty : 1)) }); });
@@ -68,11 +70,27 @@
       install = { offered: true, available: !!c, city: c ? c.name : null };
       if (c) { install.fee = (num(c.visit) || 0) + Math.round((num(c.rate) || 0) * qty); if (o.install) instFee = install.fee; }
     }
+    var D = m.delivery || {}, delivery = null, dlv = 0;
+    if ([D.local, D.state, D.india].some(function (v) { return num(v) != null; })) {
+      if (['local', 'state', 'india'].indexOf(o.zone) >= 0) {
+        var dr = o.zone === 'local' ? (num(D.local) != null ? num(D.local) : num(D.state) != null ? num(D.state) : num(D.india)) : o.zone === 'state' ? (num(D.state) != null ? num(D.state) : num(D.india)) : num(D.india);
+        dlv = Math.round((dr || 0) * qty); delivery = { zone: o.zone, fee: dlv };
+      } else delivery = { zone: null, fee: null };
+    }
     var payNow = Math.round(product * (payPct == null ? 50 : payPct) / 100);
-    return { ok: true, unit: u, qty: qty, rate: rate, base: base, min_charge_used: minUsed, material: mat.name, colour: col ? col.name : null, size: sz ? sz.label : null,
-      addons: addons, product: product, install: install, install_fee: instFee, total: product + instFee, pay_now: payNow, before_dispatch: product - payNow + instFee };
+    return { delivery: delivery, delivery_fee: dlv, seats: u === 'seat' ? qty : null, ok: true, unit: u, qty: qty, rate: rate, base: base, min_charge_used: minUsed, material: mat.name, colour: col ? col.name : null, size: sz ? sz.label : null,
+      addons: addons, product: product, install: install, install_fee: instFee, total: product + instFee + dlv, pay_now: payNow, before_dispatch: product - payNow + instFee + dlv };
   }
   window.mtoPrice = price;
+  // delivery zone from the maker's pincode (the order is priced again by the database, nearby cities included)
+  function zoneOf(from, to) {
+    if (!/^[1-9][0-9]{5}$/.test(to || '') || !window.locFromPin) return null;
+    var a = locFromPin(from), b = locFromPin(to); if (!a || !b) return null;
+    if (a.city && b.city && a.city === b.city) return 'local';
+    if (a.state && b.state && a.state === b.state) return 'state';
+    return 'india';
+  }
+  var hasDlv = function (m) { var D = m.delivery || {}; return [D.local, D.state, D.india].some(function (v) { return num(v) != null; }); };
 
   // ------------------------------------------------------------ styles
   var css = '' +
@@ -112,7 +130,7 @@
   window.mtoOpen = function (id) {
     var x = PRODS[id]; if (!x || !x.cz) return;
     var m = x.cz;
-    S = { id: id, img: 0, o: { l: '', w: '', h: arr(m.h && m.h.options)[0] || '', size: '', material: (arr(m.materials)[0] || {}).name || '', colour: '',
+    S = { id: id, img: 0, o: { n: (m.n && num(m.n.min)) || '', l: '', w: '', h: arr(m.h && m.h.options)[0] || '', size: '', material: (arr(m.materials)[0] || {}).name || '', colour: '',
       addons: arr(m.addons).filter(function (a) { return a.on; }).map(function (a) { return a.name; }), install: false, pin: lastPin(),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
     try { curPid = id; } catch (e) {}
@@ -131,7 +149,9 @@
     var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), imgs = gal(S.id);
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     var hOpts = arr(m.h && m.h.options);
-    var size = u === 'fixed'
+    var size = u === 'seat'
+      ? '<p style="font-size:13px;color:#4A4640;margin:0 0 8px">How many seats?</p><div class="mto-sw">' + (function () { var b = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) b.push('<button type="button" data-n="' + i + '" class="' + (String(o.n) === String(i) ? 'on' : '') + '">' + i + '</button>'); return b.join(''); })() + '</div>'
+      : u === 'fixed'
       ? '<div class="mto-sw">' + arr(m.sizes).map(function (s) { return '<button type="button" data-size="' + esc(s.label) + '" class="' + (o.size === s.label ? 'on' : '') + '">' + esc(s.label) + ' · ' + rs(s.price) + '</button>'; }).join('') + '</div>'
       : '<div class="mto-g">' +
         ((u === 'area' || u === 'length') ? '<label>Length (ft)<input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>' : '') +
@@ -148,7 +168,8 @@
     var drw = m.drawing || 'choose';
     var instHtml = '<div class="mto-box"><h3>' + (adds.length ? '4' : '3') + ' · ' + (inst ? 'Installation &amp; drawing' : 'Drawing') + '</h3>' +
       (inst ? '<label class="mto-chk"><input type="checkbox" data-k="install"' + (o.install ? ' checked' : '') + '><span><b>Add installation</b> by ' + (m.install.by === 'brand' ? esc(x.br || 'the maker') : 'a verified outrr partner') + '<br><span id="mtoInstTxt" style="color:#6A6258"></span></span></label>' +
-        '<label class="mto-f" style="max-width:220px;margin:4px 0 10px">Your pincode<input inputmode="numeric" maxlength="6" data-k="pin" value="' + esc(o.pin) + '" placeholder="122002"></label>' : '') +
+        '' : '') +
+      (inst || hasDlv(m) ? '<label class="mto-f" style="max-width:220px;margin:4px 0 10px">Your pincode' + (hasDlv(m) ? ' (for delivery)' : '') + '<input inputmode="numeric" maxlength="6" data-k="pin" value="' + esc(o.pin) + '" placeholder="122002"></label>' : '') +
       (drw === 'choose' ? '<p style="margin:6px 0;font-size:14px;font-weight:600">Approve a drawing before we make it?</p>' +
         '<label class="mto-chk"><input type="radio" name="mtoDrw" data-drw="1"' + (o.drawing ? ' checked' : '') + '><span><b>Yes, send me a drawing</b>' + (daysTxt(m.drawing_days) ? ' (adds ' + daysTxt(m.drawing_days) + ')' : '') + '. Production starts after you approve it.</span></label>' +
         '<label class="mto-chk"><input type="radio" name="mtoDrw" data-drw="0"' + (!o.drawing ? ' checked' : '') + '><span><b>No, make it to my size</b></span></label>'
@@ -161,7 +182,7 @@
     ov.innerHTML = '<div class="mto-top"><button class="mto-x" type="button" data-act="close" aria-label="Back">←</button><b>' + esc(x.n) + '</b><button class="mto-x" type="button" data-act="close" aria-label="Close">✕</button></div>' +
       '<div class="mto-wrap"><section class="mto-gal" aria-label="Photos"><img class="main" src="' + esc(imgs[S.img] || '') + '" alt="' + esc(x.alt || x.n) + '">' +
       (imgs.length > 1 ? '<div class="mto-th">' + imgs.map(function (g, i) { return '<button type="button" data-img="' + i + '" class="' + (i === S.img ? 'on' : '') + '" aria-label="Photo ' + (i + 1) + '"><img src="' + esc(g) + '" alt=""></button>'; }).join('') + '</div>' : '') +
-      '<div class="mto-facts"><div>Made in<b>' + esc(daysTxt(m.make_days) || '—') + '</b></div><div>Delivery<b>Included in the price</b></div><div>Installation<b>' + (inst ? 'Optional add-on' : 'By you') + '</b></div></div>' +
+      '<div class="mto-facts"><div>Made in<b>' + esc(daysTxt(m.make_days) || '—') + '</b></div><div>Delivery<b>' + (hasDlv(m) ? 'By pincode' : 'Included in the price') + '</b></div><div>Installation<b>' + (inst ? 'Optional add-on' : 'By you') + '</b></div></div>' +
       (x.ds ? '<p style="font-size:15px;line-height:1.65;color:#4A4640;margin-top:16px">' + esc(x.ds) + '</p>' : '') + '</section>' +
       '<section class="mto-cfg" aria-label="Build your design"><span class="mto-badge">Made to Order</span><h1>' + esc(x.n) + '</h1>' +
       '<p class="mto-by">by <b>' + esc(x.br || 'outrr') + '</b>' + (x.mat ? ' · ' + esc(x.mat) : '') + '</p>' +
@@ -173,7 +194,11 @@
       ['Order & ' + PCT + '%|Size and options locked', 'Drawing|If you chose it: approve online', 'Production|' + (daysTxt(m.make_days) || 'Made for you'), 'Balance|Pay the rest' + (inst ? ' + installation' : '') + ' before dispatch', 'Dispatch|Tracking shared', 'Installation|If added: OTP on completion']
         .map(function (s, i) { var p = s.split('|'); return '<li><i>' + (i + 1) + '</i><b>' + esc(p[0]) + '</b>' + esc(p[1]) + '</li>'; }).join('') + '</ol></section>' +
       (more.length ? '<section class="mto-more"><h2>More designs</h2><div class="row">' + more.map(function (k) { var y = PRODS[k]; return '<a data-open="' + esc(k) + '"><img src="' + esc(IMGS[y.img] || '') + '" alt=""><span style="color:#6A6258;font-size:12px">by ' + esc(y.br || 'outrr') + '</span><b>' + esc(y.n) + '</b><span>From ' + rs(y.p) + '</span></a>'; }).join('') + '</div></section>' : '') +
+      (arr(m.specs).length ? '<section class="mto-faq" aria-label="Specifications"><h2 style="font-size:22px;margin:10px 0 12px">Specifications</h2><div style="background:#FFFBF5;border:1px solid #E2D6C4;border-radius:12px;overflow:hidden">' +
+        arr(m.specs).map(function (sp, i, a) { var g = i === 0 || a[i - 1].group !== sp.group; return (g ? '<div style="padding:10px 14px;background:#EADCC8;font-weight:700;font-size:13px">' + esc(sp.group) + '</div>' : '') +
+          '<div style="display:grid;grid-template-columns:minmax(0,0.8fr) minmax(0,1.6fr);gap:12px;padding:10px 14px;border-top:1px solid #EDE3D4;font-size:14px"><span style="color:#6A6258">' + esc(sp.label) + '</span><span>' + esc(sp.value) + '</span></div>'; }).join('') + '</div></section>' : '') +
       '<section class="mto-faq"><h2 style="font-size:22px;margin:10px 0 12px">Questions</h2>' +
+      arr(m.faqs).map(function (f) { return '<details><summary>' + esc(f.q) + '</summary><p>' + esc(f.a) + '</p></details>'; }).join('') +
       '<details><summary>How do I measure?</summary><p>' + (u === 'area' ? 'Measure the floor area it should cover, post to post, in feet.' : u === 'face' ? 'Measure the width and height of the wall or opening, in feet.' : u === 'length' ? 'Measure the total running length, in feet.' : 'Pick the size that fits your space; the sizes are in the size chart photo.') + ' Not sure? Choose the drawing option and we check it with you.</p></details>' +
       '<details><summary>When do I pay the rest?</summary><p>You pay ' + PCT + '% now. The rest' + (inst ? ' and the installation charge are' : ' is') + ' paid when it is ready, before it is dispatched: we email you the link.</p></details>' +
       '<details><summary>Can I cancel or return it?</summary><p>It is made for you, so it can’t be cancelled once production starts or returned for a change of mind. A defect or damage in delivery is fixed by the maker.</p></details>' +
@@ -183,20 +208,20 @@
   }
 
   function paint() {
-    var x = PRODS[S.id], m = x.cz, o = S.o, q = price(m, o, PCT), el = document.getElementById('mtoSum'), it = document.getElementById('mtoInstTxt');
+    var x = PRODS[S.id], m = x.cz, o = S.o; o.zone = zoneOf(m.ships_from, o.pin); var q = price(m, o, PCT), el = document.getElementById('mtoSum'), it = document.getElementById('mtoInstTxt');
     if (it) it.textContent = !/^\d{6}$/.test(o.pin) ? 'Enter your pincode to see the installation charge' : q.ok && q.install ? (q.install.available ? q.install.city + ': ' + rs(q.install.fee) : 'Not available at this pincode yet: delivery only, with a fixing guide') : '';
     if (!el) return;
     if (!q.ok) { el.innerHTML = '<p class="mto-err" style="margin:0">' + esc(q.error) + '</p><button class="mto-go" type="button" disabled>Enter your size</button>'; return; }
     var ins = o.install && q.install && q.install.available;
-    var needOk = !o.drawing && !o.size_ok, closed = x.oo === false;
-    el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate ? ' + ' + esc(q.material) : '') : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
+    var needOk = !o.drawing && !o.size_ok, closed = x.oo === false, needPin = q.delivery && q.delivery.fee == null;
+    el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate ? ' + ' + esc(q.material) : '') : m.unit === 'seat' ? q.qty + '-seat bench' : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
       q.addons.map(function (a) { return '<div class="rw"><span>' + esc(a.name) + '</span><span>' + rs(a.amount) + '</span></div>'; }).join('') +
       (ins ? '<div class="rw"><span>Installation (' + esc(q.install.city) + ')</span><span>' + rs(q.install_fee) + '</span></div>' : '') +
-      '<div class="rw"><span>Delivery</span><span>Included</span></div>' +
+      '<div class="rw"><span>Delivery</span><span>' + (!q.delivery ? 'Included' : q.delivery.fee == null ? 'Enter your pincode' : rs(q.delivery_fee)) + '</span></div>' +
       '<div class="rw tt"><span>Total</span><span>' + rs(q.total) + '</span></div>' +
       '<div class="mto-pay"><div>Pay now (' + PCT + '%)<b>' + rs(q.pay_now) + '</b></div><div>Before dispatch' + (ins ? ' (rest + installation)' : '') + '<b>' + rs(q.before_dispatch) + '</b></div></div>' +
       (o.install && q.install && !q.install.available && /^\d{6}$/.test(o.pin) ? '<p class="mto-err" style="margin:10px 0 0">Installation isn’t available at ' + esc(o.pin) + ' yet: untick it to order without.</p>' : '') +
-      '<button class="mto-go" type="button" data-act="order"' + (needOk || closed || (o.install && q.install && !q.install.available) ? ' disabled' : '') + '>' + (closed ? 'Orders open soon' : needOk ? 'Confirm your size above' : 'Order now · pay ' + rs(q.pay_now)) + '</button>' +
+      '<button class="mto-go" type="button" data-act="order"' + (needOk || closed || needPin || (o.install && q.install && !q.install.available) ? ' disabled' : '') + '>' + (closed ? 'Orders open soon' : needPin ? 'Enter your pincode' : needOk ? 'Confirm your size above' : 'Order now · pay ' + rs(q.pay_now)) + '</button>' +
       '<p style="text-align:center;font-size:13px;color:#CFC8BD;margin:10px 0 0">Buying for a project or 5+ pieces? <a style="color:#F2B49C;cursor:pointer" data-act="bulk">Get a bulk quote</a></p>';
   }
 
@@ -210,7 +235,8 @@
     if (t.hasAttribute('data-add')) { var n = t.getAttribute('data-add'); S.o.addons = S.o.addons.filter(function (a) { return a !== n; }); if (t.checked) S.o.addons.push(n); return paint(); }
   }
   function onClick(e) {
-    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open]'); if (!t || !S) return;
+    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n]'); if (!t || !S) return;
+    if (t.hasAttribute('data-n')) { S.o.n = +t.getAttribute('data-n'); return draw(); }
     if (t.hasAttribute('data-size')) { S.o.size = t.getAttribute('data-size'); return draw(); }
     if (t.hasAttribute('data-col')) { var c = t.getAttribute('data-col'); S.o.colour = S.o.colour === c ? '' : c; return draw(); }
     if (t.hasAttribute('data-img')) { S.img = +t.getAttribute('data-img'); return draw(); }
@@ -227,7 +253,7 @@
     var x = PRODS[S.id], q = price(x.cz, S.o, PCT); if (!q.ok) return toast(q.error);
     if (x.oo === false) return toast('Orders for this maker open soon');
     var o = S.o;
-    window.MTO_BUY = { id: S.id, o: { l: o.l, w: o.w, h: o.h, size: o.size, material: o.material, colour: o.colour, addons: o.addons.slice(), install: !!o.install, drawing: !!o.drawing, size_ok: !!o.size_ok, note: o.note }, pin: o.pin };
+    window.MTO_BUY = { id: S.id, o: { n: o.n, l: o.l, w: o.w, h: o.h, size: o.size, material: o.material, colour: o.colour, addons: o.addons.slice(), install: !!o.install, drawing: !!o.drawing, size_ok: !!o.size_ok, note: o.note }, pin: o.pin };
     window.mtoClose();
     var go = function () { renderCheckout(); showView('checkout'); };
     try { if (window.otrack) otrack('begin_checkout', { value: q.total, skus: [S.id] }); } catch (e) {}
@@ -235,7 +261,7 @@
     go();
   }
   function coPin() { var e = document.getElementById('coPin'); return e ? e.value.trim() : ''; }
-  function buyQuote() { var b = window.MTO_BUY, x = b && PRODS[b.id]; if (!x) return null; var o = {}; for (var k in b.o) o[k] = b.o[k]; o.pin = coPin(); return price(x.cz, o, PCT); }
+  function buyQuote() { var b = window.MTO_BUY, x = b && PRODS[b.id]; if (!x) return null; var o = {}; for (var k in b.o) o[k] = b.o[k]; o.pin = coPin(); o.zone = zoneOf(x.cz.ships_from, o.pin); return price(x.cz, o, PCT); }
 
   var _ct = window.coTotals, _rc = window.renderCheckout, _po = window.placeOrder, _sp = window.coShipPaint, _oc = window.openCart, _ock = window.openCheckout;
   window.coTotals = function () {
@@ -254,11 +280,11 @@
     CART = [{ id: b.id, q: 1 }];
     try { _rc(); } finally { CART = keep; }
     var pe = document.getElementById('coPin'); if (pe && !pe.value && /^\d{6}$/.test(b.pin || '')) pe.value = b.pin;   // the pincode typed on the design page
-    var o = b.o, spec = [x.cz.unit === 'fixed' ? o.size : [o.l, o.w].filter(Boolean).join(' × ') + ' ft' + (o.h ? ', ' + o.h + ' ft high' : ''), o.material, o.colour].concat(o.addons).filter(Boolean).join(' · ');
+    var o = b.o, spec = [x.cz.unit === 'seat' ? o.n + ' seats' : x.cz.unit === 'fixed' ? o.size : [o.l, o.w].filter(Boolean).join(' × ') + ' ft' + (o.h ? ', ' + o.h + ' ft high' : ''), o.material, o.colour].concat(o.addons).filter(Boolean).join(' · ');
     var cl = document.querySelector('#coBody .coline');
     if (cl) cl.innerHTML = '<div class="im"><img src="' + esc(IMGS[x.img] || '') + '" alt=""></div><div><b>' + esc(x.n) + '</b> <span class="mto-badge" style="font-size:9px;padding:3px 7px">Made to Order</span>' +
       '<div class="co-mto">' + esc(spec) + '<br>' + (o.drawing ? 'Drawing to approve before production' : 'Made to the size you entered (you confirmed it)') + (o.install ? '<br>With installation' : '') + '</div></div><div class="q" id="coMtoAmt"></div>';
-    var dl = document.getElementById('coDlvTxt'); if (dl) dl.innerHTML = '<b>Delivery included</b><span>Made in ' + esc(daysTxt(x.cz.make_days) || 'a few weeks') + ', then dispatched with tracking</span>';
+    var dl = document.getElementById('coDlvTxt'); if (dl) dl.innerHTML = (hasDlv(x.cz) ? '<b>Delivery to your pincode</b>' : '<b>Delivery included</b>') + '<span>Made in ' + esc(daysTxt(x.cz.make_days) || 'a few weeks') + ', then dispatched with tracking</span>';
     var asm = dl && dl.closest('.cobox') && dl.closest('.cobox').querySelector('.secline'); if (asm) asm.textContent = o.install ? 'Installed by ' + (x.cz.install.by === 'brand' ? (x.br || 'the maker') : 'a verified outrr partner') + ' after delivery.' : 'Fixing is yours: a fixing guide comes with it.';
     mtoCoPaint();
   };
@@ -267,7 +293,7 @@
     if (sum) {
       var rows = '<div class="r"><span>Design</span><span>' + (q.ok ? rs(q.product) : '—') + '</span></div>' +
         (window.MTO_BUY.o.install ? '<div class="r"><span>Installation' + (q.ok && q.install && q.install.city ? ' (' + esc(q.install.city) + ')' : '') + '</span><span>' + (q.ok && q.install && q.install.available ? rs(q.install_fee) : /^\d{6}$/.test(coPin()) ? 'Not available here' : 'Enter pincode') + '</span></div>' : '') +
-        '<div class="r"><span>Delivery</span><span class="grn">Included</span></div><div class="r tot"><span>Total</span><span id="coTot">' + (q.ok ? rs(q.total) : '—') + '</span></div>';
+        '<div class="r"><span>Delivery</span>' + (!q.delivery ? '<span class="grn">Included</span>' : q.delivery.fee == null ? '<span>Enter pincode</span>' : '<span>' + rs(q.delivery_fee) + '</span>') + '</div><div class="r tot"><span>Total</span><span id="coTot">' + (q.ok ? rs(q.total) : '—') + '</span></div>';
       sum.innerHTML = rows;
     }
     var amt = document.getElementById('coMtoAmt'); if (amt) amt.textContent = q.ok ? rs(q.product) : '';
