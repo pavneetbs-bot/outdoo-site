@@ -2638,14 +2638,14 @@ function renderPLP(){
   document.getElementById('plpGrid').innerHTML = ids.map(id=>{
     const x=PRODS[id];
     if(x.bun) return bunCard(id);   // 127
-    const off = x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
+    const off = !x.cz && x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
     return `<div class="pc" onclick="openProduct('${id}')">
       ${off?`<span class="offb">${off}</span>`:''}
       <span class="heart" onclick="event.stopPropagation();this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></span>
       <div class="im"><img src="${IMGS[x.img]}" alt=""></div>
       <div class="bd"><div class="nm">${vName(id)}</div>
         <div class="rate"><span class="st">${x.r} ★</span>${x.c}</div>
-        <div><span class="pr">${vFrom(id)!=null?`<span class="vfrom">From</span> ${inr(vFrom(id))}`:inr(x.p)}</span>${x.m>x.p&&vFrom(id)==null?`<span class="mrp">${inr(x.m)}</span>`:''}</div>
+        <div><span class="pr">${x.cz?`<span class="vfrom">From</span> ${inr(x.p)}`:vFrom(id)!=null?`<span class="vfrom">From</span> ${inr(vFrom(id))}`:inr(x.p)}</span>${!x.cz&&x.m>x.p&&vFrom(id)==null?`<span class="mrp">${inr(x.m)}</span>`:''}</div>
         <div class="ship">${x.ship}</div>${vCardNote(id)}${tbHTML(id)}</div>
     </div>`;
   }).join('');
@@ -2661,6 +2661,7 @@ function pdThumbs(id){
 function pdShow(th){ document.querySelectorAll('.thumbs .th').forEach(t=>t.classList.remove('on')); th.classList.add('on'); document.getElementById('pdImg').src=th.querySelector('img').src; }
 function openProduct(id){
   if(PRODS[id]&&PRODS[id].bun) return openBundle(id);   // 127
+  if(PRODS[id]&&PRODS[id].cz&&window.mtoOpen) return mtoOpen(id);   // 134 Made to Order
   setTimeout(()=>{const el=document.getElementById('pdBun'), bs=bundlesWith(id); if(!el) return; el.innerHTML=bs.map(k=>`<a class="bun-note" onclick="openBundle('${k}')">Save ${Math.round((1-PRODS[k].p/PRODS[k].m)*100)}% in the <b>${_esc(PRODS[k].n)}</b> →</a>`).join('');},0);
   if(lastCol==='__search' && SQ) _supaRpc('log_search',{p_kind:'click',p_q:SQ,p_sku:id}).catch(()=>{});
   curPid=id; setTimeout(()=>window.acWlPaint&&acWlPaint(),0);
@@ -3476,7 +3477,7 @@ async function placeOrder(){
   let res, err;
   try{
     const r=await fetch(S.url+'/rest/v1/rpc/place_order',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(utok||S.anon),'Content-Type':'application/json'},
-      body:JSON.stringify({p:{items:CART.map(c=>PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().code,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
+      body:JSON.stringify({p:{items:CART.map(c=>c.mto?{sku:c.id,qty:1,mto:c.mto}:PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().code,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
@@ -3754,7 +3755,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,variant_options,made_to_order,image_alt,seo_description,orders_open,description,brand_name'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,variant_options,made_to_order,image_alt,seo_description,orders_open,description,brand_name,kind,mto'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3777,7 +3778,9 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         sp:p.ship_pan_india!==false, sc:p.ship_cities||[], ss:p.ship_states||[], oc:p.origin_city||'', os:p.origin_state||'',
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0, alt:p.image_alt||'', md:p.seo_description||'',
-        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, vop:Array.isArray(p.variant_options)?p.variant_options:null, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'', mto:!!p.made_to_order };
+        vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, vop:Array.isArray(p.variant_options)?p.variant_options:null, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'', mto:!!p.made_to_order,
+        cz:p.kind==='mto'&&p.mto&&typeof p.mto==='object'?p.mto:null };   // 133 Made to Order: priced by the customer's size (mto.js)
+      if(PRODS[p.sku].cz){ const d=(PRODS[p.sku].cz.make_days||[]).filter(v=>v!=null); PRODS[p.sku].ship='Made to your size'+(d.length?' · '+(d.length>1&&d[0]!==d[1]?d[0]+'–'+d[1]:d[d.length-1])+' days':''); }
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
     // a category made in the admin (not one of the built-in six): its own page, menu entry and filters
@@ -3883,6 +3886,7 @@ async function shareProduct(){
 <script src="/track.js"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=5"></script>
+<script src="/mto.js?v=1"></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };
