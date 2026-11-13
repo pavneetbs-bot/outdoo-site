@@ -9,6 +9,25 @@
   var rs = function (n) { return '₹' + Math.round(+n || 0).toLocaleString('en-IN'); };
   var UW = function (u) { return u === 'length' ? 'running ft' : u === 'fixed' ? 'piece' : u === 'seat' ? 'seat' : 'sq ft'; };
   var PCT = 50;
+  // 140: modular panels (privacy screens): running length rounded up to whole ft, fewest standard panels, a post at each joint
+  function panelSizes(m) { var out = []; arr(m && m.panels && m.panels.sizes).forEach(function (x) { x = num(x); if (x > 0 && x === Math.floor(x) && out.indexOf(x) < 0) out.push(x); }); return out.sort(function (a, b) { return b - a; }); }
+  function panels(m, w) {
+    var sz = panelSizes(m); w = num(w);
+    if (!sz.length || w == null || w <= 0 || w > 500) return null;
+    var W = Math.ceil(w - 1e-9), top = W + sz[0], best = [], pick = [], k, i;
+    for (k = 0; k <= top; k++) { best.push(Infinity); pick.push(0); }
+    best[0] = 0;
+    for (k = 1; k <= top; k++) for (i = 0; i < sz.length; i++) if (sz[i] <= k && best[k - sz[i]] + 1 < best[k]) { best[k] = best[k - sz[i]] + 1; pick[k] = sz[i]; }
+    k = W; while (k <= top && best[k] === Infinity) k++;
+    if (k > top) return null;
+    var ps = []; for (var r = k; r > 0; r -= pick[r]) ps.push(pick[r]);
+    ps.sort(function (a, b) { return b - a; });
+    return { width: k, panels: ps, count: ps.length, posts: ps.length + 1 };
+  }
+  function panelsText(p) {
+    if (!p) return ''; var c = {}; p.panels.forEach(function (x) { c[x] = (c[x] || 0) + 1; });
+    return Object.keys(c).sort(function (a, b) { return b - a; }).map(function (s) { return c[s] + ' × ' + s + ' ft'; }).join(' + ') + ' panels, ' + p.posts + ' posts';
+  }
 
   function missing(m) {
     if (!m || typeof m !== 'object') return ['setup'];
@@ -21,6 +40,7 @@
       if ((u === 'area' || u === 'length') && !lim('l')) r.push('l');
       if ((u === 'area' || u === 'face') && !lim('w')) r.push('w');
       if (u === 'face' && !arr(m.h && m.h.options).length && !lim('h')) r.push('h');
+      if (m.panels && (u !== 'face' || !panelSizes(m).length || (num(m.w && m.w.min) || 0) < Math.min.apply(null, panelSizes(m)))) r.push('panels');
     }
     if (!arr(m.materials).some(function (x) { return String(x && x.name || '').trim() && ((num(x.rate) || 0) > 0 || u === 'fixed'); })) r.push('material');
     if (u !== 'fixed' && u !== 'seat' && !((num(m.min_charge) || 0) > 0)) r.push('min');
@@ -51,16 +71,18 @@
       var chk = function (d, v, word) { var lo = num(m[d] && m[d].min), hi = num(m[d] && m[d].max); return v == null || v < lo || v > hi ? word + ' must be ' + lo + ' to ' + hi + ' ft' : null; };
       var e;
       if (u === 'area' || u === 'length') { e = chk('l', l, 'Length'); if (e) return { ok: false, error: e }; }
-      if (u === 'area' || u === 'face') { e = chk('w', w, 'Width'); if (e) return { ok: false, error: e }; }
+      if (u === 'area' || u === 'face') { e = chk('w', w, m.panels ? 'Length' : 'Width'); if (e) return { ok: false, error: e }; }
       if (arr(m.h && m.h.options).length) { if (h == null || !m.h.options.some(function (x) { return num(x) === h; })) return { ok: false, error: 'Choose a height' }; }
       else if (u === 'face') { e = chk('h', h, 'Height'); if (e) return { ok: false, error: e }; }
       qty = Math.round((u === 'area' ? l * w : u === 'face' ? w * h : l) * 100) / 100;
     }
+    var pn = u === 'face' && m.panels ? panels(m, w) : null;
+    if (u === 'face' && m.panels) { if (!pn) return { ok: false, error: 'Enter the running length' }; qty = Math.round(pn.width * h * 100) / 100; }
     var mat = arr(m.materials).filter(function (x) { return !o.material || x.name === o.material; })[0];
     if (!mat) return { ok: false, error: 'Choose a material' };
     var rate = num(mat.rate) || 0, col = null;
     if (o.colour) { col = arr(mat.colours).filter(function (x) { return x.name === o.colour; })[0]; if (!col) return { ok: false, error: 'Choose a colour' }; rate += num(col.extra) || 0; }
-    var base = u === 'fixed' ? (num(sz.price) || 0) + rate : (num(mat.base) || 0) + Math.round(qty * rate), minUsed = false, minc = num(m.min_charge) || 0;
+    var base = u === 'fixed' ? (num(sz.price) || 0) + rate : (num(mat.base) || 0) + Math.round(qty * rate + (pn ? pn.width * (num(mat.rate_rft) || 0) + pn.posts * h * (num(mat.rate_postft) || 0) + pn.posts * (num(mat.rate_post) || 0) : 0)), minUsed = false, minc = num(m.min_charge) || 0;
     if (base < minc) { base = minc; minUsed = true; }
     var picked = arr(o.addons), addons = [];
     arr(m.addons).forEach(function (a) { if (picked.indexOf(a.name) >= 0) addons.push({ name: a.name, amount: Math.round((num(a.price) || 0) * (a.charge === 'unit' ? qty : 1)) }); });
@@ -78,7 +100,7 @@
       } else delivery = { zone: null, fee: null };
     }
     var payNow = Math.round(product * (payPct == null ? 50 : payPct) / 100);
-    return { delivery: delivery, delivery_fee: dlv, seats: u === 'seat' ? qty : null, ok: true, unit: u, qty: qty, rate: rate, base: base, min_charge_used: minUsed, material: mat.name, colour: col ? col.name : null, size: sz ? sz.label : null,
+    return { panels: pn, delivery: delivery, delivery_fee: dlv, seats: u === 'seat' ? qty : null, ok: true, unit: u, qty: qty, rate: rate, base: base, min_charge_used: minUsed, material: mat.name, colour: col ? col.name : null, size: sz ? sz.label : null,
       addons: addons, product: product, install: install, install_fee: instFee, total: product + instFee + dlv, pay_now: payNow, before_dispatch: product - payNow + instFee + dlv };
   }
   window.mtoPrice = price;
@@ -155,11 +177,11 @@
       ? '<div class="mto-sw">' + arr(m.sizes).map(function (s) { return '<button type="button" data-size="' + esc(s.label) + '" class="' + (o.size === s.label ? 'on' : '') + '">' + esc(s.label) + ' · ' + rs(s.price) + '</button>'; }).join('') + '</div>'
       : '<div class="mto-g">' +
         ((u === 'area' || u === 'length') ? '<label>Length (ft)<input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>' : '') +
-        ((u === 'area' || u === 'face') ? '<label>Width (ft)<input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>' : '') +
+        ((u === 'area' || u === 'face') ? '<label>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '<input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>' : '') +
         (hOpts.length ? '<label>Height (ft)<select data-k="h">' + hOpts.map(function (h) { return '<option' + (String(h) === String(o.h) ? ' selected' : '') + '>' + esc(h) + '</option>'; }).join('') + '</select></label>'
           : u === 'face' ? '<label>Height (ft)<input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>' : '') +
-        '</div><p style="font-size:13px;color:#6A6258;margin:8px 0 0">Measure the space in feet. ' + (u === 'area' ? 'Length × width is the area it covers.' : u === 'face' ? 'Width × height of the opening or wall.' : 'Total running length.') + '</p>';
-    var matHtml = mats.length > 1 ? mats.map(function (y) { return '<label class="mto-opt' + (y === mat ? ' on' : '') + '"><input type="radio" name="mtoMat" data-mat="' + esc(y.name) + '"' + (y === mat ? ' checked' : '') + '><span><b>' + esc(y.name) + '</b><br><span style="color:#6A6258">' + (u === 'fixed' ? (+y.rate ? '+ ' + rs(y.rate) : 'Standard') : rs(y.rate) + ' / ' + uw) + '</span></span></label>'; }).join('') : '<p style="margin:0 0 8px;font-size:14px"><b>' + esc(mat.name) + '</b></p>';
+        '</div><p style="font-size:13px;color:#6A6258;margin:8px 0 0">Measure the space in feet. ' + (u === 'area' ? 'Length × width is the area it covers.' : u === 'face' && m.panels ? 'Total length of the wall or parapet to cover. It is made in standard ' + panelSizes(m).join(' / ') + ' ft panels, rounded up to the next foot.' : u === 'face' ? 'Width × height of the opening or wall.' : 'Total running length.') + '</p>';
+    var matHtml = mats.length > 1 ? mats.map(function (y) { return '<label class="mto-opt' + (y === mat ? ' on' : '') + '"><input type="radio" name="mtoMat" data-mat="' + esc(y.name) + '"' + (y === mat ? ' checked' : '') + '><span><b>' + esc(y.name) + '</b><br><span style="color:#6A6258">' + (u === 'fixed' ? (+y.rate ? '+ ' + rs(y.rate) : 'Standard') : m.panels ? 'Panels, frame and posts' : rs(y.rate) + ' / ' + uw) + '</span></span></label>'; }).join('') : '<p style="margin:0 0 8px;font-size:14px"><b>' + esc(mat.name) + '</b></p>';
     var cols = arr(mat.colours);
     var colHtml = cols.length ? '<p style="font-size:13px;color:#4A4640;margin:6px 0">Colour</p><div class="mto-sw">' + cols.map(function (c) { return '<button type="button" data-col="' + esc(c.name) + '" class="' + (o.colour === c.name ? 'on' : '') + '">' + esc(c.name) + (+c.extra ? ' (+' + rs(c.extra) + '/' + uw + ')' : '') + '</button>'; }).join('') + '</div>' : '';
     var adds = arr(m.addons).filter(function (a) { return a.name; });
@@ -214,7 +236,8 @@
     if (!q.ok) { el.innerHTML = '<p class="mto-err" style="margin:0">' + esc(q.error) + '</p><button class="mto-go" type="button" disabled>Enter your size</button>'; return; }
     var ins = o.install && q.install && q.install.available;
     var needOk = !o.drawing && !o.size_ok, closed = x.oo === false, needPin = q.delivery && q.delivery.fee == null;
-    el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate ? ' + ' + esc(q.material) : '') : m.unit === 'seat' ? q.qty + '-seat bench' : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
+    el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate ? ' + ' + esc(q.material) : '') : m.unit === 'seat' ? q.qty + '-seat bench' : q.panels ? q.panels.width + ' ft × ' + esc(o.h) + ' ft high, ' + esc(q.material) : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
+      (q.panels ? '<div class="rw" style="font-size:12.5px;color:#6A6258"><span>' + esc(panelsText(q.panels)) + '</span><span></span></div>' : '') +
       q.addons.map(function (a) { return '<div class="rw"><span>' + esc(a.name) + '</span><span>' + rs(a.amount) + '</span></div>'; }).join('') +
       (ins ? '<div class="rw"><span>Installation (' + esc(q.install.city) + ')</span><span>' + rs(q.install_fee) + '</span></div>' : '') +
       '<div class="rw"><span>Delivery</span><span>' + (!q.delivery ? 'Included' : q.delivery.fee == null ? 'Enter your pincode' : rs(q.delivery_fee)) + '</span></div>' +
