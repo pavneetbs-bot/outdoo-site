@@ -413,7 +413,7 @@ var DT = { transit_days: { local: [1, 2], state: [2, 4], india: [4, 7], special:
 (function () { var S = window.OUTRR_SUPA || {}; if (!S.url || !S.anon) return;
   fetch(S.url + '/rest/v1/rpc/company_rates', { method: 'POST', headers: { apikey: S.anon, Authorization: 'Bearer ' + S.anon, 'Content-Type': 'application/json' }, body: '{}' })
     .then(function (r) { return r.ok ? r.json() : null }).then(function (j) { if (j && j.transit_days) { DT = { transit_days: j.transit_days, cutoff_hour: j.cutoff_hour == null ? 14 : j.cutoff_hour, special_states: j.special_states || DT.special_states }; refresh() } }, function () {}) })();
-function shipDaysOf(x){ if (+x.dd > 0) return +x.dd; var n = String(x.ship || '').match(/\d+/g); return n ? Math.max.apply(null, n.map(Number)) : 10 }
+function shipDaysOf(x){ if (/same day/i.test(x.ship || '')) return 0; if (+x.dd > 0) return +x.dd; var n = String(x.ship || '').match(/\d+/g); return n ? Math.max.apply(null, n.map(Number)) : 10 }
 function wd(d, n){ var r = new Date(d), k = 0; while (k < Math.max(+n || 0, 0)) { r.setDate(r.getDate() + 1); if (r.getDay() !== 0) k++ } while (r.getDay() === 0) r.setDate(r.getDate() + 1); return r }
 function etaOf(x, loc){ if (!x || !loc) return null;
   if (x.bun) return bunParts(x).map(function (o) { return etaOf(o.x, loc) }).filter(Boolean).sort(function (a, b) { return b.to - a.to })[0] || null;
