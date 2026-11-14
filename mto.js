@@ -3,6 +3,7 @@
    the order is always priced again by the database from the customer's size (134). */
 (function () {
   'use strict';
+  var rnd = function (x) { return Math.round(+Number(x).toFixed(6)); };   // 150: half-up on the decimal value, same as the database
   var num = function (v) { if (typeof v === 'number') return isFinite(v) ? v : null; var s = String(v == null ? '' : v).trim(); return /^-?\d+(\.\d+)?$/.test(s) ? +s : null; };
   var arr = function (v) { return Array.isArray(v) ? v : []; };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
@@ -85,20 +86,20 @@
     var rate = num(mat.rate) || 0, col = null;
     if (o.colour) { col = arr(mat.colours).filter(function (x) { return x.name === o.colour; })[0]; if (!col) return { ok: false, error: 'Choose a colour' }; rate += num(col.extra) || 0; }
     var own = u === 'fixed' && mat.prices ? num(mat.prices[sz.label]) : null;   // 147: this finish's own price for this size
-    var base = u === 'fixed' ? (own != null ? own + rate - (num(mat.rate) || 0) : (num(sz.price) || 0) + rate) : (num(mat.base) || 0) + Math.round(qty * rate + (pn ? pn.width * (num(mat.rate_rft) || 0) + pn.posts * h * (num(mat.rate_postft) || 0) + pn.posts * (num(mat.rate_post) || 0) : 0)), minUsed = false, minc = num(m.min_charge) || 0;
+    var base = u === 'fixed' ? (own != null ? own + rate - (num(mat.rate) || 0) : (num(sz.price) || 0) + rate) : (num(mat.base) || 0) + rnd(qty * rate + (pn ? pn.width * (num(mat.rate_rft) || 0) + pn.posts * h * (num(mat.rate_postft) || 0) + pn.posts * (num(mat.rate_post) || 0) : 0)), minUsed = false, minc = num(m.min_charge) || 0;
     if (base < minc) { base = minc; minUsed = true; }
     var picked = arr(o.addons), addons = [];
-    arr(m.addons).forEach(function (a) { if (picked.indexOf(a.name) >= 0) addons.push({ name: a.name, amount: Math.round((num(a.price) || 0) * (a.charge === 'unit' ? qty : 1)) }); });
+    arr(m.addons).forEach(function (a) { if (picked.indexOf(a.name) >= 0) addons.push({ name: a.name, amount: rnd((num(a.price) || 0) * (a.charge === 'unit' ? qty : 1)) }); });
     var groups = {}, gs = arr(m.groups), gErr = null;   // 148: one choice per group, fixed + per unit, listed with the add-ons
     gs.forEach(function (g) { if (gErr) return; var c2 = arr(g.options).filter(function (y) { return y.name === (o.groups || {})[g.name]; })[0];
       if (!c2) { gErr = 'Choose ' + String(g.name).toLowerCase(); return; }
-      addons.push({ name: g.name + ': ' + c2.name, amount: (num(c2.fixed) || 0) + Math.round((num(c2.rate) || 0) * qty + (num(c2.rate_w) || 0) * (w || 0)), group: g.name }); groups[g.name] = c2.name; });
+      addons.push({ name: g.name + ': ' + c2.name, amount: (num(c2.fixed) || 0) + rnd((num(c2.rate) || 0) * qty + (num(c2.rate_w) || 0) * (w || 0)), group: g.name }); groups[g.name] = c2.name; });
     if (gErr) return { ok: false, error: gErr };
     var addT = addons.reduce(function (s, a) { return s + a.amount; }, 0), product = base + addT, install = null, instFee = 0;
     if (m.install && m.install.offered) {
       var c = arr(m.install.cities).filter(function (x) { return pinIn(o.pin, x.pins); })[0], req = !!m.install.required;
       install = { offered: true, available: !!c, city: c ? c.name : null, required: req };
-      if (c) install.fee = (num(c.visit) || 0) + Math.round((num(c.rate) || 0) * qty);
+      if (c) install.fee = (num(c.visit) || 0) + rnd((num(c.rate) || 0) * qty);
       if (req && !c && String(o.pin || '') !== '') return { ok: false, error: 'Not available at this pincode yet', install: install };
       if (c && (o.install || req)) instFee = install.fee;
     }
@@ -106,10 +107,10 @@
     if ([D.local, D.state, D.india].some(function (v) { return num(v) != null; })) {
       if (['local', 'state', 'india'].indexOf(o.zone) >= 0) {
         var dr = o.zone === 'local' ? (num(D.local) != null ? num(D.local) : num(D.state) != null ? num(D.state) : num(D.india)) : o.zone === 'state' ? (num(D.state) != null ? num(D.state) : num(D.india)) : num(D.india);
-        dlv = Math.round((dr || 0) * qty); delivery = { zone: o.zone, fee: dlv };
+        dlv = rnd((dr || 0) * qty); delivery = { zone: o.zone, fee: dlv };
       } else delivery = { zone: null, fee: null };
     }
-    var payNow = Math.round(product * (payPct == null ? 50 : payPct) / 100);
+    var payNow = rnd(product * (payPct == null ? 50 : payPct) / 100);
     return { panels: pn, delivery: delivery, delivery_fee: dlv, seats: u === 'seat' ? qty : null, ok: true, unit: u, qty: qty, rate: rate, base: base, min_charge_used: minUsed, material: mat.name, colour: col ? col.name : null, size: sz ? sz.label : null,
       addons: addons, product: product, install: install, install_fee: instFee, total: product + instFee + dlv, pay_now: payNow, before_dispatch: product - payNow + instFee + dlv };
   }
