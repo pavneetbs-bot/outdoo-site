@@ -46,6 +46,8 @@
     if (u !== 'fixed' && u !== 'seat' && !((num(m.min_charge) || 0) > 0)) r.push('min');
     var md = arr(m.make_days); if (!(((num(md[1]) != null ? num(md[1]) : num(md[0])) || 0) > 0)) r.push('days');
     if (m.install && m.install.offered && !arr(m.install.cities).length) r.push('cities');
+    if (m.install && m.install.required && !m.install.offered) r.push('install');   // 148
+    if (arr(m.groups).some(function (g) { return !String((g && g.name) || '').trim() || !arr(g.options).some(function (y) { return String((y && y.name) || '').trim(); }); })) r.push('groups');
     return r;
   }
   function pinIn(pin, list) {
@@ -87,11 +89,18 @@
     if (base < minc) { base = minc; minUsed = true; }
     var picked = arr(o.addons), addons = [];
     arr(m.addons).forEach(function (a) { if (picked.indexOf(a.name) >= 0) addons.push({ name: a.name, amount: Math.round((num(a.price) || 0) * (a.charge === 'unit' ? qty : 1)) }); });
+    var groups = {}, gs = arr(m.groups), gErr = null;   // 148: one choice per group, fixed + per unit, listed with the add-ons
+    gs.forEach(function (g) { if (gErr) return; var c2 = arr(g.options).filter(function (y) { return y.name === (o.groups || {})[g.name]; })[0];
+      if (!c2) { gErr = 'Choose ' + String(g.name).toLowerCase(); return; }
+      addons.push({ name: g.name + ': ' + c2.name, amount: (num(c2.fixed) || 0) + Math.round((num(c2.rate) || 0) * qty + (num(c2.rate_w) || 0) * (w || 0)), group: g.name }); groups[g.name] = c2.name; });
+    if (gErr) return { ok: false, error: gErr };
     var addT = addons.reduce(function (s, a) { return s + a.amount; }, 0), product = base + addT, install = null, instFee = 0;
     if (m.install && m.install.offered) {
-      var c = arr(m.install.cities).filter(function (x) { return pinIn(o.pin, x.pins); })[0];
-      install = { offered: true, available: !!c, city: c ? c.name : null };
-      if (c) { install.fee = (num(c.visit) || 0) + Math.round((num(c.rate) || 0) * qty); if (o.install) instFee = install.fee; }
+      var c = arr(m.install.cities).filter(function (x) { return pinIn(o.pin, x.pins); })[0], req = !!m.install.required;
+      install = { offered: true, available: !!c, city: c ? c.name : null, required: req };
+      if (c) install.fee = (num(c.visit) || 0) + Math.round((num(c.rate) || 0) * qty);
+      if (req && !c && String(o.pin || '') !== '') return { ok: false, error: 'Not available at this pincode yet', install: install };
+      if (c && (o.install || req)) instFee = install.fee;
     }
     var D = m.delivery || {}, delivery = null, dlv = 0;
     if ([D.local, D.state, D.india].some(function (v) { return num(v) != null; })) {
@@ -156,7 +165,8 @@
     var x = PRODS[id]; if (!x || !x.cz) return;
     var m = x.cz;
     S = { id: id, img: 0, o: { n: (m.n && num(m.n.min)) || '', l: '', w: '', h: arr(m.h && m.h.options)[0] || '', size: '', material: (arr(m.materials)[0] || {}).name || '', colour: '',
-      addons: arr(m.addons).filter(function (a) { return a.on; }).map(function (a) { return a.name; }), install: false, pin: lastPin(),
+      addons: arr(m.addons).filter(function (a) { return a.on; }).map(function (a) { return a.name; }), install: !!(m.install && m.install.required), pin: lastPin(),
+      groups: arr(m.groups).reduce(function (g, x) { var f = arr(x.options).filter(function (y) { return String(y.name || '').trim(); })[0]; if (f) g[x.name] = f.name; return g; }, {}),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
     try { curPid = id; } catch (e) {}
     var ov = document.getElementById('mtoOv');
@@ -189,10 +199,15 @@
     var colHtml = cols.length ? '<p style="font-size:13px;color:#4A4640;margin:6px 0">Colour</p><div class="mto-sw">' + cols.map(function (c) { return '<button type="button" data-col="' + esc(c.name) + '" class="' + (o.colour === c.name ? 'on' : '') + '">' + esc(c.name) + (+c.extra ? ' (+' + rs(c.extra) + '/' + uw + ')' : '') + '</button>'; }).join('') + '</div>' : '';
     var adds = arr(m.addons).filter(function (a) { return a.name; });
     var addHtml = adds.length ? '<div class="mto-box"><h3>3 · Add-ons</h3>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span><span class="r">+ ' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span></label>'; }).join('') + '</div>' : '';
-    var inst = m.install && m.install.offered;
+    var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; });
+    var grpHtml = gs.map(function (g) { return '<div class="mto-box"><h3>' + esc(g.name) + '</h3>' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) {
+      var on = (o.groups || {})[g.name] === y.name, pr = [+y.fixed ? rs(y.fixed) : '', +y.rate ? rs(y.rate) + ' / ' + uw : '', +y.rate_w ? rs(y.rate_w) + ' / ft width' : ''].filter(Boolean).join(' + ');
+      return '<label class="mto-chk"><input type="radio" name="mtoG_' + esc(g.name) + '" data-grp="' + esc(g.name) + '" value="' + esc(y.name) + '"' + (on ? ' checked' : '') + '><span>' + esc(y.name) + '</span><span class="r">' + (pr ? '+ ' + pr : 'Included') + '</span></label>'; }).join('') + '</div>'; }).join('');
+    addHtml += grpHtml;
+    var inst = m.install && m.install.offered, instReq = inst && m.install.required;
     var drw = m.drawing || 'choose';
     var instHtml = '<div class="mto-box"><h3>' + (adds.length ? '4' : '3') + ' · ' + (inst ? 'Installation &amp; drawing' : 'Drawing') + '</h3>' +
-      (inst ? '<label class="mto-chk"><input type="checkbox" data-k="install"' + (o.install ? ' checked' : '') + '><span><b>Add installation</b> by ' + (m.install.by === 'brand' ? esc(x.br || 'the maker') : 'a verified outrr partner') + '<br><span id="mtoInstTxt" style="color:#6A6258"></span></span></label>' +
+      (inst ? '<label class="mto-chk"><input type="checkbox" data-k="install"' + (o.install || instReq ? ' checked' : '') + (instReq ? ' disabled' : '') + '><span><b>' + (instReq ? 'Installation included (required)' : 'Add installation') + '</b> by ' + (m.install.by === 'brand' ? esc(x.br || 'the maker') : 'a verified outrr partner') + '<br><span id="mtoInstTxt" style="color:#6A6258"></span></span></label>' +
         '' : '') +
       (inst || hasDlv(m) ? '<label class="mto-f" style="max-width:220px;margin:4px 0 10px">Your pincode' + (hasDlv(m) ? ' (for delivery)' : '') + '<input inputmode="numeric" maxlength="6" data-k="pin" value="' + esc(o.pin) + '" placeholder="122002"></label>' : '') +
       (drw === 'choose' ? '<p style="margin:6px 0;font-size:14px;font-weight:600">Approve a drawing before we make it?</p>' +
@@ -227,7 +242,7 @@
       '<details><summary>How do I measure?</summary><p>' + (u === 'area' ? 'Measure the floor area it should cover, post to post, in feet.' : u === 'face' ? 'Measure the width and height of the wall or opening, in feet.' : u === 'length' ? 'Measure the total running length, in feet.' : 'Pick the size that fits your space; the sizes are in the size chart photo.') + ' Not sure? Choose the drawing option and we check it with you.</p></details>' +
       '<details><summary>When do I pay the rest?</summary><p>You pay ' + PCT + '% now. The rest' + (inst ? ' and the installation charge are' : ' is') + ' paid when it is ready, before it is dispatched: we email you the link.</p></details>' +
       '<details><summary>Can I cancel or return it?</summary><p>It is made for you, so it can’t be cancelled once production starts or returned for a change of mind. A defect or damage in delivery is fixed by the maker.</p></details>' +
-      (inst ? '<details><summary>Can I install it myself?</summary><p>Yes. Without installation, fixing is yours: a fixing guide comes with it.</p></details>' : '') +
+      (inst && !instReq ? '<details><summary>Can I install it myself?</summary><p>Yes. Without installation, fixing is yours: a fixing guide comes with it.</p></details>' : '') +
       '</section></div>';
     paint();
   }
@@ -254,7 +269,8 @@
   function onInput(e) { var k = e.target.getAttribute('data-k'); if (!k || !S) return; if (k === 'pin') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); S.o[k] = e.target.value; paint(); }
   function onChange(e) {
     var t = e.target, k = t.getAttribute('data-k'); if (!S) return;
-    if (k === 'install' || k === 'size_ok') { S.o[k] = t.checked; return paint(); }
+    if (k === 'install' || k === 'size_ok') { S.o[k] = t.checked; var mm = (PRODS[S.id] || {}).cz; if (k === 'install' && mm && mm.install && mm.install.required) S.o.install = true; return paint(); }
+    if (t.hasAttribute('data-grp')) { S.o.groups = Object.assign({}, S.o.groups); S.o.groups[t.getAttribute('data-grp')] = t.value; return paint(); }
     if (k === 'h') { S.o.h = t.value; return paint(); }
     if (t.hasAttribute('data-mat')) { S.o.material = t.getAttribute('data-mat'); S.o.colour = ''; return draw(); }
     if (t.hasAttribute('data-drw')) { S.o.drawing = t.getAttribute('data-drw') === '1'; return draw(); }
@@ -279,7 +295,7 @@
     var x = PRODS[S.id], q = price(x.cz, S.o, PCT); if (!q.ok) return toast(q.error);
     if (x.oo === false) return toast('Orders for this maker open soon');
     var o = S.o;
-    window.MTO_BUY = { id: S.id, o: { n: o.n, l: o.l, w: o.w, h: o.h, size: o.size, material: o.material, colour: o.colour, addons: o.addons.slice(), install: !!o.install, drawing: !!o.drawing, size_ok: !!o.size_ok, note: o.note }, pin: o.pin };
+    window.MTO_BUY = { id: S.id, o: { n: o.n, l: o.l, w: o.w, h: o.h, size: o.size, material: o.material, colour: o.colour, addons: o.addons.slice(), groups: Object.assign({}, o.groups || {}), install: !!o.install, drawing: !!o.drawing, size_ok: !!o.size_ok, note: o.note }, pin: o.pin };
     window.mtoClose();
     var go = function () { renderCheckout(); showView('checkout'); };
     try { if (window.otrack) otrack('begin_checkout', { value: q.total, skus: [S.id] }); } catch (e) {}
@@ -306,7 +322,7 @@
     CART = [{ id: b.id, q: 1 }];
     try { _rc(); } finally { CART = keep; }
     var pe = document.getElementById('coPin'); if (pe && !pe.value && /^\d{6}$/.test(b.pin || '')) pe.value = b.pin;   // the pincode typed on the design page
-    var o = b.o, spec = [x.cz.unit === 'seat' ? o.n + ' seats' : x.cz.unit === 'fixed' ? o.size : [o.l, o.w].filter(Boolean).join(' × ') + ' ft' + (o.h ? ', ' + o.h + ' ft high' : ''), o.material, o.colour].concat(o.addons).filter(Boolean).join(' · ');
+    var o = b.o, spec = [x.cz.unit === 'seat' ? o.n + ' seats' : x.cz.unit === 'fixed' ? o.size : [o.l, o.w].filter(Boolean).join(' × ') + ' ft' + (o.h ? ', ' + o.h + ' ft high' : ''), o.material, o.colour].concat(o.addons).concat(Object.keys(o.groups || {}).map(function (g) { return g + ': ' + o.groups[g]; })).filter(Boolean).join(' · ');
     var cl = document.querySelector('#coBody .coline');
     if (cl) cl.innerHTML = '<div class="im"><img src="' + esc(IMGS[x.img] || '') + '" alt=""></div><div><b>' + esc(x.n) + '</b> <span class="mto-badge" style="font-size:9px;padding:3px 7px">Made to Order</span>' +
       '<div class="co-mto">' + esc(spec) + '<br>' + (o.drawing ? 'Drawing to approve before production' : 'Made to the size you entered (you confirmed it)') + (o.install ? '<br>With installation' : '') + '</div></div><div class="q" id="coMtoAmt"></div>';
