@@ -1946,6 +1946,7 @@ header{position:static!important}
       <div class="fltov" id="fltOv" onclick="fltToggle(false)"></div>
       <div id="fltPanel">
         <div class="fsec" id="fTypeSec" hidden><h4>Type</h4><div id="fTypeOpts"></div></div>
+        <div id="fTagSecs"></div>
         <div class="fsec"><h4>Price</h4>
           <label class="fopt"><input type="checkbox" data-f="price" value="0-10000" onchange="fltSet()"> Under ₹10,000</label>
           <label class="fopt"><input type="checkbox" data-f="price" value="10000-25000" onchange="fltSet()"> ₹10,000 – ₹25,000</label>
@@ -2551,8 +2552,8 @@ function subOf(id){const x=PRODS[id],n=x.n; if(x.sb) return x.sb;
  return 'All';}
 // the chips above the grid: sub-categories; on a seller's catalogue, its categories (099)
 function chipOf(id){return lastCol==='__seller'?((COLS[PRODS[id].col]||{}).t||'Other'):subOf(id);}
-let FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
-function fltReset(){FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false};
+let FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false,tag:{}};
+function fltReset(){FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false,tag:{}};
  document.querySelectorAll('#fltPanel input').forEach(i=>{i.checked=false});}
 function fltSet(){
  FLT.price=new Set([...document.querySelectorAll('input[data-f=price]:checked')].map(i=>i.value));
@@ -2560,6 +2561,7 @@ function fltSet(){
  const d=document.querySelector('input[data-f=dispatch]:checked'); FLT.dispatch=d?d.value:'';
  FLT.offer=!!document.querySelector('input[data-f=offer]:checked');
  FLT.type=new Set([...document.querySelectorAll('input[data-f=type]:checked')].map(i=>i.value));
+ FLT.tag={}; document.querySelectorAll('input[data-f=tag]:checked').forEach(i=>{(FLT.tag[i.dataset.g]=FLT.tag[i.dataset.g]||new Set()).add(i.value)});   // 158
  renderPLP();}
 function fltClear(){fltReset();buildChips();renderPLP();}
 function fltToggle(open){document.getElementById('fltPanel').classList.toggle('open',open);
@@ -2582,7 +2584,15 @@ function buildChips(){
  const subs=Object.keys(m).sort((a,b)=>m[b]-m[a]);
  document.getElementById('subChips').innerHTML = subs.length>1 ?
   subs.map(sb=>`<span class="schip${FLT.sub.has(sb)?' on':''}" onclick="chipTap('${sb}')">${sb} (${m[sb]})</span>`).join('') : '';
- buildTypes(ids);}
+ buildTypes(ids); buildTags(ids);}
+// 158: product tags "Group: Value" → one filter section per group (Place, Style, Colour…)
+function tagSplit(t){const i=String(t).indexOf(':');return i>0?[t.slice(0,i).trim(),t.slice(i+1).trim()]:['Tags',String(t).trim()];}
+function buildTags(ids){const box=document.getElementById('fTagSecs'); if(!box) return; const g={};
+ ids.forEach(id=>(PRODS[id].tg||[]).forEach(t=>{const [k,v]=tagSplit(t); if(!v) return; (g[k]=g[k]||{})[v]=(g[k][v]||0)+1}));
+ Object.keys(FLT.tag).forEach(k=>{ if(!g[k]) delete FLT.tag[k] });
+ const esc=t=>String(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+ box.innerHTML=Object.keys(g).map(k=>{const vs=Object.keys(g[k]).sort((a,b)=>g[k][b]-g[k][a]||a.localeCompare(b)); if(vs.length<2) return '';
+  return `<div class="fsec"><h4>${esc(k)}</h4>${vs.map(v=>`<label class="fopt"><input type="checkbox" data-f="tag" data-g="${esc(k)}" value="${esc(v)}"${FLT.tag[k]&&FLT.tag[k].has(v)?' checked':''} onchange="fltSet()"> ${esc(v)} <span class="fcnt">(${g[k][v]})</span></label>`).join('')}</div>`}).join('');}
 
 // ---- 127 Bundles: a seller's products at one price (coupons never apply) ----
 function bunCard(id){const x=PRODS[id];
@@ -2617,6 +2627,7 @@ function renderPLP(){
     if(_c && _c.f ? !_c.f(x,id) : x.col!==k) return false;
     if(FLT.sub.size && !FLT.sub.has(chipOf(id))) return false;
     if(FLT.type.size && !FLT.type.has(x.ty)) return false;
+    for(const k in FLT.tag){const w=FLT.tag[k]; if(w.size && !(x.tg||[]).some(t=>{const [a,b]=tagSplit(t);return a===k&&w.has(b)})) return false;}   // 158
     if(FLT.price.size){let ok=false;FLT.price.forEach(rg=>{const [lo,hi]=rg.split('-').map(Number);if(x.p>=lo&&x.p<=hi)ok=true});if(!ok)return false;}
     if(FLT.rating && parseFloat(x.r)<FLT.rating) return false;
     if(FLT.dispatch==='ready' && /order/i.test(x.ship)) return false;
@@ -2631,7 +2642,7 @@ function renderPLP(){
   if(sort==='hi') ids.sort((a,b)=>PRODS[b].p-PRODS[a].p);
   if(sort==='rat') ids.sort((a,b)=>parseFloat(PRODS[b].r)-parseFloat(PRODS[a].r));
   if(sort==='off') ids.sort((a,b)=>((PRODS[b].m>PRODS[b].p?1-PRODS[b].p/PRODS[b].m:0)-(PRODS[a].m>PRODS[a].p?1-PRODS[a].p/PRODS[a].m:0)));
-  const nf=FLT.sub.size+FLT.type.size+FLT.price.size+(FLT.rating?1:0)+(FLT.dispatch?1:0)+(FLT.offer?1:0);
+  const nf=Object.values(FLT.tag).reduce((a,w)=>a+w.size,0)+FLT.sub.size+FLT.type.size+FLT.price.size+(FLT.rating?1:0)+(FLT.dispatch?1:0)+(FLT.offer?1:0);
   const fc=document.getElementById('fltCount');
   if(fc){fc.textContent=nf;fc.style.display=nf?'inline-block':'none';}
   document.getElementById('colCnt').textContent = nf? ids.length+' of '+total+' products' : ids.length+' products';
@@ -3762,7 +3773,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
     const [pr, cr, sr, tr] = await Promise.all([
-      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,variant_options,made_to_order,image_alt,seo_description,orders_open,description,brand_name,kind,mto'),
+      pages(S.url + '/rest/v1/products?status=eq.published&select=id,sku,name,price,mrp,rating,rating_count,ship_text,dispatch_days,image_url,collection_slug,subcategory_slug,type_slug,material,dims,weight_kg,in_stock,tier,ship_pan_india,ship_cities,ship_states,origin_city,origin_state,pack_fee,ship_local,ship_state,ship_india,set_key,set_piece,set_sort,variant_group,variant_size,variant_colour,variant_material,variant_other_name,variant_other,variant_main,variant_options,made_to_order,image_alt,seo_description,orders_open,description,brand_name,kind,mto,tags'),
       fetch(S.url + '/rest/v1/collections?active=eq.true&select=*&order=sort', {headers:H}),
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
@@ -3786,7 +3797,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0, alt:p.image_alt||'', md:p.seo_description||'',
         vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, vop:Array.isArray(p.variant_options)?p.variant_options:null, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'', mto:!!p.made_to_order,
-        cz:p.kind==='mto'&&p.mto&&typeof p.mto==='object'?p.mto:null };   // 133 Made to Order: priced by the customer's size (mto.js)
+        cz:p.kind==='mto'&&p.mto&&typeof p.mto==='object'?p.mto:null, tg:Array.isArray(p.tags)?p.tags:[] };   // 133 Made to Order: priced by the customer's size (mto.js)
       if(PRODS[p.sku].cz){ const d=(PRODS[p.sku].cz.make_days||[]).filter(v=>v!=null); PRODS[p.sku].ship='Made to your size'+(d.length?' · '+(d.length>1&&d[0]!==d[1]?d[0]+'–'+d[1]:d[d.length-1])+' days':''); }
       if(p.image_url) IMGS[p.sku] = p.image_url;
     });
