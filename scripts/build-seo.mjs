@@ -165,6 +165,25 @@ ${view ? `<script>if(window.otrack)otrack('view_item',{sku:${JSON.stringify(view
 </body></html>`
 
 const isMto = p => p.kind === 'mto'
+// 163: the SEO pages are the shop itself (same product page, cards, cart) with this page's own head and text,
+// opened on that view by window.OUTRR_ROUTE; the text below is what crawlers read before the shop draws.
+const SHOP = readFileSync(join(ROOT, 'index.html'), 'utf8')
+const shell = ({ title, desc, path, image, body, jsonld = [], keywords = [], route }) => {
+  let h = SHOP
+  const set = (re, rep) => { h = h.replace(re, () => rep) }
+  set(/<title>[\s\S]*?<\/title>/, `<base href="/"><title>${esc(title)}</title>`)
+  set(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">${keywords.length ? `<meta name="keywords" content="${esc(keywords.join(', '))}">` : ''}`)
+  set(/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${SITE}${path}">`)
+  set(/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${esc(title)}">`)
+  set(/<meta property="og:description" content="[^"]*">/, `<meta property="og:description" content="${esc(desc)}">`)
+  set(/<meta property="og:type" content="[^"]*">/, `<meta property="og:type" content="${path.startsWith('/p/') ? 'product' : 'website'}">`)
+  set(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${SITE}${path}">`)
+  if (image) set(/<meta property="og:image" content="[^"]*">/, `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">`)
+  set(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n') + `\n<script>window.OUTRR_ROUTE=${JSON.stringify(route).replace(/</g, '\\u003c')};document.documentElement.className+=' js'</script>`)
+  set(/<body([^>]*)>/, (m => `<body${m[1].includes('class="') ? m[1].replace('class="', 'class="routing ') : m[1] + ' class="routing"'}>`)(h.match(/<body([^>]*)>/)))
+  set(/<div id="plp">/, `<section id="seoBody">${body}</section>\n<div id="plp">`)
+  return h
+}
 const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" loading="lazy" width="400" height="400"></div>
 <div class="n">${esc(p.name)}</div><div class="p">${soon(p) ? SOON : isMto(p) ? `From ${inr(p.price)}` : `${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}`}</div></a>`
 
@@ -215,19 +234,11 @@ for (const p of products) {
       ...(c ? [{ '@type': 'ListItem', position: 2, name: c.title, item: `${SITE}/c/${c.slug}/` }] : []),
       { '@type': 'ListItem', position: c ? 3 : 2, name: p.name, item: SITE + url }],
   }]
-  write(`p/${p.slug}/index.html`, page({
+  write(`p/${p.slug}/index.html`, shell({ route: { p: p.sku },
     title: p.seo_title ? (/\| outrr$/.test(p.seo_title) ? p.seo_title : `${p.seo_title} | outrr`) : (soon(p) ? `${p.name} | Coming soon | outrr` : isMto(p) ? `${p.name} | Made to Size, from ${inr(p.price)} | outrr` : `${p.name} | Buy Online at ${inr(p.price)} | outrr`), desc: clip(p.seo_description || desc, 158), keywords: p.seo_keywords || [], path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
-    body: `<div class="crumbs"><a href="/">Home</a> › ${c ? `<a href="/c/${c.slug}/">${esc(c.title)}</a> › ` : ''}${esc(p.name)}</div>
-<div class="pd"><div class="pimg"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" width="800" height="800"></div>
-<div><h1>${esc(p.name)}</h1>${RATE[p.id]?.n > 0 ? `<div class="tax">★ ${RATE[p.id].rating} · ${RATE[p.id].n} customer review${RATE[p.id].n === 1 ? '' : 's'}</div>` : ''}
-${soon(p) ? `<div class="price">${SOON}</div><div class="tax">Not on sale yet. Check back soon.</div>` : `<div class="price">${isMto(p) ? '<span style="font-size:15px;font-weight:600">From </span>' : ''}<b>${inr(p.price)}</b>${off && !isMto(p) ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>`}
-<div class="btns">${soon(p) ? '<button class="btn" disabled>Coming soon</button>' : isMto(p) ? `<a class="btn" href="/?p=${encodeURIComponent(p.sku)}">Choose your size</a>` : p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
-<ul class="perks">${isMto(p) ? `<li>Made to your size · ${esc(p.ship_text || '')}</li><li>Priced for your size and options · pay ${50}% now, the rest before dispatch</li><li>${p.mto?.install?.required ? 'Installed by an outrr partner' : p.mto?.install?.offered ? 'Installation available' : 'Fixing guide included'}</li><li>Drawing for your approval before it is made</li>` : `<li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Delivery charge shown for your pincode</li><li>Secure online payment: UPI, cards, netbanking</li><li>Weather-safe packing · assembly guide included</li>`}</ul>
-<div class="desc"><h2>About this product</h2><p>${esc(desc)}</p>
-<dl>${c ? `<dt>Category</dt><dd><a href="/c/${c.slug}/">${esc(c.title)}</a></dd>` : ''}${p.material ? `<dt>Material</dt><dd>${esc(p.material)}</dd>` : ''}${p.dims ? `<dt>Size</dt><dd>${esc(p.dims)}</dd>` : ''}<dt>SKU</dt><dd>${esc(p.sku)}</dd></dl></div>
-</div></div>
-${compare(p)}
-${related.length ? `<section class="rel"><h2>More in ${esc(c?.title || 'this range')}</h2><div class="grid">${related.map(card).join('')}</div></section>` : ''}`,
+    body: `<h1>${esc(p.name)}</h1><p>${soon(p) ? 'Coming soon' : `${isMto(p) ? 'From ' : ''}${inr(p.price)}${!isMto(p) && off ? ` (MRP ${inr(p.mrp)}, ${off}% off)` : ''} · inclusive of GST`}</p>
+<p class="seo-intro">${esc(desc)}</p>${c ? `<p><a href="/c/${c.slug}/">More ${esc(c.title)}</a></p>` : ''}
+${related.length ? `<h2>More in ${esc(c?.title || 'this range')}</h2><ul class="seo-list">${related.map(x => `<li><a href="/p/${x.slug}/">${esc(x.name)}</a></li>`).join('')}</ul>` : ''}`,
   }))
 }
 
@@ -262,7 +273,7 @@ function autoText(name, L, parent) {
     { q: 'What if something arrives damaged?', a: 'Report it within 48 hours with photos and it is replaced or repaired free.' }]
   return { title, desc, intro, faqs }
 }
-const faqHtml = fs => fs.length ? `<section class="faq"><h2>Questions about this range</h2>${fs.map(f => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join('')}</section>` : ''
+const faqHtml = fs => fs.length ? `<h2>Questions about this range</h2>${fs.map(f => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join('')}` : ''
 const faqLd = fs => fs.length ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: fs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }] : []
 const listLd = (name, url, L) => ({ '@context': 'https://schema.org', '@type': 'CollectionPage', name, url: SITE + url, mainEntity: { '@type': 'ItemList', numberOfItems: L.length, itemListElement: L.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/p/${p.slug}/`, name: p.name })) } })
 const crumbLd = items => ({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items.map(([n, u], i) => ({ '@type': 'ListItem', position: i + 1, name: n, item: SITE + u })) })
@@ -273,30 +284,30 @@ for (const c of cols) {
   const url = `/c/${c.slug}/`, gs = groupsOf(c.slug), real = gs.filter(g => subUrl[g.slug]), at = autoText(c.title, list)
   const faqs = Array.isArray(c.seo_faqs) && c.seo_faqs.length ? c.seo_faqs : at.faqs
   const nav = real.length > 1 ? `<nav class="subnav" aria-label="${esc(c.title)} types">${real.map(g => `<a href="${subUrl[g.slug]}">${esc(g.title)} (${g.items.length})</a>`).join('')}</nav>` : ''
-  write(`c/${c.slug}/index.html`, page({
+  write(`c/${c.slug}/index.html`, shell({ route: { c: c.slug },
     title: `${clip(c.seo_title || at.title, 62)} | outrr`, desc: clip(c.seo_description || at.desc, 158),
     path: url, image: list[0].image_url, cur: c.slug,
     jsonld: [listLd(c.title, url, list), crumbLd([['Home', '/'], [c.title, url]]), ...faqLd(faqs)],
-    body: `<div class="crumbs"><a href="/">Home</a> › ${esc(c.title)}</div><section class="cat"><h1>${esc(c.title)}</h1>
-<p class="lead">${esc(c.tagline || '')}${c.tagline ? ' · ' : ''}${list.length} designs</p><p class="intro">${esc(c.seo_intro || at.intro)}</p>${nav}
-${gs.length > 1 ? gs.map(g => `<h2 class="sub-h" id="${g.slug}">${subUrl[g.slug] ? `<a href="${subUrl[g.slug]}" style="color:inherit;text-decoration:none">${esc(g.title)} →</a>` : esc(g.title)}</h2><div class="grid">${g.items.map(card).join('')}</div>`).join('') : `<div class="grid">${list.map(card).join('')}</div>`}
-${faqHtml(faqs)}</section>`,
+    body: `<h1>${esc(c.title)}</h1><p class="seo-intro">${esc(c.seo_intro || at.intro)}</p>
+${real.length > 1 ? `<nav class="seo-subs" aria-label="${esc(c.title)} types">${real.map(g => `<a href="${subUrl[g.slug]}">${esc(g.title)} (${g.items.length})</a>`).join('')}</nav>` : ''}
+<ul class="seo-list">${list.map(x => `<li><a href="/p/${x.slug}/">${esc(x.name)}</a></li>`).join('')}</ul>
+${faqHtml(faqs)}`,
   }))
   for (const g of real) {
     const x = subs.find(y => y.slug === g.slug), su = subUrl[g.slug], st = autoText(g.title, g.items, c.title.toLowerCase())
     subPages.push(su)
-    write(su.slice(1) + 'index.html', page({
+    write(su.slice(1) + 'index.html', shell({ route: { c: c.slug, sub: g.title },
       title: `${clip(x.seo_title || st.title, 62)} | outrr`, desc: clip(x.seo_description || st.desc, 158),
       path: su, image: g.items[0].image_url, cur: c.slug,
       jsonld: [listLd(g.title, su, g.items), crumbLd([['Home', '/'], [c.title, url], [g.title, su]]), ...faqLd(st.faqs)],
-      body: `<div class="crumbs"><a href="/">Home</a> › <a href="${url}">${esc(c.title)}</a> › ${esc(g.title)}</div><section class="cat"><h1>${esc(g.title)}</h1>
-<p class="lead">${esc(c.title)} · ${g.items.length} designs</p><p class="intro">${esc(x.seo_intro || st.intro)}</p>
-<nav class="subnav">${real.map(h => `<a href="${subUrl[h.slug]}"${h === g ? ' class="on"' : ''}>${esc(h.title)}</a>`).join('')}<a href="${url}">All ${esc(c.title)}</a></nav>
-<div class="grid">${g.items.map(card).join('')}</div>${faqHtml(st.faqs)}</section>`,
+      body: `<h1>${esc(g.title)}</h1><p class="seo-intro">${esc(x.seo_intro || st.intro)}</p>
+<nav class="seo-subs">${real.map(h => `<a href="${subUrl[h.slug]}">${esc(h.title)}</a>`).join('')}<a href="${url}">All ${esc(c.title)}</a></nav>
+<ul class="seo-list">${g.items.map(x => `<li><a href="/p/${x.slug}/">${esc(x.name)}</a></li>`).join('')}</ul>${faqHtml(st.faqs)}`,
     }))
   }
 }
 
+write('slugs.json', JSON.stringify(Object.fromEntries(products.map(p => [p.sku, p.slug]))))   // 163: the shop links to these pages
 // ---------------------------------------------------------------- sitemap, robots, Google Merchant feed
 const POLICY = ['about', 'shipping', 'warranty', 'payments', 'returns', 'privacy', 'terms', 'contact'].map(k => [`${SITE}/${k}/`, today, '0.3'])
 const urls = [[`${SITE}/`, today, '1.0'], ...POLICY, ...cols.filter(c => products.some(p => p.collection_slug === c.slug)).map(c => [`${SITE}/c/${c.slug}/`, today, '0.8']), ...subPages.map(u => [SITE + u, today, '0.7']),

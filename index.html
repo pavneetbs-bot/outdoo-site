@@ -11,6 +11,7 @@ try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var 
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#ffffff">
+<style>body.routing #home{display:none!important}#seoBody{max-width:1240px;margin:0 auto;padding:16px}#seoBody.in{padding:24px 0 10px}#seoBody .seo-intro{max-width:860px;line-height:1.65;color:#4A4640}#seoBody .seo-subs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}#seoBody .seo-subs a{border:1px solid #E2D6C4;border-radius:999px;padding:7px 14px;font-size:13px;text-decoration:none;color:inherit;background:#fff}#seoBody details{border-bottom:1px solid #E2D6C4;padding:10px 0;max-width:860px}#seoBody summary{cursor:pointer;font-weight:600}#seoBody details p{margin:8px 0 0;line-height:1.6;color:#4A4640}#seoBody .seo-list{columns:2;font-size:13px;line-height:1.9}#seoBody.in .seo-list,#seoBody.in h1{display:none}#seoBody h2{font-size:18px;margin:18px 0 8px}</style>
 <title>outrr — Every Outdoor Possibility | Outdoor Furniture, Lighting & Decor Online</title>
 <meta name="description" content="India's destination for outdoor living — furniture, shade, planters, lighting & soft furnishings. Curated by the team behind 300+ luxury outdoor projects. A LifeWall Group company.">
 <meta property="og:title" content="outrr — Every Outdoor Possibility">
@@ -2518,6 +2519,7 @@ const COLS = {
 };
 
 function showView(v){
+  try{ const sb=document.getElementById('seoBody'), R=window.OUTRR_ROUTE; if(sb&&sb.classList.contains('in')) sb.style.display=(v==='plp'&&R&&lastCol===R.c)?'':'none'; }catch(e){}
   ['home','store','plp','pdp','cart','checkout','account'].forEach(x=>{const el=document.getElementById(x); if(el) el.style.display = x===v?'block':'none';});
   document.body.classList.toggle('pdp-open', v==='pdp');
   window.scrollTo(0,0);
@@ -3077,7 +3079,13 @@ setTimeout(offShow,5000);
   }
   // Meta Pixel: a new screen in this one-page shop counts as a page view (not pop-ups)
   function pv(st){ try{ if(window.fbq && st && st.v!=='modal') fbq('track','PageView'); }catch(e){} }
-  function push(st){ if(lock) return; history.pushState(st,'',location.pathname+location.search); pv(st); }
+  // 163: real addresses — /c/<category>/ and /p/<product>/ (the SEO pages are this same shop with that page opened)
+  window.urlOf=function(st){ st=st||{};
+    if(st.v==='home') return '/';
+    if(st.v==='plp' && st.k && COLS[st.k] && !/^__/.test(st.k)) return '/c/'+st.k+'/';
+    if(st.v==='pdp' && st.id) return window.SLUG&&SLUG[st.id] ? '/p/'+SLUG[st.id]+'/' : '/?p='+encodeURIComponent(st.id);
+    return location.pathname+location.search; };
+  function push(st){ if(lock) return; const u=urlOf(st); if(window.__routing) history.replaceState(st,'',u); else history.pushState(st,'',u); pv(st); }
 
   // view openers record history
   window.showHome=function(){ _home(); push({v:'home'}); };
@@ -3113,6 +3121,7 @@ setTimeout(offShow,5000);
 
   window.__initHash=location.hash;   // #review= / #track= links from emails (account.js)
   history.replaceState({v:'home'},'',location.pathname+location.search);
+  try{ fetch('/slugs.json').then(r=>r.ok?r.json():{}).then(j=>{ window.SLUG=j||{}; }).catch(()=>{}); }catch(e){}   // 163: sku → page address
 })();
 
 // ================= HOME v2 renderers =================
@@ -3842,6 +3851,17 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
       try{ renderPLP(lastCol); }catch(e){}
     }
+    // 163: an SEO page (/c/…, /p/…) opens its own view in the shop
+    const _R = window.OUTRR_ROUTE;
+    if(_R && !_R.done){ _R.done=true; _R.path=_R.path||location.pathname; window.__routing=true;
+      try{
+        const sb=document.getElementById('seoBody');
+        if(_R.c && COLS[_R.c]){ openCol(_R.c); if(_R.sub && typeof chipTap==='function') chipTap(_R.sub);
+          const pw=document.querySelector('#plp .wrap'); if(sb&&pw){ pw.appendChild(sb); sb.classList.add('in'); } }
+        else if(_R.p && PRODS[_R.p]){ openProduct(_R.p); if(sb) sb.remove(); }
+      }catch(e){ console.warn(e) }
+      try{ history.replaceState(history.state,'',_R.path||location.pathname); }catch(e){}
+      window.__routing=false; document.body.classList.remove('routing'); }
     const _pc = new URLSearchParams(location.search).get('c');   // ?c=<category slug>: a shareable link to a category page
     if(_pc && COLS[_pc] && typeof openCol === 'function' && !new URLSearchParams(location.search).get('p')) try{ openCol(_pc); }catch(e){}
     const _pp = new URLSearchParams(location.search).get('p');
