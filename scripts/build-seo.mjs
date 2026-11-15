@@ -35,7 +35,7 @@ const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length 
 
 // 076: packaging + the highest delivery charge the seller set (per piece, incl. GST) — what a buyer far away pays; 0 = free
 const shipOf = p => Math.round(((+p.pack_fee || 0) + Math.max(+p.ship_india || 0, +p.ship_state || 0, +p.ship_local || 0)) * 100) / 100
-const products = (await getAll('products?status=eq.published&select=id,sku,name,seo_title,seo_description,seo_keywords,image_alt,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at,pack_fee,ship_local,ship_state,ship_india,orders_open&order=name,sku'))
+const products = (await getAll('products?status=eq.published&select=id,sku,name,seo_title,seo_description,seo_keywords,image_alt,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at,pack_fee,ship_local,ship_state,ship_india,orders_open,kind,mto,tags&order=name,sku'))
   .filter(p => p.price > 0)
 // 135: listed but not on sale yet (seller not live / preview only) — "Coming soon": no price, no cart, not in the Google feed
 const soon = p => p.orders_open === false
@@ -122,7 +122,7 @@ h1{font-size:27px;line-height:1.2;margin:4px 0 10px;letter-spacing:-.01em}
 .desc{margin-top:20px}.desc h2,.rel h2,.cat h2{font-size:17px;margin-bottom:8px}.desc dl{display:grid;grid-template-columns:120px 1fr;gap:6px 12px;margin-top:12px;font-size:13.5px}.desc dt{color:var(--muted)}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.card .im{aspect-ratio:1;background:var(--sand-soft);border-radius:12px;overflow:hidden}.card .im img{width:100%;height:100%;object-fit:cover;transition:transform .3s}.card:hover img{transform:scale(1.04)}
 .card .n{font-size:13.5px;font-weight:500;margin:8px 0 2px;line-height:1.35}.card .p{font-weight:700}.card .p s{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
-.rel{margin:10px 0 50px}.cat{margin:6px 0 50px}.cat .lead{color:var(--muted);margin-bottom:18px}
+.rel{margin:10px 0 50px}.cat{margin:6px 0 50px}.cat .lead{color:var(--muted);margin-bottom:18px}.cat .intro{max-width:860px;line-height:1.65;margin:0 0 14px}.subnav{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}.subnav a{border:1px solid #E2D6C4;border-radius:999px;padding:7px 14px;font-size:13px;text-decoration:none;color:inherit;background:#fff}.subnav a.on{border-color:#C26445;color:#9C4127;font-weight:600}.faq{max-width:860px;margin:30px 0}.faq details{border-bottom:1px solid #E2D6C4;padding:10px 0}.faq summary{cursor:pointer;font-weight:600}.faq p{margin:8px 0 0;line-height:1.6;color:#4A4640}.cat .more-h{font-size:15px;margin:26px 0 8px}
 footer{background:var(--sand-soft);padding:30px 0;font-size:13px;color:#555}footer .cols{display:flex;gap:30px;flex-wrap:wrap;justify-content:space-between}footer a{display:block;margin:3px 0}footer a:hover{color:var(--terra)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--char);color:#fff;border-radius:99px;padding:10px 18px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}
 @media(max-width:760px){.pd{grid-template-columns:1fr;gap:18px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}h1{font-size:22px}.hd{gap:12px}.logo img{height:23px}}`
@@ -164,8 +164,9 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 ${view ? `<script>if(window.otrack)otrack('view_item',{sku:${JSON.stringify(view.sku)},value:${Math.round(+view.price || 0)}})</script>` : ''}
 </body></html>`
 
+const isMto = p => p.kind === 'mto'
 const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" loading="lazy" width="400" height="400"></div>
-<div class="n">${esc(p.name)}</div><div class="p">${soon(p) ? SOON : `${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}`}</div></a>`
+<div class="n">${esc(p.name)}</div><div class="p">${soon(p) ? SOON : isMto(p) ? `From ${inr(p.price)}` : `${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}`}</div></a>`
 
 
 // Amazon-style "Compare with similar items": same sub-category first, then closest price
@@ -204,7 +205,7 @@ for (const p of products) {
     brand: { '@type': 'Brand', name: 'outrr' }, category: c?.title,
     ...(p.material ? { material: p.material } : {}),
     ...(RATE[p.id]?.n > 0 ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: +RATE[p.id].rating, reviewCount: RATE[p.id].n, bestRating: 5, worstRating: 1 } } : {}),
-    offers: { '@type': 'Offer', url: SITE + url, priceCurrency: 'INR', price: (+p.price).toFixed(2), itemCondition: 'https://schema.org/NewCondition',
+    offers: isMto(p) ? { '@type': 'AggregateOffer', url: SITE + url, priceCurrency: 'INR', lowPrice: (+p.price).toFixed(2), offerCount: 1, availability: 'https://schema.org/PreOrder' } : { '@type': 'Offer', url: SITE + url, priceCurrency: 'INR', price: (+p.price).toFixed(2), itemCondition: 'https://schema.org/NewCondition',
       availability: p.in_stock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
       seller: { '@type': 'Organization', name: 'outrr' },
       shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: shipOf(p), currency: 'INR' }, shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' } } },
@@ -215,13 +216,13 @@ for (const p of products) {
       { '@type': 'ListItem', position: c ? 3 : 2, name: p.name, item: SITE + url }],
   }]
   write(`p/${p.slug}/index.html`, page({
-    title: p.seo_title ? `${p.seo_title} | outrr` : (soon(p) ? `${p.name} | Coming soon | outrr` : `${p.name} | Buy Online at ${inr(p.price)} | outrr`), desc: clip(p.seo_description || desc, 158), keywords: p.seo_keywords || [], path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
+    title: p.seo_title ? (/\| outrr$/.test(p.seo_title) ? p.seo_title : `${p.seo_title} | outrr`) : (soon(p) ? `${p.name} | Coming soon | outrr` : isMto(p) ? `${p.name} | Made to Size, from ${inr(p.price)} | outrr` : `${p.name} | Buy Online at ${inr(p.price)} | outrr`), desc: clip(p.seo_description || desc, 158), keywords: p.seo_keywords || [], path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
     body: `<div class="crumbs"><a href="/">Home</a> › ${c ? `<a href="/c/${c.slug}/">${esc(c.title)}</a> › ` : ''}${esc(p.name)}</div>
 <div class="pd"><div class="pimg"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" width="800" height="800"></div>
 <div><h1>${esc(p.name)}</h1>${RATE[p.id]?.n > 0 ? `<div class="tax">★ ${RATE[p.id].rating} · ${RATE[p.id].n} customer review${RATE[p.id].n === 1 ? '' : 's'}</div>` : ''}
-${soon(p) ? `<div class="price">${SOON}</div><div class="tax">Not on sale yet. Check back soon.</div>` : `<div class="price"><b>${inr(p.price)}</b>${off ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>`}
-<div class="btns">${soon(p) ? '<button class="btn" disabled>Coming soon</button>' : p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
-<ul class="perks"><li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Delivery charge shown for your pincode</li><li>Secure online payment: UPI, cards, netbanking</li><li>Weather-safe packing · assembly guide included</li></ul>
+${soon(p) ? `<div class="price">${SOON}</div><div class="tax">Not on sale yet. Check back soon.</div>` : `<div class="price">${isMto(p) ? '<span style="font-size:15px;font-weight:600">From </span>' : ''}<b>${inr(p.price)}</b>${off && !isMto(p) ? `<s>${inr(p.mrp)}</s><em>${off}% off</em>` : ''}</div><div class="tax">Inclusive of all taxes · GST invoice</div>`}
+<div class="btns">${soon(p) ? '<button class="btn" disabled>Coming soon</button>' : isMto(p) ? `<a class="btn" href="/?p=${encodeURIComponent(p.sku)}">Choose your size</a>` : p.in_stock === false ? '<button class="btn" disabled>Out of stock</button>' : `<button class="btn" onclick="addCart('${esc(p.sku)}',${Math.round(+p.price || 0)})">Add to cart</button><a class="btn alt" href="/?buy=${encodeURIComponent(p.sku)}">Buy now</a>`}</div>
+<ul class="perks">${isMto(p) ? `<li>Made to your size · ${esc(p.ship_text || '')}</li><li>Priced for your size and options · pay ${50}% now, the rest before dispatch</li><li>${p.mto?.install?.required ? 'Installed by an outrr partner' : p.mto?.install?.offered ? 'Installation available' : 'Fixing guide included'}</li><li>Drawing for your approval before it is made</li>` : `<li>${esc(p.ship_text || 'Ships in 7-10 days')}</li><li>Delivery charge shown for your pincode</li><li>Secure online payment: UPI, cards, netbanking</li><li>Weather-safe packing · assembly guide included</li>`}</ul>
 <div class="desc"><h2>About this product</h2><p>${esc(desc)}</p>
 <dl>${c ? `<dt>Category</dt><dd><a href="/c/${c.slug}/">${esc(c.title)}</a></dd>` : ''}${p.material ? `<dt>Material</dt><dd>${esc(p.material)}</dd>` : ''}${p.dims ? `<dt>Size</dt><dd>${esc(p.dims)}</dd>` : ''}<dt>SKU</dt><dd>${esc(p.sku)}</dd></dl></div>
 </div></div>
@@ -230,25 +231,75 @@ ${related.length ? `<section class="rel"><h2>More in ${esc(c?.title || 'this ran
   }))
 }
 
+// 162: category and sub-category pages — own title / description / intro / FAQs (admin text first, else written from the catalogue)
+const subPath = (c, x) => { let t = String(x.title || '').toLowerCase().replace(/&/g, ' and ').replace(/[—–]/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); return t || x.slug }
+const subUrl = {}
+for (const c of cols) { const seen = new Set(); for (const x of subs.filter(y => y.category_slug === c.slug)) { let k = subPath(c, x); if (seen.has(k)) k = x.slug; seen.add(k); subUrl[x.slug] = `/c/${c.slug}/${k}/` } }
+const lc = t => String(t || '').split(' ').map(w => /^[A-Z0-9]{2,}$/.test(w) ? w : w.toLowerCase()).join(' ')
+const priceSpan = L => { const ps = L.filter(p => !soon(p) && +p.price > 0).map(p => +p.price); return ps.length ? [Math.min(...ps), Math.max(...ps)] : null }
+const COLW = /^(black|white|grey|gray|brown|natural|teak|walnut|charcoal|gold|silver|beige|cream|metal|multi.*)$/i
+const topMats = L => { const m = {}; L.forEach(p => new Set(String(p.material || '').split(/[\/,;()+]| or | and | with /i).map(x => x.trim()).filter(x => x && x.length <= 22 && !COLW.test(x))).forEach(x => { m[x] = (m[x] || 0) + 1 })); return Object.keys(m).filter(k => m[k] >= Math.min(2, L.length)).sort((a, b) => m[b] - m[a]).slice(0, 4) }
+function autoText(name, L, parent) {
+  const mto = L.filter(isMto).length > L.length / 2, pr = priceSpan(L), mats = topMats(L), anySoon = L.every(soon)
+  const inst = L.some(p => p.mto?.install?.required), instOpt = !inst && L.some(p => p.mto?.install?.offered)
+  const unit = { area: 'sq ft of area', face: 'sq ft', length: 'running ft', seat: 'seat' }[L.find(isMto)?.mto?.unit] || ''
+  const title = mto ? `${name} — Made to Your Size in India${pr ? ` | From ${inr(pr[0])}` : ''}` : `Buy ${name} Online in India${pr ? ` | From ${inr(pr[0])}` : ''}`
+  const desc = mto
+    ? `${L.length} ${lc(name)} designs made to your size${unit ? `, priced per ${unit.replace(/ of .*/, '')}` : ''}${mats.length ? ` in ${mats.slice(0, 3).join(', ')}` : ''}. ${inst ? 'Measured, made and installed by outrr.' : 'Drawing for your approval, delivered across India.'}`
+    : `Shop ${L.length} ${lc(name)} designs${mats.length ? ` in ${mats.slice(0, 3).join(', ')}` : ''}${pr ? ` from ${inr(pr[0])}` : ''}. Built for Indian weather, GST invoice, delivered across India.`
+  const intro = mto
+    ? `Every ${lc(name)} design here is made for your space: enter your size and pick the finish and options to see the price${unit ? ` (worked out per ${unit})` : ''}. ${mats.length ? `Choose from ${mats.join(', ')}. ` : ''}We send a drawing for your approval before making it, you pay 50% to start and the rest before dispatch${inst ? ', and our partner installs it' : instOpt ? '; installation is available in many cities' : ''}.${anySoon ? ' Orders open soon — save your favourites.' : ''}`
+    : `${L.length} ${lc(name)} designs for balconies, terraces and gardens${parent ? ` from our ${parent} range` : ''}, picked by the team behind 300+ outdoor projects.${mats.length ? ` Materials: ${mats.join(', ')}.` : ''}${pr ? ` Prices from ${inr(pr[0])} to ${inr(pr[1])}, inclusive of GST.` : ''} Delivery charge is shown for your pincode, with weather-safe packing and a GST invoice on every order.`
+  const faqs = mto ? [
+    { q: `How is the price of ${lc(name)} worked out?`, a: `By your size${unit ? ` (per ${unit})` : ''}, the finish and the options you pick — the price updates on the product page as you choose.` },
+    { q: 'Do I see a drawing before it is made?', a: 'Yes. After you order, we send a drawing of your design and size for your approval; making starts only after you approve.' },
+    { q: 'How do I pay?', a: 'You pay 50% online when you order and the rest when it is ready, before dispatch.' },
+    { q: inst ? 'Is installation included?' : 'Can you install it?', a: inst ? 'Yes — an outrr partner measures and installs it. Enter your pincode on the product page to see the charge for your city.' : instOpt ? 'Installation is available in Delhi NCR and other cities; enter your pincode on the product page to see if it is available and its charge.' : 'It comes with a fixing guide.' },
+    { q: 'How long does it take?', a: `Usually ${L.find(isMto)?.mto?.make_days?.join('–') || '10–25'} days to make after the drawing is approved, then delivery${inst ? ' and installation' : ''}.` }]
+  : [{ q: `Do you deliver ${lc(name)} across India?`, a: 'Yes. The delivery charge for your pincode is shown before you pay, and every order is packed for the weather.' },
+    { q: `Will ${lc(name)} survive rain and sun?`, a: 'Everything is picked for Indian outdoor conditions — UV-stable finishes and rust-proof hardware. Care tips are on each product page.' },
+    { q: 'Do I get a GST invoice?', a: 'Yes, a GST invoice comes with every order.' },
+    { q: 'What if something arrives damaged?', a: 'Report it within 48 hours with photos and it is replaced or repaired free.' }]
+  return { title, desc, intro, faqs }
+}
+const faqHtml = fs => fs.length ? `<section class="faq"><h2>Questions about this range</h2>${fs.map(f => `<details><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join('')}</section>` : ''
+const faqLd = fs => fs.length ? [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: fs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) }] : []
+const listLd = (name, url, L) => ({ '@context': 'https://schema.org', '@type': 'CollectionPage', name, url: SITE + url, mainEntity: { '@type': 'ItemList', numberOfItems: L.length, itemListElement: L.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/p/${p.slug}/`, name: p.name })) } })
+const crumbLd = items => ({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items.map(([n, u], i) => ({ '@type': 'ListItem', position: i + 1, name: n, item: SITE + u })) })
+const subPages = []
 for (const c of cols) {
   const list = ranked[c.slug] || []
   if (!list.length) continue
-  const url = `/c/${c.slug}/`
+  const url = `/c/${c.slug}/`, gs = groupsOf(c.slug), real = gs.filter(g => subUrl[g.slug]), at = autoText(c.title, list)
+  const faqs = Array.isArray(c.seo_faqs) && c.seo_faqs.length ? c.seo_faqs : at.faqs
+  const nav = real.length > 1 ? `<nav class="subnav" aria-label="${esc(c.title)} types">${real.map(g => `<a href="${subUrl[g.slug]}">${esc(g.title)} (${g.items.length})</a>`).join('')}</nav>` : ''
   write(`c/${c.slug}/index.html`, page({
-    title: `${c.title} Online in India | ${list.length} Designs | outrr`,
-    desc: clip(`Shop ${c.title.toLowerCase()} online at outrr: ${c.tagline ? c.tagline.toLowerCase() + '. ' : ''}${list.length} designs built for Indian weather, delivered across India, secure online payment.`, 158),
+    title: `${clip(c.seo_title || at.title, 62)} | outrr`, desc: clip(c.seo_description || at.desc, 158),
     path: url, image: list[0].image_url, cur: c.slug,
-    jsonld: [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: c.title, url: SITE + url,
-      mainEntity: { '@type': 'ItemList', itemListElement: list.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${SITE}/p/${p.slug}/` })) } }],
+    jsonld: [listLd(c.title, url, list), crumbLd([['Home', '/'], [c.title, url]]), ...faqLd(faqs)],
     body: `<div class="crumbs"><a href="/">Home</a> › ${esc(c.title)}</div><section class="cat"><h1>${esc(c.title)}</h1>
-<p class="lead">${esc(c.tagline || '')}${c.tagline ? ' · ' : ''}${list.length} designs · delivered across India · secure online payment</p>
-${(() => { const gs = groupsOf(c.slug); return gs.length > 1 ? gs.map(g => `<h2 class="sub-h" id="${g.slug}">${esc(g.title)}</h2><div class="grid">${g.items.map(card).join('')}</div>`).join('') : `<div class="grid">${list.map(card).join('')}</div>` })()}</section>`,
+<p class="lead">${esc(c.tagline || '')}${c.tagline ? ' · ' : ''}${list.length} designs</p><p class="intro">${esc(c.seo_intro || at.intro)}</p>${nav}
+${gs.length > 1 ? gs.map(g => `<h2 class="sub-h" id="${g.slug}">${subUrl[g.slug] ? `<a href="${subUrl[g.slug]}" style="color:inherit;text-decoration:none">${esc(g.title)} →</a>` : esc(g.title)}</h2><div class="grid">${g.items.map(card).join('')}</div>`).join('') : `<div class="grid">${list.map(card).join('')}</div>`}
+${faqHtml(faqs)}</section>`,
   }))
+  for (const g of real) {
+    const x = subs.find(y => y.slug === g.slug), su = subUrl[g.slug], st = autoText(g.title, g.items, c.title.toLowerCase())
+    subPages.push(su)
+    write(su.slice(1) + 'index.html', page({
+      title: `${clip(x.seo_title || st.title, 62)} | outrr`, desc: clip(x.seo_description || st.desc, 158),
+      path: su, image: g.items[0].image_url, cur: c.slug,
+      jsonld: [listLd(g.title, su, g.items), crumbLd([['Home', '/'], [c.title, url], [g.title, su]]), ...faqLd(st.faqs)],
+      body: `<div class="crumbs"><a href="/">Home</a> › <a href="${url}">${esc(c.title)}</a> › ${esc(g.title)}</div><section class="cat"><h1>${esc(g.title)}</h1>
+<p class="lead">${esc(c.title)} · ${g.items.length} designs</p><p class="intro">${esc(x.seo_intro || st.intro)}</p>
+<nav class="subnav">${real.map(h => `<a href="${subUrl[h.slug]}"${h === g ? ' class="on"' : ''}>${esc(h.title)}</a>`).join('')}<a href="${url}">All ${esc(c.title)}</a></nav>
+<div class="grid">${g.items.map(card).join('')}</div>${faqHtml(st.faqs)}</section>`,
+    }))
+  }
 }
 
 // ---------------------------------------------------------------- sitemap, robots, Google Merchant feed
 const POLICY = ['about', 'shipping', 'warranty', 'payments', 'returns', 'privacy', 'terms', 'contact'].map(k => [`${SITE}/${k}/`, today, '0.3'])
-const urls = [[`${SITE}/`, today, '1.0'], ...POLICY, ...cols.filter(c => products.some(p => p.collection_slug === c.slug)).map(c => [`${SITE}/c/${c.slug}/`, today, '0.8']),
+const urls = [[`${SITE}/`, today, '1.0'], ...POLICY, ...cols.filter(c => products.some(p => p.collection_slug === c.slug)).map(c => [`${SITE}/c/${c.slug}/`, today, '0.8']), ...subPages.map(u => [SITE + u, today, '0.7']),
   ...products.map(p => [`${SITE}/p/${p.slug}/`, (p.updated_at || today).slice(0, 10), '0.7'])]
 write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(([u, d, pr]) => `  <url><loc>${u}</loc><lastmod>${d}</lastmod><priority>${pr}</priority></url>`).join('\n')}\n</urlset>\n`)
 // 098: renamed products keep their old links: every earlier /p/<slug>/ → the current one (Cloudflare Pages _redirects)
@@ -265,7 +316,7 @@ ${products.filter(p => !soon(p)).map(p => `<item>
   <g:id>${x(p.sku)}</g:id><g:title>${x(clip(p.name, 150))}</g:title><g:description>${x(clip(describe(p), 4900))}</g:description>
   <g:link>${SITE}/p/${p.slug}/</g:link><g:image_link>${x(p.image_url)}</g:image_link>
   <g:availability>${p.in_stock === false ? 'out_of_stock' : 'in_stock'}</g:availability><g:condition>new</g:condition>
-  ${p.mrp > p.price ? `<g:price>${(+p.mrp).toFixed(2)} INR</g:price><g:sale_price>${(+p.price).toFixed(2)} INR</g:sale_price>` : `<g:price>${(+p.price).toFixed(2)} INR</g:price>`}
+  ${p.mrp > p.price && !isMto(p) ? `<g:price>${(+p.mrp).toFixed(2)} INR</g:price><g:sale_price>${(+p.price).toFixed(2)} INR</g:sale_price>` : `<g:price>${(+p.price).toFixed(2)} INR</g:price>`}
   <g:brand>outrr</g:brand><g:identifier_exists>no</g:identifier_exists><g:product_type>${x(colOf[p.collection_slug]?.title || 'Outdoor')}</g:product_type>
   <g:shipping><g:country>IN</g:country><g:price>${shipOf(p).toFixed(2)} INR</g:price></g:shipping>
 </item>`).join('\n')}
