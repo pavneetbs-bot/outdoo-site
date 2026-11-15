@@ -11,7 +11,58 @@ try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var 
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#ffffff">
-<style>body.routing #home{display:none!important}#seoBody{max-width:1240px;margin:0 auto;padding:16px}#seoBody.in{padding:24px 0 10px}#seoBody .seo-intro{max-width:860px;line-height:1.65;color:#4A4640}#seoBody .seo-subs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}#seoBody .seo-subs a{border:1px solid #E2D6C4;border-radius:999px;padding:7px 14px;font-size:13px;text-decoration:none;color:inherit;background:#fff}#seoBody details{border-bottom:1px solid #E2D6C4;padding:10px 0;max-width:860px}#seoBody summary{cursor:pointer;font-weight:600}#seoBody details p{margin:8px 0 0;line-height:1.6;color:#4A4640}#seoBody .seo-list{columns:2;font-size:13px;line-height:1.9}#seoBody.in .seo-list,#seoBody.in h1{display:none}#seoBody h2{font-size:18px;margin:18px 0 8px}</style>
+<style>body.routing #home{display:none!important}#seoBody{max-width:1240px;margin:0 auto;padding:16px}#seoBody.in{padding:24px 0 10px}#seoBody .seo-intro{max-width:860px;line-height:1.65;color:#4A4640}#seoBody .seo-subs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}#seoBody .seo-subs a{border:1px solid #E2D6C4;border-radius:999px;padding:7px 14px;font-size:13px;text-decoration:none;color:inherit;background:#fff}#seoBody details{border-bottom:1px solid #E2D6C4;padding:10px 0;max-width:860px}#seoBody summary{cursor:pointer;font-weight:600}#seoBody details p{margin:8px 0 0;line-height:1.6;color:#4A4640}#seoBody .seo-list{columns:2;font-size:13px;line-height:1.9}#seoBody.in .seo-list,#seoBody.in h1{display:none}#seoBody h2{font-size:18px;margin:18px 0 8px}
+/* ---- mobile home (Pepperfry-style): no menu row, search, banner carousel, category chips + circles ---- */
+.mhome,.mham,.mmenu{display:none}
+@media(max-width:760px){
+  .shopnav{display:none!important}
+  #obnHero,#home .hero2,#home .sec2:has(#archTop){display:none!important}
+  .mham{display:flex;align-items:center;justify-content:center;width:38px;height:38px;margin:0 2px 0 -8px;border:0;background:none;cursor:pointer;color:var(--char)}
+  .mham svg{width:24px;height:24px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round}
+  .hd{gap:4px}
+  .mhome{display:block;margin:4px -14px 6px}
+  .mbn{position:relative}
+  .mbn-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 7vw 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .mbn-track::-webkit-scrollbar{display:none}
+  .mbc{flex:0 0 86vw;aspect-ratio:1010/1110;border-radius:16px;overflow:hidden;position:relative;scroll-snap-align:center;background:#efe9e0;cursor:pointer}
+  .mbc img{width:100%;height:100%;object-fit:cover;display:block}
+  .mbc:before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(24,17,12,.66) 0%,rgba(24,17,12,.28) 34%,rgba(24,17,12,0) 56%)}
+  .mbc .tx{position:absolute;left:22px;right:20px;top:24px;z-index:2;color:#fff}
+  .mbc h3{margin:0;font:600 29px/1.08 'Poppins',sans-serif;letter-spacing:-.02em}
+  .mbc h3 em{display:block;font:italic 600 37px/1.05 'Cormorant Garamond',Georgia,serif;letter-spacing:0;margin-top:2px}
+  .mbc .go{display:inline-flex;align-items:center;gap:6px;margin-top:14px;font:600 16px 'Poppins',sans-serif}
+  .mbc .go:after{content:'›';font-size:22px;line-height:1;margin-top:-2px}
+  .mbc .tag{position:absolute;top:18px;right:0;z-index:2;background:linear-gradient(90deg,#d97a57,#C26445);color:#fff;font:600 12px 'Poppins',sans-serif;padding:6px 12px 6px 14px;border-radius:4px 0 0 4px}
+  .mbn-dots{position:absolute;left:0;right:0;bottom:16px;display:flex;justify-content:center;align-items:center;gap:7px;z-index:3;pointer-events:none}
+  .mbn-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.6)}
+  .mbn-dots i.on{background:#C26445;box-shadow:0 0 0 2px #fff}
+  .mchips{display:flex;gap:10px;overflow-x:auto;padding:18px 16px 4px;scrollbar-width:none}
+  .mchips::-webkit-scrollbar,.mcircles::-webkit-scrollbar{display:none}
+  .mchips button{flex:0 0 auto;border:1px solid #e7e2da;background:#fff;border-radius:999px;padding:10px 20px;font:500 14px 'Poppins',sans-serif;color:var(--char);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .mchips button.on{background:#C26445;border-color:#C26445;color:#fff}
+  .mcircles{display:flex;gap:14px;overflow-x:auto;padding:14px 16px 18px;scrollbar-width:none}
+  .mcir{flex:0 0 92px;text-align:center;cursor:pointer}
+  .mcir .im{width:92px;height:92px;border-radius:50%;overflow:hidden;background:#f3eee7}
+  .mcir img{width:100%;height:100%;object-fit:cover;display:block}
+  .mcir span{display:block;margin-top:7px;font:500 12.5px/1.25 'Poppins',sans-serif;color:var(--char)}
+  /* bottom menu: bigger icons + labels, terracotta when on */
+  nav.bottomnav{background:#fff;box-shadow:0 -1px 0 var(--line),0 -6px 18px rgba(0,0,0,.05);border-top:0}
+  nav.bottomnav .bn{padding:10px 0 9px;gap:5px;font-size:11.5px;font-weight:500;letter-spacing:0;color:#3a3a3a}
+  nav.bottomnav .bn svg{width:25px;height:25px;stroke-width:1.6}
+  nav.bottomnav .bn.on{color:#C26445}
+  /* menu drawer */
+  .mmenu{display:block;position:fixed;inset:0;z-index:120;pointer-events:none}
+  .mmenu .bg{position:absolute;inset:0;background:rgba(0,0,0,.35);opacity:0;transition:opacity .2s}
+  .mmenu .pn{position:absolute;top:0;bottom:0;left:0;width:84vw;max-width:340px;background:#fff;transform:translateX(-100%);transition:transform .22s;overflow-y:auto;padding:18px 0 30px}
+  .mmenu.open{pointer-events:auto}.mmenu.open .bg{opacity:1}.mmenu.open .pn{transform:none}
+  .mmenu h4{margin:14px 20px 6px;font:600 11px 'Poppins',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .mmenu a{display:flex;align-items:center;gap:12px;padding:11px 20px;font:500 15px 'Poppins',sans-serif;color:var(--char);text-decoration:none;cursor:pointer}
+  .mmenu a img{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#f3eee7}
+  .mmenu .top{display:flex;align-items:center;justify-content:space-between;padding:0 14px 8px 20px;border-bottom:1px solid var(--line)}
+  .mmenu .top img{height:26px}
+  .mmenu .x{border:0;background:none;font-size:28px;line-height:1;padding:4px 8px;cursor:pointer;color:var(--char)}
+}
+</style>
 <title>outrr — Every Outdoor Possibility | Outdoor Furniture, Lighting & Decor Online</title>
 <meta name="description" content="India's destination for outdoor living — furniture, shade, planters, lighting & soft furnishings. Curated by the team behind 300+ luxury outdoor projects. A LifeWall Group company.">
 <meta property="og:title" content="outrr — Every Outdoor Possibility">
@@ -24,7 +75,7 @@ try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var 
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"outrr","url":"https://outrr.in/","logo":"https://outrr.in/img/outrr-logo-full.png","slogan":"Every Outdoor Possibility","parentOrganization":{"@type":"Organization","name":"LifeWall"}},{"@type":"WebSite","name":"outrr","url":"https://outrr.in/"}]}</script>
 <link rel="icon" type="image/png" href="img/outrr-fav.png?v=3"><link rel="apple-touch-icon" href="img/outrr-touch.png?v=3">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,600&family=Plus+Jakarta+Sans:wght@700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:light;
   --terra:#BE5633; --terra-deep:#A84F33; --terra-soft:#F7E8DF;
@@ -1537,6 +1588,7 @@ header{position:static!important}
 
 <header>
   <div class="wrap hd">
+    <button class="mham" type="button" onclick="mMenu(true)" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h11M4 17h16"/></svg></button>
     <a class="logohome" onclick="showHome()" aria-label="outrr home"><img class="logoimg" src="img/outrr-logo.png?v=3" alt="outrr"></a>
     <div class="hd-right">
       <div class="icobtn" onclick="acWishlist()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></div>
@@ -1570,6 +1622,13 @@ header{position:static!important}
 
 <div id="home">
 <div class="wrap">
+
+<!-- mobile home (≤760px): banner carousel → category chips → category circles -->
+<div class="mhome" id="mhome">
+  <div class="mbn"><div class="mbn-track" id="mbnTrack"></div><div class="mbn-dots" id="mbnDots" aria-hidden="true"></div></div>
+  <div class="mchips" id="mchips" role="tablist" aria-label="Categories"></div>
+  <div class="mcircles" id="mcircles"></div>
+</div>
 
 <div class="obn-hero" id="obnHero" hidden><div class="obn-track">
     <div class="obn ob-fest" data-from="" data-to="2026-11-10T00:00:00+05:30" data-act="" aria-label="The Festive Sale: flat ₹1,000 off on orders above ₹8,000 with code FESTIVE1000, till 9 November">
@@ -2229,6 +2288,16 @@ header{position:static!important}
 <div class="wafab" onclick="waToggle()">
   <span class="dot"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.347-.347.52-.52.174-.174.232-.298.347-.497.115-.199.057-.372-.058-.52-.116-.149-.64-1.542-.877-2.11-.232-.554-.468-.48-.643-.489l-.547-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347M12.05 21.785h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></span>
 </div>
+
+<div class="mmenu" id="mmenu" aria-hidden="true"><div class="bg" onclick="mMenu(false)"></div><div class="pn" role="dialog" aria-label="Menu">
+  <div class="top"><img src="img/outrr-logo.png?v=3" alt="outrr"><button class="x" type="button" onclick="mMenu(false)" aria-label="Close">×</button></div>
+  <h4>Shop by category</h4><div id="mmCats"></div>
+  <h4>Shop by space</h4><div id="mmSpaces"></div>
+  <h4>More</h4>
+  <a onclick="mMenu(false);acTrack()">Track your order</a>
+  <a onclick="mMenu(false);enqOpen('db')">Design &amp; Build (LifeWall)</a>
+  <a href="https://seller.outrr.in/?utm_source=outrr.in&amp;utm_medium=site&amp;utm_campaign=mmenu" target="_blank" rel="noopener">Sell on outrr</a>
+</div></div>
 
 <nav class="bottomnav">
   <div class="bn on" onclick="showHome()"><svg viewBox="0 0 24 24"><path d="M4 11 L12 4 l8 7"/><path d="M6 10 v9 h12 v-9"/></svg>Home</div>
@@ -3201,6 +3270,55 @@ function fillArch(){
 
 // ---- live catalogue on the home page: category tiles, photos and packages come from what is on the store ----
 var LIVE_HOME = false;
+
+/* ---- mobile home: banners (same size, swipe + auto), category chips → circles, menu drawer ---- */
+const MBANNERS = [
+  ['fp-teardrop', 'Winter evenings,', 'by the fire', 'Shop Fire Pits', "openCol('fire-pits')", 'From ₹4,500'],
+  ['lt-lotus', 'Light up', 'the evening', 'Shop Decor Lights', "openCol('lighting')", ''],
+  ['lt-globe', 'Extra 5% off', 'with OUTRR5', 'Shop the launch offer', "openCol('fire-pits')", 'Launch offer'],
+  ['fp-orb', 'Fire globes,', 'made in India', 'Shop Fire Globes', "openCol('fire-pits')", ''],
+  ['lt-tiered', 'Handwoven', 'cane lights', 'Shop from ₹1,450', "openCol('lighting')", ''],
+  ['ph-terrace-sunset', 'Your terrace,', 'but better', 'Shop Terrace', "openCol('sp-terrace')", ''],
+  ['fp-hex', 'Grill. Gather.', 'Glow.', 'Shop BBQ & Grills', "openCol('fire-pits')", 'Winter edit'],
+  ['ph-garden-night', 'Garden nights,', 'aglow', 'Shop Garden', "openCol('sp-garden')", ''],
+  ['lt-petal', 'Petal pendants', 'for patios', 'Shop Pendant Lights', "openCol('lighting')", ''],
+  ['ph-diwali-balcony', 'Balcony', 'makeovers', 'Shop Balcony', "openCol('sp-balcony')", ''],
+  ['fu-pergola2', 'Lawn lounging,', 'coming soon', 'See Outdoor Furniture', "openCol('furniture')", 'New'],
+];
+let MCHIP = '';
+function mHome(){
+  const tr = document.getElementById('mbnTrack'); if(!tr) return;
+  const ok = MBANNERS;
+  if(!tr.dataset.done){
+    tr.innerHTML = ok.map(b => `<div class="mbc" role="link" tabindex="0" onclick="${b[4]}" aria-label="${b[1]} ${b[2]}: ${b[3]}">
+      <img src="img/banners/${b[0]}.jpg" alt="" ${b === ok[0] ? 'fetchpriority="high"' : 'loading="lazy"'}>
+      ${b[5] ? `<span class="tag">${b[5]}</span>` : ''}
+      <div class="tx"><h3>${b[1]}<em>${b[2]}</em></h3><span class="go">${b[3]}</span></div></div>`).join('');
+    const dots = document.getElementById('mbnDots'); dots.innerHTML = ok.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('');
+    const at = () => Math.round(tr.scrollLeft / (tr.firstElementChild.offsetWidth + 10));
+    tr.addEventListener('scroll', () => { const i = at(); [...dots.children].forEach((d, k) => d.classList.toggle('on', k === i)); }, { passive: true });
+    let touched = 0; ['touchstart', 'pointerdown'].forEach(e => tr.addEventListener(e, () => { touched = Date.now(); }, { passive: true }));
+    setInterval(() => { if(document.hidden || Date.now() - touched < 6000 || !tr.offsetParent) return;
+      const n = tr.children.length, i = (at() + 1) % n; tr.scrollTo({ left: i * (tr.firstElementChild.offsetWidth + 10), behavior: 'smooth' }); }, 4500);
+    tr.dataset.done = 1;
+  }
+  const tiles = (window.MTILES || ARCH || []);
+  const cols = [...new Set(tiles.map(t => t[1]))].filter(c => COLS[c] && !/^(sp|bg|md)-/.test(c));
+  const ch = document.getElementById('mchips');
+  ch.innerHTML = [['', 'All'], ...cols.map(c => [c, COLS[c].t])].map(([k, l]) => `<button role="tab" aria-selected="${k === MCHIP}" class="${k === MCHIP ? 'on' : ''}" onclick="MCHIP='${k}';mHome()">${l}</button>`).join('');
+  const esc = v => String(v).replace(/'/g, "\\'");
+  const circ = (label, img, act) => `<div class="mcir" role="link" tabindex="0" onclick="${act}"><div class="im"><img src="${IMGS[img] || ''}" alt="" loading="lazy"></div><span>${label}</span></div>`;
+  const list = !MCHIP ? cols.map(c => { const t = tiles.find(x => x[1] === c); return circ(COLS[c].t, t[2], `openCol('${c}')`); })
+    : tiles.filter(t => t[1] === MCHIP).map(t => circ(t[0], t[2], t[3] ? `openSub('${t[1]}','${esc(t[3])}')` : `openCol('${t[1]}')`));
+  document.getElementById('mcircles').innerHTML = list.join('');
+  const mc = document.getElementById('mmCats');
+  if(mc) mc.innerHTML = cols.map(c => { const t = tiles.find(x => x[1] === c); return `<a onclick="mMenu(false);openCol('${c}')"><img src="${IMGS[t[2]] || ''}" alt="" loading="lazy">${COLS[c].t}</a>`; }).join('');
+  const ms = document.getElementById('mmSpaces');
+  if(ms) ms.innerHTML = Object.keys(COLS).filter(c => /^sp-/.test(c)).map(c => `<a onclick="mMenu(false);openCol('${c}')">${COLS[c].t}</a>`).join('');
+}
+function mMenu(on){ const m = document.getElementById('mmenu'); if(!m) return; m.classList.toggle('open', !!on); m.setAttribute('aria-hidden', on ? 'false' : 'true'); document.body.style.overflow = on ? 'hidden' : ''; }
+document.addEventListener('DOMContentLoaded', () => { try{ mHome(); }catch(e){} });
+
 function liveHome(){
   const ids = Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0);
   if(!ids.length) return;
@@ -3210,6 +3328,7 @@ function liveHome(){
   const g = {}; one(ids).forEach(i => { const x = PRODS[i], sb = x.sb && x.sb !== 'More' ? x.sb : ''; (g[x.col + '|' + sb] = g[x.col + '|' + sb] || []).push(i) });
   const tiles = Object.entries(g).sort((a, b) => b[1].length - a[1].length).map(([k, l]) => { const [col, sb] = k.split('|'); return [sb || (COLS[col] ? COLS[col].t : col), col, PRODS[l[0]].img, sb] });
   if(tiles.length){ ARCH.length = 0; tiles.slice(0, 12).forEach(t => ARCH.push(t)); fillArch(); }
+  window.MTILES = tiles; try{ mHome(); }catch(e){ console.warn(e) }
   // photos of the old sample catalogue → a live product's photo (furniture where it shows furniture)
   const used = new Set(), pickImg = col => { const l = one(ids).filter(i => !used.has(i) && (!col || PRODS[i].col === col)); const i = l[0] || one(ids).find(x => !used.has(x)); if(!i) return null; used.add(i); return IMGS[PRODS[i].img]; };
   const SAMPLE = { BFURN: 'furniture', BDINE: 'furniture', TCASSIO: 'furniture', SOFA: 'furniture', STOOL: 'furniture', TGIULIAA: 'furniture', CHAIR: 'furniture' };
