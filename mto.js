@@ -85,7 +85,7 @@
     if (!((num(c.shell) || 0) > 0) || !arr(c.bays).length) return { ok: false, error: 'This design is not ready to order yet' };
     var fl = L * W, pick = function (list, name) { return arr(list).filter(function (x) { return x && x.name === name; })[0] || arr(list)[0] || null; };
     var roof = pick(c.roofs, lay.roof), hgt = pick(c.heights, lay.height), pnl = pick(c.panels, lay.panel), gls = pick(c.glasses, lay.glass), frm = pick(c.frames, lay.frame);
-    var ws = 0, nb = 0, cnt = {}, walls = {}, si, err = null;
+    var ws = 0, nb = 0, nsl = 0, ndr = 0, cnt = {}, walls = {}, si, err = null;
     for (si = 0; si < SIDES.length && !err; si++) {
       var side = SIDES[si], n = Math.ceil((side === 'front' || side === 'back' ? L : W) / bay), ks = lay.walls && lay.walls[side];
       if (!Array.isArray(ks) || ks.length !== n) return { ok: false, error: 'The ' + side + ' wall needs ' + n + ' bays' };
@@ -97,7 +97,7 @@
         if (i + sp > n) return { ok: false, error: b.name + ' does not fit at the end of the ' + side + ' wall' };
         for (var j = 1; j < sp; j++) if (ks[i + j] !== '-') return { ok: false, error: b.name + ' needs ' + sp + ' bays on the ' + side + ' wall' };
         ws += (num(b.price) || 0) + (b.solid ? num(pnl && pnl.extra) || 0 : 0) + (b.glass ? num(gls && gls.extra) || 0 : 0) + (b.glass || b.door ? num(frm && frm.extra) || 0 : 0);
-        cnt[k] = (cnt[k] || 0) + 1; nb += sp; i += sp;
+        cnt[k] = (cnt[k] || 0) + 1; nb += sp; i += sp; if (k === 'slide') nsl++; if (b.door) ndr++;
       }
       walls[side] = ks;
     }
@@ -106,7 +106,23 @@
     var nm = function (x) { return x ? x.name : null; };
     var lines = [{ name: (c.kind || 'Cabin') + ' shell · ' + L + ' × ' + W + ' ft (' + fl + ' sq ft) · ' + ((roof && roof.name) || 'roof'), amount: samt },
       { name: 'Walls · ' + nb + ' bays: ' + summ, amount: wamt }, { name: 'Spec: ' + [nm(hgt), nm(pnl), nm(gls), nm(frm)].filter(function (x) { return x != null; }).join(', '), amount: 0 }];
-    var total = samt + wamt, items = {}, its = arr(c.items);
+    var total = samt + wamt, items = {}, its = arr(c.items), a2;
+    // 159: sliding door tracks, full-height doors, rain gutter, pergola projection
+    var trk = pick(c.tracks, lay.tracks);
+    if (nsl > 0 && (num(trk && trk.extra) || 0) !== 0) { a2 = rnd(nsl * num(trk.extra)); lines.push({ name: 'Sliding doors: ' + trk.name + ' × ' + nsl, amount: a2 }); total += a2; }
+    if (lay.full_doors === true && ndr > 0 && (num(c.full_door) || 0) > 0) { a2 = rnd(ndr * num(c.full_door)); lines.push({ name: 'Full-height doors × ' + ndr, amount: a2 }); total += a2; }
+    var gsd = SIDES.indexOf(lay.gutter) >= 0 && typeof lay.gutter === 'string' && (num(c.gutter) || 0) > 0 ? lay.gutter : null;
+    if (gsd) { var gl = gsd === 'front' || gsd === 'back' ? L : W; a2 = rnd(num(c.gutter) * gl); lines.push({ name: 'Rain gutter + downpipe · slope to the ' + gsd + ' · ' + gl + ' ft', amount: a2 }); total += a2; }
+    var pj = null;
+    if (isObj(c.proj)) {
+      var ps0 = lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : null, psd = ['front', 'right', 'back', 'left'].filter(function (x) { return ps0 && ps0.indexOf(x) >= 0; });
+      if (!psd.length && c.proj.required === true) return { ok: false, error: 'Choose where the pergola projection goes' };
+      var lp = lay.proj || {}, pdz = pick(c.proj.designs, lp.design), ptp = pick(c.proj.tops, lp.top), pun = pick(c.proj.unders, lp.under);
+      var plen = psd.reduce(function (t, x) { return t + (x === 'front' || x === 'back' ? L : W); }, 0), dep = dv(c.proj.depth, 1.5);
+      if (plen > 0) { a2 = rnd(plen * ((num(c.proj.rate) || 0) + (num(pdz && pdz.extra) || 0)) + plen * dep * ((num(ptp && ptp.rate) || 0) + (num(pun && pun.rate) || 0)));
+        lines.push({ name: 'Pergola projection ' + dep + ' ft deep · ' + plen + ' ft (' + psd.join(', ') + ') · ' + [nm(pdz), nm(ptp), nm(pun)].filter(function (x) { return x != null; }).join(', ') + ' · lights included', amount: a2 }); total += a2; }
+      pj = { sides: psd, design: nm(pdz), top: nm(ptp), under: nm(pun) };
+    }
     for (var t = 0; t < its.length; t++) {
       var it = its[t];
       if (!isObj(lay.items) || !(it.key in lay.items)) continue;
@@ -124,7 +140,8 @@
       return it ? { key: pl.key, x: cl(pl.x, L), y: cl(pl.y, W), rot: num(pl.rot) === 90 ? 90 : 0, len: it.unit === 'rft' ? Math.min(Math.max(rnd(dv(pl.len, 1)), 1), Math.max(L, W)) : null } : null;
     }).filter(function (x) { return x; });
     return { ok: true, L: L, W: W, floor: fl, size: L + ' × ' + W + ' ft', total: total, lines: lines,
-      layout: { L: L, W: W, roof: nm(roof), height: nm(hgt), panel: nm(pnl), glass: nm(gls), frame: nm(frm), walls: walls, items: items, places: places } };
+      layout: { L: L, W: W, roof: nm(roof), height: nm(hgt), panel: nm(pnl), glass: nm(gls), frame: nm(frm), walls: walls, items: items, places: places,
+        tracks: nm(trk), full_doors: lay.full_doors === true, gutter: gsd, proj: pj } };
   }
   window.mtoCabin = cabin;
   function price(m, o, payPct) {
@@ -219,6 +236,12 @@
     '.mto-box input[type=text],.mto-box input[inputmode],.mto-box select,.mto-box textarea{font:inherit;font-size:16px;padding:9px 11px;border:1px solid #CFC3B1;border-radius:10px;min-height:44px;box-sizing:border-box;width:100%;background:#fff}' +
     '.mto-opt{display:flex;gap:10px;align-items:flex-start;border:1px solid #CFC3B1;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;margin-bottom:8px}.mto-opt.on{border:2px solid #C26445}' +
     '.wz-pic-main{height:210px;background:#F3EEE6;border-radius:16px;padding:12px;box-sizing:border-box;margin-bottom:12px}'+
+    '.mto-wrap>section{min-width:0}.wz-views{max-width:100%}'+
+    '.wz-3d{position:sticky;top:52px;z-index:3;background:#FFFBF5;padding-bottom:8px;margin:0 -2px 10px}.wz-3dv{height:260px;background:#F3EEE6;border-radius:16px;overflow:hidden;position:relative}.wz-3dv>svg{padding:12px;box-sizing:border-box}'+
+    '.wz-views{display:flex;gap:6px;overflow-x:auto;margin-top:8px;scrollbar-width:none}.wz-views button{flex:none;border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:6px 12px;min-height:36px;font:inherit;font-size:12.5px;cursor:pointer;color:#2E2E2E}.wz-views button.on{background:#2E2E2E;color:#fff;border-color:#2E2E2E}'+
+    '.wz-hint{position:absolute;left:10px;bottom:8px;font-size:11px;color:#6A6258;background:rgba(255,251,245,.85);padding:3px 8px;border-radius:99px;pointer-events:none}'+
+    '.wz-dims{background:#fff;border:1px solid #E2D6C4;border-radius:12px;padding:6px;margin-top:12px}.wz-dims h5{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#6A6258;margin:6px 6px 2px}'+
+    '.wz-stp{display:flex;align-items:center;gap:8px}.wz-stp input{width:72px!important;text-align:center;min-height:40px!important}.wz-note{background:#EEF3EA;border:1px solid #CBD8C2;border-radius:12px;padding:10px 12px;font-size:13px;color:#33402B;margin:10px 0}'+
     '.wz-steps{display:flex;gap:5px;margin:0 0 12px}.wz-steps button{flex:1;height:6px;border:0;border-radius:3px;background:#E6DED2;padding:0;cursor:pointer}.wz-steps button.on{background:#C26445}'+
     '.wz-h{font-size:19px;font-weight:800;margin:0}.wz-sub{font-size:13px;color:#6A6258;margin:2px 0 12px}.wz-lbl{font-size:13px;font-weight:700;margin:14px 0 8px}'+
     '.wz-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.wz-card{border:1px solid #E2D6C4;background:#fff;border-radius:14px;padding:10px;text-align:center;font:inherit;color:#2E2E2E;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:64px}'+
@@ -271,7 +294,7 @@
   function cbColor(b) { return !b ? '#D9D4CB' : b.door ? (b.glass ? '#4E93AD' : '#8C7E6C') : b.glass ? (b.key === 'frost' ? '#B9CDD4' : '#8EC3D6') : '#D9D4CB'; }
   // 157: drag and drop — things placed inside (toilet, WC, pantry, partitions, partition doors) and wall pieces dropped on bays
   var CB_FOOT = { toilet: [4, 6, 'Toilet'], wc: [4, 4, 'WC'], pantry: [6, 2, 'Pantry'], pdoor: [3, 0.6, 'Door'], gdoorp: [3, 0.6, 'Glass door'] };
-  function cbPlaceable(it) { return it && (it.unit === 'nos' || it.unit === 'rft'); }
+  function cbPlaceable(it) { return it && ((it.unit === 'nos' && it.key in CB_FOOT) || it.unit === 'rft'); }
   function cbItem(c, k) { return arr(c.items).filter(function (x) { return x.key === k; })[0] || null; }
   function cbDims(c, pl) { var it = cbItem(c, pl.key), f = CB_FOOT[pl.key] || [3, 3, it ? it.name : '']; if (it && it.unit === 'rft') return [pl.rot === 90 ? 0.4 : pl.len, pl.rot === 90 ? pl.len : 0.4]; return pl.rot === 90 ? [f[1], f[0]] : [f[0], f[1]]; }
   function cbSync(c, lay) {   // quantities follow what is placed
@@ -350,7 +373,7 @@
     SIDES.forEach(function (sd) { lay.walls[sd].forEach(function (k) { var b = cbBay(c, k); if (b && b.door && (num(b.price) || 0) > best) { best = num(b.price) || 0; side = sd; door = k === 'fold' ? 'fold' : k === 'slide' ? 'slide' : k === 'double' || k === 'pdouble' ? 'double' : 'single'; } }); });
     var win = 0; SIDES.forEach(function (sd) { lay.walls[sd].forEach(function (k) { if (k === 'window') win++; }); });
     var it = lay.items || {};
-    return { glass: g, door: door, side: side, windows: win, rooms: (num(it.ppart) || 0) + (num(it.gpart) || 0) + (num(it.fpart) || 0) > 0, toilet: (num(it.toilet) || 0) > 0, wc: (num(it.wc) || 0) > 0, pantry: (num(it.pantry) || 0) > 0 };
+    return { glass: g, door: door, side: side, windows: win, rooms: (num(it.ppart) || 0) + (num(it.gpart) || 0) + (num(it.fpart) || 0) > 0, toilet: (num(it.toilet) || 0) > 0, wc: (num(it.wc) || 0) > 0, pantry: (num(it.pantry) || 0) > 0, exhaust: (num(it.exhaust) || 0) > 0 };
   }
   function wzBuild(c, lay, w) {   // walls from the simple choices: glass level, one main door, windows on solid walls, a vent by the toilet
     var gw = wzGlassWalls(w.glass), solid = cbBay(c, 'puf') ? 'puf' : cbFill(c), glass = cbBay(c, 'glass') ? 'glass' : solid;
@@ -369,7 +392,64 @@
     if (w.pantry && cbItem(c, 'pantry')) lay.places.push({ key: 'pantry', x: Math.max(0, L - 6), y: 0, rot: 0, len: null });
     if (w.rooms) { var pk = w.glass === 'most' || w.glass === 'all' ? 'gpart' : 'ppart', px = Math.max(x + 2, Math.round(L / 3)); lay.places.push({ key: pk, x: px, y: 0, rot: 90, len: W }); lay.places.push({ key: pk === 'gpart' ? 'gdoorp' : 'pdoor', x: Math.max(0, px - 0.1), y: Math.max(0, W - 4), rot: 90, len: null }); }
     ['ppart', 'gpart', 'fpart', 'pdoor', 'gdoorp', 'toilet', 'wc', 'pantry'].forEach(function (k) { if (k in it || lay.places.some(function (p) { return p.key === k; })) it[k] = 0; });
+    if (cbItem(c, 'exhaust')) { var wet = lay.places.filter(function (p) { return p.key === 'toilet' || p.key === 'wc' || p.key === 'pantry'; }).length; it.exhaust = w.exhaust && wet ? Math.min(wet, num(cbItem(c, 'exhaust').max) || 6) : 0; }   // 159: one exhaust fan per wet area
     lay.items = it; lay.places.forEach(function (p) { cbClamp(c, lay, p); }); cbSync(c, lay);
+  }
+  // 159: feet and inches, the plan with measurements, and the 3D view
+  function fi(v) { v = Math.round(num(v) * 12); var f = Math.floor(v / 12), i = v - f * 12; return f + "'" + (i ? '-' + i + '"' : '-0"'); }
+  function wzDims(c, lay) {   // the layout seen from the top, every size in ft-in
+    var L = num(lay.L), W = num(lay.W), bay = num(c.bay) || 4, pj = lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : [], dep = num(c.proj && c.proj.depth) || 1.5;
+    var pad = { front: pj.indexOf('front') >= 0 ? dep : 0, back: pj.indexOf('back') >= 0 ? dep : 0, left: pj.indexOf('left') >= 0 ? dep : 0, right: pj.indexOf('right') >= 0 ? dep : 0 };
+    var s = Math.min(520 / (L + pad.left + pad.right), 360 / (W + pad.front + pad.back), 30), ox = 58 + pad.left * s, oy = 50 + pad.back * s, o = '', FC = '#2E2E2E', DC = '#9C4127';
+    var X = function (x) { return Math.round((ox + x * s) * 10) / 10; }, Y = function (y) { return Math.round((oy + y * s) * 10) / 10; };
+    var dim = function (x1, y1, x2, y2, t, off, vert) {   // a dimension line with ticks and its text
+      var r = ''; if (vert) { r += '<line x1="' + (x1 + off) + '" y1="' + y1 + '" x2="' + (x1 + off) + '" y2="' + y2 + '" stroke="' + DC + '" stroke-width="1"/>'; [y1, y2].forEach(function (y) { r += '<line x1="' + (x1 + off - 4) + '" y1="' + (y + 4) + '" x2="' + (x1 + off + 4) + '" y2="' + (y - 4) + '" stroke="' + DC + '" stroke-width="1.4"/>'; });
+        r += '<text x="' + (x1 + off + (off < 0 ? -4 : 4)) + '" y="' + ((+y1 + +y2) / 2 + 4) + '" font-size="11" fill="' + DC + '" text-anchor="' + (off < 0 ? 'end' : 'start') + '">' + t + '</text>'; }
+      else { r += '<line x1="' + x1 + '" y1="' + (y1 + off) + '" x2="' + x2 + '" y2="' + (y1 + off) + '" stroke="' + DC + '" stroke-width="1"/>'; [x1, x2].forEach(function (x) { r += '<line x1="' + (x - 4) + '" y1="' + (y1 + off + 4) + '" x2="' + (+x + 4) + '" y2="' + (y1 + off - 4) + '" stroke="' + DC + '" stroke-width="1.4"/>'; });
+        r += '<text x="' + ((+x1 + +x2) / 2) + '" y="' + (y1 + off + (off < 0 ? -4 : 12)) + '" font-size="11" fill="' + DC + '" text-anchor="middle">' + t + '</text>'; }
+      return r; };
+    // pergola projection (dashed) and gutter
+    pj.forEach(function (sd) { var x = sd === 'right' ? L : sd === 'left' ? -dep : 0, y = sd === 'front' ? W : sd === 'back' ? -dep : 0, w = sd === 'front' || sd === 'back' ? L : dep, h = sd === 'front' || sd === 'back' ? dep : W;
+      o += '<rect x="' + X(x) + '" y="' + Y(y) + '" width="' + (w * s).toFixed(1) + '" height="' + (h * s).toFixed(1) + '" fill="#F4EFE6" stroke="#8C7E6C" stroke-dasharray="5 4"/>';
+      if (sd === 'front') o += dim(X(L), Y(W), X(L), Y(W + dep), fi(dep) + ' pergola', 8, true); });
+    if (SIDES.indexOf(lay.gutter) >= 0) { var g = lay.gutter, go = (pad[g] || 0) + 0.6, gx1 = g === 'right' ? L + go : g === 'left' ? -go : 0, gx2 = g === 'right' ? L + go : g === 'left' ? -go : L, gy1 = g === 'front' ? W + go : g === 'back' ? -go : 0, gy2 = g === 'front' ? W + go : g === 'back' ? -go : W;
+      o += '<line x1="' + X(gx1) + '" y1="' + Y(gy1) + '" x2="' + X(gx2) + '" y2="' + Y(gy2) + '" stroke="#3C3C3C" stroke-width="4"/><circle cx="' + X(gx2) + '" cy="' + Y(gy2) + '" r="5" fill="#3C3C3C"/>'; }
+    o += '<rect x="' + X(0) + '" y="' + Y(0) + '" width="' + (L * s).toFixed(1) + '" height="' + (W * s).toFixed(1) + '" fill="#FBF8F3"/>';
+    // things inside, with their sizes
+    arr(lay.places).forEach(function (pl) { var it = cbItem(c, pl.key), d = cbDims(c, pl), x = X(pl.x), y = Y(pl.y), w = d[0] * s, h = d[1] * s;
+      if (it && it.unit === 'rft') { o += '<rect x="' + x + '" y="' + y + '" width="' + Math.max(w, 4) + '" height="' + Math.max(h, 4) + '" fill="' + (pl.key === 'gpart' ? '#8EC3D6' : pl.key === 'fpart' ? '#B9CDD4' : '#B9B2A6') + '"/>';
+        o += '<text x="' + (+x + w / 2 + (pl.rot === 90 ? 8 : 0)) + '" y="' + (+y + h / 2 + (pl.rot === 90 ? 4 : -6)) + '" font-size="10" fill="#4A4640" text-anchor="' + (pl.rot === 90 ? 'start' : 'middle') + '">' + esc((it.name || '').replace(/ — .*$/, '').replace(/ \(.*\)$/, '')) + ' ' + fi(pl.len) + '</text>'; return; }
+      if (pl.key === 'pdoor' || pl.key === 'gdoorp') { o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="#fff" stroke="' + (pl.key === 'gdoorp' ? '#4E93AD' : '#8C7E6C') + '" stroke-width="1.5"/>'; return; }
+      o += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + (pl.key === 'pantry' ? '#EFE6D6' : '#EAF3F6') + '" stroke="#8EC3D6" stroke-width="1.2"/><text x="' + (+x + w / 2) + '" y="' + (+y + h / 2 - 1) + '" font-size="10.5" font-weight="700" fill="#2E2E2E" text-anchor="middle">' + esc((CB_FOOT[pl.key] || [0, 0, ''])[2]) + '</text><text x="' + (+x + w / 2) + '" y="' + (+y + h / 2 + 11) + '" font-size="9.5" fill="#6A6258" text-anchor="middle">' + fi(d[0]) + ' × ' + fi(d[1]) + '</text>'; });
+    // walls, each piece with its width (front and right chains)
+    var DH = lay.full_doors === true ? '' : " · 8'-0\" high";
+    SIDES.forEach(function (side) { var ks = lay.walls[side] || [], len = cbLen(c, lay, side), i = 0;
+      while (i < ks.length) { var k = ks[i], b = cbBay(c, k), sp = cbSpan(c, k), a = i * bay, e = Math.min((i + sp) * bay, len), x1, y1, x2, y2;
+        if (side === 'front') { x1 = X(a); x2 = X(e); y1 = y2 = Y(W); } else if (side === 'back') { x1 = X(a); x2 = X(e); y1 = y2 = Y(0); } else if (side === 'right') { x1 = x2 = X(L); y1 = Y(W - a); y2 = Y(W - e); } else { x1 = x2 = X(0); y1 = Y(W - a); y2 = Y(W - e); }
+        o += '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + cbColor(b) + '" stroke-width="8"/>';
+        if (k === 'window' || k === 'vent') o += '<line x1="' + (+x1 + (x2 - x1) * .25) + '" y1="' + (+y1 + (y2 - y1) * .25) + '" x2="' + (+x1 + (x2 - x1) * .75) + '" y2="' + (+y1 + (y2 - y1) * .75) + '" stroke="#8EC3D6" stroke-width="4"/>';
+        if (side === 'front') o += dim(x1, y1, x2, y2, fi(e - a), 14 + pad.front * s + (pad.front ? 4 : 0) + (lay.gutter === 'front' ? 12 : 0));
+        if (side === 'right') o += dim(x1, y2, x2, y1, fi(e - a), 14 + pad.right * s + (lay.gutter === 'right' ? 12 : 0), true);
+        if (b && b.door) { var mx = (+x1 + +x2) / 2, my = (+y1 + +y2) / 2, ins = side === 'front' ? [0, -14] : side === 'back' ? [0, 20] : side === 'right' ? [-8, 0] : [8, 0];
+          o += '<text x="' + (mx + ins[0]) + '" y="' + (my + ins[1]) + '" font-size="10" fill="#4A4640" text-anchor="' + (side === 'right' ? 'end' : side === 'left' ? 'start' : 'middle') + '">' + esc((b.name || '').replace(/ \(.*\)$/, '')) + (k === 'slide' && lay.tracks ? ' · ' + esc(lay.tracks) : '') + DH + '</text>'; }
+        i += sp; } });
+    o += dim(X(0), Y(0), X(L), Y(0), fi(L) + ' outside', -16 - pad.back * s - (lay.gutter === 'back' ? 12 : 0));
+    o += dim(X(0), Y(0), X(0), Y(W), fi(W), -16 - pad.left * s - (lay.gutter === 'left' ? 12 : 0), true);
+    var H = /^10/.test(lay.height || '') ? '10\'-0"' : '8\'-6"';
+    var vw = (L + pad.left + pad.right) * s + 130, vh = (W + pad.front + pad.back) * s + 110;
+    o += '<text x="' + X(L / 2) + '" y="' + (vh - 8) + '" font-size="11" fill="#6A6258" text-anchor="middle" letter-spacing="1">FRONT · clear height ' + H + ' · area ' + (L * W) + ' sq ft</text>';
+    return '<svg viewBox="0 0 ' + vw.toFixed(0) + ' ' + vh.toFixed(0) + '" style="width:100%;display:block" role="img" aria-label="Your layout with measurements in feet and inches">' + o + '</svg>';
+  }
+  var V3 = [['3d', '3D'], ['top', 'Top'], ['front', 'Front'], ['right', 'Right'], ['back', 'Back'], ['left', 'Left'], ['inside', 'Inside'], ['360', '360°']];
+  function wzAuto(st, w, lay) { var it = lay.items || {}; return st === 0 ? 'top' : st === 1 ? '3d' : st === 2 ? (w.side || 'front') : st === 3 ? 'top' : st === 4 ? '3d' : st === 5 ? ((num(it.ceiling) || 0) > 0 ? 'inside' : '3d') : '360'; }
+  var C3 = { st: 0 };   // 0 not loaded, 1 loading, 2 ready, -1 not possible (no WebGL)
+  function mount3d() {
+    var el = document.getElementById('cb3d'); if (!el || !S || !S.wz) return;
+    if (C3.st === 2) { try { window.Cabin3D.show(el, PRODS[S.id].cz.cabin, S.o.layout, S.view3); } catch (er) { C3.st = -1; } return; }
+    if (C3.st !== 0) return;
+    try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
+    C3.st = 1; var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=1';
+    sc.onload = function () { C3.st = window.Cabin3D ? 2 : -1; mount3d(); }; sc.onerror = function () { C3.st = -1; }; document.head.appendChild(sc);
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -423,11 +503,15 @@
   }
   function wzTry(c, lay, f) { var l2 = cbClone(lay); f(l2); var q = cabin(c, l2); return q.ok ? q.total : null; }
   function cabinUI(m, o) {
-    var c = m.cabin, lay = o.layout, w = S.wz, q0 = cabin(c, lay), st = w.step, TITLES = ['How big?', 'How much glass?', 'Main door', 'Rooms inside', 'The look', 'Your cabin'];
-    var SUBS = ['Pick a size — or set it exactly below', 'We put the glass on the walls for you', 'Pick the door and the wall it goes on', 'Switch on what you need — move things on the plan if you like', 'Roof, frame colour and a few upgrades', 'Check it, then order — a drawing comes to you for approval first'];
-    var h = '<div class="wz-pic-main">' + wzIso(c, lay) + '</div><div class="wz-steps">' + TITLES.map(function (t, i) { return '<button type="button" data-wzgo="' + i + '" class="' + (i <= st ? 'on' : '') + '" aria-label="Step ' + (i + 1) + ': ' + t + '"></button>'; }).join('') + '</div>' +
+    var c = m.cabin, lay = o.layout, w = S.wz, q0 = cabin(c, lay), st = w.step, TITLES = ['How big?', 'How much glass?', 'Doors', 'Rooms inside', 'Outside', 'The look', 'Your cabin'];
+    var SUBS = ['Pick a size — or set it exactly with − / +', 'We put the glass on the walls for you', 'Pick the door, the wall it goes on and its height', 'Switch on what you need — move things on the plan if you like', 'Pergola projection over the walls, and a rain gutter', 'Roof, frame colour and a few upgrades', 'Check it, then order — final drawings come to you for approval first'];
+    var v3 = S.view3 = S.v3 || (w.adv ? (w.aside || 'front') : wzAuto(st, w, lay));
+    var h = '<div class="wz-3d"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(c, lay)) + '</div>' + (C3.st === -1 ? '' : '<div class="wz-views" role="tablist" aria-label="Views">' + V3.map(function (v) { return '<button type="button" role="tab" data-wzv="' + v[0] + '" class="' + (v[0] === v3 ? 'on' : '') + '" aria-selected="' + (v[0] === v3) + '">' + v[1] + '</button>'; }).join('') + '</div>') + '</div><div class="wz-steps">' + TITLES.map(function (t, i) { return '<button type="button" data-wzgo="' + i + '" class="' + (i <= st ? 'on' : '') + '" aria-label="Step ' + (i + 1) + ': ' + t + '"></button>'; }).join('') + '</div>' +
       '<h4 class="wz-h">' + (w.adv ? 'Edit each wall' : TITLES[st]) + '</h4><p class="wz-sub">' + (w.adv ? 'Pick a wall, tap a panel, choose what it should be' : SUBS[st]) + '</p>';
     var mini = function (lay2) { return wzIso(c, lay2, true); };
+    var dimsBox = '<div class="wz-dims"><h5>Your layout · sizes in ft-in</h5>' + wzDims(c, lay) + '</div>';
+    var tgl = function (attr, on, name, sub, pr) { return '<label class="wz-row"><span><b>' + esc(name) + '</b><small>' + esc(sub) + '</small></span><span class="wz-pr">' + (pr || '') + '</span><input type="checkbox" class="wz-sw" ' + attr + (on ? ' checked' : '') + '></label>'; };
+    var dif = function (f1, f0) { var a1 = wzTry(c, lay, f1), a0 = wzTry(c, lay, f0); return a1 != null && a0 != null ? (a1 - a0 ? '+' + rs(a1 - a0) : 'included') : ''; };
     var withW = function (ch) { var w2 = {}, k; for (k in w) w2[k] = w[k]; for (k in ch) w2[k] = ch[k]; return w2; };
     if (w.adv) {
       var side = w.aside || 'front', ks = lay.walls[side], hi = cbHead(ks, Math.min(w.ai || 0, ks.length - 1)), cur = ks[hi];
@@ -436,14 +520,14 @@
       var pieces = WZ_PIECES.filter(function (p) { return cbBay(c, p[0]); }).map(function (p) { var b = cbBay(c, p[0]); return [p[0], p[1], cbSpan(c, p[0]) > 1 ? (cbSpan(c, p[0]) * (num(c.bay) || 4)) + ' ft wide' : '']; });
       h += '<div class="wz-cards">' + pieces.map(function (p) { var b = cbBay(c, p[0]), okk = cbSet(c, cbClone(lay), side, hi, p[0]);   // each piece with its own price
         return '<button type="button" data-wzpiece="' + esc(p[0]) + '" class="wz-card' + (p[0] === cur ? ' on' : '') + '"' + (okk ? '' : ' disabled') + '><b>' + esc(p[1]) + '</b><small>' + rs(num(b.price) || 0) + (p[2] ? ' · ' + esc(p[2]) : '') + '</small></button>'; }).join('') + '</div>';
-      h += '<button type="button" class="wz-back" data-wzadv="0">← Back to the simple steps</button>';
+      h += '<button type="button" class="wz-back" data-wzadv="0">← Back to the simple steps</button>' + dimsBox;
       return h;
     }
     if (st === 0) {
       h += wzCards(WZ_SIZES.map(function (z) { return [z[0], z[0], z[1] + ' × ' + z[2] + ' ft · ' + z[3]]; }), (WZ_SIZES.filter(function (z) { return z[1] === num(lay.L) && z[2] === num(lay.W); })[0] || [''])[0], 'data-wzsize',
         function (z) { var zz = WZ_SIZES.filter(function (y) { return y[0] === z[0]; })[0]; return wzTry(c, lay, function (l2) { l2.L = zz[1]; l2.W = zz[2]; wzBuild(c, l2, w); }); });
-      var opts = function (lo, hi2, v, key) { var r = ''; for (var i = lo; i <= hi2; i++) r += '<option' + (i === num(v) ? ' selected' : '') + '>' + i + '</option>'; return '<select data-cdim="' + key + '">' + r + '</select>'; };
-      h += '<div class="mto-g" style="grid-template-columns:repeat(2,minmax(0,1fr));margin-top:12px"><label>Exact length (ft)' + opts(num(c.L && c.L.min) || 8, num(c.L && c.L.max) || 40, lay.L, 'L') + '</label><label>Exact width (ft)' + opts(num(c.W && c.W.min) || 8, num(c.W && c.W.max) || 20, lay.W, 'W') + '</label></div>';
+      var stp = function (key, lbl, lo, hi2) { return '<div class="wz-row" style="cursor:default"><span><b>' + lbl + '</b><small>' + lo + '–' + hi2 + ' ft · now ' + fi(lay[key]) + '</small></span><span class="wz-stp"><button type="button" class="wz-pm" data-cstep="' + key + ':-1" aria-label="' + lbl + ' less"' + (num(lay[key]) <= lo ? ' disabled' : '') + '>−</button><input type="number" inputmode="numeric" min="' + lo + '" max="' + hi2 + '" step="1" data-cdim="' + key + '" value="' + num(lay[key]) + '" aria-label="' + lbl + ' in feet"><button type="button" class="wz-pm" data-cstep="' + key + ':1" aria-label="' + lbl + ' more"' + (num(lay[key]) >= hi2 ? ' disabled' : '') + '>+</button></span></div>'; };
+      h += '<p class="wz-lbl">Exact size</p>' + stp('L', 'Length', num(c.L && c.L.min) || 8, num(c.L && c.L.max) || 40) + stp('W', 'Width', num(c.W && c.W.min) || 8, num(c.W && c.W.max) || 20);
     } else if (st === 1) {
       h += wzCards(WZ_GLASS, w.glass, 'data-wzglass', function (g) { return wzTry(c, lay, function (l2) { wzBuild(c, l2, withW({ glass: g[0] })); }); },
         function (g) { var l2 = cbClone(lay); l2.L = 12; l2.W = 10; wzBuild(c, l2, withW({ glass: g[0], door: 'single', side: 'front', windows: 2, rooms: false, toilet: false, wc: false, pantry: false })); return mini(l2); });
@@ -451,16 +535,32 @@
       h += wzCards(WZ_DOORS, w.door, 'data-wzdoor', function (d) { return wzTry(c, lay, function (l2) { wzBuild(c, l2, withW({ door: d[0] })); if (!l2.walls[w.side].some(function (k) { var b = cbBay(c, k); return b && b.door && cbSpan(c, k) === cbSpan(c, wzDoorKey(c, d[0], true)); })) l2.L = -1; }); },
         function (d) { var l2 = cbClone(lay); l2.L = 12; l2.W = 10; wzBuild(c, l2, withW({ door: d[0], side: 'front', windows: 0, rooms: false, toilet: false, wc: false, pantry: false })); return mini(l2); });
       h += '<p class="wz-lbl">Which wall?</p><div class="wz-tabs">' + WZ_SIDES.map(function (sd) { return '<button type="button" data-wzdside="' + sd[0] + '" class="' + (sd[0] === w.side ? 'on' : '') + '">' + sd[1] + '</button>'; }).join('') + '</div>';
+      var hasSlide = SIDES.some(function (sd) { return lay.walls[sd].indexOf('slide') >= 0; });
+      if (hasSlide && arr(c.tracks).length > 1) h += '<p class="wz-lbl">Sliding door tracks</p>' + wzCards(arr(c.tracks).map(function (t) { return [t.name, t.name, t.name.charAt(0) + ' glass panels slide']; }), lay.tracks || arr(c.tracks)[0].name, 'data-wztrk', function (t) { return wzTry(c, lay, function (l2) { l2.tracks = t[0]; }); });
+      if (num(c.full_door)) h += '<p class="wz-lbl">Door height</p>' + tgl('data-wzfull="1"', lay.full_doors === true, 'Full-height doors', 'standard doors are 8 ft high with wall above — this takes them up to the roof', dif(function (l2) { l2.full_doors = true; }, function (l2) { l2.full_doors = false; }));
     } else if (st === 3) {
       var tg = function (key, name, sub, item) { var it = cbItem(c, item); if (!it) return ''; var on = !!w[key], t1 = wzTry(c, lay, function (l2) { var ch = {}; ch[key] = true; wzBuild(c, l2, withW(ch)); }), t0 = wzTry(c, lay, function (l2) { var ch = {}; ch[key] = false; wzBuild(c, l2, withW(ch)); });
         return '<label class="wz-row"><span><b>' + esc(name) + '</b><small>' + esc(sub) + '</small></span><span class="wz-pr">' + (t1 != null && t0 != null ? '+' + rs(t1 - t0) : '') + '</span><input type="checkbox" class="wz-sw" data-wztog="' + key + '"' + (on ? ' checked' : '') + '></label>'; };
       h += tg('rooms', 'Split into 2 rooms', 'a wall with a door between', 'ppart') + tg('toilet', 'Toilet', 'WC, basin and shower', 'toilet') + tg('wc', 'Small toilet', 'WC and basin', 'wc') + tg('pantry', 'Pantry', 'counter and sink', 'pantry');
+      if (cbItem(c, 'exhaust') && (w.toilet || w.wc || w.pantry)) h += tgl('data-wztog="exhaust"', !!w.exhaust, 'Exhaust fans', 'one in each toilet / pantry, fitted on the wall', dif(function (l2) { wzBuild(c, l2, withW({ exhaust: true })); }, function (l2) { wzBuild(c, l2, withW({ exhaust: false })); }));
       var wp = cbBay(c, 'window');
       if (wp) h += '<div class="wz-row"><span><b>Windows</b><small>sliding, with mesh · ' + rs(wp.price) + ' each</small></span><span style="display:flex;align-items:center;gap:10px"><button type="button" class="wz-pm" data-wzwin="-1" aria-label="Fewer windows">−</button><b>' + w.windows + '</b><button type="button" class="wz-pm" data-wzwin="1" aria-label="More windows">+</button></span></div>';
       if (arr(lay.places).length) h += '<p class="wz-lbl">Move things if you like (drag on the plan)</p><div id="cbPlanBox" style="background:#fff;border:1px solid #E2D6C4;border-radius:12px;padding:6px">' + cbPlan(c, lay, null, S.psel, true) + '</div>' + (S.psel != null && lay.places[S.psel] ? '<div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="wz-chip" data-pact="rot">Turn</button><button type="button" class="wz-chip" data-pact="done">Done</button></div>' : '');
-    } else if (st === 4) {
+    } else if (st === 4) {   // 159: pergola projection (always, like a pergola — never a PUF box) and the rain gutter
+      var P = c.proj, lp = lay.proj || {}, sides = arr(lp.sides);
+      if (P) {
+        h += '<p class="wz-lbl">Projection — ' + fi(num(P.depth) || 1.5) + ' deep, on which walls?</p><div class="wz-tabs">' + WZ_SIDES.map(function (sd) { var on = sides.indexOf(sd[0]) >= 0; return '<button type="button" data-wzpj="' + sd[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + (on ? '✓ ' : '') + sd[1] + '</button>'; }).join('') + '</div>';
+        var pset = function (key, list, lbl, attr) { list = arr(list); if (!list.length) return ''; return '<p class="wz-lbl">' + lbl + '</p>' + wzCards(list.map(function (x) { return [x.name, x.name, '']; }), lp[key] || list[0].name, attr, function (x) { return wzTry(c, lay, function (l2) { l2.proj = Object.assign({}, l2.proj); l2.proj[key] = x[0]; }); }); };
+        h += pset('design', P.designs, 'Pergola design', 'data-wzpd') + pset('top', P.tops, 'Cover on top', 'data-wzpt') + pset('under', P.unders, 'Underneath', 'data-wzpu');
+        h += '<div class="wz-note">💡 Lights under the projection are always included.</div>';
+      }
+      if (num(c.gutter)) {
+        h += '<p class="wz-lbl">Rain gutter</p>' + tgl('data-wzgon="1"', SIDES.indexOf(lay.gutter) >= 0, 'Rain gutter + downpipe', 'collects roof water and drains it on one side', SIDES.indexOf(lay.gutter) >= 0 ? '' : '+' + rs(num(c.gutter) * num(lay.L)));
+        if (SIDES.indexOf(lay.gutter) >= 0) h += '<p class="wz-lbl">Roof slope — water drains to the</p><div class="wz-tabs">' + WZ_SIDES.map(function (sd) { return '<button type="button" data-wzgut="' + sd[0] + '" class="' + (sd[0] === lay.gutter ? 'on' : '') + '">' + sd[1] + '</button>'; }).join('') + '</div>';
+      }
+    } else if (st === 5) {
       var row = function (key, list, lbl) { list = arr(list); if (list.length < 2) return ''; return '<p class="wz-lbl">' + lbl + '</p>' + wzCards(list.map(function (x) { return [x.name, x.name.replace(/ — .*$/, '').replace(/ \(.*\)$/, ''), '']; }), lay[key], 'data-cchk="' + key + '" data-v', function (x) { return wzTry(c, lay, function (l2) { l2[key] = x[0]; }); }); };
-      h += row('roof', c.roofs, 'Roof');
+      h += '<div class="wz-note">💡 LED lights inside are always included.</div>' + row('roof', c.roofs, 'Roof');
       var frames = arr(c.frames), fcol = function (n) { n = n.toLowerCase(); return /grey/.test(n) ? '#8A8A8A' : /white/.test(n) ? '#FFFFFF' : /wood/.test(n) ? '#8B5A2B' : '#2E2E2E'; };
       if (frames.length > 1) h += '<p class="wz-lbl">Frame colour</p><div style="display:flex;gap:12px;flex-wrap:wrap">' + frames.map(function (f) { var t = wzTry(c, lay, function (l2) { l2.frame = f.name; }); return '<button type="button" data-cch="frame" data-v="' + esc(f.name) + '" class="wz-sw-col' + (lay.frame === f.name ? ' on' : '') + '" style="background:' + fcol(f.name) + '" aria-label="' + esc(f.name) + '" title="' + esc(f.name) + (t != null && t > q0.total ? ' +' + rs(t - q0.total) : '') + '"></button>'; }).join('') + '</div><p class="wz-sub" style="margin-top:4px">' + esc(lay.frame || '') + '</p>';
       var up = function (key, list, name, sub) { list = arr(list); if (list.length < 2) return ''; var on = lay[key] && lay[key] !== list[0].name, t1 = wzTry(c, lay, function (l2) { l2[key] = list[1].name; }), t0 = wzTry(c, lay, function (l2) { l2[key] = list[0].name; });
@@ -470,23 +570,32 @@
     } else {
       var gname = (WZ_GLASS.filter(function (g) { return g[0] === w.glass; })[0] || ['', ''])[1], dname = (WZ_DOORS.filter(function (d) { return d[0] === w.door; })[0] || ['', ''])[1];
       var ins = []; if (w.rooms) ins.push('2 rooms'); if (w.toilet) ins.push('toilet'); if (w.wc) ins.push('small toilet'); if (w.pantry) ins.push('pantry'); if (w.windows) ins.push(w.windows + ' window' + (w.windows > 1 ? 's' : ''));
-      h += '<ul class="wz-sum"><li><b>' + num(lay.L) + ' × ' + num(lay.W) + ' ft</b> · ' + (num(lay.L) * num(lay.W)) + ' sq ft</li><li>' + esc(gname) + ' · ' + esc(dname) + ' (' + esc(w.side) + ')</li><li>' + esc(ins.join(' · ') || 'open inside') + '</li><li>' + esc([lay.roof, lay.frame, lay.height].filter(Boolean).join(' · ')) + '</li></ul>';
+      if (w.exhaust) ins.push('exhaust fans');
+      var pj2 = lay.proj && arr(lay.proj.sides).length ? 'Pergola projection (' + arr(lay.proj.sides).join(', ') + ') · ' + [lay.proj.design, lay.proj.top, lay.proj.under].filter(Boolean).join(' · ') : '';
+      h += '<ul class="wz-sum"><li><b>' + fi(lay.L) + ' × ' + fi(lay.W) + '</b> · ' + (num(lay.L) * num(lay.W)) + ' sq ft</li><li>' + esc(gname) + ' · ' + esc(dname) + ' (' + esc(w.side) + ')' + (lay.full_doors === true ? ' · full-height doors' : ' · 8 ft doors') + (SIDES.some(function (sd) { return lay.walls[sd].indexOf('slide') >= 0; }) && lay.tracks ? ' · ' + esc(lay.tracks) : '') + '</li><li>' + esc(ins.join(' · ') || 'open inside') + '</li>' + (pj2 ? '<li>' + esc(pj2) + '</li>' : '') + (SIDES.indexOf(lay.gutter) >= 0 ? '<li>Rain gutter, slope to the ' + esc(lay.gutter) + '</li>' : '') + '<li>' + esc([lay.roof, lay.frame, lay.height].filter(Boolean).join(' · ')) + ' · LED lights included</li></ul>';
+      h += '<div class="wz-note"><b>Before we make it:</b> final drawings of your cabin are sent to you for approval. Making starts only after you approve them.</div>';
       h += '<button type="button" class="wz-back" data-wzadv="1">✎ Edit each wall yourself</button>';
     }
-    h += '<div class="wz-nav">' + (st > 0 ? '<button type="button" class="wz-prev" data-wzgo="' + (st - 1) + '">← Back</button>' : '<span></span>') + (st < 5 ? '<button type="button" class="wz-next" data-wzgo="' + (st + 1) + '">Next →</button>' : '') + '</div>';
+    h += dimsBox + '<div class="wz-nav">' + (st > 0 ? '<button type="button" class="wz-prev" data-wzgo="' + (st - 1) + '">← Back</button>' : '<span></span>') + (st < 6 ? '<button type="button" class="wz-next" data-wzgo="' + (st + 1) + '">Next →</button>' : '') + '</div>';
     return h;
   }
   function wzClick(t) {   // returns true when it handled the click
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, w = S.wz, k;
-    if ((k = t.getAttribute('data-wzgo')) != null) { w.step = +k; w.adv = false; S.psel = null; return true; }
+    if ((k = t.getAttribute('data-wzgo')) != null) { w.step = +k; w.adv = false; S.psel = null; S.v3 = null; return true; }
+    if ((k = t.getAttribute('data-wzv')) != null) { S.v3 = k; return true; }
+    if ((k = t.getAttribute('data-cstep')) != null) { var cs = k.split(':'); setDim(cs[0], num(lay[cs[0]]) + (+cs[1])); return true; }
+    if ((k = t.getAttribute('data-wztrk')) != null) { lay.tracks = k; return true; }
+    if ((k = t.getAttribute('data-wzpj')) != null) { var pj = Object.assign({}, lay.proj), sd0 = arr(pj.sides).slice(), ix = sd0.indexOf(k); if (ix >= 0) { if (sd0.length > 1 || !(c.proj && c.proj.required)) sd0.splice(ix, 1); } else sd0.push(k); pj.sides = SIDES.filter(function (x) { return sd0.indexOf(x) >= 0; }); lay.proj = pj; return true; }
+    if ((k = t.getAttribute('data-wzpd')) != null || (k = t.getAttribute('data-wzpt')) != null || (k = t.getAttribute('data-wzpu')) != null) { var pk = t.hasAttribute('data-wzpd') ? 'design' : t.hasAttribute('data-wzpt') ? 'top' : 'under'; lay.proj = Object.assign({}, lay.proj); lay.proj[pk] = k; return true; }
+    if ((k = t.getAttribute('data-wzgut')) != null) { lay.gutter = k; return true; }
     if ((k = t.getAttribute('data-wzadv')) != null) { w.adv = k === '1'; w.aside = w.aside || 'front'; w.ai = 0; return true; }
     if ((k = t.getAttribute('data-wzside')) != null) { w.aside = k; w.ai = 0; return true; }
     if ((k = t.getAttribute('data-wp')) != null) { w.ai = +k; return true; }
     if ((k = t.getAttribute('data-wzpiece')) != null) { var ks = lay.walls[w.aside], hi = cbHead(ks, Math.min(w.ai, ks.length - 1)); if (cbSet(c, lay, w.aside, hi, k)) w.ai = Math.max(0, Math.min(hi, ks.length - cbSpan(c, k))); w.custom = true; return true; }
     if ((k = t.getAttribute('data-wzsize')) != null) { var z = WZ_SIZES.filter(function (y) { return y[0] === k; })[0]; lay.L = z[1]; lay.W = z[2]; wzBuild(c, lay, w); return true; }
     if ((k = t.getAttribute('data-wzglass')) != null) { w.glass = k; if (k === 'all') { var gr = arr(c.roofs).filter(function (r) { return /glass/i.test(r.name); })[0]; if (gr) lay.roof = gr.name; } wzBuild(c, lay, w); return true; }
-    if ((k = t.getAttribute('data-wzdoor')) != null) { w.door = k; wzBuild(c, lay, w); return true; }
-    if ((k = t.getAttribute('data-wzdside')) != null) { w.side = k; wzBuild(c, lay, w); return true; }
+    if ((k = t.getAttribute('data-wzdoor')) != null) { w.door = k; wzBuild(c, lay, w); if (k === 'slide' && !lay.tracks && arr(c.tracks).length) lay.tracks = c.tracks[0].name; return true; }
+    if ((k = t.getAttribute('data-wzdside')) != null) { w.side = k; wzBuild(c, lay, w); if (S.v3 && ['front', 'right', 'back', 'left'].indexOf(S.v3) >= 0) S.v3 = k; return true; }
     if ((k = t.getAttribute('data-wzwin')) != null) { w.windows = Math.max(0, Math.min(12, w.windows + (+k))); wzBuild(c, lay, w); return true; }
     if ((k = t.getAttribute('data-cchk')) != null) { lay[k] = t.getAttribute('data-v'); return true; }
     return false;
@@ -605,7 +714,7 @@
       '<div class="mto-box"><h3>2 · Material &amp; finish</h3>' + matHtml + colHtml + '</div>' + addHtml + instHtml) +
       '<div class="mto-sum" id="mtoSum"></div></section>' +
       '<section class="mto-steps" aria-label="How it is made"><h2>How your order is made</h2><ol>' +
-      ['Order & ' + PCT + '%|Size and options locked', 'Drawing|If you chose it: approve online', 'Production|' + (daysTxt(m.make_days) || 'Made for you'), 'Balance|Pay the rest' + (inst ? ' + installation' : '') + ' before dispatch', 'Dispatch|Tracking shared', 'Installation|If added: OTP on completion']
+      ['Order & ' + PCT + '%|Size and options locked', u === 'cabin' ? 'Final drawings|Sent to you for approval — making starts only after you approve' : 'Drawing|If you chose it: approve online', 'Production|' + (daysTxt(m.make_days) || 'Made for you'), 'Balance|Pay the rest' + (inst ? ' + installation' : '') + ' before dispatch', 'Dispatch|Tracking shared', 'Installation|If added: OTP on completion']
         .map(function (s, i) { var p = s.split('|'); return '<li><i>' + (i + 1) + '</i><b>' + esc(p[0]) + '</b>' + esc(p[1]) + '</li>'; }).join('') + '</ol></section>' +
       (more.length ? '<section class="mto-more"><h2>More designs</h2><div class="row">' + more.map(function (k) { var y = PRODS[k]; return '<a data-open="' + esc(k) + '"><img src="' + esc(IMGS[y.img] || '') + '" alt=""><span style="color:#6A6258;font-size:12px">by ' + esc(y.br || 'outrr') + '</span><b>' + esc(y.n) + '</b><span>From ' + rs(y.p) + '</span></a>'; }).join('') + '</div></section>' : '') +
       (arr(m.specs).length ? '<section class="mto-faq" aria-label="Specifications"><h2 style="font-size:22px;margin:10px 0 12px">Specifications</h2><div style="background:#FFFBF5;border:1px solid #E2D6C4;border-radius:12px;overflow:hidden">' +
@@ -619,6 +728,7 @@
       (inst && !instReq ? '<details><summary>Can I install it myself?</summary><p>Yes. Without installation, fixing is yours: a fixing guide comes with it.</p></details>' : '') +
       '</section></div>';
     paint();
+    if (u === 'cabin') mount3d();   // 159
   }
 
   function paint() {
@@ -648,12 +758,19 @@
       '<p style="text-align:center;font-size:13px;color:#CFC8BD;margin:10px 0 0">Buying for a project or 5+ pieces? <a style="color:#F2B49C;cursor:pointer" data-act="bulk">Get a bulk quote</a></p>';
   }
 
+  function setDim(key, v) {   // 159: size from − / + or typed, kept inside the limits
+    var cz = PRODS[S.id].cz, c = cz.cabin, lay = S.o.layout, lim = c[key] || {}, lo = num(lim.min) || 8, hi = num(lim.max) || (key === 'L' ? 40 : 20);
+    lay[key] = Math.max(lo, Math.min(hi, Math.round(num(v) || lo)));
+    if (S.wz && !S.wz.custom) wzBuild(c, lay, S.wz); else cbResize(c, lay); arr(lay.places).forEach(function (p) { cbClamp(c, lay, p); }); cbSync(c, lay); S.sel = { side: (S.sel || {}).side || 'front', i: 0 };
+  }
   function onInput(e) { var k = e.target.getAttribute('data-k'); if (!k || !S) return; if (k === 'pin') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); S.o[k] = e.target.value; paint(); }
   function onChange(e) {
     var t = e.target, k = t.getAttribute('data-k'); if (!S) return;
     if (k === 'install' || k === 'size_ok') { S.o[k] = t.checked; var mm = (PRODS[S.id] || {}).cz; if (k === 'install' && mm && mm.install && mm.install.required) S.o.install = true; return paint(); }
     if (t.hasAttribute('data-grp')) { S.o.groups = Object.assign({}, S.o.groups); S.o.groups[t.getAttribute('data-grp')] = t.value; return paint(); }
-    if (t.hasAttribute('data-cdim')) { var cz = PRODS[S.id].cz; S.o.layout[t.getAttribute('data-cdim')] = +t.value; if (S.wz && !S.wz.custom) wzBuild(cz.cabin, S.o.layout, S.wz); else cbResize(cz.cabin, S.o.layout); arr(S.o.layout.places).forEach(function (p) { cbClamp(cz.cabin, S.o.layout, p); }); cbSync(cz.cabin, S.o.layout); S.sel = { side: S.sel.side, i: 0 }; return draw(); }   // 156
+    if (t.hasAttribute('data-cdim')) { setDim(t.getAttribute('data-cdim'), Math.round(+t.value || 0)); return draw(); }   // 156
+    if (t.hasAttribute('data-wzfull')) { S.o.layout.full_doors = t.checked; return draw(); }   // 159
+    if (t.hasAttribute('data-wzgon')) { S.o.layout.gutter = t.checked ? (S.o.layout.gutter && SIDES.indexOf(S.o.layout.gutter) >= 0 ? S.o.layout.gutter : 'back') : null; return draw(); }
     if (t.hasAttribute('data-wztog')) { var czw = PRODS[S.id].cz.cabin; S.wz[t.getAttribute('data-wztog')] = t.checked; wzBuild(czw, S.o.layout, S.wz); return draw(); }   // 158
     if (t.hasAttribute('data-wzup')) { var czu = PRODS[S.id].cz.cabin, lu = arr(czu[{ height: 'heights', glass: 'glasses', panel: 'panels' }[t.getAttribute('data-wzup')]]); S.o.layout[t.getAttribute('data-wzup')] = lu[t.checked ? 1 : 0].name; return draw(); }
     if (t.hasAttribute('data-citc')) { S.o.layout.items = Object.assign({}, S.o.layout.items); S.o.layout.items[t.getAttribute('data-citc')] = t.checked ? 1 : 0; return draw(); }
@@ -663,7 +780,7 @@
     if (t.hasAttribute('data-add')) { var n = t.getAttribute('data-add'); S.o.addons = S.o.addons.filter(function (a) { return a !== n; }); if (t.checked) S.o.addons.push(n); return paint(); }
   }
   function onClick(e) {
-    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit],[data-pl],[data-dragpl],[data-pact],[data-wzgo],[data-wzadv],[data-wzside],[data-wp],[data-wzpiece],[data-wzsize],[data-wzglass],[data-wzdoor],[data-wzdside],[data-wzwin],[data-cchk]'); if (!t || !S) return;
+    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit],[data-pl],[data-dragpl],[data-pact],[data-wzgo],[data-wzadv],[data-wzside],[data-wp],[data-wzpiece],[data-wzsize],[data-wzglass],[data-wzdoor],[data-wzdside],[data-wzwin],[data-cchk],[data-wzv],[data-cstep],[data-wztrk],[data-wzpj],[data-wzpd],[data-wzpt],[data-wzpu],[data-wzgut]'); if (!t || !S) return;
     var cz0 = (PRODS[S.id] || {}).cz;   // 156: cabin builder
     if (t.getAttribute && t.getAttribute('data-dragged')) { t.removeAttribute('data-dragged'); return; }
     if (cz0 && cz0.unit === 'cabin' && S.wz && wzClick(t)) return draw();   // 158
