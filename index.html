@@ -3842,6 +3842,8 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
       try{ renderPLP(lastCol); }catch(e){}
     }
+    const _pc = new URLSearchParams(location.search).get('c');   // ?c=<category slug>: a shareable link to a category page
+    if(_pc && COLS[_pc] && typeof openCol === 'function' && !new URLSearchParams(location.search).get('p')) try{ openCol(_pc); }catch(e){}
     const _pp = new URLSearchParams(location.search).get('p');
     if(_pp && typeof openProduct === 'function' && document.getElementById('pdp')){
       if(PRODS[_pp]) try{ openProduct(_pp); }catch(e){}
