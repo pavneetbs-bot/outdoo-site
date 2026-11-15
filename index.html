@@ -2675,7 +2675,7 @@ function pdThumbs(id){
 function pdShow(th){ document.querySelectorAll('.thumbs .th').forEach(t=>t.classList.remove('on')); th.classList.add('on'); document.getElementById('pdImg').src=th.querySelector('img').src; }
 function openProduct(id){
   if(PRODS[id]&&PRODS[id].bun) return openBundle(id);   // 127
-  if(PRODS[id]&&PRODS[id].cz&&window.mtoOpen) return mtoOpen(id);   // 134 Made to Order
+  window.mtoPdpReset&&mtoPdpReset();   // 159: Made to Order uses this same page (mto.js fills the options card)
   setTimeout(()=>{const el=document.getElementById('pdBun'), bs=bundlesWith(id); if(!el) return; el.innerHTML=bs.map(k=>`<a class="bun-note" onclick="openBundle('${k}')">Save ${Math.round((1-PRODS[k].p/PRODS[k].m)*100)}% in the <b>${_esc(PRODS[k].n)}</b> →</a>`).join('');},0);
   if(lastCol==='__search' && SQ) _supaRpc('log_search',{p_kind:'click',p_q:SQ,p_sku:id}).catch(()=>{});
   curPid=id; setTimeout(()=>window.acWlPaint&&acWlPaint(),0);
@@ -2713,6 +2713,7 @@ function openProduct(id){
   try{setRender(id);}catch(e){console.warn(e)}
   try{cmpRender(id);}catch(e){console.warn(e)}
   try{const rl=document.getElementById('pdRevList'); if(rl) rl.innerHTML='<p class="rv-none">Loading reviews…</p>'; window.rvPdp&&rvPdp(id);}catch(e){}
+  if(x.cz&&window.mtoPdp){try{mtoPdp(id);}catch(e){console.warn(e)}}
   showView('pdp');
 }
 // ---- Buy This Set (089): pieces of one set are separate products sharing set_key ----
@@ -3904,7 +3905,7 @@ async function shareProduct(){
 <script src="/track.js"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=5"></script>
-<script src="/mto.js?v=9"></script>
+<script src="/mto.js?v=10"></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };

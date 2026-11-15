@@ -222,6 +222,14 @@
 
   // ------------------------------------------------------------ styles
   var css = '' +
+    '.pdp-mto .qtyrow,.pdp-mto .cashback,.pdp-mto .etamod,.pdp-mto .delvblock,.pdp-mto #vSec,.pdp-mto #setSec,.pdp-mto .acc.rts-only,.pdp-mto #pdHurry,.pdp-mto #pdSize,.pdp-mto .chips .chip.terra,.pdp-mto #pdDlv,.pdp-mto #pdMto,.pdp-mto #pdEtaLine,.pdp-mto-on .ctas button[onclick="addCart()"],.pdp-mto button[onclick="addCart()"]{display:none!important}' +
+    '.mfrom{font-size:14px;font-weight:600;color:#6b665c;margin-right:2px}.mto-pcfg .mto-ph{font-size:15px;margin:0 0 4px}.mto-hint{font-size:12.5px;color:#6b665c;margin:0 0 10px}' +
+    '.mto-pks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mto-pk{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#6b665c;font-weight:600}' +
+    '.mto-pk select,.mto-pk input,.mto-note textarea{font:inherit;font-size:14px;font-weight:500;color:#2e2e2e;padding:9px 11px;border:1.5px solid var(--line,#E2D6C4);border-radius:10px;min-height:44px;box-sizing:border-box;width:100%;background:#fff}.mto-pk select:focus,.mto-pk input:focus{border-color:#C26445;outline:none}' +
+    '.mto-adds{margin-top:12px}.mto-al{display:block;font-size:12px;color:#6b665c;font-weight:600;margin-bottom:2px}.mto-pcfg .mto-chk{font-size:13.5px}.mto-note{margin-top:8px;font-size:13px}.mto-note summary{cursor:pointer;color:#9C4127;font-weight:600;min-height:32px}' +
+    '.mto-sum.lt{background:#FBF6EE;color:#2E2E2E;border:1px solid #E2D6C4;margin-top:14px}.mto-sum.lt .rw span:first-child{color:#6b665c}.mto-sum.lt .tt span:first-child{color:#2E2E2E}.mto-sum.lt .tt{border-color:#E2D6C4}.mto-sum.lt .mto-pay div{background:#fff;border:1px solid #E2D6C4;color:#6b665c}.mto-sum.lt .mto-pay b{color:#2E2E2E}.mto-sum.lt .mto-err{color:#9C4127}.mto-sum.lt p a{color:#9C4127!important}.mto-sum.lt p{color:#6b665c!important}' +
+    '.mto-stp{margin:0;padding-left:18px;line-height:1.8;font-size:13.5px}.mto-q{font-size:13.5px;margin:0 0 10px;line-height:1.5}' +
+    '@media(max-width:560px){.mto-pks{grid-template-columns:1fr}}' +
     '.mto-ov{position:fixed;inset:0;z-index:80;background:#F6F0E6;overflow-y:auto;display:none}.mto-ov.open{display:block}' +
     '.mto-top{position:sticky;top:0;z-index:2;background:#FFFBF5;border-bottom:1px solid #E2D6C4;display:flex;align-items:center;gap:12px;padding:10px 16px}' +
     '.mto-top b{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mto-x{border:1px solid #D6CBB9;background:transparent;border-radius:999px;min-width:44px;min-height:44px;font-size:18px;cursor:pointer}' +
@@ -642,7 +650,8 @@
   function daysTxt(d) { d = arr(d).map(num).filter(function (x) { return x != null; }); return d.length ? (d.length > 1 && d[0] !== d[1] ? d[0] + '–' + d[1] : d[d.length - 1]) + ' days' : ''; }
   function lastPin() { try { return (JSON.parse(localStorage.getItem('outrr_addr') || '{}').pincode) || ''; } catch (e) { return ''; } }
 
-  window.mtoOpen = function (id) {
+  window.mtoOpen = function (id) { if (window.openProduct) return window.openProduct(id); };   // 159: one product page for every product
+  function mtoInit(id) {
     var x = PRODS[id]; if (!x || !x.cz) return;
     var m = x.cz;
     S = { id: id, img: 0, o: { n: (m.n && num(m.n.min)) || '', l: '', w: '', h: arr(m.h && m.h.options)[0] || '', size: '', material: (arr(m.materials)[0] || {}).name || '', colour: '',
@@ -650,6 +659,10 @@
       groups: arr(m.groups).reduce(function (g, x) { var f = arr(x.options).filter(function (y) { return String(y.name || '').trim(); })[0]; if (f) g[x.name] = f.name; return g; }, {}),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
     if (m.unit === 'cabin' && m.cabin && m.cabin.layout) { S.o.layout = cbClone(m.cabin.layout); cbDefaults(m.cabin, S.o.layout); S.o.material = ''; S.sel = { side: 'front', i: 0 }; S.psel = null; S.wz = wzRead(m.cabin, S.o.layout); S.wz.step = 0; S.wz.adv = false; }   // 156, 157, 158
+    return S;
+  }
+  window.mtoOpenOverlay = function (id) {
+    if (!mtoInit(id)) return; var x = PRODS[id];
     try { curPid = id; } catch (e) {}
     var ov = document.getElementById('mtoOv');
     if (!ov) { ov = document.createElement('div'); ov.id = 'mtoOv'; ov.className = 'mto-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov);
@@ -660,9 +673,108 @@
   };
   window.mtoClose = function () { var ov = document.getElementById('mtoOv'); if (ov) ov.classList.remove('open'); document.body.classList.remove('flt-open'); };
 
+
+  // ------------------------------------------------------------ 159: Made to Order on the regular product page (same layout as ready-to-ship)
+  function pdpWire() {
+    if (pdpWire.done) return; pdpWire.done = true;
+    var inCfg = function (f) { return function (e) { if (S && S.pdp && e.target.closest && e.target.closest('#mtoCfg')) f(e); }; };
+    document.addEventListener('input', inCfg(onInput)); document.addEventListener('change', inCfg(onChange)); document.addEventListener('click', inCfg(onClick));
+    var _bn = window.buyNow, _ac = window.addCart;
+    window.buyNow = function () { if (S && S.pdp && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(); return _bn.apply(this, arguments); };
+    window.addCart = function (id) { if (S && S.pdp && (!id || id === S.id) && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(); return _ac.apply(this, arguments); };
+  }
+  function pdpOrder() { var c = document.getElementById('mtoCfg'), q = price(PRODS[S.id].cz, S.o, PCT); if (!q.ok || PRODS[S.id].oo === false) { if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return toast(PRODS[S.id].oo === false ? 'Coming soon — orders open soon' : q.error); } order(); }
+  window.mtoPdpReset = function () {
+    var p = document.getElementById('pdp'); if (p) p.classList.remove('pdp-mto'); document.body.classList.remove('pdp-mto-on');
+    ['mtoCfg', 'mtoAccs', 'mtoChip', 'mtoChip2'].forEach(function (k) { var e = document.getElementById(k); if (e) e.remove(); });
+    if (S) S.pdp = false;
+  };
+  window.mtoPdp = function (id) {
+    if (!mtoInit(id)) return; S.pdp = true; pdpWire();
+    var x = PRODS[id], m = x.cz, u = m.unit, uw = UW(u), pdp = document.getElementById('pdp'); pdp.classList.add('pdp-mto'); document.body.classList.add('pdp-mto-on');
+    var c0 = arr((arr(m.materials)[0] || {}).colours)[0]; if (c0 && !S.o.colour) S.o.colour = c0.name;
+    var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), lo = mats.length ? Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; })) : 0;
+    var pr = document.getElementById('pdPrice'); if (pr && x.oo !== false) pr.innerHTML = '<span class="mfrom">From</span> ' + rs(x.p) + (u !== 'fixed' && u !== 'cabin' && u !== 'seat' && lo ? '<span class="mrplab">' + rs(lo) + ' / ' + uw + '</span>' : '');
+    var tl = document.querySelector('#pdp .taxline'); if (tl) { tl.style.display = ''; tl.textContent = 'Inclusive of GST · priced for your size and options below'; }
+    var sk = document.getElementById('pdSku'); if (sk) sk.textContent = 'SKU ' + id + ' · ' + String((document.getElementById('crumbPath') || {}).textContent || '').replace(/^Home \/ /, '') + ' · Made to Order';
+    var mt = document.getElementById('pdMat'); if (mt) mt.textContent = x.mat || '';
+    // the configurator card: right under the title card
+    var first = document.querySelector('#pdp .pdp-info .pcard'), cfg = document.createElement('div'); cfg.id = 'mtoCfg'; cfg.className = 'pcard mto-pcfg';
+    first.parentNode.insertBefore(cfg, first.nextSibling);
+    // details: the design's own specifications
+    var kv = document.getElementById('pdKV');
+    if (kv) kv.innerHTML = arr(m.specs).map(function (sp) { return '<div class="k">' + esc(sp.label) + '</div><div class="v">' + esc(sp.value) + '</div>'; }).join('') +
+      '<div class="k">Made in</div><div class="v">' + esc(daysTxt(m.make_days) || '—') + ' after you order' + (m.drawing !== 'no' ? ' (and approve the drawing)' : '') + '</div>' +
+      '<div class="k">Installation</div><div class="v">' + (m.install && m.install.required ? 'Included — by ' + (m.install.by === 'brand' ? esc(x.br || 'the maker') : 'a verified outrr partner') : m.install && m.install.offered ? 'Optional' : 'By you, with a fixing guide') + '</div>' +
+      '<div class="k">SKU</div><div class="v">' + esc(id) + ' · Made in India</div>';
+    var sz = document.getElementById('pdSize'); if (sz) sz.innerHTML = '';
+    var ch = document.getElementById('pdShip'); if (ch) { var c1 = document.createElement('span'); c1.id = 'mtoChip'; c1.className = 'chip'; c1.textContent = m.install && m.install.required ? 'Installed by outrr' : m.install && m.install.offered ? 'Installation available' : 'Fixing guide included'; ch.parentNode.insertBefore(c1, ch.nextSibling); var c2 = document.createElement('span'); c2.className = 'chip'; c2.textContent = 'Made to order · returns only for defects'; c1.appendChild(document.createTextNode('')); ch.parentNode.insertBefore(c2, c1.nextSibling); c2.id = 'mtoChip2'; }
+    // accordions: how it's made + questions (the ready-to-ship delivery / returns one is hidden)
+    var acc = document.createElement('div'); acc.id = 'mtoAccs';
+    var stp = ['Order & pay ' + PCT + '%|Size and options locked', 'Drawing|' + (m.drawing === 'no' ? 'Not needed' : 'Approve it online'), 'Making|' + (daysTxt(m.make_days) || 'Made for you'), 'Balance|Pay the rest before dispatch', (m.install && m.install.offered ? 'Installation|By our partner, OTP on completion' : 'Delivery|Tracking shared')];
+    var faqs = arr(m.faqs).concat([{ q: 'How do I measure?', a: (u === 'area' ? 'Measure the floor area it should cover, post to post, in feet.' : u === 'face' ? 'Measure the width and height of the wall or opening, in feet.' : u === 'length' ? 'Measure the total running length, in feet.' : 'Pick the size that fits your space.') + ' Not sure? We check it with you on the drawing.' },
+      { q: 'When do I pay the rest?', a: 'You pay ' + PCT + '% now. The rest is paid when it is ready, before dispatch: we email you the link.' },
+      { q: 'Can I cancel or return it?', a: 'It is made for you, so it can’t be cancelled once production starts or returned for a change of mind. A defect or damage in delivery is fixed by the maker.' }]);
+    acc.innerHTML = '<div class="acc"><div class="acc-h" onclick="accT(this)">How your order is made<span class="pm">+</span></div><div class="acc-b"><ol class="mto-stp">' + stp.map(function (t) { var p = t.split('|'); return '<li><b>' + esc(p[0]) + '</b> — ' + esc(p[1]) + '</li>'; }).join('') + '</ol></div></div>' +
+      '<div class="acc"><div class="acc-h" onclick="accT(this)">Questions<span class="pm">+</span></div><div class="acc-b">' + faqs.map(function (f) { return '<p class="mto-q"><b>' + esc(f.q) + '</b><br>' + esc(f.a) + '</p>'; }).join('') + '</div></div>';
+    var why = [].slice.call(document.querySelectorAll('#pdp .acc')).filter(function (a) { return /Why outrr/.test(a.textContent); })[0];
+    if (why) why.parentNode.insertBefore(acc, why);
+    [].slice.call(document.querySelectorAll('#pdp .acc')).forEach(function (a) { if (/Delivery, assembly/.test((a.querySelector('.acc-h') || {}).textContent || '')) a.classList.add('rts-only'); });
+    try { if (window.otrack) otrack('view_item', { sku: id, value: x.p }); } catch (e) {}
+    drawPdp();
+  };
+  function sel(attr, list, cur, lab) {   // a picklist; list = [[value, label]]
+    return '<label class="mto-pk"><span>' + lab + '</span><select ' + attr + '>' + list.map(function (v) { return '<option value="' + esc(v[0]) + '"' + (String(v[0]) === String(cur) ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join('') + '</select></label>';
+  }
+  function drawPdp() {
+    var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), el = document.getElementById('mtoCfg'); if (!el) return;
+    var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
+    var hOpts = arr(m.h && m.h.options), f = [];
+    if (u === 'cabin') { el.innerHTML = '<h3 class="mto-ph">Design your cabin</h3>' + cabinUI(m, o) + pdpTail(x, m, o) + '<div class="mto-sum lt" id="mtoSum"></div>'; return paint(); }
+    if (u === 'seat') { var sv = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
+    else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + ' — ' + rs(fixedAt(m, mat, z))]; })), o.size, 'Size'));
+    else {
+      if (u === 'area' || u === 'length') f.push('<label class="mto-pk"><span>Length (ft)</span><input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>');
+      if (u === 'area' || u === 'face') f.push('<label class="mto-pk"><span>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '</span><input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>');
+      if (hOpts.length) f.push(sel('data-k="h"', hOpts.map(function (h) { return [h, h + ' ft']; }), o.h, 'Height'));
+      else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>');
+    }
+    if (mats.length > 1) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, 'Finish'));
+    var cols = arr(mat && mat.colours);
+    if (cols.length) f.push(sel('data-pick="colour"', [].concat(cols.map(function (c) { return [c.name, c.name + (+c.extra ? ' (+' + rs(c.extra) + ' / ' + uw + ')' : '')]; })), o.colour, 'Colour'));
+    arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }).forEach(function (g) {
+      f.push(sel('data-grp="' + esc(g.name) + '"', arr(g.options).filter(function (y) { return y.name; }).map(function (y) {
+        var pr = [+y.fixed ? (+y.fixed > 0 ? '+' : '−') + rs(Math.abs(y.fixed)) : '', +y.rate ? '+' + rs(y.rate) + ' / ' + uw : '', +y.rate_w ? '+' + rs(y.rate_w) + ' / ft width' : ''].filter(Boolean).join(' ');
+        return [y.name, y.name + (pr ? ' (' + pr + ')' : '')]; }), (o.groups || {})[g.name], esc(g.name)));
+    });
+    var adds = arr(m.addons).filter(function (a) { return a.name; });
+    var hint = u === 'area' ? 'Length × width of the floor it covers, in feet.' : u === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : u === 'face' ? 'Width × height of the wall or opening, in feet.' : u === 'length' ? 'Total running length, in feet.' : '';
+    el.innerHTML = '<h3 class="mto-ph">Choose your size &amp; options</h3>' + (hint ? '<p class="mto-hint">' + hint + '</p>' : '') + '<div class="mto-pks">' + f.join('') + '</div>' +
+      (adds.length ? '<div class="mto-adds"><span class="mto-al">Add-ons</span>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span><span class="r">+' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span></label>'; }).join('') + '</div>' : '') +
+      pdpTail(x, m, o) + '<div class="mto-sum lt" id="mtoSum"></div>';
+    paint();
+  }
+  function pdpTail(x, m, o) {   // pincode (installation / delivery), drawing, note
+    var inst = m.install && m.install.offered, instReq = inst && m.install.required, drw = m.drawing || 'choose', h = '';
+    if (inst || hasDlv(m)) h += '<div class="mto-pks" style="margin-top:10px"><label class="mto-pk"><span>Your pincode</span><input inputmode="numeric" maxlength="6" data-k="pin" value="' + esc(o.pin) + '" placeholder="e.g. 110001"></label>' +
+      (drw === 'choose' ? sel('data-pick="drawing"', [['1', 'Yes — send me a drawing to approve'], ['0', 'No — make it to my size']], o.drawing ? '1' : '0', 'Drawing before making?') : '') + '</div>';
+    else if (drw === 'choose') h += '<div class="mto-pks" style="margin-top:10px">' + sel('data-pick="drawing"', [['1', 'Yes — send me a drawing to approve'], ['0', 'No — make it to my size']], o.drawing ? '1' : '0', 'Drawing before making?') + '</div>';
+    if (inst) h += instReq ? '<p class="mto-hint" style="margin-top:8px">Installation included · <span id="mtoInstTxt"></span></p>' : '<label class="mto-chk"><input type="checkbox" data-k="install"' + (o.install ? ' checked' : '') + '><span><b>Add installation</b> · <span id="mtoInstTxt"></span></span></label>';
+    if (drw === 'always') h += '<p class="mto-hint">We send you a drawing to approve before making it' + (daysTxt(m.drawing_days) ? ' (' + daysTxt(m.drawing_days) + ')' : '') + '.</p>';
+    if (!o.drawing || drw === 'no') h += '<div class="mto-warn">Made exactly to the size you enter — please check it.</div><label class="mto-chk"><input type="checkbox" data-k="size_ok"' + (o.size_ok ? ' checked' : '') + '><span>I have checked my size and I take responsibility for it.</span></label>';
+    h += '<details class="mto-note"><summary>Add a note for the maker</summary><textarea rows="2" data-k="note" maxlength="500">' + esc(o.note) + '</textarea></details>';
+    return h;
+  }
+  function ctaPaint(q) {   // the page's own Buy button (and the sticky bar) follow the configuration
+    var x = PRODS[S.id], closed = x.oo === false;
+    document.querySelectorAll('button[onclick="buyNow()"]').forEach(function (b) { b.style.display = ''; var o = S.o, needPin = q && q.ok && q.delivery && q.delivery.fee == null, noInst = q && q.ok && o.install && q.install && !q.install.available, needOk = !o.drawing && !o.size_ok;
+      b.disabled = closed; b.textContent = closed ? 'Coming soon' : !(q && q.ok) ? 'Choose your size' : needPin || noInst ? 'Enter your pincode' : needOk ? 'Confirm your size' : 'Order now · pay ' + rs(q.pay_now); });
+  }
+
   function gal(id) { var x = PRODS[id]; return [IMGS[x.img]].concat((window.GAL && GAL[id]) || []).filter(Boolean).filter(function (u, i, a) { return a.indexOf(u) === i; }); }
 
   function draw() {
+    if (S.pdp) return drawPdp();   // 159: Made to Order on the regular product page
     var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), imgs = gal(S.id);
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     var hOpts = arr(m.h && m.h.options);
@@ -733,6 +845,7 @@
 
   function paint() {
     var x = PRODS[S.id], m = x.cz, o = S.o; o.zone = zoneOf(m.ships_from, o.pin); var q = price(m, o, PCT), el = document.getElementById('mtoSum'), it = document.getElementById('mtoInstTxt');
+    if (S.pdp) ctaPaint(q);
     if (it) it.textContent = !/^\d{6}$/.test(o.pin) ? 'Enter your pincode to see the installation charge' : q.ok && q.install ? (q.install.available ? q.install.city + ': ' + rs(q.install.fee) : 'Not available at this pincode yet: delivery only, with a fixing guide') : '';
     if (!el) return;
     if (!q.ok) { el.innerHTML = '<p class="mto-err" style="margin:0">' + esc(q.error) + '</p><button class="mto-go" type="button" disabled>Enter your size</button>'; return; }
@@ -748,7 +861,7 @@
     }
     el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate || arr(m.materials).length > 1 ? ' + ' + esc(q.material) : '') : m.unit === 'seat' ? q.qty + '-seat bench' : q.panels ? q.panels.width + ' ft × ' + esc(o.h) + ' ft high, ' + esc(q.material) : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
       (q.panels ? '<div class="rw" style="font-size:12.5px;color:#6A6258"><span>' + esc(panelsText(q.panels)) + '</span><span></span></div>' : '') +
-      q.addons.map(function (a) { return '<div class="rw"><span>' + esc(a.name) + '</span><span>' + rs(a.amount) + '</span></div>'; }).join('') +
+      q.addons.map(function (a) { return '<div class="rw"><span>' + esc(a.name) + '</span><span>' + (a.amount ? rs(a.amount) : 'Included') + '</span></div>'; }).join('') +
       (ins ? '<div class="rw"><span>Installation (' + esc(q.install.city) + ')</span><span>' + rs(q.install_fee) + '</span></div>' : '') +
       '<div class="rw"><span>Delivery</span><span>' + (!q.delivery ? 'Included' : q.delivery.fee == null ? 'Enter your pincode' : rs(q.delivery_fee)) + '</span></div>' +
       '<div class="rw tt"><span>Total</span><span>' + rs(q.total) + '</span></div>' +
@@ -766,6 +879,12 @@
   function onInput(e) { var k = e.target.getAttribute('data-k'); if (!k || !S) return; if (k === 'pin') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); S.o[k] = e.target.value; paint(); }
   function onChange(e) {
     var t = e.target, k = t.getAttribute('data-k'); if (!S) return;
+    var pk = t.getAttribute('data-pick');   // 159 picklists
+    if (pk === 'n') { S.o.n = +t.value; return draw(); }
+    if (pk === 'size') { S.o.size = t.value; return draw(); }
+    if (pk === 'material') { S.o.material = t.value; var mm1 = arr(PRODS[S.id].cz.materials).filter(function (y) { return y.name === t.value; })[0]; S.o.colour = (arr(mm1 && mm1.colours)[0] || {}).name || ''; return draw(); }
+    if (pk === 'colour') { S.o.colour = t.value; return draw(); }
+    if (pk === 'drawing') { S.o.drawing = t.value === '1'; return draw(); }
     if (k === 'install' || k === 'size_ok') { S.o[k] = t.checked; var mm = (PRODS[S.id] || {}).cz; if (k === 'install' && mm && mm.install && mm.install.required) S.o.install = true; return paint(); }
     if (t.hasAttribute('data-grp')) { S.o.groups = Object.assign({}, S.o.groups); S.o.groups[t.getAttribute('data-grp')] = t.value; return paint(); }
     if (t.hasAttribute('data-cdim')) { setDim(t.getAttribute('data-cdim'), Math.round(+t.value || 0)); return draw(); }   // 156
