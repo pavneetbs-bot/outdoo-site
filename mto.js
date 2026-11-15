@@ -245,6 +245,21 @@
     '.mto-opt{display:flex;gap:10px;align-items:flex-start;border:1px solid #CFC3B1;border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;margin-bottom:8px}.mto-opt.on{border:2px solid #C26445}' +
     '.wz-pic-main{height:210px;background:#F3EEE6;border-radius:16px;padding:12px;box-sizing:border-box;margin-bottom:12px}'+
     '.mto-wrap>section{min-width:0}.wz-views{max-width:100%}'+
+    '.pdp-cab .pdp-grid>div:first-child>.gal-main,.pdp-cab .pdp-grid>div:first-child>.thumbs{display:none!important}'+
+    '.cb-stage{background:#fff;padding:0 0 8px;z-index:6}.cb-stage .wz-3dv{height:min(42vh,420px);border-radius:16px}.cb-stage .cb-pic{height:min(42vh,420px);border-radius:16px;background:#F3EEE6;overflow:auto;position:relative}'+
+    '.cb-pic img{width:100%;height:100%;object-fit:contain;display:block}.cb-pic .cb-plan{padding:6px;box-sizing:border-box;height:100%;background:#fff}.cb-plan svg{width:100%!important;height:100%!important}'+
+    '.cb-vw{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}.cb-vw button{flex:1 1 auto;border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:6px 8px;min-height:34px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;color:#2E2E2E;white-space:nowrap}.cb-vw button.on{background:#2E2E2E;color:#fff;border-color:#2E2E2E}'+
+    '.cb-sides{position:absolute;bottom:8px;right:8px;display:flex;gap:4px;z-index:2}.cb-sides button{border:0;background:rgba(255,255,255,.92);border-radius:8px;min-width:34px;min-height:32px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}.cb-sides button.on{background:#C26445;color:#fff}'+
+    '.cb-nav{position:absolute;top:50%;transform:translateY(-50%);border:0;background:rgba(255,255,255,.9);width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer}'+
+    '@media(max-width:899px){.pdp-cab .pdp-grid>div:first-child{display:contents}.cb-stage{position:sticky;top:var(--cbtop,0px);margin:0 -14px;padding:0 14px 8px;box-shadow:0 6px 10px -8px rgba(0,0,0,.25)}.cb-stage .wz-3dv,.cb-stage .cb-pic{height:30vh;min-height:200px}}'+
+    '@media(min-width:900px){.pdp-cab .pdp-grid>div:first-child{position:sticky;top:calc(var(--cbtop,96px) + 12px)}}'+
+    '.wz-stc{display:flex;gap:6px;overflow-x:auto;margin:0 0 12px;scrollbar-width:none;padding-bottom:2px}.wz-stc button{flex:none;border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:6px 12px;min-height:34px;font:inherit;font-size:12.5px;cursor:pointer;color:#6A6258}.wz-stc button.dn{color:#2E2E2E;border-color:#C9BBA6}.wz-stc button.on{background:#C26445;border-color:#C26445;color:#fff;font-weight:700}'+
+    '.wz-tpl{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}.wz-tpl .wz-card{flex:0 0 132px}'+
+    '.cbbar{display:flex;gap:10px;align-items:center;width:100%}.cbbar .cbp{flex:1;text-align:left;background:none;border:0;font:inherit;cursor:pointer;padding:0;color:#2E2E2E}.cbbar .cbp b{display:block;font-size:19px}.cbbar .cbp small{font-size:12px;color:#9C4127;font-weight:600}'+
+    '.cbbar .cbn{flex:1.2;background:#2E2E2E;color:#fff;border:0;border-radius:12px;min-height:48px;font:inherit;font-weight:700;font-size:15px;cursor:pointer}.cbbar .cbn[disabled]{background:#9A958C;cursor:not-allowed}'+
+    '.cb-sheet{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center}.cb-sheet.open{display:flex}.cb-sheet>div{background:#fff;width:min(560px,100%);max-height:80vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}'+
+    '.cb-sheet .mto-go{display:none}.cb-sheet h4{margin:0 0 10px;font-size:17px;display:flex;justify-content:space-between;align-items:center}.cb-sheet h4 button{border:0;background:#F3EEE6;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer}'+
+    'body.pdp-cab-on .ctas>*:not(.cbbar){display:none!important}'+
     '.wz-3d{position:sticky;top:52px;z-index:3;background:#FFFBF5;padding-bottom:8px;margin:0 -2px 10px}.wz-3dv{height:260px;background:#F3EEE6;border-radius:16px;overflow:hidden;position:relative}.wz-3dv>svg{padding:12px;box-sizing:border-box}'+
     '.wz-views{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}.wz-views button{border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:5px 4px;min-height:36px;font:inherit;font-size:12.5px;cursor:pointer;color:#2E2E2E}.wz-views button.on{background:#2E2E2E;color:#fff;border-color:#2E2E2E}'+
     '.wz-hint{position:absolute;left:10px;bottom:8px;font-size:11px;color:#6A6258;background:rgba(255,251,245,.85);padding:3px 8px;border-radius:99px;pointer-events:none}'+
@@ -515,10 +530,14 @@
     var c = m.cabin, lay = o.layout, w = S.wz, q0 = cabin(c, lay), st = w.step, TITLES = ['How big?', 'How much glass?', 'Doors', 'Rooms inside', 'Outside', 'The look', 'Your cabin'];
     var SUBS = ['Pick a size — or set it exactly with − / +', 'We put the glass on the walls for you', 'Pick the door, the wall it goes on and its height', 'Switch on what you need — move things on the plan if you like', 'Pergola projection over the walls, and a rain gutter', 'Roof, frame colour and a few upgrades', 'Check it, then order — final drawings come to you for approval first'];
     var v3 = S.view3 = S.v3 || (w.adv ? (w.aside || 'front') : wzAuto(st, w, lay));
-    var h = '<div class="wz-3d"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(c, lay)) + '</div>' + (C3.st === -1 ? '' : '<div class="wz-views" role="tablist" aria-label="Views">' + V3.map(function (v) { return '<button type="button" role="tab" data-wzv="' + v[0] + '" class="' + (v[0] === v3 ? 'on' : '') + '" aria-selected="' + (v[0] === v3) + '">' + v[1] + '</button>'; }).join('') + '</div>') + '</div><div class="wz-steps">' + TITLES.map(function (t, i) { return '<button type="button" data-wzgo="' + i + '" class="' + (i <= st ? 'on' : '') + '" aria-label="Step ' + (i + 1) + ': ' + t + '"></button>'; }).join('') + '</div>' +
+    var h = S.pdp ? '' : '<div class="wz-3d"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(c, lay)) + '</div>' + (C3.st === -1 ? '' : '<div class="wz-views" role="tablist" aria-label="Views">' + V3.map(function (v) { return '<button type="button" role="tab" data-wzv="' + v[0] + '" class="' + (v[0] === v3 ? 'on' : '') + '" aria-selected="' + (v[0] === v3) + '">' + v[1] + '</button>'; }).join('') + '</div>') + '</div>';
+    var SHORT = ['Size', 'Glass', 'Doors', 'Rooms', 'Outside', 'Look', 'Done'];
+    h += S.pdp ? '<div class="wz-stc" role="tablist" aria-label="Steps">' + SHORT.map(function (t, i) { return '<button type="button" role="tab" data-wzgo="' + i + '" class="' + (i === st && !w.adv ? 'on' : i < st ? 'dn' : '') + '" aria-selected="' + (i === st) + '">' + (i + 1) + ' · ' + t + '</button>'; }).join('') + '</div>'
+      : '<div class="wz-steps">' + TITLES.map(function (t, i) { return '<button type="button" data-wzgo="' + i + '" class="' + (i <= st ? 'on' : '') + '" aria-label="Step ' + (i + 1) + ': ' + t + '"></button>'; }).join('') + '</div>';
+    h +=
       '<h4 class="wz-h">' + (w.adv ? 'Edit each wall' : TITLES[st]) + '</h4><p class="wz-sub">' + (w.adv ? 'Pick a wall, tap a panel, choose what it should be' : SUBS[st]) + '</p>';
     var mini = function (lay2) { return wzIso(c, lay2, true); };
-    var dimsBox = '<div class="wz-dims"><h5>Your layout · sizes in ft-in</h5>' + wzDims(c, lay) + '</div>';
+    var dimsBox = S.pdp ? '' : '<div class="wz-dims"><h5>Your layout · sizes in ft-in</h5>' + wzDims(c, lay) + '</div>';
     var tgl = function (attr, on, name, sub, pr) { return '<label class="wz-row"><span><b>' + esc(name) + '</b><small>' + esc(sub) + '</small></span><span class="wz-pr">' + (pr || '') + '</span><input type="checkbox" class="wz-sw" ' + attr + (on ? ' checked' : '') + '></label>'; };
     var dif = function (f1, f0) { var a1 = wzTry(c, lay, f1), a0 = wzTry(c, lay, f0); return a1 != null && a0 != null ? (a1 - a0 ? '+' + rs(a1 - a0) : 'included') : ''; };
     var withW = function (ch) { var w2 = {}, k; for (k in w) w2[k] = w[k]; for (k in ch) w2[k] = ch[k]; return w2; };
@@ -533,6 +552,9 @@
       return h;
     }
     if (st === 0) {
+      var tps = arr(c.templates);
+      if (tps.length) h += '<p class="wz-lbl" style="margin-top:0">Start from a ready layout <span style="font-weight:400;color:#6A6258">— or just change things below</span></p><div class="wz-tpl">' + tps.map(function (t) { var tt = wzTry(c, lay, function (l2) { var k; for (k in l2) delete l2[k]; var t2 = cbClone(t.layout); for (k in t2) l2[k] = t2[k]; cbDefaults(c, l2); });
+        return '<button type="button" data-wztpl="' + esc(t.code) + '" class="wz-card' + (S.tpl === t.code ? ' on' : '') + '"><span class="wz-pic">' + wzIso(c, t.layout, true) + '</span><b>' + esc(t.name) + '</b><small>' + num(t.layout.L) + ' × ' + num(t.layout.W) + ' ft' + (tt != null ? ' · ' + rs(tt) : '') + '</small></button>'; }).join('') + '</div><p class="wz-lbl">Size</p>';
       h += wzCards(WZ_SIZES.map(function (z) { return [z[0], z[0], z[1] + ' × ' + z[2] + ' ft · ' + z[3]]; }), (WZ_SIZES.filter(function (z) { return z[1] === num(lay.L) && z[2] === num(lay.W); })[0] || [''])[0], 'data-wzsize',
         function (z) { var zz = WZ_SIZES.filter(function (y) { return y[0] === z[0]; })[0]; return wzTry(c, lay, function (l2) { l2.L = zz[1]; l2.W = zz[2]; wzBuild(c, l2, w); }); });
       var stp = function (key, lbl, lo, hi2) { return '<div class="wz-row" style="cursor:default"><span><b>' + lbl + '</b><small>' + lo + '–' + hi2 + ' ft · now ' + fi(lay[key]) + '</small></span><span class="wz-stp"><button type="button" class="wz-pm" data-cstep="' + key + ':-1" aria-label="' + lbl + ' less"' + (num(lay[key]) <= lo ? ' disabled' : '') + '>−</button><input type="number" inputmode="numeric" min="' + lo + '" max="' + hi2 + '" step="1" data-cdim="' + key + '" value="' + num(lay[key]) + '" aria-label="' + lbl + ' in feet"><button type="button" class="wz-pm" data-cstep="' + key + ':1" aria-label="' + lbl + ' more"' + (num(lay[key]) >= hi2 ? ' disabled' : '') + '>+</button></span></div>'; };
@@ -583,8 +605,10 @@
       var pj2 = lay.proj && arr(lay.proj.sides).length ? 'Pergola projection (' + arr(lay.proj.sides).join(', ') + ') · ' + [lay.proj.design, lay.proj.top, lay.proj.under].filter(Boolean).join(' · ') : '';
       h += '<ul class="wz-sum"><li><b>' + fi(lay.L) + ' × ' + fi(lay.W) + '</b> · ' + (num(lay.L) * num(lay.W)) + ' sq ft</li><li>' + esc(gname) + ' · ' + esc(dname) + ' (' + esc(w.side) + ')' + (lay.full_doors === true ? ' · full-height doors' : ' · 8 ft doors') + (SIDES.some(function (sd) { return lay.walls[sd].indexOf('slide') >= 0; }) && lay.tracks ? ' · ' + esc(lay.tracks) : '') + '</li><li>' + esc(ins.join(' · ') || 'open inside') + '</li>' + (pj2 ? '<li>' + esc(pj2) + '</li>' : '') + (SIDES.indexOf(lay.gutter) >= 0 ? '<li>Rain gutter, slope to the ' + esc(lay.gutter) + '</li>' : '') + '<li>' + esc([lay.roof, lay.frame, lay.height].filter(Boolean).join(' · ')) + ' · LED lights included</li></ul>';
       h += '<div class="wz-note"><b>Before we make it:</b> final drawings of your cabin are sent to you for approval. Making starts only after you approve them.</div>';
+      if (S.pdp) h += pdpTail(PRODS[S.id], m, o);
       h += '<button type="button" class="wz-back" data-wzadv="1">✎ Edit each wall yourself</button>';
     }
+    if (S.pdp) return h;
     h += dimsBox + '<div class="wz-nav">' + (st > 0 ? '<button type="button" class="wz-prev" data-wzgo="' + (st - 1) + '">← Back</button>' : '<span></span>') + (st < 6 ? '<button type="button" class="wz-next" data-wzgo="' + (st + 1) + '">Next →</button>' : '') + '</div>';
     return h;
   }
@@ -592,6 +616,7 @@
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, w = S.wz, k;
     if ((k = t.getAttribute('data-wzgo')) != null) { w.step = +k; w.adv = false; S.psel = null; S.v3 = null; return true; }
     if ((k = t.getAttribute('data-wzv')) != null) { S.v3 = k; return true; }
+    if ((k = t.getAttribute('data-wztpl')) != null) { var tp = arr(c.templates).filter(function (x) { return x.code === k; })[0]; if (tp) { var keep = { step: w.step }; S.o.layout = lay = cbClone(tp.layout); cbDefaults(c, lay); S.wz = wzRead(c, lay); S.wz.step = keep.step; S.wz.adv = false; S.tpl = k; S.v3 = '3d'; } return true; }
     if ((k = t.getAttribute('data-cstep')) != null) { var cs = k.split(':'); setDim(cs[0], num(lay[cs[0]]) + (+cs[1])); return true; }
     if ((k = t.getAttribute('data-wztrk')) != null) { lay.tracks = k; return true; }
     if ((k = t.getAttribute('data-wzpj')) != null) { var pj = Object.assign({}, lay.proj), sd0 = arr(pj.sides).slice(), ix = sd0.indexOf(k); if (ix >= 0) { if (sd0.length > 1 || !(c.proj && c.proj.required)) sd0.splice(ix, 1); } else sd0.push(k); pj.sides = SIDES.filter(function (x) { return sd0.indexOf(x) >= 0; }); lay.proj = pj; return true; }
@@ -685,14 +710,61 @@
     window.addCart = function (id) { if (S && S.pdp && (!id || id === S.id) && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(); return _ac.apply(this, arguments); };
   }
   function pdpOrder() { var c = document.getElementById('mtoCfg'), q = price(PRODS[S.id].cz, S.o, PCT); if (!q.ok || PRODS[S.id].oo === false) { if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return toast(PRODS[S.id].oo === false ? 'Coming soon — orders open soon' : q.error); } order(); }
+  // 160: the cabin builder on the product page — the 3D model takes the photo's place, a sticky bar carries the price and Next
+  var CBV = [['3d', '3D'], ['360', '360°'], ['inside', 'Inside'], ['top', 'Top'], ['plan', 'Plan'], ['front', 'Sides'], ['photos', 'Photos']];
+  function cbStage() {
+    var col = document.querySelector('#pdp .pdp-grid > div:first-child'); if (!col) return;
+    var st = document.getElementById('cbStage'); if (!st) { st = document.createElement('div'); st.id = 'cbStage'; st.className = 'cb-stage'; col.insertBefore(st, col.firstChild); st.addEventListener('click', stageClick); }
+    cbTop(); if (!cbStage.on) { cbStage.on = true; window.addEventListener('scroll', cbTop, { passive: true }); window.addEventListener('resize', cbTop); }
+    var c = PRODS[S.id].cz.cabin, v = S.view3, side = ['front', 'right', 'back', 'left'].indexOf(v) >= 0, imgs = gal(S.id), h = '';
+    if (v === 'plan') h = '<div class="cb-pic"><div class="cb-plan">' + wzDims(c, S.o.layout) + '</div></div>';
+    else if (v === 'photos') { var gi = Math.min(S.img || 0, imgs.length - 1); h = '<div class="cb-pic"><img src="' + esc(imgs[gi] || '') + '" alt="' + esc(PRODS[S.id].n) + '">' + (imgs.length > 1 ? '<button type="button" class="cb-nav" style="left:8px" data-gi="' + ((gi + imgs.length - 1) % imgs.length) + '" aria-label="Previous photo">‹</button><button type="button" class="cb-nav" style="right:8px" data-gi="' + ((gi + 1) % imgs.length) + '" aria-label="Next photo">›</button>' : '') + '</div>'; }
+    else h = '<div class="wz-3dv" id="cb3d" style="position:relative">' + (C3.st === 2 ? '' : wzIso(c, S.o.layout)) + '</div>';
+    if (side) h = h.replace('id="cb3d" style="position:relative">', 'id="cb3d" style="position:relative">');
+    var sides = side ? '<div class="cb-sides">' + [['front', 'F'], ['right', 'R'], ['back', 'B'], ['left', 'L']].map(function (x) { return '<button type="button" data-wzv="' + x[0] + '" class="' + (x[0] === v ? 'on' : '') + '" aria-label="' + x[0] + ' side">' + x[1] + '</button>'; }).join('') + '</div>' : '';
+    st.innerHTML = '<div style="position:relative">' + h + sides + '</div><div class="cb-vw" role="tablist" aria-label="Views">' + CBV.filter(function (x) { return C3.st !== -1 || ['plan', 'photos'].indexOf(x[0]) >= 0; }).map(function (x) { var on = x[0] === v || (x[0] === 'front' && side); return '<button type="button" role="tab" data-wzv="' + x[0] + '" class="' + (on ? 'on' : '') + '" aria-selected="' + on + '">' + x[1] + '</button>'; }).join('') + '</div>';
+    if (side) { var cv = st.querySelector('#cb3d'); if (cv) cv.parentNode.style.position = 'relative'; }
+  }
+  function cbTop() {   // the stage sticks right under whatever part of the store header is showing
+    var hd = document.querySelector('.stickytop') || document.querySelector('header'), b = 0; if (hd) { var r = hd.getBoundingClientRect(); b = Math.max(0, Math.round(r.bottom)); }
+    document.documentElement.style.setProperty('--cbtop', b + 'px');
+  }
+  function stageClick(e) {
+    var t = e.target.closest('[data-wzv],[data-gi]'); if (!t || !S) return;
+    if (t.hasAttribute('data-gi')) S.img = +t.getAttribute('data-gi'); else S.v3 = S.view3 = t.getAttribute('data-wzv');
+    cbStage(); mount3d();
+  }
+  function cbSheet() {
+    var sh = document.getElementById('cbSheet'); if (sh) return;
+    sh = document.createElement('div'); sh.id = 'cbSheet'; sh.className = 'cb-sheet'; sh.setAttribute('role', 'dialog'); sh.setAttribute('aria-label', 'Price details');
+    sh.innerHTML = '<div><h4>Price details <button type="button" aria-label="Close" data-x="1">✕</button></h4><div class="mto-sum lt" id="mtoSum" style="margin-top:0"></div></div>';
+    sh.addEventListener('click', function (e) { if (e.target === sh || e.target.closest('[data-x]')) sh.classList.remove('open'); });
+    document.body.appendChild(sh);
+  }
+  window.cbOpenSheet = function () { var sh = document.getElementById('cbSheet'); if (sh) sh.classList.add('open'); };
+  window.cbNext = function () {
+    if (!S || !S.wz) return; var w = S.wz;
+    if (w.adv) { w.adv = false; } else if (w.step < 6) { w.step++; S.v3 = null; S.psel = null; } else return pdpOrder();
+    draw(); var cfg = document.getElementById('mtoCfg'), stg = document.getElementById('cbStage'), hd = document.querySelector('.stickytop') || document.querySelector('header');
+    if (cfg) { var off = (window.innerWidth < 900 && stg ? stg.offsetHeight : 0) + (hd ? Math.max(0, hd.getBoundingClientRect().bottom) : 0) + 8; window.scrollTo({ top: cfg.getBoundingClientRect().top + window.scrollY - off, behavior: 'smooth' }); }
+  };
+  function cbBar(q) {
+    var ct = document.querySelector('.ctas'); if (!ct) return; var b = ct.querySelector('.cbbar'); if (!b) { b = document.createElement('div'); b.className = 'cbbar'; ct.appendChild(b); }
+    var x = PRODS[S.id], last = S.wz.step >= 6 && !S.wz.adv, closed = x.oo === false, o = S.o, needPin = !(q.ok && q.install && q.install.available);
+    b.innerHTML = '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
+      '<button type="button" class="cbn" onclick="cbNext()"' + (last && (closed || needPin || !q.ok) ? ' disabled' : '') + '>' + (!last ? 'Next →' : closed ? 'Coming soon' : needPin ? 'Enter your pincode' : 'Order · pay ' + rs(q.pay_now)) + '</button>';
+    var pr = document.getElementById('pdPrice'); if (pr && q.ok && x.oo !== false) pr.innerHTML = rs(q.total) + '<span class="mrplab">your design, incl. GST</span>';
+  }
   window.mtoPdpReset = function () {
-    var p = document.getElementById('pdp'); if (p) p.classList.remove('pdp-mto'); document.body.classList.remove('pdp-mto-on');
+    var p = document.getElementById('pdp'); if (p) p.classList.remove('pdp-mto', 'pdp-cab'); document.body.classList.remove('pdp-mto-on', 'pdp-cab-on');
+    ['cbStage', 'cbSheet'].forEach(function (k) { var e = document.getElementById(k); if (e) e.remove(); }); var cb = document.querySelector('.ctas .cbbar'); if (cb) cb.remove();
     ['mtoCfg', 'mtoAccs', 'mtoChip', 'mtoChip2'].forEach(function (k) { var e = document.getElementById(k); if (e) e.remove(); });
     if (S) S.pdp = false;
   };
   window.mtoPdp = function (id) {
     if (!mtoInit(id)) return; S.pdp = true; pdpWire();
     var x = PRODS[id], m = x.cz, u = m.unit, uw = UW(u), pdp = document.getElementById('pdp'); pdp.classList.add('pdp-mto'); document.body.classList.add('pdp-mto-on');
+    if (u === 'cabin') { pdp.classList.add('pdp-cab'); document.body.classList.add('pdp-cab-on'); S.v3 = null; var j0 = JSON.stringify(m.cabin.layout); S.tpl = (arr(m.cabin.templates).filter(function (t) { return JSON.stringify(t.layout) === j0; })[0] || {}).code || null; }
     var c0 = arr((arr(m.materials)[0] || {}).colours)[0]; if (c0 && !S.o.colour) S.o.colour = c0.name;
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), lo = mats.length ? Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; })) : 0;
     var pr = document.getElementById('pdPrice'); if (pr && x.oo !== false) pr.innerHTML = '<span class="mfrom">From</span> ' + rs(x.p) + (u !== 'fixed' && u !== 'cabin' && u !== 'seat' && lo ? '<span class="mrplab">' + rs(lo) + ' / ' + uw + '</span>' : '');
@@ -731,7 +803,7 @@
     var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), el = document.getElementById('mtoCfg'); if (!el) return;
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     var hOpts = arr(m.h && m.h.options), f = [];
-    if (u === 'cabin') { el.innerHTML = '<h3 class="mto-ph">Design your cabin</h3>' + cabinUI(m, o) + pdpTail(x, m, o) + '<div class="mto-sum lt" id="mtoSum"></div>'; paint(); return mount3d(); }
+    if (u === 'cabin') { el.innerHTML = cabinUI(m, o); cbStage(); cbSheet(); paint(); return mount3d(); }
     if (u === 'seat') { var sv = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
     else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + ' — ' + rs(fixedAt(m, mat, z))]; })), o.size, 'Size'));
     else {
@@ -846,7 +918,7 @@
 
   function paint() {
     var x = PRODS[S.id], m = x.cz, o = S.o; o.zone = zoneOf(m.ships_from, o.pin); var q = price(m, o, PCT), el = document.getElementById('mtoSum'), it = document.getElementById('mtoInstTxt');
-    if (S.pdp) ctaPaint(q);
+    if (S.pdp) { if (m.unit === 'cabin' && S.wz) cbBar(q); else ctaPaint(q); }
     if (it) it.textContent = !/^\d{6}$/.test(o.pin) ? 'Enter your pincode to see the installation charge' : q.ok && q.install ? (q.install.available ? q.install.city + ': ' + rs(q.install.fee) : 'Not available at this pincode yet: delivery only, with a fixing guide') : '';
     if (!el) return;
     if (!q.ok) { el.innerHTML = '<p class="mto-err" style="margin:0">' + esc(q.error) + '</p><button class="mto-go" type="button" disabled>Enter your size</button>'; return; }
@@ -900,7 +972,7 @@
     if (t.hasAttribute('data-add')) { var n = t.getAttribute('data-add'); S.o.addons = S.o.addons.filter(function (a) { return a !== n; }); if (t.checked) S.o.addons.push(n); return paint(); }
   }
   function onClick(e) {
-    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit],[data-pl],[data-dragpl],[data-pact],[data-wzgo],[data-wzadv],[data-wzside],[data-wp],[data-wzpiece],[data-wzsize],[data-wzglass],[data-wzdoor],[data-wzdside],[data-wzwin],[data-cchk],[data-wzv],[data-cstep],[data-wztrk],[data-wzpj],[data-wzpd],[data-wzpt],[data-wzpu],[data-wzgut]'); if (!t || !S) return;
+    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit],[data-pl],[data-dragpl],[data-pact],[data-wzgo],[data-wzadv],[data-wzside],[data-wp],[data-wzpiece],[data-wzsize],[data-wzglass],[data-wzdoor],[data-wzdside],[data-wzwin],[data-cchk],[data-wzv],[data-cstep],[data-wztrk],[data-wzpj],[data-wzpd],[data-wzpt],[data-wzpu],[data-wzgut],[data-wztpl]'); if (!t || !S) return;
     var cz0 = (PRODS[S.id] || {}).cz;   // 156: cabin builder
     if (t.getAttribute && t.getAttribute('data-dragged')) { t.removeAttribute('data-dragged'); return; }
     if (cz0 && cz0.unit === 'cabin' && S.wz && wzClick(t)) return draw();   // 158
