@@ -479,7 +479,7 @@
     if (C3.st !== 0) return;
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1; var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=2';
-    sc.onload = function () { C3.st = window.Cabin3D ? 2 : -1; mount3d(); }; sc.onerror = function () { C3.st = -1; }; document.head.appendChild(sc);
+    sc.onload = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar sc.onerror = function () { C3.st = -1; }; document.head.appendChild(sc);
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
