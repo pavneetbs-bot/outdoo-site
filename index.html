@@ -454,6 +454,21 @@ body.flt-open .ctas,body.cmp-in .ctas{display:none!important}
 .thumbs{display:flex;gap:9px;margin-top:10px}
 .thumbs .th{width:60px;height:60px;border-radius:10px;border:2px solid transparent;cursor:pointer;overflow:hidden}
 .thumbs .th.on{border-color:var(--terra)}
+.thumbs{overflow-x:auto;scrollbar-width:none}.thumbs .th{flex:0 0 auto}
+.gal-main{cursor:zoom-in;touch-action:pan-y}.gnav{position:absolute;inset:0;z-index:2;pointer-events:none}
+.gnav button{pointer-events:auto;position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.88);font-size:24px;line-height:1;color:#2E2E2E;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.gnav .gp{left:10px}.gnav .gn{right:10px}.gnav .gc{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(46,46,46,.72);color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px}
+.gnav .gz{position:absolute;bottom:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;font-size:16px}
+.gnav.one .gp,.gnav.one .gn,.gnav.one .gc{display:none}
+#lbx{position:fixed;inset:0;z-index:200;background:#111;display:none}#lbx.open{display:block}
+#lbx .lstage{position:absolute;inset:56px 0 64px;overflow:hidden;touch-action:none;display:flex;align-items:center;justify-content:center}
+#lbx img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .12s ease-out;user-select:none;-webkit-user-drag:none;cursor:zoom-in}
+#lbx .lx{position:absolute;top:8px;right:10px;z-index:2;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:20px;cursor:pointer}
+#lbx .lp,#lbx .ln{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:46px;height:46px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:28px;cursor:pointer}#lbx .lp{left:10px}#lbx .ln{right:10px}
+#lbx .lbar{position:absolute;bottom:0;left:0;right:0;height:64px;display:flex;align-items:center;justify-content:center;gap:16px;color:#fff;font-size:14px}
+#lbx .lzb{border:1px solid rgba(255,255,255,.4);background:none;color:#fff;border-radius:99px;padding:8px 16px;font:inherit;cursor:pointer}
+#lbx.one .lp,#lbx.one .ln{display:none}
+@media(max-width:760px){.gnav button{width:34px;height:34px;font-size:20px}#lbx .lp,#lbx .ln{display:none}}
 .pdp-info{margin-top:16px}
 .pdp-info h1{font-size:19px;margin-bottom:7px}
 .skuline{color:var(--muted);font-size:11px;margin:6px 0 10px}
@@ -2670,11 +2685,58 @@ let curPid=null;
 // product page gallery: main photo + the product's other photos (GAL, from product_images); one thumb when there are none
 var GAL = window.GAL || {}; window.GAL = GAL;
 function pdThumbs(id){
-  const x=PRODS[id], list=[IMGS[x.img], ...(GAL[id]||[])].filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
+  const x=PRODS[id]; if(!x) return; const list=[IMGS[x.img], ...(GAL[id]||[])].filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
+  window.PDG={id,list,i:0};
   const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
-  box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdShow(this)"><img src="${u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
+  box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdGo(${i})"><img src="${u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
+  pdGalUI();
 }
-function pdShow(th){ document.querySelectorAll('.thumbs .th').forEach(t=>t.classList.remove('on')); th.classList.add('on'); document.getElementById('pdImg').src=th.querySelector('img').src; }
+// 164: product photos — swipe, arrows, counter, tap for full screen with zoom
+function pdGo(i){ const g=window.PDG; if(!g||!g.list.length) return; g.i=(i+g.list.length)%g.list.length;
+  const im=document.getElementById('pdImg'); im.src=g.list[g.i];
+  document.querySelectorAll('#pdp .thumbs .th').forEach((t,k)=>t.classList.toggle('on',k===g.i));
+  const th=document.querySelectorAll('#pdp .thumbs .th')[g.i]; if(th&&th.scrollIntoView) try{th.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}
+  pdGalUI(); if(document.getElementById('lbx')&&document.getElementById('lbx').classList.contains('open')) lbxShow(); }
+function pdShow(th){ const k=[...document.querySelectorAll('#pdp .thumbs .th')].indexOf(th); pdGo(k<0?0:k); }
+function pdGalUI(){ const g=window.PDG, m=document.querySelector('#pdp .gal-main'); if(!m||!g) return;
+  let ui=m.querySelector('.gnav'); if(!ui){ ui=document.createElement('div'); ui.className='gnav';
+    ui.innerHTML='<button type="button" class="gp" aria-label="Previous photo" onclick="event.stopPropagation();pdGo(PDG.i-1)">‹</button><button type="button" class="gn" aria-label="Next photo" onclick="event.stopPropagation();pdGo(PDG.i+1)">›</button><span class="gc"></span><span class="gz" aria-hidden="true">⤢</span>';
+    m.appendChild(ui); pdSwipe(m, ()=>pdGo(PDG.i+1), ()=>pdGo(PDG.i-1), ()=>lbxOpen()); }
+  ui.classList.toggle('one', g.list.length<2); ui.querySelector('.gc').textContent=(g.i+1)+' / '+g.list.length; }
+function pdSwipe(el, next, prev, tap){ let x0=null,y0=0,t0=0,multi=false;
+  el.addEventListener('touchstart',e=>{ multi=e.touches.length>1; x0=e.touches[0].clientX; y0=e.touches[0].clientY; t0=Date.now(); },{passive:true});
+  el.addEventListener('touchend',e=>{ if(x0==null||multi) return; const t=e.changedTouches[0], dx=t.clientX-x0, dy=t.clientY-y0; x0=null;
+    if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)) { dx<0?next():prev(); e.preventDefault(); } else if(Math.abs(dx)<8&&Math.abs(dy)<8&&Date.now()-t0<350&&tap){ e.preventDefault(); tap(); } });
+  if(tap) el.addEventListener('click',e=>{ if(e.target.closest('button')) return; tap(); }); }
+// full-screen viewer: swipe between photos, double-tap / tap the zoom button / pinch to zoom, drag to look around
+let LZ={s:1,x:0,y:0};
+function lbxOpen(){ let b=document.getElementById('lbx');
+  if(!b){ b=document.createElement('div'); b.id='lbx'; b.setAttribute('role','dialog'); b.setAttribute('aria-label','Photos');
+    b.innerHTML='<button type="button" class="lx" aria-label="Close" onclick="lbxClose()">✕</button><div class="lstage"><img alt=""></div><button type="button" class="lp" aria-label="Previous photo" onclick="pdGo(PDG.i-1)">‹</button><button type="button" class="ln" aria-label="Next photo" onclick="pdGo(PDG.i+1)">›</button><div class="lbar"><span class="lc"></span><button type="button" class="lzb" onclick="lbxZoom()">Zoom</button></div>';
+    document.body.appendChild(b); lbxWire(b.querySelector('.lstage')); }
+  b.classList.add('open'); document.body.classList.add('flt-open'); lbxShow();
+  try{ history.pushState({v:'modal'},'',location.pathname+location.search); }catch(e){} }
+function lbxClose(){ const b=document.getElementById('lbx'); if(b&&b.classList.contains('open')){ b.classList.remove('open'); document.body.classList.remove('flt-open'); } }
+function lbxShow(){ const b=document.getElementById('lbx'), g=window.PDG; if(!b||!g) return; LZ={s:1,x:0,y:0};
+  const im=b.querySelector('img'); im.src=g.list[g.i]; lbxApply(); b.querySelector('.lc').textContent=(g.i+1)+' / '+g.list.length;
+  b.classList.toggle('one', g.list.length<2); }
+function lbxApply(){ const im=document.querySelector('#lbx img'); if(im) im.style.transform=`translate(${LZ.x}px,${LZ.y}px) scale(${LZ.s})`; const z=document.querySelector('#lbx .lzb'); if(z) z.textContent=LZ.s>1?'Zoom out':'Zoom in'; }
+function lbxZoom(cx,cy){ if(LZ.s>1){ LZ={s:1,x:0,y:0}; } else { const st=document.querySelector('#lbx .lstage').getBoundingClientRect(); const s=2.5;
+  const px=(cx==null?st.width/2:cx-st.left)-st.width/2, py=(cy==null?st.height/2:cy-st.top)-st.height/2; LZ={s, x:-px*(s-1), y:-py*(s-1)}; } lbxApply(); }
+function lbxWire(st){ let p=null, pinch=null, lastTap=0, sw=null;
+  const clamp=()=>{ const r=st.getBoundingClientRect(), mx=r.width*(LZ.s-1)/2, my=r.height*(LZ.s-1)/2; LZ.x=Math.max(-mx,Math.min(mx,LZ.x)); LZ.y=Math.max(-my,Math.min(my,LZ.y)); };
+  st.addEventListener('touchstart',e=>{ if(e.touches.length===2){ const [a,b]=e.touches; pinch={d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),s:LZ.s}; sw=null; return; }
+    const t=e.touches[0]; p={x:t.clientX,y:t.clientY,lx:LZ.x,ly:LZ.y}; sw=LZ.s===1?{x:t.clientX,y:t.clientY}:null;
+    const now=Date.now(); if(now-lastTap<300){ lbxZoom(t.clientX,t.clientY); sw=null; p=null; } lastTap=now; },{passive:true});
+  st.addEventListener('touchmove',e=>{ if(pinch&&e.touches.length===2){ const [a,b]=e.touches; LZ.s=Math.max(1,Math.min(4,pinch.s*Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)/pinch.d)); clamp(); lbxApply(); e.preventDefault(); return; }
+    if(p&&LZ.s>1){ const t=e.touches[0]; LZ.x=p.lx+t.clientX-p.x; LZ.y=p.ly+t.clientY-p.y; clamp(); lbxApply(); e.preventDefault(); } },{passive:false});
+  st.addEventListener('touchend',e=>{ if(pinch&&e.touches.length<2){ pinch=null; if(LZ.s<1.05){LZ={s:1,x:0,y:0};lbxApply();} return; }
+    if(sw&&LZ.s===1){ const t=e.changedTouches[0], dx=t.clientX-sw.x, dy=t.clientY-sw.y; if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)) pdGo(PDG.i+(dx<0?1:-1)); else if(dy>90&&Math.abs(dy)>Math.abs(dx)) history.back(); } sw=null; p=null; });
+  st.addEventListener('dblclick',e=>lbxZoom(e.clientX,e.clientY));
+  st.addEventListener('mousemove',e=>{ if(LZ.s>1&&!('ontouchstart' in window)){ const r=st.getBoundingClientRect(), mx=r.width*(LZ.s-1)/2, my=r.height*(LZ.s-1)/2;
+    LZ.x=mx-(e.clientX-r.left)/r.width*2*mx; LZ.y=my-(e.clientY-r.top)/r.height*2*my; lbxApply(); } });
+  st.addEventListener('click',e=>{ if(!('ontouchstart' in window)&&e.detail===1) lbxZoom(e.clientX,e.clientY); });
+  document.addEventListener('keydown',e=>{ const b=document.getElementById('lbx'); if(!b||!b.classList.contains('open')) return; if(e.key==='Escape') history.back(); if(e.key==='ArrowRight') pdGo(PDG.i+1); if(e.key==='ArrowLeft') pdGo(PDG.i-1); }); }
 function openProduct(id){
   if(PRODS[id]&&PRODS[id].bun) return openBundle(id);   // 127
   window.mtoPdpReset&&mtoPdpReset();   // 159: Made to Order uses this same page (mto.js fills the options card)
@@ -2891,9 +2953,7 @@ function checkPin(){
 let tt;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('show'),1700); }
-document.querySelectorAll('.thumbs .th').forEach(th=>{ th.addEventListener('click',()=>{
-  document.querySelectorAll('.thumbs .th').forEach(x=>x.classList.remove('on')); th.classList.add('on');
-  document.querySelector('.gal-main img').src = th.querySelector('img').src; }); });
+
 
 // hero carousel
 const slides=[...document.querySelectorAll('#caro .slide')], dots=[...document.querySelectorAll('#caro .dot')];
@@ -3066,7 +3126,7 @@ setTimeout(offShow,5000);
   let lock=false;
 
   function anyModal(){
-    return ['mcart','qv','fltPanel','offpop','wachat'].some(id=>{
+    return ['mcart','qv','fltPanel','offpop','wachat','lbx'].some(id=>{
       const el=document.getElementById(id); return el && el.classList.contains('open');});
   }
   function closeModals(){
@@ -3075,6 +3135,7 @@ setTimeout(offShow,5000);
     try{ _flt(false); }catch(e){}
     try{ offClose(); }catch(e){}
     const w=document.getElementById('wachat'); if(w) w.classList.remove('open');
+    try{ lbxClose(); }catch(e){}
     document.body.classList.remove('flt-open');
   }
   // Meta Pixel: a new screen in this one-page shop counts as a page view (not pop-ups)
@@ -3881,7 +3942,8 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     try{
       const gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort');
       if(gr.ok){ const bySku = {}; prods.forEach(p => bySku[p.id] = p.sku);
-        (await gr.json()).sort((a,b) => (a.sort||0) - (b.sort||0)).forEach(g => { const k = bySku[g.product_id]; if(k){ (GAL[k] = GAL[k] || []).push(g.url); } }); }
+        (await gr.json()).sort((a,b) => (a.sort||0) - (b.sort||0)).forEach(g => { const k = bySku[g.product_id]; if(k){ (GAL[k] = GAL[k] || []).push(g.url); } });
+        try{ if(curPid && document.getElementById('pdp').style.display==='block' && window.PDG && PDG.id===curPid) pdThumbs(curPid); }catch(e){} }   // 164: a product page opened before the photos loaded
     }catch(e){}
     try{ window.dispatchEvent(new Event('outrr-catalog')); }catch(e){}
     console.log('[outrr] live catalog loaded:', prods.length, 'products');
