@@ -33,6 +33,13 @@
   function missing(m) {
     if (!m || typeof m !== 'object') return ['setup'];
     var u = m.unit, r = [];
+    if (u === 'cabin') {   // 156
+      if (!m.cabin || typeof m.cabin !== 'object' || !cabin(m.cabin, m.cabin.layout).ok) r.push('cabin');
+      var cd = arr(m.make_days); if (!(((num(cd[1]) != null ? num(cd[1]) : num(cd[0])) || 0) > 0)) r.push('days');
+      if (m.install && m.install.offered && !arr(m.install.cities).length) r.push('cities');
+      if (m.install && m.install.required && !m.install.offered) r.push('install');
+      return r;
+    }
     if (['area', 'face', 'length', 'fixed', 'seat'].indexOf(u) < 0) return ['pricing'];
     var lim = function (d) { return (num(m[d] && m[d].min) || 0) > 0 && (num(m[d] && m[d].max) || 0) >= (num(m[d] && m[d].min) || 0); };
     if (u === 'fixed') { if (!arr(m.sizes).length) r.push('sizes'); }
@@ -64,8 +71,71 @@
     }
     return false;
   }
+
+  // 156: "Customise your cabin" — a cabin priced from its layout (same as _mto_cabin in the database)
+  var SIDES = ['front', 'right', 'back', 'left'];
+  function cabin(c, lay) {
+    var isObj = function (v) { return v && typeof v === 'object' && !Array.isArray(v); };
+    if (!isObj(c) || !isObj(lay)) return { ok: false, error: 'Lay out your cabin' };
+    var dv = function (v, d) { v = num(v); return v == null ? d : v; };
+    var Lmin = dv(c.L && c.L.min, 8), Lmax = dv(c.L && c.L.max, 40), Wmin = dv(c.W && c.W.min, 8), Wmax = dv(c.W && c.W.max, 20), bay = dv(c.bay, 4);
+    var L = num(lay.L), W = num(lay.W);
+    if (L == null || L !== Math.floor(L) || L < Lmin || L > Lmax) return { ok: false, error: 'Length must be ' + Lmin + ' to ' + Lmax + ' ft' };
+    if (W == null || W !== Math.floor(W) || W < Wmin || W > Wmax) return { ok: false, error: 'Width must be ' + Wmin + ' to ' + Wmax + ' ft' };
+    if (!((num(c.shell) || 0) > 0) || !arr(c.bays).length) return { ok: false, error: 'This design is not ready to order yet' };
+    var fl = L * W, pick = function (list, name) { return arr(list).filter(function (x) { return x && x.name === name; })[0] || arr(list)[0] || null; };
+    var roof = pick(c.roofs, lay.roof), hgt = pick(c.heights, lay.height), pnl = pick(c.panels, lay.panel), gls = pick(c.glasses, lay.glass), frm = pick(c.frames, lay.frame);
+    var ws = 0, nb = 0, cnt = {}, walls = {}, si, err = null;
+    for (si = 0; si < SIDES.length && !err; si++) {
+      var side = SIDES[si], n = Math.ceil((side === 'front' || side === 'back' ? L : W) / bay), ks = lay.walls && lay.walls[side];
+      if (!Array.isArray(ks) || ks.length !== n) return { ok: false, error: 'The ' + side + ' wall needs ' + n + ' bays' };
+      var i = 0;
+      while (i < n) {
+        var k = ks[i], b = arr(c.bays).filter(function (x) { return x && x.key === k; })[0];
+        if (!b) return { ok: false, error: 'Choose what goes in bay ' + (i + 1) + ' of the ' + side + ' wall' };
+        var sp = Math.max(Math.floor(dv(b.span, 1)), 1);
+        if (i + sp > n) return { ok: false, error: b.name + ' does not fit at the end of the ' + side + ' wall' };
+        for (var j = 1; j < sp; j++) if (ks[i + j] !== '-') return { ok: false, error: b.name + ' needs ' + sp + ' bays on the ' + side + ' wall' };
+        ws += (num(b.price) || 0) + (b.solid ? num(pnl && pnl.extra) || 0 : 0) + (b.glass ? num(gls && gls.extra) || 0 : 0) + (b.glass || b.door ? num(frm && frm.extra) || 0 : 0);
+        cnt[k] = (cnt[k] || 0) + 1; nb += sp; i += sp;
+      }
+      walls[side] = ks;
+    }
+    var wamt = rnd(ws * (1 + (num(hgt && hgt.walls_pct) || 0) / 100)), samt = rnd(fl * ((num(c.shell) || 0) + (num(roof && roof.rate) || 0) + (num(hgt && hgt.rate) || 0)));
+    var summ = arr(c.bays).filter(function (x) { return cnt[x.key]; }).map(function (x) { return x.name + ' × ' + cnt[x.key]; }).join(', ');
+    var nm = function (x) { return x ? x.name : null; };
+    var lines = [{ name: (c.kind || 'Cabin') + ' shell · ' + L + ' × ' + W + ' ft (' + fl + ' sq ft) · ' + ((roof && roof.name) || 'roof'), amount: samt },
+      { name: 'Walls · ' + nb + ' bays: ' + summ, amount: wamt }, { name: 'Spec: ' + [nm(hgt), nm(pnl), nm(gls), nm(frm)].filter(function (x) { return x != null; }).join(', '), amount: 0 }];
+    var total = samt + wamt, items = {}, its = arr(c.items);
+    for (var t = 0; t < its.length; t++) {
+      var it = its[t];
+      if (!isObj(lay.items) || !(it.key in lay.items)) continue;
+      var qv = num(lay.items[it.key]);
+      if (qv == null || qv < 0 || qv !== Math.floor(qv) || qv > dv(it.max, 100)) return { ok: false, error: 'Check the quantity of ' + String(it.name).toLowerCase() };
+      if (qv === 0) continue;
+      var amt = it.unit === 'floor' ? rnd((num(it.price) || 0) * fl) : rnd((num(it.price) || 0) * qv);
+      lines.push({ name: it.name + (it.unit === 'floor' ? '' : it.unit === 'rft' ? ' · ' + qv + ' ft' : it.unit === 'wall_sqft' ? ' · ' + qv + ' sq ft' : ' × ' + qv), amount: amt });
+      items[it.key] = qv; total += amt;
+    }
+    return { ok: true, L: L, W: W, floor: fl, size: L + ' × ' + W + ' ft', total: total, lines: lines,
+      layout: { L: L, W: W, roof: nm(roof), height: nm(hgt), panel: nm(pnl), glass: nm(gls), frame: nm(frm), walls: walls, items: items } };
+  }
+  window.mtoCabin = cabin;
   function price(m, o, payPct) {
     o = o || {};
+    if (m && m.unit === 'cabin') {   // 156: priced from the layout, then quoted as one piece
+      if (missing(m).length) return { ok: false, error: 'This design is not ready to order yet' };
+      var cb = cabin(m.cabin, o.layout !== undefined ? o.layout : m.cabin && m.cabin.layout);
+      if (!cb.ok) return cb;
+      var m2 = {}, o2 = {}, kk; for (kk in m) m2[kk] = m[kk]; for (kk in o) if (kk !== 'groups' && kk !== 'addons' && kk !== 'colour') o2[kk] = o[kk];
+      m2.unit = 'fixed'; m2.sizes = [{ label: cb.size, price: cb.total }]; m2.materials = [{ name: 'As configured', rate: 0, colours: [] }]; m2.groups = []; m2.addons = []; m2.min_charge = null; m2.delivery = {};
+      var ins0 = m.install || {}, ins2 = {}; for (kk in ins0) ins2[kk] = ins0[kk];
+      ins2.cities = arr(ins0.cities).map(function (x) { var y = {}, z; for (z in x) y[z] = x[z]; y.visit = (num(x.visit) || 0) + rnd((num(x.rate) || 0) * cb.floor); y.rate = 0; return y; }); m2.install = ins2;
+      o2.size = cb.size; o2.material = 'As configured';
+      var q0 = price(m2, o2, payPct); if (!q0.ok) return q0;
+      q0.unit = 'cabin'; q0.qty = cb.floor; q0.addons = cb.lines.concat([{ name: 'Layout', amount: 0, layout: cb.layout }]); q0.cabin = { ok: true, L: cb.L, W: cb.W, floor: cb.floor, size: cb.size, total: cb.total };
+      return q0;
+    }
     if (missing(m).length) return { ok: false, error: 'This design is not ready to order yet' };
     var u = m.unit, l = num(o.l), w = num(o.w), h = num(o.h), qty, sz = null;
     if (u === 'fixed') { sz = arr(m.sizes).filter(function (x) { return x.label === o.size; })[0]; if (!sz) return { ok: false, error: 'Choose a size' }; qty = 1; }
@@ -157,6 +227,86 @@
     '@media (max-width:820px){.mto-wrap{grid-template-columns:1fr;gap:18px}.mto-steps ol{grid-template-columns:repeat(2,minmax(0,1fr))}.mto-more .row{grid-template-columns:repeat(2,minmax(0,1fr))}.mto-g{grid-template-columns:repeat(2,minmax(0,1fr))}.mto-cfg h1{font-size:26px}}';
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 
+
+  // ------------------------------------------------------------ 156: cabin builder (layout) — tap a wall bay, choose what goes there; price updates live
+  function cbClone(v) { return JSON.parse(JSON.stringify(v)); }
+  function cbBay(c, k) { return arr(c.bays).filter(function (b) { return b.key === k; })[0] || null; }
+  function cbSpan(c, k) { var b = cbBay(c, k); return b ? Math.max(Math.floor(num(b.span) || 1), 1) : 1; }
+  function cbFill(c) { return c.fill && cbBay(c, c.fill) ? c.fill : (arr(c.bays)[0] || {}).key; }
+  function cbLen(c, lay, side) { return side === 'front' || side === 'back' ? num(lay.L) : num(lay.W); }
+  function cbN(c, lay, side) { return Math.ceil(cbLen(c, lay, side) / (num(c.bay) || 4)); }
+  function cbNorm(c, ks, n) {   // whole elements only: orphans and doors cut by the end become plain wall
+    var f = cbFill(c), out = ks.slice(0, n), i = 0; while (out.length < n) out.push(f);
+    while (i < n) { var k = out[i]; if (k === '-' || !cbBay(c, k)) { out[i] = f; i++; continue; } var sp = cbSpan(c, k); if (i + sp > n) { out[i] = f; i++; continue; } for (var j = 1; j < sp; j++) out[i + j] = '-'; i += sp; }
+    return out;
+  }
+  function cbHead(ks, i) { while (i > 0 && ks[i] === '-') i--; return i; }
+  function cbSet(c, lay, side, i, key) {   // put `key` at bay i (wide doors take the next bays)
+    var n = cbN(c, lay, side), ks = lay.walls[side].slice(), f = cbFill(c), sp = cbSpan(c, key);
+    var clear = function (h) { h = cbHead(ks, h); var s2 = cbSpan(c, ks[h]); for (var j = 0; j < s2 && h + j < n; j++) ks[h + j] = f; };
+    var h = cbHead(ks, i); clear(h);
+    var st = Math.min(h, n - sp); if (st < 0) return false;
+    for (var j = st; j < st + sp; j++) if (ks[j] !== f || cbSpan(c, ks[j]) > 1) clear(j);
+    ks[st] = key; for (j = 1; j < sp; j++) ks[st + j] = '-';
+    lay.walls[side] = cbNorm(c, ks, n); return true;
+  }
+  function cbResize(c, lay) { SIDES.forEach(function (sd) { lay.walls[sd] = cbNorm(c, arr(lay.walls[sd]), cbN(c, lay, sd)); }); }
+  function cbColor(b) { return !b ? '#D9D4CB' : b.door ? (b.glass ? '#4E93AD' : '#8C7E6C') : b.glass ? (b.key === 'frost' ? '#B9CDD4' : '#8EC3D6') : '#D9D4CB'; }
+  function cbPlan(c, lay, sel) {
+    var L = num(lay.L), W = num(lay.W), bay = num(c.bay) || 4, s = Math.min(520 / L, 300 / W, 30), ox = 26, oy = 26, t = 12, o = '';
+    o += '<rect x="' + ox + '" y="' + oy + '" width="' + L * s + '" height="' + W * s + '" fill="#FBF8F3" stroke="#E2D6C4"/>';
+    for (var gx = 1; gx < L; gx++) o += '<line x1="' + (ox + gx * s) + '" y1="' + oy + '" x2="' + (ox + gx * s) + '" y2="' + (oy + W * s) + '" stroke="#F0EAE0"/>';
+    var seg = function (side) {
+      var ks = lay.walls[side], n = ks.length, len = cbLen(c, lay, side), r = '', i = 0;
+      while (i < n) {
+        var k = ks[i], b = cbBay(c, k), sp = cbSpan(c, k), a = i * bay, e = Math.min((i + sp) * bay, len), x1, y1, x2, y2;
+        if (side === 'front') { x1 = ox + a * s; x2 = ox + e * s; y1 = y2 = oy + W * s; }
+        else if (side === 'back') { x1 = ox + a * s; x2 = ox + e * s; y1 = y2 = oy; }
+        else if (side === 'right') { x1 = x2 = ox + L * s; y1 = oy + W * s - a * s; y2 = oy + W * s - e * s; }
+        else { x1 = x2 = ox; y1 = oy + W * s - a * s; y2 = oy + W * s - e * s; }
+        var on = sel && sel.side === side && cbHead(ks, sel.i) === i, hx = Math.min(x1, x2) - 9, hy = Math.min(y1, y2) - 9, hw = Math.abs(x2 - x1) + 18, hh = Math.abs(y2 - y1) + 18;
+        r += '<g data-bay="' + side + ':' + i + '" style="cursor:pointer"><title>' + esc(side + ' wall, bay ' + (i + 1) + ': ' + (b ? b.name : '')) + '</title>' +
+          '<rect x="' + hx + '" y="' + hy + '" width="' + hw + '" height="' + hh + '" fill="' + (on ? '#F7DDD2' : 'transparent') + '" stroke="' + (on ? '#C26445' : 'none') + '" stroke-width="2" rx="4"/>' +
+          '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + cbColor(b) + '" stroke-width="' + t + '"/>' +
+          (b && b.key === 'window' ? '<line x1="' + (x1 + (x2 - x1) * .2) + '" y1="' + (y1 + (y2 - y1) * .2) + '" x2="' + (x1 + (x2 - x1) * .8) + '" y2="' + (y1 + (y2 - y1) * .8) + '" stroke="#8EC3D6" stroke-width="' + (t - 5) + '"/>' : '') +
+          (b && b.key === 'vent' ? '<line x1="' + (x1 + (x2 - x1) * .38) + '" y1="' + (y1 + (y2 - y1) * .38) + '" x2="' + (x1 + (x2 - x1) * .62) + '" y2="' + (y1 + (y2 - y1) * .62) + '" stroke="#8EC3D6" stroke-width="' + (t - 5) + '"/>' : '') +
+          (b && b.door ? '<line x1="' + (x1 + (x2 - x1) * .5) + '" y1="' + (y1 + (y2 - y1) * .5) + '" x2="' + (x1 + (x2 - x1) * .5 + (side === 'left' || side === 'right' ? 0 : 0)) + '" y2="' + (y1 + (y2 - y1) * .5) + '" stroke="#fff" stroke-width="3"/>' : '') + '</g>';
+        i += sp;
+      }
+      return r;
+    };
+    SIDES.forEach(function (sd) { o += seg(sd); });
+    var inside = arr(c.items).filter(function (it) { return (num((lay.items || {})[it.key]) || 0) > 0; }).map(function (it) { return it.name.replace(/ \(.*\)$/, '') + (it.unit === 'rft' ? ' ' + lay.items[it.key] + ' ft' : it.unit === 'nos' && lay.items[it.key] > 1 ? ' × ' + lay.items[it.key] : ''); });
+    o += '<text x="' + (ox + L * s / 2) + '" y="' + (oy + W * s / 2 - (inside.length ? 8 : -5)) + '" font-size="15" font-weight="700" fill="#4A4640" text-anchor="middle">' + L + ' × ' + W + ' ft</text>';
+    if (inside.length) o += '<text x="' + (ox + L * s / 2) + '" y="' + (oy + W * s / 2 + 14) + '" font-size="11.5" fill="#6A6258" text-anchor="middle">' + esc(inside.join(' · ').slice(0, 90)) + '</text>';
+    o += '<text x="' + (ox + L * s / 2) + '" y="' + (oy + W * s + 24) + '" font-size="11" fill="#6A6258" text-anchor="middle" letter-spacing="1">FRONT</text>';
+    return '<svg viewBox="0 0 ' + (L * s + 52) + ' ' + (W * s + 58) + '" style="width:100%;max-height:360px;display:block" role="img" aria-label="Your cabin plan — tap a wall bay to change it">' + o + '</svg>';
+  }
+  function cabinUI(m, o) {
+    var c = m.cabin, lay = o.layout, sel = S.sel || { side: 'front', i: 0 }, q0 = cabin(c, lay), ks = lay.walls[sel.side], hi = cbHead(ks, Math.min(sel.i, ks.length - 1)), cur = ks[hi];
+    var opts = function (lo, hi2, v, key) { var r = ''; for (var i = lo; i <= hi2; i++) r += '<option' + (i === num(v) ? ' selected' : '') + '>' + i + '</option>'; return '<select data-cdim="' + key + '">' + r + '</select>'; };
+    var ch = arr(c.bays).map(function (b) {
+      var l2 = cbClone(lay), okk = cbSet(c, l2, sel.side, hi, b.key), q2 = okk ? cabin(c, l2) : { ok: false }, d = q2.ok && q0.ok ? q2.total - q0.total : null;
+      return '<button type="button" data-bk="' + esc(b.key) + '" class="' + (b.key === cur ? 'on' : '') + '"' + (q2.ok ? '' : ' disabled') + '>' + esc(b.name) + (b.key === cur ? '' : d == null ? '' : ' <span style="color:#6A6258">' + (d >= 0 ? '+' : '−') + rs(Math.abs(d)) + '</span>') + '</button>';
+    }).join('');
+    var row = function (key, list, lbl) { list = arr(list); if (list.length < 2) return ''; return '<p style="font-size:13px;color:#4A4640;margin:10px 0 6px">' + lbl + '</p><div class="mto-sw">' + list.map(function (x) {
+      var l2 = cbClone(lay); l2[key] = x.name; var q2 = cabin(c, l2), d = q2.ok && q0.ok ? q2.total - q0.total : 0;
+      return '<button type="button" data-cch="' + key + '" data-v="' + esc(x.name) + '" class="' + (lay[key] === x.name ? 'on' : '') + '">' + esc(x.name) + (lay[key] === x.name || !d ? '' : ' <span style="color:#6A6258">' + (d >= 0 ? '+' : '−') + rs(Math.abs(d)) + '</span>') + '</button>'; }).join('') + '</div>'; };
+    var items = arr(c.items).map(function (it) {
+      var v = num((lay.items || {})[it.key]) || 0, step = it.unit === 'rft' ? 2 : it.unit === 'wall_sqft' ? 20 : 1;
+      if (it.unit === 'floor') return '<label class="mto-chk"><input type="checkbox" data-citc="' + esc(it.key) + '"' + (v ? ' checked' : '') + '><span>' + esc(it.name) + '</span><span class="r">' + rs(it.price) + ' / sq ft</span></label>';
+      return '<div class="mto-chk" style="align-items:center"><span style="flex:1">' + esc(it.name) + '<br><span style="color:#6A6258;font-size:12.5px">' + rs(it.price) + (it.unit === 'rft' ? ' / running ft' : it.unit === 'wall_sqft' ? ' / sq ft of wall' : ' each') + '</span></span>' +
+        '<button type="button" class="mto-x" style="min-width:40px;min-height:40px" data-cit="' + esc(it.key) + '" data-d="-' + step + '" aria-label="Less ' + esc(it.name) + '">−</button><b style="min-width:52px;text-align:center">' + v + (it.unit === 'rft' ? ' ft' : it.unit === 'wall_sqft' ? ' sq ft' : '') + '</b>' +
+        '<button type="button" class="mto-x" style="min-width:40px;min-height:40px" data-cit="' + esc(it.key) + '" data-d="' + step + '" aria-label="More ' + esc(it.name) + '">+</button></div>';
+    }).join('');
+    return '<div class="mto-g" style="grid-template-columns:repeat(2,minmax(0,1fr))"><label>Length (ft)' + opts(num(c.L && c.L.min) || 8, num(c.L && c.L.max) || 40, lay.L, 'L') + '</label><label>Width (ft)' + opts(num(c.W && c.W.min) || 8, num(c.W && c.W.max) || 20, lay.W, 'W') + '</label></div>' +
+      '<div style="background:#fff;border:1px solid #E2D6C4;border-radius:12px;padding:8px;margin-top:10px">' + cbPlan(c, lay, { side: sel.side, i: hi }) + '</div>' +
+      '<p style="font-size:12.5px;color:#6A6258;margin:6px 0 0">Tap a wall bay on the plan (' + (num(c.bay) || 4) + ' ft each), then choose what goes there. Positions inside are fixed on the drawing you approve.</p>' +
+      '<p style="font-size:13px;font-weight:700;margin:12px 0 6px">' + esc(sel.side.charAt(0).toUpperCase() + sel.side.slice(1)) + ' wall · bay ' + (hi + 1) + ' of ' + ks.length + '</p><div class="mto-sw">' + ch + '</div>' +
+      row('roof', c.roofs, 'Roof') + row('height', c.heights, 'Height') + row('panel', c.panels, 'Wall panels') + row('glass', c.glasses, 'Glass') + row('frame', c.frames, 'Frame colour') +
+      '<p style="font-size:13px;font-weight:700;margin:14px 0 4px">Inside</p>' + items;
+  }
+
   // ------------------------------------------------------------ product page
   var S = null;   // {id, o, img}
   function daysTxt(d) { d = arr(d).map(num).filter(function (x) { return x != null; }); return d.length ? (d.length > 1 && d[0] !== d[1] ? d[0] + '–' + d[1] : d[d.length - 1]) + ' days' : ''; }
@@ -169,6 +319,7 @@
       addons: arr(m.addons).filter(function (a) { return a.on; }).map(function (a) { return a.name; }), install: !!(m.install && m.install.required), pin: lastPin(),
       groups: arr(m.groups).reduce(function (g, x) { var f = arr(x.options).filter(function (y) { return String(y.name || '').trim(); })[0]; if (f) g[x.name] = f.name; return g; }, {}),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
+    if (m.unit === 'cabin' && m.cabin && m.cabin.layout) { S.o.layout = cbClone(m.cabin.layout); S.o.material = ''; S.sel = { side: 'front', i: 0 }; }   // 156
     try { curPid = id; } catch (e) {}
     var ov = document.getElementById('mtoOv');
     if (!ov) { ov = document.createElement('div'); ov.id = 'mtoOv'; ov.className = 'mto-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov);
@@ -185,7 +336,7 @@
     var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), imgs = gal(S.id);
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     var hOpts = arr(m.h && m.h.options);
-    var size = u === 'seat'
+    var size = u === 'cabin' ? cabinUI(m, o) : u === 'seat'
       ? '<p style="font-size:13px;color:#4A4640;margin:0 0 8px">How many seats?</p><div class="mto-sw">' + (function () { var b = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) b.push('<button type="button" data-n="' + i + '" class="' + (String(o.n) === String(i) ? 'on' : '') + '">' + i + '</button>'); return b.join(''); })() + '</div>'
       : u === 'fixed'
       ? '<div class="mto-sw">' + arr(m.sizes).map(function (s) { return '<button type="button" data-size="' + esc(s.label) + '" class="' + (o.size === s.label ? 'on' : '') + '">' + esc(s.label) + ' · ' + rs(fixedAt(m, mat, s)) + '</button>'; }).join('') + '</div>'
@@ -195,8 +346,8 @@
         (hOpts.length ? '<label>Height (ft)<select data-k="h">' + hOpts.map(function (h) { return '<option' + (String(h) === String(o.h) ? ' selected' : '') + '>' + esc(h) + '</option>'; }).join('') + '</select></label>'
           : u === 'face' ? '<label>Height (ft)<input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>' : '') +
         '</div><p style="font-size:13px;color:#6A6258;margin:8px 0 0">Measure the space in feet. ' + (u === 'area' ? 'Length × width is the area it covers.' : u === 'face' && m.panels ? 'Total length of the wall or parapet to cover. It is made in standard ' + panelSizes(m).join(' / ') + ' ft panels, rounded up to the next foot.' : u === 'face' ? 'Width × height of the opening or wall.' : 'Total running length.') + '</p>';
-    var matHtml = mats.length > 1 ? mats.map(function (y) { return '<label class="mto-opt' + (y === mat ? ' on' : '') + '"><input type="radio" name="mtoMat" data-mat="' + esc(y.name) + '"' + (y === mat ? ' checked' : '') + '><span><b>' + esc(y.name) + '</b><br><span style="color:#6A6258">' + (u === 'fixed' ? (y.prices && Object.keys(y.prices).length ? 'From ' + rs(Math.min.apply(null, arr(m.sizes).map(function (z) { return fixedAt(m, y, z); }))) : +y.rate ? '+ ' + rs(y.rate) : 'Standard') : m.panels ? 'Panels, frame and posts' : rs(y.rate) + ' / ' + uw) + '</span></span></label>'; }).join('') : '<p style="margin:0 0 8px;font-size:14px"><b>' + esc(mat.name) + '</b></p>';
-    var cols = arr(mat.colours);
+    var matHtml = u === 'cabin' || !mat ? '' : mats.length > 1 ? mats.map(function (y) { return '<label class="mto-opt' + (y === mat ? ' on' : '') + '"><input type="radio" name="mtoMat" data-mat="' + esc(y.name) + '"' + (y === mat ? ' checked' : '') + '><span><b>' + esc(y.name) + '</b><br><span style="color:#6A6258">' + (u === 'fixed' ? (y.prices && Object.keys(y.prices).length ? 'From ' + rs(Math.min.apply(null, arr(m.sizes).map(function (z) { return fixedAt(m, y, z); }))) : +y.rate ? '+ ' + rs(y.rate) : 'Standard') : m.panels ? 'Panels, frame and posts' : rs(y.rate) + ' / ' + uw) + '</span></span></label>'; }).join('') : '<p style="margin:0 0 8px;font-size:14px"><b>' + esc(mat.name) + '</b></p>';
+    var cols = arr(mat && mat.colours);
     var colHtml = cols.length ? '<p style="font-size:13px;color:#4A4640;margin:6px 0">Colour</p><div class="mto-sw">' + cols.map(function (c) { return '<button type="button" data-col="' + esc(c.name) + '" class="' + (o.colour === c.name ? 'on' : '') + '">' + esc(c.name) + (+c.extra ? ' (+' + rs(c.extra) + '/' + uw + ')' : '') + '</button>'; }).join('') + '</div>' : '';
     var adds = arr(m.addons).filter(function (a) { return a.name; });
     var addHtml = adds.length ? '<div class="mto-box"><h3>3 · Add-ons</h3>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span><span class="r">+ ' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span></label>'; }).join('') + '</div>' : '';
@@ -207,7 +358,7 @@
     addHtml += grpHtml;
     var inst = m.install && m.install.offered, instReq = inst && m.install.required;
     var drw = m.drawing || 'choose';
-    var instHtml = '<div class="mto-box"><h3>' + (adds.length ? '4' : '3') + ' · ' + (inst ? 'Installation &amp; drawing' : 'Drawing') + '</h3>' +
+    var instHtml = '<div class="mto-box"><h3>' + (u === 'cabin' ? '2' : adds.length ? '4' : '3') + ' · ' + (inst ? 'Installation &amp; drawing' : 'Drawing') + '</h3>' +
       (inst ? '<label class="mto-chk"><input type="checkbox" data-k="install"' + (o.install || instReq ? ' checked' : '') + (instReq ? ' disabled' : '') + '><span><b>' + (instReq ? 'Installation included (required)' : 'Add installation') + '</b> by ' + (m.install.by === 'brand' ? esc(x.br || 'the maker') : 'a verified outrr partner') + '<br><span id="mtoInstTxt" style="color:#6A6258"></span></span></label>' +
         '' : '') +
       (inst || hasDlv(m) ? '<label class="mto-f" style="max-width:220px;margin:4px 0 10px">Your pincode' + (hasDlv(m) ? ' (for delivery)' : '') + '<input inputmode="numeric" maxlength="6" data-k="pin" value="' + esc(o.pin) + '" placeholder="122002"></label>' : '') +
@@ -223,13 +374,14 @@
     ov.innerHTML = '<div class="mto-top"><button class="mto-x" type="button" data-act="close" aria-label="Back">←</button><b>' + esc(x.n) + '</b><button class="mto-x" type="button" data-act="close" aria-label="Close">✕</button></div>' +
       '<div class="mto-wrap"><section class="mto-gal" aria-label="Photos"><img class="main" src="' + esc(imgs[S.img] || '') + '" alt="' + esc(x.alt || x.n) + '">' +
       (imgs.length > 1 ? '<div class="mto-th">' + imgs.map(function (g, i) { return '<button type="button" data-img="' + i + '" class="' + (i === S.img ? 'on' : '') + '" aria-label="Photo ' + (i + 1) + '"><img src="' + esc(g) + '" alt=""></button>'; }).join('') + '</div>' : '') +
-      '<div class="mto-facts"><div>Made in<b>' + esc(daysTxt(m.make_days) || '—') + '</b></div><div>Delivery<b>' + (hasDlv(m) ? 'By pincode' : 'Included in the price') + '</b></div><div>Installation<b>' + (inst ? 'Optional add-on' : 'By you') + '</b></div></div>' +
+      '<div class="mto-facts"><div>Made in<b>' + esc(daysTxt(m.make_days) || '—') + '</b></div><div>Delivery<b>' + (hasDlv(m) ? 'By pincode' : 'Included in the price') + '</b></div><div>Installation<b>' + (instReq ? 'Included' : inst ? 'Optional add-on' : 'By you') + '</b></div></div>' +
       (x.ds ? '<p style="font-size:15px;line-height:1.65;color:#4A4640;margin-top:16px">' + esc(x.ds) + '</p>' : '') + '</section>' +
       '<section class="mto-cfg" aria-label="Build your design"><span class="mto-badge">Made to Order</span><h1>' + esc(x.n) + '</h1>' +
       '<p class="mto-by">by <b>' + esc(x.br || 'outrr') + '</b>' + (x.mat ? ' · ' + esc(x.mat) : '') + '</p>' +
-      (x.oo === false ? '<p class="mto-from"><span class="soonb">Coming soon</span></p>' : '<p class="mto-from">From <b>' + rs(x.p) + '</b>' + (u !== 'fixed' ? ' · ' + rs(Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; }))) + ' / ' + uw : '') + ' · incl. GST</p>') +
+      (x.oo === false ? '<p class="mto-from"><span class="soonb">Coming soon</span></p>' : '<p class="mto-from">From <b>' + rs(x.p) + '</b>' + (u === 'cabin' ? ' · this preset as shown' : u !== 'fixed' ? ' · ' + rs(Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; }))) + ' / ' + uw : '') + ' · incl. GST</p>') +
+      (u === 'cabin' ? '<div class="mto-box"><h3>1 · Customise your cabin</h3>' + size + '</div>' + instHtml :
       '<div class="mto-box"><h3>1 · Your size</h3>' + size + '</div>' +
-      '<div class="mto-box"><h3>2 · Material &amp; finish</h3>' + matHtml + colHtml + '</div>' + addHtml + instHtml +
+      '<div class="mto-box"><h3>2 · Material &amp; finish</h3>' + matHtml + colHtml + '</div>' + addHtml + instHtml) +
       '<div class="mto-sum" id="mtoSum"></div></section>' +
       '<section class="mto-steps" aria-label="How it is made"><h2>How your order is made</h2><ol>' +
       ['Order & ' + PCT + '%|Size and options locked', 'Drawing|If you chose it: approve online', 'Production|' + (daysTxt(m.make_days) || 'Made for you'), 'Balance|Pay the rest' + (inst ? ' + installation' : '') + ' before dispatch', 'Dispatch|Tracking shared', 'Installation|If added: OTP on completion']
@@ -255,6 +407,14 @@
     if (!q.ok) { el.innerHTML = '<p class="mto-err" style="margin:0">' + esc(q.error) + '</p><button class="mto-go" type="button" disabled>Enter your size</button>'; return; }
     var ins = o.install && q.install && q.install.available;
     var needOk = !o.drawing && !o.size_ok, closed = x.oo === false, needPin = q.delivery && q.delivery.fee == null;
+    if (m.unit === 'cabin') {   // 156
+      el.innerHTML = q.addons.filter(function (a) { return a.name !== 'Layout'; }).map(function (a) { return a.amount ? '<div class="rw"><span>' + esc(a.name) + '</span><span>' + rs(a.amount) + '</span></div>' : '<div class="rw" style="font-size:12.5px"><span>' + esc(a.name) + '</span><span></span></div>'; }).join('') +
+        (q.install && q.install.available ? '<div class="rw"><span>Installation + transport (' + esc(q.install.city) + ')</span><span>' + rs(q.install_fee) + '</span></div>' : '<div class="rw"><span>Installation + transport</span><span>' + (/^\d{6}$/.test(o.pin) ? 'Not available' : 'Enter your pincode') + '</span></div>') +
+        '<div class="rw tt"><span>Total</span><span>' + rs(q.total) + '</span></div>' +
+        '<div class="mto-pay"><div>Pay now (' + PCT + '%)<b>' + rs(q.pay_now) + '</b></div><div>Later (dispatch + delivery)<b>' + rs(q.before_dispatch) + '</b></div></div>' +
+        '<button class="mto-go" type="button" data-act="order"' + (closed || !q.install || !q.install.available ? ' disabled' : '') + '>' + (closed ? 'Orders open soon' : !(q.install && q.install.available) ? 'Enter your pincode' : 'Order now · pay ' + rs(q.pay_now)) + '</button>';
+      return;
+    }
     el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate || arr(m.materials).length > 1 ? ' + ' + esc(q.material) : '') : m.unit === 'seat' ? q.qty + '-seat bench' : q.panels ? q.panels.width + ' ft × ' + esc(o.h) + ' ft high, ' + esc(q.material) : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
       (q.panels ? '<div class="rw" style="font-size:12.5px;color:#6A6258"><span>' + esc(panelsText(q.panels)) + '</span><span></span></div>' : '') +
       q.addons.map(function (a) { return '<div class="rw"><span>' + esc(a.name) + '</span><span>' + rs(a.amount) + '</span></div>'; }).join('') +
@@ -272,13 +432,20 @@
     var t = e.target, k = t.getAttribute('data-k'); if (!S) return;
     if (k === 'install' || k === 'size_ok') { S.o[k] = t.checked; var mm = (PRODS[S.id] || {}).cz; if (k === 'install' && mm && mm.install && mm.install.required) S.o.install = true; return paint(); }
     if (t.hasAttribute('data-grp')) { S.o.groups = Object.assign({}, S.o.groups); S.o.groups[t.getAttribute('data-grp')] = t.value; return paint(); }
+    if (t.hasAttribute('data-cdim')) { var cz = PRODS[S.id].cz; S.o.layout[t.getAttribute('data-cdim')] = +t.value; cbResize(cz.cabin, S.o.layout); S.sel = { side: S.sel.side, i: 0 }; return draw(); }   // 156
+    if (t.hasAttribute('data-citc')) { S.o.layout.items = Object.assign({}, S.o.layout.items); S.o.layout.items[t.getAttribute('data-citc')] = t.checked ? 1 : 0; return draw(); }
     if (k === 'h') { S.o.h = t.value; return paint(); }
     if (t.hasAttribute('data-mat')) { S.o.material = t.getAttribute('data-mat'); S.o.colour = ''; return draw(); }
     if (t.hasAttribute('data-drw')) { S.o.drawing = t.getAttribute('data-drw') === '1'; return draw(); }
     if (t.hasAttribute('data-add')) { var n = t.getAttribute('data-add'); S.o.addons = S.o.addons.filter(function (a) { return a !== n; }); if (t.checked) S.o.addons.push(n); return paint(); }
   }
   function onClick(e) {
-    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n]'); if (!t || !S) return;
+    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit]'); if (!t || !S) return;
+    var cz0 = (PRODS[S.id] || {}).cz;   // 156: cabin builder
+    if (t.hasAttribute('data-bay')) { var bp = t.getAttribute('data-bay').split(':'); S.sel = { side: bp[0], i: +bp[1] }; return draw(); }
+    if (t.hasAttribute('data-bk')) { var ks0 = S.o.layout.walls[S.sel.side], h0 = cbHead(ks0, Math.min(S.sel.i, ks0.length - 1)), nk = t.getAttribute('data-bk'); if (cbSet(cz0.cabin, S.o.layout, S.sel.side, h0, nk)) S.sel.i = Math.max(0, Math.min(h0, ks0.length - cbSpan(cz0.cabin, nk))); return draw(); }
+    if (t.hasAttribute('data-cch')) { S.o.layout[t.getAttribute('data-cch')] = t.getAttribute('data-v'); return draw(); }
+    if (t.hasAttribute('data-cit')) { var ik = t.getAttribute('data-cit'), itd = arr(cz0.cabin.items).filter(function (z) { return z.key === ik; })[0]; S.o.layout.items = Object.assign({}, S.o.layout.items); S.o.layout.items[ik] = Math.max(0, Math.min(num(itd && itd.max) || 100, (num(S.o.layout.items[ik]) || 0) + (+t.getAttribute('data-d')))); return draw(); }
     if (t.hasAttribute('data-n')) { S.o.n = +t.getAttribute('data-n'); return draw(); }
     if (t.hasAttribute('data-size')) { S.o.size = t.getAttribute('data-size'); return draw(); }
     if (t.hasAttribute('data-col')) { var c = t.getAttribute('data-col'); S.o.colour = S.o.colour === c ? '' : c; return draw(); }
@@ -296,7 +463,7 @@
     var x = PRODS[S.id], q = price(x.cz, S.o, PCT); if (!q.ok) return toast(q.error);
     if (x.oo === false) return toast('Orders for this maker open soon');
     var o = S.o;
-    window.MTO_BUY = { id: S.id, o: { n: o.n, l: o.l, w: o.w, h: o.h, size: o.size, material: o.material, colour: o.colour, addons: o.addons.slice(), groups: Object.assign({}, o.groups || {}), install: !!o.install, drawing: !!o.drawing, size_ok: !!o.size_ok, note: o.note }, pin: o.pin };
+    window.MTO_BUY = { id: S.id, o: { n: o.n, l: o.l, w: o.w, h: o.h, size: o.size, material: o.material, colour: o.colour, addons: o.addons.slice(), groups: Object.assign({}, o.groups || {}), install: !!o.install, drawing: !!o.drawing, size_ok: !!o.size_ok, note: o.note, layout: o.layout ? cbClone(o.layout) : undefined }, pin: o.pin };
     window.mtoClose();
     var go = function () { renderCheckout(); showView('checkout'); };
     try { if (window.otrack) otrack('begin_checkout', { value: q.total, skus: [S.id] }); } catch (e) {}
@@ -323,7 +490,7 @@
     CART = [{ id: b.id, q: 1 }];
     try { _rc(); } finally { CART = keep; }
     var pe = document.getElementById('coPin'); if (pe && !pe.value && /^\d{6}$/.test(b.pin || '')) pe.value = b.pin;   // the pincode typed on the design page
-    var o = b.o, spec = [x.cz.unit === 'seat' ? o.n + ' seats' : x.cz.unit === 'fixed' ? o.size : [o.l, o.w].filter(Boolean).join(' × ') + ' ft' + (o.h ? ', ' + o.h + ' ft high' : ''), o.material, o.colour].concat(o.addons).concat(Object.keys(o.groups || {}).map(function (g) { return g + ': ' + o.groups[g]; })).filter(Boolean).join(' · ');
+    var o = b.o, spec = [x.cz.unit === 'cabin' ? o.layout.L + ' × ' + o.layout.W + ' ft, your layout' : x.cz.unit === 'seat' ? o.n + ' seats' : x.cz.unit === 'fixed' ? o.size : [o.l, o.w].filter(Boolean).join(' × ') + ' ft' + (o.h ? ', ' + o.h + ' ft high' : ''), o.material, o.colour].concat(o.addons).concat(Object.keys(o.groups || {}).map(function (g) { return g + ': ' + o.groups[g]; })).filter(Boolean).join(' · ');
     var cl = document.querySelector('#coBody .coline');
     if (cl) cl.innerHTML = '<div class="im"><img src="' + esc(IMGS[x.img] || '') + '" alt=""></div><div><b>' + esc(x.n) + '</b> <span class="mto-badge" style="font-size:9px;padding:3px 7px">Made to Order</span>' +
       '<div class="co-mto">' + esc(spec) + '<br>' + (o.drawing ? 'Drawing to approve before production' : 'Made to the size you entered (you confirmed it)') + (o.install ? '<br>With installation' : '') + '</div></div><div class="q" id="coMtoAmt"></div>';
