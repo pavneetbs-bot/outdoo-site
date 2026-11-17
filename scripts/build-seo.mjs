@@ -75,6 +75,7 @@ const groupsOf = cs => {
   return g.filter(x => x.items.length)
 }
 
+const slim = (u, w = 600) => { const m = String(u || '').match(/^(https:\/\/[a-z0-9]+\.supabase\.co)\/storage\/v1\/object\/public\/([^?]+)(?:\?(.*))?$/); return m && /\.(jpe?g|png|webp)$/i.test(m[2]) ? `${m[1]}/storage/v1/render/image/public/${m[2]}?width=${w}&quality=75${m[3] ? '&' + m[3] : ''}` : u }
 // desktop mega menu (pure CSS hover): sub-category tiles with pictures + a feature picture
 const MEGA = Object.fromEntries(cols.map(c => {
   const gs = groupsOf(c.slug), list = ranked[c.slug] || []
@@ -185,7 +186,6 @@ const shell = ({ title, desc, path, image, body, jsonld = [], keywords = [], rou
   return h
 }
 // listing / card photos: Supabase-resized (600 px) instead of the full original
-const slim = (u, w = 600) => { const m = String(u || '').match(/^(https:\/\/[a-z0-9]+\.supabase\.co)\/storage\/v1\/object\/public\/([^?]+)(?:\?(.*))?$/); return m && /\.(jpe?g|png|webp)$/i.test(m[2]) ? `${m[1]}/storage/v1/render/image/public/${m[2]}?width=${w}&quality=75${m[3] ? '&' + m[3] : ''}` : u }
 const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(slim(p.image_url))}" alt="${esc(p.image_alt || p.name)}" loading="lazy" width="400" height="400"></div>
 <div class="n">${esc(p.name)}</div><div class="p">${soon(p) ? SOON : isMto(p) ? `From ${inr(p.price)}` : `${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}`}</div></a>`
 
