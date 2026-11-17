@@ -259,7 +259,36 @@
     '.cbbar .cbn{flex:1.2;background:#2E2E2E;color:#fff;border:0;border-radius:12px;min-height:48px;font:inherit;font-weight:700;font-size:15px;cursor:pointer}.cbbar .cbn[disabled]{background:#9A958C;cursor:not-allowed}'+
     '.cb-sheet{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.4);display:none;align-items:flex-end;justify-content:center}.cb-sheet.open{display:flex}.cb-sheet>div{background:#fff;width:min(560px,100%);max-height:80vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}'+
     '.cb-sheet .mto-go{display:none}.cb-sheet h4{margin:0 0 10px;font-size:17px;display:flex;justify-content:space-between;align-items:center}.cb-sheet h4 button{border:0;background:#F3EEE6;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer}'+
-    'body.pdp-cab-on .ctas>*:not(.cbbar){display:none!important}'+
+    'body.pdp-cab-on .ctas>*:not(.cbbar):not(.cbcta){display:none!important}'+
+    'body.pdp-cab-on:not(.cb-studio) #cbStage,body.pdp-cab-on:not(.cb-studio) #mtoCfg,body.pdp-cab-on:not(.cb-studio) .ctas .cbbar{display:none!important}'+
+    'body.pdp-cab-on:not(.cb-studio) .pdp-cab .pdp-grid>div:first-child>.gal-main,body.pdp-cab-on:not(.cb-studio) .pdp-cab .pdp-grid>div:first-child>.thumbs{display:revert!important}'+
+    '@media(max-width:899px){body.pdp-cab-on:not(.cb-studio) .pdp-cab .pdp-grid>div:first-child{display:block}}'+
+    '.cbcta{display:flex;flex-direction:column;gap:10px;width:100%}.cbcta button{min-height:52px;border-radius:12px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;width:100%}'+
+    '.cbc-main{background:#C26445;color:#fff;border:0;box-shadow:0 6px 18px -6px rgba(194,100,69,.65);animation:cbpulse 2.4s ease-in-out 3}.cbc-main:hover{background:#A84F33}.cbc-sec{background:#fff;color:#2E2E2E;border:1.5px solid #2E2E2E}'+
+    '@keyframes cbpulse{0%,100%{box-shadow:0 6px 18px -6px rgba(194,100,69,.65)}50%{box-shadow:0 0 0 6px rgba(194,100,69,.18)}}'+
+    '.cb-avg{position:fixed;inset:0;z-index:960;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:14px}.cb-avg.open{display:flex}'+
+    '.cb-avgb{background:#fff;border-radius:18px;width:min(980px,100%);max-height:92vh;overflow:auto;padding:18px}.cb-avgb h4{margin:0;font-size:20px;display:flex;justify-content:space-between;align-items:center}.cb-avgb h4 button{border:0;background:#F3EEE6;border-radius:50%;width:38px;height:38px;font-size:16px;cursor:pointer}'+
+    '.cb-avgs{font-size:13px;color:#6A6258;margin:4px 0 14px}.cb-avgg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.cb-avgc{border:1px solid #E2D6C4;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px;background:#FFFBF5}.cb-avgc.on{border:2px solid #C26445}'+
+    '.cb-avgc img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px;margin-bottom:6px}.cb-avgc>b{font-size:16px}.cb-avgc>small{color:#6A6258;font-size:12px}.cb-avgp{display:flex;align-items:baseline;gap:8px;margin-top:6px}.cb-avgp span{font-size:12px;color:#6A6258}.cb-avgp b{font-size:24px}'+
+    '.cb-avgr{font-size:12px;color:#4A4640}.cb-avgc button{margin-top:auto;background:#2E2E2E;color:#fff;border:0;border-radius:10px;min-height:44px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;margin-top:10px}.cb-avgc.on button{background:#C26445}'+
+    '@media(max-width:760px){.cb-avg{align-items:flex-end;padding:0}.cb-avgb{border-radius:18px 18px 0 0;max-height:88vh}.cb-avgg{grid-template-columns:1fr}.cb-avgc{display:grid;grid-template-columns:110px 1fr;column-gap:12px}.cb-avgc img{grid-row:span 5;margin:0;height:100%;aspect-ratio:auto}.cb-avgc button{grid-column:1/-1}}'+
+    '.cbs-ov{position:fixed;inset:0;z-index:900;background:#F6F1E9;display:none}.cbs-ov.open{display:block}'+
+    '.cbs-hd{height:56px;display:flex;align-items:center;gap:10px;padding:0 12px;background:#fff;border-bottom:1px solid #E7DDCF;box-sizing:border-box}.cbs-hd>div{flex:1;min-width:0;text-align:center}.cbs-hd b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cbs-hd small{font-size:12px;color:#9C4127;font-weight:600}'+
+    '.cbs-x{border:0;background:#F3EEE6;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;flex:none}'+
+    'body.cb-studio{overflow:hidden}body.cb-studio #cbStage{position:fixed!important;top:56px!important;left:0;right:0;height:var(--cbs3d);margin:0!important;padding:10px 12px 0!important;box-shadow:none!important;background:transparent!important;z-index:901;box-sizing:border-box;display:flex;flex-direction:column}'+
+    'body.cb-studio{--cbs3d:calc(100vh - 56px - 74px - 290px)}@media(max-width:899px){body.cb-studio{--cbs3d:48vh;--cbs3d:48dvh}}body.cb-studio.cbs-big{--cbs3d:calc(100vh - 56px - 74px)}'+
+    '.cbs-v{position:relative;flex:1;min-height:0;max-width:1400px;width:100%;margin:0 auto}.cbs-v .wz-3dv{height:100%!important;border-radius:16px}.cbs-v .wz-3dv>svg{padding:24px}'+
+    '.cbs-z{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:2}.cbs-z button{border:0;background:rgba(255,255,255,.95);width:40px;height:40px;border-radius:10px;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.18)}'+
+    '.cbs-hint{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;margin:0;font-size:11.5px;color:#fff;background:rgba(46,46,46,.62);padding:4px 10px;border-radius:99px;pointer-events:none;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}@media(max-width:600px){.cbs-hint{white-space:normal;text-align:center;font-size:10.5px;width:86%;line-height:1.3}}'+
+    'body.cb-studio #cbStage .cb-ed{max-width:1400px;width:100%;margin:6px auto 0}'+
+    'body.cb-studio #mtoCfg{position:fixed!important;left:0;right:0;top:calc(56px + var(--cbs3d));bottom:74px;overflow:auto;z-index:901;margin:0!important;border:0!important;border-top:1px solid #E7DDCF!important;border-radius:0!important;background:#fff!important;padding:12px max(16px,calc((100vw - 1100px)/2)) 16px!important;box-sizing:border-box}'+
+    'body.cb-studio.cbs-big #mtoCfg{display:none!important}'+
+    'body.cb-studio #mtoCfg .wz-stc{position:sticky;top:-12px;background:#fff;padding:4px 0 8px;margin:-4px 0 6px;z-index:2}.wz-stc button[disabled]{opacity:.45;cursor:not-allowed}'+
+    'body.cb-studio #mtoCfg .wz-cards{display:flex;overflow-x:auto;gap:10px;padding-bottom:6px;scrollbar-width:thin}body.cb-studio #mtoCfg .wz-cards .wz-card{flex:0 0 150px}'+
+    'body.cb-studio .ctas .cbbar{position:fixed;left:0;right:0;bottom:0;z-index:902;background:#fff;border-top:1px solid #E7DDCF;padding:10px max(14px,calc((100vw - 1100px)/2)) calc(10px + env(safe-area-inset-bottom));box-sizing:border-box;height:auto;min-height:74px}'+
+    '.cbbar .cbb{flex:none;width:48px;min-height:48px;border:1.5px solid #2E2E2E;background:#fff;border-radius:12px;font-size:18px;cursor:pointer}'+
+    'body.cb-studio .cb-sheet{z-index:950}body.cb-studio .cb-avg{z-index:960}'+
+    'body.cb-studio .pdp-cab .pdp-grid>div:first-child{position:static!important}body.cb-studio .ctas{z-index:902!important}body.cb-studio .ctas{background:none!important;box-shadow:none!important;border:0!important;padding:0!important}body.cb-studio .ctas .cbcta{display:none!important}body.cb-studio #nearPill,body.cb-studio .wafab{display:none!important}'+
     '.cb-ov{position:absolute;top:8px;left:8px;display:flex;gap:6px;z-index:2}.cb-ov button{border:0;background:rgba(255,255,255,.92);border-radius:99px;padding:6px 11px;min-height:32px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}'+
     '.cb-fn{position:absolute;left:10px;bottom:8px;font-size:10.5px;color:#fff;background:rgba(46,46,46,.6);padding:3px 8px;border-radius:99px;pointer-events:none}'+
     '.cb-hint{font-size:12px;color:#6A6258;margin:8px 2px 0}.cb-ed{display:flex;gap:6px;overflow-x:auto;margin-top:8px;align-items:center;padding-bottom:2px;scrollbar-width:none}'+
@@ -484,8 +513,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=2').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=2'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=3').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=3'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -539,12 +568,12 @@
   }
   function wzTry(c, lay, f) { var l2 = cbClone(lay); f(l2); var q = cabin(c, l2); return q.ok ? q.total : null; }
   function cabinUI(m, o) {
-    var c = m.cabin, lay = o.layout, w = S.wz, q0 = cabin(c, lay), st = w.step, TITLES = ['How big?', 'How much glass?', 'Doors', 'Rooms inside', 'Outside', 'The look', 'Your cabin'];
-    var SUBS = ['Pick a size — or set it exactly with − / +', 'We put the glass on the walls for you', 'Pick the door, the wall it goes on and its height', 'Switch on what you need — move things on the plan if you like', 'Pergola projection over the walls, and a rain gutter', 'Roof, frame colour and a few upgrades', 'Check it, then order — final drawings come to you for approval first'];
-    var v3 = S.view3 = S.v3 || (w.adv ? (w.aside || 'front') : wzAuto(st, w, lay));
+    var c = m.cabin, lay = o.layout, w = S.wz, q0 = cabin(c, lay), st = w.step, TITLES = ['Glass & roof', 'How big?', 'Doors', 'Rooms inside', 'Outside', 'The look', 'Your cabin'];
+    var SUBS = ['How much glass on the walls, and the roof — these set the look of your cabin', 'Pick a size — or set it exactly with − / +', 'Pick the door, the wall it goes on and its height', 'Switch on what you need — move things on the plan if you like', 'Pergola projection over the walls, and a rain gutter', 'Roof, frame colour and a few upgrades', 'Check it, then order — final drawings come to you for approval first'];
+    var v3 = S.view3 = S.studio ? (S.v3 || (st === 3 && !w.adv ? 'cut' : '3d')) : S.v3 || (w.adv ? (w.aside || 'front') : wzAuto(st, w, lay));
     var h = S.pdp ? '' : '<div class="wz-3d"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(c, lay)) + '</div>' + (C3.st === -1 ? '' : '<div class="wz-views" role="tablist" aria-label="Views">' + V3.map(function (v) { return '<button type="button" role="tab" data-wzv="' + v[0] + '" class="' + (v[0] === v3 ? 'on' : '') + '" aria-selected="' + (v[0] === v3) + '">' + v[1] + '</button>'; }).join('') + '</div>') + '</div>';
-    var SHORT = ['Size', 'Glass', 'Doors', 'Rooms', 'Outside', 'Look', 'Done'];
-    h += S.pdp ? '<div class="wz-stc" role="tablist" aria-label="Steps">' + SHORT.map(function (t, i) { return '<button type="button" role="tab" data-wzgo="' + i + '" class="' + (i === st && !w.adv ? 'on' : i < st ? 'dn' : '') + '" aria-selected="' + (i === st) + '">' + (i + 1) + ' · ' + t + '</button>'; }).join('') + '</div>'
+    var SHORT = ['Glass & roof', 'Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Done'];
+    h += S.pdp ? '<div class="wz-stc" role="tablist" aria-label="Steps">' + SHORT.map(function (t, i) { var mx = Math.max(w.max || 0, st); return '<button type="button" role="tab" data-wzgo="' + i + '" class="' + (i === st && !w.adv ? 'on' : i <= mx ? 'dn' : '') + '" aria-selected="' + (i === st) + '"' + (i > mx ? ' disabled' : '') + '>' + (i < st || (i <= mx && i !== st) ? '✓ ' : '') + (i + 1) + ' · ' + t + '</button>'; }).join('') + '</div>'
       : '<div class="wz-steps">' + TITLES.map(function (t, i) { return '<button type="button" data-wzgo="' + i + '" class="' + (i <= st ? 'on' : '') + '" aria-label="Step ' + (i + 1) + ': ' + t + '"></button>'; }).join('') + '</div>';
     h +=
       '<h4 class="wz-h">' + (w.adv ? 'Edit each wall' : TITLES[st]) + '</h4><p class="wz-sub">' + (w.adv ? 'Pick a wall, tap a panel, choose what it should be' : SUBS[st]) + '</p>';
@@ -563,17 +592,18 @@
       h += '<button type="button" class="wz-back" data-wzadv="0">← Back to the simple steps</button>' + dimsBox;
       return h;
     }
-    if (st === 0) {
-      var tps = arr(c.templates);
+    if (st === 1) {
+      var tps = S.studio ? [] : arr(c.templates);   // studio: no ready layouts here — they would undo the glass / roof picked first
       if (tps.length) h += '<p class="wz-lbl" style="margin-top:0">Start from a ready layout <span style="font-weight:400;color:#6A6258">— or just change things below</span></p><div class="wz-tpl">' + tps.map(function (t) { var tt = wzTry(c, lay, function (l2) { var k; for (k in l2) delete l2[k]; var t2 = cbClone(t.layout); for (k in t2) l2[k] = t2[k]; cbDefaults(c, l2); });
         return '<button type="button" data-wztpl="' + esc(t.code) + '" class="wz-card' + (S.tpl === t.code ? ' on' : '') + '"><span class="wz-pic">' + wzIso(c, t.layout, true) + '</span><b>' + esc(t.name) + '</b><small>' + num(t.layout.L) + ' × ' + num(t.layout.W) + ' ft' + (tt != null ? ' · ' + rs(tt) : '') + '</small></button>'; }).join('') + '</div><p class="wz-lbl">Size</p>';
       h += wzCards(WZ_SIZES.map(function (z) { return [z[0], z[0], z[1] + ' × ' + z[2] + ' ft · ' + z[3]]; }), (WZ_SIZES.filter(function (z) { return z[1] === num(lay.L) && z[2] === num(lay.W); })[0] || [''])[0], 'data-wzsize',
         function (z) { var zz = WZ_SIZES.filter(function (y) { return y[0] === z[0]; })[0]; return wzTry(c, lay, function (l2) { l2.L = zz[1]; l2.W = zz[2]; wzBuild(c, l2, w); }); });
       var stp = function (key, lbl, lo, hi2) { return '<div class="wz-row" style="cursor:default"><span><b>' + lbl + '</b><small>' + lo + '–' + hi2 + ' ft · now ' + fi(lay[key]) + '</small></span><span class="wz-stp"><button type="button" class="wz-pm" data-cstep="' + key + ':-1" aria-label="' + lbl + ' less"' + (num(lay[key]) <= lo ? ' disabled' : '') + '>−</button><input type="number" inputmode="numeric" min="' + lo + '" max="' + hi2 + '" step="1" data-cdim="' + key + '" value="' + num(lay[key]) + '" aria-label="' + lbl + ' in feet"><button type="button" class="wz-pm" data-cstep="' + key + ':1" aria-label="' + lbl + ' more"' + (num(lay[key]) >= hi2 ? ' disabled' : '') + '>+</button></span></div>'; };
       h += '<p class="wz-lbl">Exact size</p>' + stp('L', 'Length', num(c.L && c.L.min) || 8, num(c.L && c.L.max) || 40) + stp('W', 'Width', num(c.W && c.W.min) || 8, num(c.W && c.W.max) || 20);
-    } else if (st === 1) {
+    } else if (st === 0) {
       h += wzCards(WZ_GLASS, w.glass, 'data-wzglass', function (g) { return wzTry(c, lay, function (l2) { wzBuild(c, l2, withW({ glass: g[0] })); }); },
         function (g) { var l2 = cbClone(lay); l2.L = 12; l2.W = 10; wzBuild(c, l2, withW({ glass: g[0], door: 'single', side: 'front', windows: 2, rooms: false, toilet: false, wc: false, pantry: false })); return mini(l2); });
+      if (arr(c.roofs).length > 1) h += '<p class="wz-lbl">Roof</p>' + wzCards(arr(c.roofs).map(function (x) { return [x.name, x.name.replace(/ — .*$/, '').replace(/ \(.*\)$/, ''), /glass/i.test(x.name) ? 'on slim steel members' : '']; }), lay.roof, 'data-cchk="roof" data-v', function (x) { return wzTry(c, lay, function (l2) { l2.roof = x[0]; }); });
     } else if (st === 2) {
       h += wzCards(WZ_DOORS, w.door, 'data-wzdoor', function (d) { return wzTry(c, lay, function (l2) { wzBuild(c, l2, withW({ door: d[0] })); if (!l2.walls[w.side].some(function (k) { var b = cbBay(c, k); return b && b.door && cbSpan(c, k) === cbSpan(c, wzDoorKey(c, d[0], true)); })) l2.L = -1; }); },
         function (d) { var l2 = cbClone(lay); l2.L = 12; l2.W = 10; wzBuild(c, l2, withW({ door: d[0], side: 'front', windows: 0, rooms: false, toilet: false, wc: false, pantry: false })); return mini(l2); });
@@ -604,7 +634,7 @@
       }
     } else if (st === 5) {
       var row = function (key, list, lbl) { list = arr(list); if (list.length < 2) return ''; return '<p class="wz-lbl">' + lbl + '</p>' + wzCards(list.map(function (x) { return [x.name, x.name.replace(/ — .*$/, '').replace(/ \(.*\)$/, ''), '']; }), lay[key], 'data-cchk="' + key + '" data-v', function (x) { return wzTry(c, lay, function (l2) { l2[key] = x[0]; }); }); };
-      h += '<div class="wz-note">💡 LED lights inside are always included.</div>' + row('roof', c.roofs, 'Roof');
+      h += '<div class="wz-note">💡 LED lights inside are always included.</div>';
       var frames = arr(c.frames), fcol = function (n) { n = n.toLowerCase(); return /grey/.test(n) ? '#8A8A8A' : /white/.test(n) ? '#FFFFFF' : /wood/.test(n) ? '#8B5A2B' : '#2E2E2E'; };
       if (frames.length > 1) h += '<p class="wz-lbl">Frame colour</p><div style="display:flex;gap:12px;flex-wrap:wrap">' + frames.map(function (f) { var t = wzTry(c, lay, function (l2) { l2.frame = f.name; }); return '<button type="button" data-cch="frame" data-v="' + esc(f.name) + '" class="wz-sw-col' + (lay.frame === f.name ? ' on' : '') + '" style="background:' + fcol(f.name) + '" aria-label="' + esc(f.name) + '" title="' + esc(f.name) + (t != null && t > q0.total ? ' +' + rs(t - q0.total) : '') + '"></button>'; }).join('') + '</div><p class="wz-sub" style="margin-top:4px">' + esc(lay.frame || '') + '</p>';
       var up = function (key, list, name, sub) { list = arr(list); if (list.length < 2) return ''; var on = lay[key] && lay[key] !== list[0].name, t1 = wzTry(c, lay, function (l2) { l2[key] = list[1].name; }), t0 = wzTry(c, lay, function (l2) { l2[key] = list[0].name; });
@@ -627,7 +657,7 @@
   }
   function wzClick(t) {   // returns true when it handled the click
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, w = S.wz, k;
-    if ((k = t.getAttribute('data-wzgo')) != null) { w.step = +k; w.adv = false; S.psel = null; S.v3 = null; return true; }
+    if ((k = t.getAttribute('data-wzgo')) != null) { if (S.studio && +k > Math.max(w.max || 0, w.step)) return true; w.step = +k; w.adv = false; S.psel = null; S.v3 = null; return true; }
     if ((k = t.getAttribute('data-wzv')) != null) { S.v3 = k; return true; }
     if ((k = t.getAttribute('data-wztpl')) != null) { var tp = arr(c.templates).filter(function (x) { return x.code === k; })[0]; if (tp) { var keep = { step: w.step }; S.o.layout = lay = cbClone(tp.layout); cbDefaults(c, lay); S.wz = wzRead(c, lay); S.wz.step = keep.step; S.wz.adv = false; S.tpl = k; S.v3 = '3d'; S.sel3 = null; S.psel = null; if (S.pdp) S.furn = furnGuess(PRODS[S.id]); } return true; }
     if ((k = t.getAttribute('data-cstep')) != null) { var cs = k.split(':'); setDim(cs[0], num(lay[cs[0]]) + (+cs[1])); return true; }
@@ -758,6 +788,15 @@
   function cbStage() {
     var col = document.querySelector('#pdp .pdp-grid > div:first-child'); if (!col) return;
     var st = document.getElementById('cbStage'); if (!st) { st = document.createElement('div'); st.id = 'cbStage'; st.className = 'cb-stage'; col.insertBefore(st, col.firstChild); st.addEventListener('click', stageClick); }
+    if (S.studio) {
+      var cS = PRODS[S.id].cz.cabin, vS = S.view3 === 'cut' ? 'cut' : '3d', flS = (FURN.filter(function (f) { return f[0] === (S.furn || 'none'); })[0] || FURN[4])[1], ok3 = C3.st !== -1;
+      st.innerHTML = '<div class="cbs-v"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(cS, S.o.layout)) + '</div>' +
+        (C3.st === 2 ? '<div class="cb-ov"><button type="button" data-cbroof="1" aria-pressed="' + (vS === 'cut') + '">' + (vS === 'cut' ? '⌂ Roof on' : '⌂ Roof off') + '</button><button type="button" data-e3furn="1">🛋 ' + esc(flS) + '</button><button type="button" data-e3night="1" aria-pressed="' + !!S.night + '">' + (S.night ? '🌙 Evening' : '☀ Day') + '</button></div>' +
+          '<div class="cbs-z"><button type="button" data-cbz="in" aria-label="Zoom in">+</button><button type="button" data-cbz="out" aria-label="Zoom out">−</button><button type="button" data-cbz="big" aria-label="' + (S.big ? 'Smaller view' : 'Bigger view') + '">' + (S.big ? '⤡' : '⤢') + '</button></div>' +
+          '<p class="cbs-hint">Drag to turn it 360° · pinch to zoom · turn it under to see the ceiling</p>' : '') + '</div>' +
+        (ok3 ? cbEditBar(cS, S.o.layout, vS === 'cut' ? 'cut' : '360').replace(/<p class="cb-hint">[\s\S]*?<\/p>/, '') : '');
+      return;
+    }
     cbTop(); if (!cbStage.on) { cbStage.on = true; window.addEventListener('scroll', cbTop, { passive: true }); window.addEventListener('resize', cbTop); }
     var c = PRODS[S.id].cz.cabin, v = S.view3, side = ['front', 'right', 'back', 'left'].indexOf(v) >= 0, imgs = gal(S.id), h = '';
     if (v === 'plan') h = '<div class="cb-pic"><div class="cb-plan">' + wzDims(c, S.o.layout) + '</div></div>';
@@ -775,7 +814,9 @@
     document.documentElement.style.setProperty('--cbtop', b + 'px');
   }
   function stageClick(e) {
-    var t = e.target.closest('[data-wzv],[data-gi],[data-e3k],[data-e3x],[data-e3p],[data-e3add],[data-e3furn],[data-e3night]'); if (!t || !S || t.disabled) return;
+    var t = e.target.closest('[data-wzv],[data-gi],[data-e3k],[data-e3x],[data-e3p],[data-e3add],[data-e3furn],[data-e3night],[data-cbz],[data-cbroof]'); if (!t || !S || t.disabled) return;
+    if (t.hasAttribute('data-cbz')) { var zk = t.getAttribute('data-cbz'); if (zk === 'big') { S.big = !S.big; document.body.classList.toggle('cbs-big', S.big); cbStage(); mount3d(); setTimeout(function () { try { window.Cabin3D.resize(); } catch (er) {} }, 60); } else try { window.Cabin3D.zoom(zk === 'in' ? 0.8 : 1.25); } catch (er) {} return; }
+    if (t.hasAttribute('data-cbroof')) { S.v3 = S.view3 = S.view3 === 'cut' ? '3d' : 'cut'; if (S.view3 !== 'cut') S.psel = null; cbStage(); return mount3d(); }
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, k;
     if ((k = t.getAttribute('data-e3k')) != null && S.sel3) { var ks = lay.walls[S.sel3.side], hi = cbHead(ks, Math.min(S.sel3.i, ks.length - 1)); if (cbSet(c, lay, S.sel3.side, hi, k)) S.sel3.i = Math.max(0, Math.min(hi, lay.walls[S.sel3.side].length - cbSpan(c, k))); S.wz.custom = true; return draw(); }
     if (t.hasAttribute('data-e3x')) { S.sel3 = null; S.psel = null; return draw(); }
@@ -801,18 +842,81 @@
   window.cbOpenSheet = function () { var sh = document.getElementById('cbSheet'); if (sh) sh.classList.add('open'); };
   window.cbNext = function () {
     if (!S || !S.wz) return; var w = S.wz;
-    if (w.adv) { w.adv = false; } else if (w.step < 6) { w.step++; S.v3 = null; S.psel = null; } else return pdpOrder();
-    draw(); var cfg = document.getElementById('mtoCfg'), stg = document.getElementById('cbStage'), hd = document.querySelector('.stickytop') || document.querySelector('header');
+    if (w.adv) { w.adv = false; } else if (w.step < 6) { w.step++; w.max = Math.max(w.max || 0, w.step); S.v3 = null; S.psel = null; } else return pdpOrder();
+    draw(); if (S.studio) { var cf0 = document.getElementById('mtoCfg'); if (cf0) cf0.scrollTop = 0; var sc0 = cf0 && cf0.querySelector('.wz-stc .on'); if (sc0 && sc0.scrollIntoView) sc0.scrollIntoView({ block: 'nearest', inline: 'center' }); return; } var cfg = document.getElementById('mtoCfg'), stg = document.getElementById('cbStage'), hd = document.querySelector('.stickytop') || document.querySelector('header');
     if (cfg) { var off = (window.innerWidth < 900 && stg ? stg.offsetHeight : 0) + (hd ? Math.max(0, hd.getBoundingClientRect().bottom) : 0) + 8; window.scrollTo({ top: cfg.getBoundingClientRect().top + window.scrollY - off, behavior: 'smooth' }); }
   };
   function cbBar(q) {
     var ct = document.querySelector('.ctas'); if (!ct) return; var b = ct.querySelector('.cbbar'); if (!b) { b = document.createElement('div'); b.className = 'cbbar'; ct.appendChild(b); }
     var x = PRODS[S.id], last = S.wz.step >= 6 && !S.wz.adv, closed = x.oo === false, o = S.o, needPin = !(q.ok && q.install && q.install.available);
-    b.innerHTML = '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
-      '<button type="button" class="cbn" onclick="cbNext()"' + (last && (closed || needPin || !q.ok) ? ' disabled' : '') + '>' + (!last ? 'Next →' : closed ? 'Coming soon' : needPin ? 'Enter your pincode' : 'Order · pay ' + rs(q.pay_now)) + '</button>';
-    var pr = document.getElementById('pdPrice'); if (pr && q.ok && x.oo !== false) pr.innerHTML = rs(q.total) + '<span class="mrplab">your design, incl. GST</span>';
+    var NX = ['Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Review'], hs = document.getElementById('cbsStep'); if (hs) hs.textContent = S.wz.adv ? 'Edit each wall' : 'Step ' + (S.wz.step + 1) + ' of 7';
+    b.innerHTML = (S.studio && (S.wz.step > 0 || S.wz.adv) ? '<button type="button" class="cbb" onclick="cbPrev()" aria-label="Back">←</button>' : '') + '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
+      '<button type="button" class="cbn" onclick="cbNext()"' + (last && (closed || needPin || !q.ok) ? ' disabled' : '') + '>' + (!last ? (S.studio && !S.wz.adv ? 'Next: ' + NX[S.wz.step] + ' →' : 'Next →') : closed ? 'Coming soon' : needPin ? 'Enter your pincode' : 'Order · pay ' + rs(q.pay_now)) + '</button>';
+    var pr = document.getElementById('pdPrice'); if (pr && q.ok && x.oo !== false && S.studio) pr.innerHTML = rs(q.total) + '<span class="mrplab">your design, incl. GST</span>';
   }
+  // 175: cabins — the product page shows photos, a highlighted Customise button and Check price (average cost of the three types);
+  // the builder opens full screen: big 360 model in the middle, the steps one after another underneath
+  function cbAvg(id) {   // average / range of a cabin type over its ready layouts
+    var x = PRODS[id], c = x && x.cz && x.cz.cabin; if (!c) return null;
+    var t = arr(c.templates).map(function (tp) { var l2 = cbClone(tp.layout); cbDefaults(c, l2); var q = cabin(c, l2); return q.ok ? { v: q.total, a: num(l2.L) * num(l2.W) } : null; }).filter(Boolean);
+    if (!t.length) { var l0 = cbClone(c.layout); cbDefaults(c, l0); var q0 = cabin(c, l0); if (!q0.ok) return null; t = [{ v: q0.total, a: num(l0.L) * num(l0.W) }]; }
+    var vs = t.map(function (z) { return z.v; }), sum = vs.reduce(function (a, b) { return a + b; }, 0), as = t.map(function (z) { return z.a; });
+    return { avg: Math.round(sum / vs.length / 1000) * 1000, lo: Math.min.apply(null, vs), hi: Math.max.apply(null, vs), sqft: Math.round(sum / as.reduce(function (a, b) { return a + b; }, 0) / 50) * 50, amin: Math.min.apply(null, as), amax: Math.max.apply(null, as) };
+  }
+  function lakh(v) { return v >= 100000 ? '₹' + (v / 100000).toFixed(v >= 1000000 ? 1 : 2).replace(/\.?0+$/, '') + ' L' : rs(v); }
+  function cbCtas() {
+    var ct = document.querySelector('.ctas'); if (!ct) return; var b = ct.querySelector('.cbcta'); if (!b) { b = document.createElement('div'); b.className = 'cbcta'; ct.insertBefore(b, ct.firstChild); }
+    b.innerHTML = '<button type="button" class="cbc-main" onclick="cbStudio(true)">✦ Customise your cabin</button><button type="button" class="cbc-sec" onclick="cbPrices()">Check price</button>';
+  }
+  window.cbPrices = function () {
+    var ids = Object.keys(PRODS).filter(function (i) { var z = PRODS[i]; return z.cz && z.cz.unit === 'cabin' && z.cz.cabin; });
+    var ord = function (i) { var n = (PRODS[i].n || '').toLowerCase(); return /glass/.test(n) ? 0 : /hybrid/.test(n) ? 1 : 2; }; ids.sort(function (a, b) { return ord(a) - ord(b); });
+    var el = document.getElementById('cbAvg'); if (!el) { el = document.createElement('div'); el.id = 'cbAvg'; el.className = 'cb-avg'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Cabin prices'); document.body.appendChild(el);
+      el.addEventListener('click', function (e) { if (e.target === el || e.target.closest('[data-x]')) return window.cbPricesClose(); var g = e.target.closest('[data-cbgo]'); if (g) { var gid = g.getAttribute('data-cbgo'); el.classList.remove('open'); document.body.classList.remove('flt-open'); if (S && S.id === gid) return window.cbStudio(true, true); window.__cbsOpen = gid; if (window.openProduct) window.openProduct(gid); } }); }
+    el.innerHTML = '<div class="cb-avgb"><h4>What a cabin costs <button type="button" data-x="1" aria-label="Close">✕</button></h4><p class="cb-avgs">Average prices of our ready layouts, incl. GST. Your exact cost depends on the size, glass, doors and rooms you choose.</p><div class="cb-avgg">' +
+      ids.map(function (i) { var a = cbAvg(i), z = PRODS[i], im = gal(i)[0]; if (!a) return '';
+        return '<div class="cb-avgc' + (S && S.id === i ? ' on' : '') + '">' + (im ? '<img src="' + esc(im) + '" alt="" loading="lazy">' : '') + '<b>' + esc(String(z.n).replace(/ — .*$/, '')) + '</b><small>' + esc(z.mat || '') + '</small>' +
+          '<div class="cb-avgp"><span>Average</span><b>' + lakh(a.avg) + '</b></div><div class="cb-avgr">' + lakh(a.lo) + ' – ' + lakh(a.hi) + ' · ' + a.amin + '–' + a.amax + ' sq ft · about ' + rs(a.sqft) + ' / sq ft</div>' +
+          '<button type="button" data-cbgo="' + esc(i) + '">Customise &amp; know the exact cost →</button></div>'; }).join('') + '</div></div>';
+    el.classList.add('open'); document.body.classList.add('flt-open');
+    try { history.pushState({ v: 'modal' }, '', location.pathname + location.search); } catch (e) {}
+  };
+  window.cbPricesClose = function (fromPop) { var el = document.getElementById('cbAvg'); if (!el || !el.classList.contains('open')) return; if (!fromPop && history.state && history.state.v === 'modal') return history.back(); el.classList.remove('open'); document.body.classList.remove('flt-open'); };
+  function cbCheap() {   // the studio starts from the lowest price: smallest size, one door, no rooms, no extras — every choice after only adds
+    var c = PRODS[S.id].cz.cabin, lay = S.o.layout, w = S.wz, lo = function (list, key) { list = arr(list); if (!list.length) return; var best = null; list.forEach(function (x) { var t = wzTry(c, lay, function (l2) { l2[key] = x.name; }); if (t != null && (!best || t < best[0])) best = [t, x.name]; }); if (best) lay[key] = best[1]; };
+    var Lmin = num(c.L && c.L.min) || 8, Wmin = num(c.W && c.W.min) || 8, Lmax = num(c.L && c.L.max) || 40, Wmax = num(c.W && c.W.max) || 20;
+    var z = WZ_SIZES.filter(function (y) { return y[1] >= Lmin && y[2] >= Wmin && y[1] <= Lmax && y[2] <= Wmax; })[0]; lay.L = z ? z[1] : Lmin; lay.W = z ? z[2] : Wmin;
+    lay.items = {}; lay.places = []; lay.full_doors = false; lay.gutter = null;
+    if (c.proj) { var P = c.proj, f0 = function (l) { return (arr(l)[0] || {}).name; }; lay.proj = { sides: P.required ? ['front'] : [], design: f0(P.designs), top: f0(P.tops), under: f0(P.unders) }; }
+    ['rooms', 'toilet', 'wc', 'pantry', 'exhaust'].forEach(function (k) { w[k] = false; }); w.door = 'single'; w.side = 'front'; w.windows = Math.min(w.windows || 0, 2);
+    ['height', 'panel', 'glass'].forEach(function (k) { var l = arr(c[k === 'height' ? 'heights' : k === 'panel' ? 'panels' : 'glasses']); if (l.length) lay[k] = l[0].name; });
+    if (arr(c.tracks).length) lay.tracks = c.tracks[0].name;
+    wzBuild(c, lay, w); lo(c.roofs, 'roof'); lo(c.frames, 'frame'); if (w.glass === 'all') { var gr = arr(c.roofs).filter(function (r) { return /glass/i.test(r.name); })[0]; if (gr) lay.roof = gr.name; }
+    w.step = 0; w.max = 0; w.adv = false; S.tpl = null; S.v3 = null; S.sel3 = null; S.psel = null; S.furn = furnGuess(PRODS[S.id]);
+  }
+  window.cbStudio = function (on, fresh) {
+    if (!S || !S.pdp || !S.wz) return;
+    var el = document.getElementById('cbStudio');
+    if (on) {
+      if (!el) { el = document.createElement('div'); el.id = 'cbStudio'; el.className = 'cbs-ov'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el); }
+      el.innerHTML = '<div class="cbs-hd"><button type="button" class="cbs-x" onclick="cbStudio(false)" aria-label="Back to the product">←</button><div><b>' + esc(String(PRODS[S.id].n).replace(/ — .*$/, '')) + '</b><small id="cbsStep">Step 1 of 7</small></div><button type="button" class="cbs-x" onclick="cbStudio(false)" aria-label="Close">✕</button></div>';
+      if (!S.cbsInit || fresh) { cbCheap(); S.cbsInit = true; }
+      S.studio = true; el.classList.add('open'); document.body.classList.add('cb-studio');
+      try { history.pushState({ v: 'modal' }, '', location.pathname + location.search); } catch (e) {}
+      draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0;
+      setTimeout(function () { try { window.Cabin3D && window.Cabin3D.resize(); } catch (er) {} }, 80);
+      try { if (window.otrack) otrack('customise_start', { sku: S.id }); } catch (e) {}
+    } else {
+      if (!el || !el.classList.contains('open')) return;
+      if (on !== null && history.state && history.state.v === 'modal') return history.back();   // back closes it (popstate → closeModals)
+      el.classList.remove('open'); document.body.classList.remove('cb-studio', 'cbs-big'); S.studio = false; S.big = false; S.v3 = null; draw(); window.scrollTo(0, 0);
+    }
+  };
+  window.cbStudioClose = function () { window.cbStudio(null); };   // from the store's back-button handler
+  window.cbPrev = function () { if (!S || !S.wz) return; var w = S.wz; if (w.adv) w.adv = false; else if (w.step > 0) { w.step--; S.v3 = null; S.psel = null; } draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; };
   window.mtoPdpReset = function () {
+    try { var sd = document.getElementById('cbStudio'); if (sd) sd.classList.remove('open'); document.body.classList.remove('cb-studio', 'cbs-big'); var cc = document.querySelector('.ctas .cbcta'); if (cc) cc.remove(); var cm = document.getElementById('cmpSec'); if (cm) cm.style.display = ''; } catch (e) {}
+    if (S) { S.studio = false; S.big = false; }
     var p = document.getElementById('pdp'); if (p) p.classList.remove('pdp-mto', 'pdp-cab'); document.body.classList.remove('pdp-mto-on', 'pdp-cab-on');
     ['cbStage', 'cbSheet'].forEach(function (k) { var e = document.getElementById(k); if (e) e.remove(); }); var cb = document.querySelector('.ctas .cbbar'); if (cb) cb.remove();
     ['mtoCfg', 'mtoAccs', 'mtoChip', 'mtoChip2'].forEach(function (k) { var e = document.getElementById(k); if (e) e.remove(); });
@@ -852,6 +956,7 @@
     [].slice.call(document.querySelectorAll('#pdp .acc')).forEach(function (a) { if (/Delivery, assembly/.test((a.querySelector('.acc-h') || {}).textContent || '')) a.classList.add('rts-only'); });
     try { if (window.otrack) otrack('view_item', { sku: id, value: x.p }); } catch (e) {}
     drawPdp();
+    if (u === 'cabin') { cbCtas(); var cm = document.getElementById('cmpSec'); if (cm) cm.style.display = 'none'; if (window.__cbsOpen === id) { window.__cbsOpen = null; setTimeout(function () { window.cbStudio(true); }, 50); } }
   };
   function sel(attr, list, cur, lab) {   // a picklist; list = [[value, label]]
     return '<label class="mto-pk"><span>' + lab + '</span><select ' + attr + '>' + list.map(function (v) { return '<option value="' + esc(v[0]) + '"' + (String(v[0]) === String(cur) ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join('') + '</select></label>';
@@ -952,7 +1057,7 @@
       (x.ds ? '<p style="font-size:15px;line-height:1.65;color:#4A4640;margin-top:16px">' + esc(x.ds) + '</p>' : '') + '</section>' +
       '<section class="mto-cfg" aria-label="Build your design"><span class="mto-badge">Made to Order</span><h1>' + esc(x.n) + '</h1>' +
       '<p class="mto-by">by <b>' + esc(x.br || 'outrr') + '</b>' + (x.mat ? ' · ' + esc(x.mat) : '') + '</p>' +
-      (x.oo === false ? '<p class="mto-from"><span class="soonb">Coming soon</span></p>' : '<p class="mto-from">From <b>' + rs(x.p) + '</b>' + (u === 'cabin' ? ' · this preset as shown' : u !== 'fixed' ? ' · ' + rs(Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; }))) + ' / ' + uw : '') + ' · incl. GST</p>') +
+      (x.oo === false ? '' : '<p class="mto-from">From <b>' + rs(x.p) + '</b>' + (u === 'cabin' ? ' · this preset as shown' : u !== 'fixed' ? ' · ' + rs(Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; }))) + ' / ' + uw : '') + ' · incl. GST</p>') +
       (u === 'cabin' ? '<div class="mto-box"><h3>1 · Customise your cabin</h3>' + size + '</div>' + instHtml :
       '<div class="mto-box"><h3>1 · Your size</h3>' + size + '</div>' +
       '<div class="mto-box"><h3>2 · Material &amp; finish</h3>' + matHtml + colHtml + '</div>' + addHtml + instHtml) +

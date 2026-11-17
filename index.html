@@ -2847,7 +2847,7 @@ function openProduct(id){
   try{vRender(id);}catch(e){console.warn(e)}
   try{const closed=x.oo===false; document.querySelectorAll('button[onclick="addCart()"],button[onclick="buyNow()"]').forEach(b=>{if(!b.dataset.t0) b.dataset.t0=b.textContent; const buy=b.getAttribute('onclick')==='buyNow()'; b.style.display=closed&&buy?'none':''; b.textContent=closed?'Coming soon':b.dataset.t0; b.disabled=closed; b.classList.toggle('soonbtn',closed); b.title=closed?'Coming soon':''});
     let n=document.getElementById('pdClosed'); if(!n){n=document.createElement('div');n.id='pdClosed';n.className='pdclosed';document.getElementById('pdPrice').after(n);}
-    n.textContent=closed?'Coming soon — this product isn\'t on sale yet. Save it to your wishlist and check back.':''; n.style.display=closed?'':'none';}catch(e){}
+    n.textContent=''; n.style.display='none';   /* 175: "Coming soon" only on the buttons */}catch(e){}
   try{setRender(id);}catch(e){console.warn(e)}
   try{cmpRender(id);}catch(e){console.warn(e)}
   try{const rl=document.getElementById('pdRevList'); if(rl) rl.innerHTML='<p class="rv-none">Loading reviews…</p>'; window.rvPdp&&rvPdp(id);}catch(e){}
@@ -3200,7 +3200,7 @@ setTimeout(offShow,5000);
   let lock=false;
 
   function anyModal(){
-    return ['mcart','qv','fltPanel','offpop','wachat','lbx','mtoOv','cbSheet','mmenu'].some(id=>{
+    return ['mcart','qv','fltPanel','offpop','wachat','lbx','mtoOv','cbSheet','mmenu','cbAvg','cbStudio'].some(id=>{
       const el=document.getElementById(id); return el && el.classList.contains('open');});
   }
   function closeModals(){
@@ -3212,6 +3212,7 @@ setTimeout(offShow,5000);
     try{ lbxClose(); }catch(e){}
     try{ window.mtoClose&&mtoClose(); }catch(e){}   // Made to Order builder overlay
     try{ const s=document.getElementById('cbSheet'); if(s) s.classList.remove('open'); }catch(e){}
+    try{ window.cbPricesClose&&cbPricesClose(true); window.cbStudioClose&&cbStudioClose(); }catch(e){}   // 175: cabin price card + full-screen builder
     try{ window.mMenu&&mMenu(false); }catch(e){}
     document.body.classList.remove('flt-open'); document.body.style.overflow='';
   }
@@ -4121,8 +4122,8 @@ async function shareProduct(){
 <script src="/account.js?v=6"></script>
 <script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
-<script src="/near.js?v=5"></script>
-<script src="/mto.js?v=16"></script>
+<script src="/near.js?v=6"></script>
+<script src="/mto.js?v=17"></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };

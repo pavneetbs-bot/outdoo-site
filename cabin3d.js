@@ -52,8 +52,8 @@ function build(c, lay, opts) {
   const g = new THREE.Group(), L = +lay.L, W = +lay.W, H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = +(c.bay || 4), FM = frameMat(lay), T = 0.25, DH = lay.full_doors ? H : 8;
   const tracks = Math.max(2, parseInt(lay.tracks || '2', 10) || 2);
   site(g, L, W);
-  box(g, L + 0.6, 0.6, W + 0.6, L / 2, -0.3, W / 2, mat('deck'));
-  box(g, L, 0.05, W, L / 2, 0.02, W / 2, mat('floor'), false);
+  box(g, L + 0.6, 0.6, W + 0.6, L / 2, -0.3, W / 2, mat('deck')).userData.under = 1;
+  box(g, L, 0.05, W, L / 2, 0.02, W / 2, mat('floor'), false).userData.under = 1;
   const walls = new THREE.Group(); walls.name = 'walls'; g.add(walls);
   const hits = new THREE.Group(); hits.name = 'hits'; g.add(hits);
   const wallOf = {};
@@ -92,6 +92,10 @@ function build(c, lay, opts) {
   const roof = new THREE.Group(); roof.name = 'roof'; g.add(roof);
   const rm = /glass/i.test(lay.roof || '') ? mat('roofGlass') : /metal/i.test(lay.roof || '') ? mat('roofMetal') : mat('roofPuf');
   box(roof, L + 0.5, 0.45, W + 0.5, L / 2, H + 0.22, W / 2, rm);
+  if (/glass/i.test(lay.roof || '')) {   // a glass roof sits on MS members: purlins every ~2 ft across, a ridge beam along — never one big sheet of glass
+    const n = Math.max(2, Math.round(L / 2)); for (let i = 1; i < n; i++) box(roof, 0.16, 0.32, W + 0.3, i * L / n, H + 0.02, W / 2, FM, false)
+    const m = Math.max(1, Math.round(W / 5)); for (let j = 1; j <= m; j++) box(roof, L + 0.3, 0.2, 0.14, L / 2, H + 0.08, j * W / (m + 1), FM, false)
+  }
   [[-0.25, W / 2, 0.3, W + 0.5], [L + 0.25, W / 2, 0.3, W + 0.5]].forEach(([x, z, w, d]) => box(roof, w, 0.5, d, x, H + 0.25, z, FM));
   [[L / 2, -0.25, L + 0.8, 0.3], [L / 2, W + 0.25, L + 0.8, 0.3]].forEach(([x, z, w, d]) => box(roof, w, 0.5, d, x, H + 0.25, z, FM));
   const items = lay.items || {}, ceil = +items.ceiling > 0, ly = ceil ? H - 0.62 : H - 0.03;
@@ -277,7 +281,7 @@ function ensure(el) {
     renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;border-radius:16px';
     R = { renderer, scene, cam, ortho, controls, sun, hemi, key: '', view: '', group: null, skyD: sky('#BFD8EA', '#F1EEE7'), skyN: sky('#0B1222', '#2B3550'), night: false };
     scene.background = R.skyD;
-    const loop = () => { R.raf = requestAnimationFrame(loop); if (!R.el || !R.el.isConnected) return; R.controls.update(); R.renderer.render(R.scene, R.active || R.cam); };
+    const loop = () => { R.raf = requestAnimationFrame(loop); if (!R.el || !R.el.isConnected) return; R.controls.update(); under(); R.renderer.render(R.scene, R.active || R.cam); };
     loop();
     window.addEventListener('resize', () => R.el && size());
     const cv = renderer.domElement;
@@ -285,6 +289,12 @@ function ensure(el) {
   }
   if (R.el !== el) { R.el = el; el.innerHTML = ''; el.appendChild(R.renderer.domElement); }
   size();
+}
+function under() {   // orbiting below the floor: the ground, deck and floor fade out so the ceiling / false ceiling is seen from under
+  if (!R.group) return; const b = (R.active || R.cam) === R.cam && R.view !== 'inside' && R.cam.position.y < -0.2
+  if (b === R.below) return; R.below = b
+  const st = R.group.getObjectByName('site'); if (st) st.visible = !b && !['top', 'front', 'right', 'back', 'left'].includes(R.view)
+  R.group.traverse(o => { if (o.userData && o.userData.under) o.visible = !b })
 }
 function size() { const w = R.el.clientWidth || 360, h = R.el.clientHeight || 220; R.renderer.setSize(w, h, false); R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); fitOrtho(); }
 function fitOrtho() {
@@ -299,7 +309,7 @@ function visible(v) {   // what each view shows
   by('roof').visible = !open; const ce = by('ceiling'); if (ce) ce.visible = !open; by('lights').visible = !open;
   const pj = by('proj'); if (pj) pj.visible = !top; const fu = by('furn'); if (fu) fu.visible = PERSP.includes(v); const st = by('site'); if (st) st.visible = !top && !elev;
   const n = by('night'); if (n) n.visible = R.night && !top;
-  R.sun.castShadow = !top && !elev;
+  R.sun.castShadow = !top && !elev; R.below = undefined;
 }
 function setView(v, keepCam) {
   R.view = v; const L = R.L, W = R.W, H = R.H, cx = L / 2, cz = W / 2, d = Math.max(L, W), C = R.controls;
@@ -315,8 +325,8 @@ function setView(v, keepCam) {
     if (!keepCam) { const st = R.start || [cx, Math.max(1.5, W - 2.5), cx, cz]; R.cam.position.set(st[0], 5, st[1]); const dx = st[2] - st[0], dz = st[3] - st[1], n = Math.hypot(dx, dz) || 1; C.target.set(st[0] + dx / n * 0.4, 4.9, st[1] + dz / n * 0.4); }
     C.minPolarAngle = Math.PI * 0.3; C.maxPolarAngle = Math.PI * 0.7; C.minDistance = C.maxDistance = 0.4; C.enableZoom = false; C.rotateSpeed = -0.45; C.autoRotateSpeed = 0.6;
   } else {   // 3d / roof off / 360
-    R.active = R.cam; C.minDistance = 6; C.maxDistance = d * 4;
-    if (!keepCam) { const k = Math.max(1, 1.5 / R.cam.aspect), hi = v === 'cut' ? 1.7 : 1;
+    R.active = R.cam; C.minDistance = 3; C.maxDistance = d * 4; C.maxPolarAngle = Math.PI * 0.93;   // go round and under: see the ceiling from below
+    if (!keepCam) { const k = Math.max(1.25, 1.5 / R.cam.aspect), hi = v === 'cut' ? 1.7 : 1;
       R.cam.position.set(cx + d * 0.95 * k, H * 0.4 + (H * 1.2 + d * 0.25) * k * hi, cz + d * 1.35 * k / (v === 'cut' ? 1.15 : 1)); C.target.set(cx, H * 0.3, cz); }
   }
   R.cam.updateProjectionMatrix(); fitOrtho(); C.update(); selBox();
@@ -411,5 +421,7 @@ export function show(el, c, lay, view, opts) {
   if (reset) setView(view, false); else selBox();
   fitOrtho();
 }
+export function zoom(f) { if (!R || R.active !== R.cam) return; const C = R.controls, v = R.cam.position.clone().sub(C.target), len = Math.max(C.minDistance, Math.min(C.maxDistance, v.length() * f)); R.cam.position.copy(C.target).add(v.setLength(len)); C.update(); }
+export function resize() { if (R && R.el) size(); }
 export function snapshot() { return R ? R.renderer.domElement.toDataURL('image/png') : null; }
-window.Cabin3D = { show, snapshot, onEvent, _r: () => R };
+window.Cabin3D = { show, snapshot, onEvent, zoom, resize, _r: () => R };
