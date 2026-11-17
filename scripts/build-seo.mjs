@@ -75,7 +75,7 @@ const groupsOf = cs => {
   return g.filter(x => x.items.length)
 }
 
-const slim = (u, w = 600) => { const m = String(u || '').match(/^(https:\/\/[a-z0-9]+\.supabase\.co)\/storage\/v1\/object\/public\/([^?]+)(?:\?(.*))?$/); return m && /\.(jpe?g|png|webp)$/i.test(m[2]) ? `${m[1]}/storage/v1/render/image/public/${m[2]}?width=${w}&quality=75${m[3] ? '&' + m[3] : ''}` : u }
+const slim = (u, w = 600) => { const m = String(u || '').match(/^(https:\/\/[a-z0-9]+\.supabase\.co)\/storage\/v1\/object\/public\/([^?]+)(?:\?(.*))?$/); return m && /\.(jpe?g|png|webp)$/i.test(m[2]) ? `${m[1]}/storage/v1/render/image/public/${m[2]}?width=${w}&resize=contain&quality=75${m[3] ? '&' + m[3] : ''}` : u }
 // desktop mega menu (pure CSS hover): sub-category tiles with pictures + a feature picture
 const MEGA = Object.fromEntries(cols.map(c => {
   const gs = groupsOf(c.slug), list = ranked[c.slug] || []
