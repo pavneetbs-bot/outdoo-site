@@ -1080,7 +1080,8 @@
 
   // a colour with its own photo (pergola finishes): picking the colour shows that photo
   function colPic(name) { var x = PRODS[S.id], c = null; arr(x && x.cz && x.cz.materials).forEach(function (mm) { arr(mm.colours).forEach(function (cc) { if (cc.name === name) c = cc; }); }); if (!c || !c.img) return;
-    var key = function (u) { u = String(u || '').split('?')[0]; return u.split('product-images/')[1] || u; }, g = gal(S.id).map(key), k = g.indexOf(key(c.img)); if (k >= 0) S.img = k; }
+    var key = function (u) { u = String(u || '').split('?')[0]; return u.split('product-images/')[1] || u; }, g = gal(S.id).map(key), k = g.indexOf(key(c.img)); if (k >= 0) S.img = k;
+    var G = window.PDG; if (G && G.id === S.id && window.pdGo) { var j = G.list.map(key).indexOf(key(c.img)); if (j >= 0) window.pdGo(j); } }   // the product page's own gallery
   function gal(id) { var x = PRODS[id]; return [IMGS[x.img]].concat((window.GAL && GAL[id]) || []).filter(Boolean).filter(function (u, i, a) { return a.indexOf(u) === i; }); }
 
   function draw() {
@@ -1194,7 +1195,7 @@
     var pk = t.getAttribute('data-pick');   // 159 picklists
     if (pk === 'n') { S.o.n = +t.value; return draw(); }
     if (pk === 'size') { S.o.size = t.value; return draw(); }
-    if (pk === 'material') { S.o.material = t.value; var mm1 = arr(PRODS[S.id].cz.materials).filter(function (y) { return y.name === t.value; })[0]; S.o.colour = (arr(mm1 && mm1.colours)[0] || {}).name || ''; return draw(); }
+    if (pk === 'material') { S.o.material = t.value; var mm1 = arr(PRODS[S.id].cz.materials).filter(function (y) { return y.name === t.value; })[0]; S.o.colour = (arr(mm1 && mm1.colours)[0] || {}).name || ''; if (S.o.colour) colPic(S.o.colour); return draw(); }
     if (pk === 'colour') { S.o.colour = t.value; colPic(t.value); return draw(); }
     if (pk === 'drawing') { S.o.drawing = t.value === '1'; return draw(); }
     if (k === 'install' || k === 'size_ok') { S.o[k] = t.checked; var mm = (PRODS[S.id] || {}).cz; if (k === 'install' && mm && mm.install && mm.install.required) S.o.install = true; return paint(); }
