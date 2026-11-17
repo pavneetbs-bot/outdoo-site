@@ -29,7 +29,7 @@ try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var 
   .mbn{position:relative}
   .mbn-track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:6px 7vw 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .mbn-track::-webkit-scrollbar{display:none}
-  .mbc{flex:0 0 86vw;aspect-ratio:1010/1110;border-radius:16px;overflow:hidden;position:relative;scroll-snap-align:center;background:#efe9e0;cursor:pointer}
+  .mbc{flex:0 0 86vw;aspect-ratio:1010/888;border-radius:16px;overflow:hidden;position:relative;scroll-snap-align:center;background:#efe9e0;cursor:pointer}
   .mbc img{width:100%;height:100%;object-fit:cover;display:block}
   .mbc:before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(24,17,12,.66) 0%,rgba(24,17,12,.28) 34%,rgba(24,17,12,0) 56%)}
   .mbc .tx{position:absolute;left:22px;right:20px;top:24px;z-index:2;color:#fff}
@@ -1048,6 +1048,52 @@ header{position:static!important}
   .mm-grid .mm-t b{font-size:13.5px}
 }
 
+
+/* ---- 2026-11: slim desktop hero (40% of before), seasonal slides, "Shop by category" grid ---- */
+.obn.ob-s{display:flex;background:var(--bg,#F6F1E7);color:var(--fg,var(--char))}
+.obn.ob-s .ob-tx{position:static;flex:0 0 44%;display:flex;flex-direction:column;justify-content:center;padding:22px 34px;min-width:0}
+.obn.ob-s .ob-eye{color:var(--ac,var(--terra));font-size:11px}
+.obn.ob-s .ob-h{font-size:31px;margin-top:8px;color:var(--fg)}.ob-s .ob-h em{color:var(--ac,var(--terra))}
+.obn.ob-s .ob-p{font-size:13.5px;max-width:none;margin-top:7px;opacity:.88;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.obn.ob-s .ob-btn{align-self:flex-start;margin-top:12px;padding:10px 20px;font-size:13.5px;background:var(--ac,var(--terra));color:var(--bg,#fff)}
+.obn.ob-s .ob-ims{flex:1;display:flex;gap:8px;padding:12px 12px 12px 0;min-width:0}
+.obn.ob-s .ob-ims img{flex:1;min-width:0;height:100%;object-fit:cover;border-radius:14px;display:block}
+.ob-s .ob-ims img.w2{flex:1.6}
+@media(min-width:761px){
+  .obn-hero{margin:12px 0 6px}
+  .obn-hero .obn{height:274px!important;min-height:0!important}
+  .obn-hero .obn-dots{bottom:8px}
+}
+@media(min-width:1100px){.obn.ob-s .ob-h{font-size:36px}.obn.ob-s .ob-tx{padding:24px 44px}}
+.cgrid-sec{margin:22px 0 8px}
+.cgrid-sec .sh{text-align:center}
+.cgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px 16px;margin-top:16px}
+.cg{cursor:pointer;text-align:center;min-width:0}
+.cg .im{aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--sand-soft)}
+.cg img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.cg:hover img{transform:scale(1.05)}
+.cg b{display:block;margin-top:9px;font-size:14.5px;font-weight:600;color:var(--char)}
+.cg small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+@media(max-width:760px){.cgrid-sec{display:none}}
+@media(min-width:761px){#home .sec2:has(#archTop){display:none}}
+/* mega menu (desktop): every category at once — photo, name, its sub-categories */
+.mm2{max-width:var(--page,1440px);margin:0 auto;padding:18px 24px 20px}
+.mm2-hd{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 12px}
+.mm2-hd b{font-size:15px;color:var(--char)}.mm2-hd small{font-size:12px;color:var(--muted)}
+.mm2-g{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px 18px}
+.mm2-c{min-width:0}
+.mm2-c .im{display:block;aspect-ratio:2/1;border-radius:10px;overflow:hidden;background:var(--sand-soft);cursor:pointer}
+.mm2-c .im img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s}
+.mm2-c .im:hover img{transform:scale(1.05)}
+.mm2-c h4{margin:8px 0 3px;font-size:13.5px;font-weight:700;color:var(--char);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm2-c h4:hover,.mm2-c a:hover{color:var(--terra-deep)}
+.mm2-c a{display:block;font-size:12.5px;color:#5d584f;line-height:1.75;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm2-c a.all{color:var(--terra-deep);font-weight:700;font-size:12px}
+.mm2-c .mt{display:inline-block;margin-left:6px;font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--olive,#55634A);vertical-align:1px}
+@media(max-width:1180px){.mm2-g,.cgrid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:980px){.mm2-g,.cgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:900px){.mm-grid .mm-t .im{aspect-ratio:16/10}}
+
 /* ===== compare with similar items ===== */
 .cmpsec{margin:26px 0 10px}
 .cmpsec:empty{display:none}
@@ -1652,35 +1698,41 @@ header{position:static!important}
         <span class="ob-fc c"><img src="img/banners/lt-tiered.jpg" alt="" fetchpriority="high"></span>
       </div>
     </div>
-    <a class="obn ob-winter" data-from="" data-to="" data-act="col:furniture" role="link" tabindex="0" aria-label="Winter is outdoor season. Shop outdoor furniture">
-      <img class="ob-bg" src="img/banners/fu-wicker-lawn.jpg" alt="Wicker three-seater sofa under a pergola on a sunny lawn" loading="lazy">
-      <div class="ob-tx">
-        <span class="ob-eye">Outdoor furniture · New collection</span>
-        <h2 class="ob-h">Winter is<br><em>outdoor season.</em></h2>
-        <p class="ob-p">Soak up the winter sun on rope, wicker and teak sofas, lounge chairs and dining sets, built to live outside.</p>
-        <span class="ob-btn">Shop outdoor furniture →</span>
-      </div>
+    <a class="obn ob-s" style="--bg:#1F2A24;--fg:#fff;--ac:#E9C46A" data-from="" data-to="" data-act="col:cabins" role="link" tabindex="0" aria-label="A glass room for winter sun. Design your glass house">
+      <div class="ob-tx"><span class="ob-eye">Winter build season · Cabins &amp; Glass Houses</span><h2 class="ob-h">A glass room for<br><em>winter sun.</em></h2><p class="ob-p">Sit in the sun on cold mornings. Glass houses and garden cabins, designed to your size.</p><span class="ob-btn">Design yours →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-glasshouse.jpg" alt="" loading="lazy" class="w2"></div>
     </a>
-    <a class="obn ob-fire" data-from="" data-to="" data-act="col:fire-pits" role="link" tabindex="0" aria-label="Gather round the fire. Shop fire pits and BBQ, from ₹4,500">
-      <img class="ob-bg" src="img/banners/fp-teardrop.jpg" alt="Teardrop steel fire pit glowing on a terrace at dusk" loading="lazy">
-      <div class="ob-tx">
-        <span class="ob-eye">New on outrr · Fire Pits &amp; BBQ</span>
-        <h2 class="ob-h">Gather round<br><em>the fire.</em></h2>
-        <p class="ob-p">Hand-cut steel fire pits and barbecues, made for terraces, lawns and long winter evenings.</p>
-        <span class="ob-from">From <b>₹4,500</b></span><br>
-        <span class="ob-btn">Shop fire pits →</span>
-      </div>
-      <div class="ob-thumbs" aria-hidden="true"><img src="img/banners/fp-orb.jpg" alt="" loading="lazy"><img src="img/banners/fp-forest.jpg" alt="" loading="lazy"><img src="img/banners/fp-lantern.jpg" alt="" loading="lazy"></div>
+    <a class="obn ob-s" style="--bg:#262422;--fg:#fff;--ac:#F4C76B" data-from="" data-to="" data-act="col:bar-counters" role="link" tabindex="0" aria-label="Host the New Year outdoors. Bar counters and outdoor kitchens">
+      <div class="ob-tx"><span class="ob-eye">New Year · Bar Counters &amp; Outdoor Kitchens</span><h2 class="ob-h">Host the New Year<br><em>outdoors.</em></h2><p class="ob-p">Bar counters, BBQ stations and pizza-oven counters, made to your length for terrace parties.</p><span class="ob-btn">Plan your bar →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-bar-subway.jpg" alt="" loading="lazy"><img src="img/banners/mto-bar-arch.jpg" alt="" loading="lazy"></div>
     </a>
-    <a class="obn ob-cane" data-from="" data-to="" data-act="col:lighting" role="link" tabindex="0" aria-label="Cane and wicker lights, handwoven by artisans. Shop lights from ₹1,450">
-      <div class="ob-tx">
-        <span class="ob-eye">Handwoven by artisans</span>
-        <h2 class="ob-h">Cane &amp; wicker<br><em>lights.</em></h2>
-        <p class="ob-p">Pendants and lanterns that throw a warm, woven glow across balconies, verandas and pergolas.</p>
-        <span class="ob-from">From <b>₹1,450</b></span><br>
-        <span class="ob-btn">Shop the lights →</span>
-      </div>
-      <div class="ob-mosaic" aria-hidden="true"><span><img src="img/banners/lt-globe.jpg" alt="" loading="lazy"></span><span><img src="img/banners/lt-petal.jpg" alt="" loading="lazy"></span><span><img src="img/banners/lt-gourd.jpg" alt="" loading="lazy"></span></div>
+    <a class="obn ob-s" style="--bg:#EADCC8;--fg:#2E2E2E;--ac:#C26445" data-from="" data-to="" data-act="col:furniture" role="link" tabindex="0" aria-label="Outdoor furniture made to order in your frame and finish">
+      <div class="ob-tx"><span class="ob-eye">Made to order · Outdoor Furniture</span><h2 class="ob-h">Your frame.<br><em>Your finish.</em></h2><p class="ob-p">Rope and wicker sofas, chairs and dining sets in MS, aluminium, steel or teak, with the cushion fabric you pick.</p><span class="ob-btn">Shop furniture →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-sofa-teak.jpg" alt="" loading="lazy"><img src="img/banners/mto-chair.jpg" alt="" loading="lazy"></div>
+    </a>
+    <a class="obn ob-s" style="--bg:#55634A;--fg:#fff;--ac:#EADCC8" data-from="" data-to="" data-act="col:shade" role="link" tabindex="0" aria-label="Plan your pergola this season">
+      <div class="ob-tx"><span class="ob-eye">Build in winter, sit out in summer · Pergolas</span><h2 class="ob-h">Plan your pergola<br><em>this season.</em></h2><p class="ob-p">Louvre, slatted and gable pergolas, made to your terrace size.</p><span class="ob-btn">See pergolas →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-pergola.jpg" alt="" loading="lazy" class="w2"></div>
+    </a>
+    <a class="obn ob-s" style="--bg:#F6F1E7;--fg:#2E2E2E;--ac:#C26445" data-from="" data-to="" data-act="col:sculptures" role="link" tabindex="0" aria-label="Sculptures made to order, a statement for the season">
+      <div class="ob-tx"><span class="ob-eye">Wedding &amp; gifting season · Sculptures</span><h2 class="ob-h">A statement<br><em>for the season.</em></h2><p class="ob-p">Abstract, Buddha and animal sculptures in FRP or natural stone, 2 to 6 ft, made to order.</p><span class="ob-btn">Shop sculptures →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-sculpt-knot.jpg" alt="" loading="lazy"><img src="img/banners/mto-sculpt-flame.jpg" alt="" loading="lazy"></div>
+    </a>
+    <a class="obn ob-s" style="--bg:#24352B;--fg:#fff;--ac:#CFE3A8" data-from="" data-to="" data-act="col:vertical-gardens" role="link" tabindex="0" aria-label="Vertical gardens, keep it green all winter">
+      <div class="ob-tx"><span class="ob-eye">Vertical Gardens</span><h2 class="ob-h">Keep it green<br><em>all winter.</em></h2><p class="ob-p">Living walls in PVC pots, wooden and HPL troughs, for balconies, terraces and boundary walls.</p><span class="ob-btn">Shop green walls →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-greenwall.jpg" alt="" loading="lazy"><img src="img/banners/mto-greenwall2.jpg" alt="" loading="lazy"></div>
+    </a>
+    <a class="obn ob-s" style="--bg:#1E1D1B;--fg:#fff;--ac:#9FD3E0" data-from="" data-to="" data-act="col:water-features" role="link" tabindex="0" aria-label="Water features lit at night">
+      <div class="ob-tx"><span class="ob-eye">Water Features</span><h2 class="ob-h">The sound of water,<br><em>lit at night.</em></h2><p class="ob-p">Cascades, fountains and water walls, made to order for courtyards and terraces.</p><span class="ob-btn">Shop water features →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-cascade.jpg" alt="" loading="lazy" class="w2"></div>
+    </a>
+    <a class="obn ob-s" style="--bg:#1E1D1B;--fg:#fff;--ac:#F4C76B" data-from="" data-to="" data-act="col:fire-pits" role="link" tabindex="0" aria-label="Gather round the fire. Shop fire pits and BBQ">
+      <div class="ob-tx"><span class="ob-eye">Fire Pits &amp; BBQ · from ₹4,500</span><h2 class="ob-h">Gather round<br><em>the fire.</em></h2><p class="ob-p">Hand-cut steel fire pits and barbecues for terraces, lawns and long winter evenings.</p><span class="ob-btn">Shop fire pits →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/fp-teardrop.jpg" alt="" loading="lazy"><img src="img/banners/fp-orb.jpg" alt="" loading="lazy"></div>
+    </a>
+    <a class="obn ob-s" style="--bg:#F2E9DD;--fg:#2E2E2E;--ac:#C26445" data-from="" data-to="" data-act="col:lighting" role="link" tabindex="0" aria-label="Cane and wicker lights, handwoven by artisans">
+      <div class="ob-tx"><span class="ob-eye">Handwoven by artisans · from ₹1,450</span><h2 class="ob-h">Cane &amp; wicker<br><em>lights.</em></h2><p class="ob-p">Pendants and lanterns that throw a warm, woven glow across balconies, verandas and pergolas.</p><span class="ob-btn">Shop the lights →</span></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/lt-globe.jpg" alt="" loading="lazy"><img src="img/banners/lt-petal.jpg" alt="" loading="lazy"></div>
     </a>
     <a class="obn ob-peek" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="Take a sneak peek. Shop this Dussehra. Explore the store">
       <div class="ob-tx">
@@ -1714,6 +1766,10 @@ header{position:static!important}
     </div>
   </div>
 
+  <div class="sec2 cgrid-sec">
+    <div class="sh"><h2>Shop by category</h2></div>
+    <div class="cgrid" id="cgrid"></div>
+  </div>
   <div class="sec2">
     <div class="archrow" id="archTop"></div>
   </div>
@@ -3288,6 +3344,13 @@ var LIVE_HOME = false;
 
 /* ---- mobile home: banners (same size, swipe + auto), category chips → circles, menu drawer ---- */
 const MBANNERS = [
+  ['mto-glasshouse', 'A glass room', 'for winter sun', 'Design your glass house', "openCol('cabins')", 'Winter build'],
+  ['mto-bar-subway', 'Host the New Year', 'outdoors', 'Plan your bar counter', "openCol('bar-counters')", 'New Year'],
+  ['mto-sofa-teak', 'Your frame,', 'your finish', 'Shop Outdoor Furniture', "openCol('furniture')", 'Made to order'],
+  ['mto-pergola', 'Plan your pergola', 'this season', 'See Pergolas', "openCol('shade')", ''],
+  ['mto-sculpt-knot', 'A statement', 'for the season', 'Shop Sculptures', "openCol('sculptures')", 'Gifting'],
+  ['mto-greenwall', 'Keep it green', 'all winter', 'Shop Green Walls', "openCol('vertical-gardens')", ''],
+  ['mto-cascade', 'Water features,', 'lit at night', 'Shop Water Features', "openCol('water-features')", ''],
   ['fp-teardrop', 'Winter evenings,', 'by the fire', 'Shop Fire Pits', "openCol('fire-pits')", 'From ₹4,500'],
   ['lt-lotus', 'Light up', 'the evening', 'Shop Decor Lights', "openCol('lighting')", ''],
   ['lt-globe', 'Extra 5% off', 'with OUTRR5', 'Shop the launch offer', "openCol('fire-pits')", 'Launch offer'],
@@ -3298,7 +3361,6 @@ const MBANNERS = [
   ['ph-garden-night', 'Garden nights,', 'aglow', 'Shop Garden', "openCol('sp-garden')", ''],
   ['lt-petal', 'Petal pendants', 'for patios', 'Shop Pendant Lights', "openCol('lighting')", ''],
   ['ph-diwali-balcony', 'Balcony', 'makeovers', 'Shop Balcony', "openCol('sp-balcony')", ''],
-  ['fu-pergola2', 'Lawn lounging,', 'coming soon', 'See Outdoor Furniture', "openCol('furniture')", 'New'],
 ];
 let MCHIP = '';
 function mHome(){
@@ -3516,9 +3578,36 @@ function mmCat(k){const p=document.getElementById('navPanel'); if(!p) return;
    <div class="ov">${c.off?`<span>${_esc(c.off)}</span>`:''}<b>${_esc(c.mnote||c.tag||'')}</b><u>Shop ${_esc(c.t)} →</u></div></a>`;
 }
 function openSub(k,t){openCol(k); FLT.sub=new Set([t]); buildChips(); renderPLP();}
+// ---- 2026-11: categories once (menu + home grid): photo, count, sub-categories; built once per catalogue load ----
+const CAT_ORDER=['furniture','fire-pits','lighting','planters','shade','bar-counters','cabins','sculptures','water-features','vertical-gardens','privacy-screens','feature-walls','gates','railings','decking','graffiti','art'];
+const CAT_PIC={'bar-counters':'MTO-BR-ARCH','cabins':'MTO-CB-GLASS','shade':'MTO-PG-AL','sculptures':'MTO-SC-ABS-KNOT-FRP','vertical-gardens':'MTO-VG-PVC-WALL','water-features':'MTO-WC-TRIPLE'};
+let _CATS=null,_CATS_N=-1;
+function catList(){
+  const ids=Object.keys(PRODS); if(_CATS&&_CATS_N===ids.length&&!!MENU.rank===!!_CATS.r) return _CATS.l;
+  const g={};
+  ids.forEach(id=>{const x=PRODS[id],k=x.col; if(!k||!COLS[k]||/^(sp|bg|md)-|^__/.test(k)) return;
+    const c=g[k]||(g[k]={k,t:COLS[k].t,n:0,mto:0,subs:{},ids:[]}); c.n++; if(x.cz) c.mto++; c.ids.push(id);
+    const sb=subOf(id); if(sb&&sb!=='More') c.subs[sb]=(c.subs[sb]||0)+1;});
+  const l=Object.values(g).map(c=>{const pin=CAT_PIC[c.k]; const top=(pin&&PRODS[pin]&&_pimg(pin)&&pin)||_byRank(c.ids).find(id=>_pimg(id));
+    const ms=MENU.subs||{};
+    return {k:c.k,t:c.t,n:c.n,mto:c.mto>c.n/2,img:COLS[c.k].mimg||_pimg(top)||IMGS[COLS[c.k].img]||'',
+      subs:Object.keys(c.subs).map(t=>({t,n:c.subs[t],so:(ms[c.k+'|'+t]||{}).sort})).sort((a,b)=>(a.so??1e4-a.n)-(b.so??1e4-b.n))};})
+   .sort((a,b)=>{const i=CAT_ORDER.indexOf(a.k),j=CAT_ORDER.indexOf(b.k);return (i<0?99:i)-(j<0?99:j)||b.n-a.n;});
+  _CATS={l,r:!!MENU.rank}; _CATS_N=ids.length; return l;
+}
+function fillCatGrid(){const el=document.getElementById('cgrid'); if(!el) return;
+  el.innerHTML=catList().map(c=>`<div class="cg" data-col="${c.k}" role="link" tabindex="0"><div class="im"><img loading="lazy" src="${c.img}" alt="${_esc(c.t)}"></div><b>${_esc(c.t)}</b><small>${c.n} design${c.n>1?'s':''}</small></div>`).join('');}
+function _catGo(e){const t=e.target.closest('[data-col]'); if(!t) return; e.preventDefault(); e.stopPropagation();
+  const k=t.dataset.col,sb=t.dataset.sub; navPick(); sb?openSub(k,sb):openCol(k);}
+document.addEventListener('DOMContentLoaded',()=>{
+  const np=document.getElementById('navPanel'); if(np) np.addEventListener('click',e=>{ if(e.target.closest('.mm2')) _catGo(e); });
+  const cg=document.getElementById('cgrid'); if(cg){ cg.addEventListener('click',_catGo); cg.addEventListener('keydown',e=>{ if(e.key==='Enter') _catGo(e); }); }
+  try{ fillCatGrid(); }catch(e){}
+});
+
 function _menuRank(){ if(MENU.rank||MENU._asked) return; MENU._asked=1;
-  _supaRpc('search_products',{q:'',p_category:null,p_limit:2000}).then(rows=>{MENU.rank={};rows.forEach((r,i)=>MENU.rank[r.sku]=i);
-    if(navCur==='cat'){const a=document.querySelector('#navPanel .mm-cats a.on'); if(a) mmCat(a.dataset.k);}}).catch(()=>{});}
+  _supaRpc('search_products',{q:'',p_category:null,p_limit:2000}).then(rows=>{MENU.rank={};rows.forEach((r,i)=>MENU.rank[r.sku]=i); try{fillCatGrid();}catch(e){}
+    }).catch(()=>{});}
 function navOpen(kind,el,hover){
   const p=document.getElementById('navPanel');
   if(navCur===kind){ if(hover) return; navPick(); return; }
@@ -3526,12 +3615,10 @@ function navOpen(kind,el,hover){
   navCur=kind; if(el) el.classList.add('on');
   _menuRank();
   const tile=(on,img,t,sm)=>`<div class="mm-t" onclick="navPick();${on}"><div class="im"><img loading="lazy" src="${img}" alt=""></div><b>${_esc(t)}</b>${sm?`<small>${_esc(sm)}</small>`:''}</div>`;
-  if(kind==='cat'){
-    const cats=NAVSETS.cat.filter(c=>COLS[c[1]]);
-    p.innerHTML=`<div class="mm"><div class="mm-cats">${cats.map(c=>{const top=_byRank(_idsOf(c[1])).find(id=>_pimg(id));
-      return `<a data-k="${c[1]}" onmouseenter="mmCat('${c[1]}')" onclick="if(matchMedia('(hover:hover) and (min-width:900px)').matches){navPick();openCol('${c[1]}')}else mmCat('${c[1]}')"><img loading="lazy" src="${_pimg(top)||IMGS[COLS[c[1]].img]||''}" alt="">${_esc(COLS[c[1]].t||c[0])}<i>›</i></a>`}).join('')}</div>
-      <div class="mm-body"></div><a class="mm-feat"></a></div>`;
-    mmCat((cats.find(c=>_idsOf(c[1]).length)||cats[0])[1]);   // open on the first category that has products
+  if(kind==='cat'){   // 2026-11: every category at once (no hover switching) — photo, name, top sub-categories
+    const cats=catList();
+    p.innerHTML=`<div class="mm2"><div class="mm2-g">${cats.map(c=>`<div class="mm2-c"><span class="im" data-col="${c.k}"><img loading="lazy" src="${c.img}" alt=""></span>
+      <h4 data-col="${c.k}">${_esc(c.t)}</h4>${c.subs.slice(0,3).map(x=>`<a data-col="${c.k}" data-sub="${_esc(x.t)}">${_esc(x.t)}</a>`).join('')}<a class="all" data-col="${c.k}">View all ${c.n} →</a></div>`).join('')}</div></div>`;
   } else if(kind==='pkg'){
     p.innerHTML=`<div class="mm-grid g5">${PKGS.map((k,i)=>tile(`openPkg(${i})`,IMGS[k.img]||_pimg(k.items.find(id=>PRODS[id])),k.n,k.inc)).join('')}</div>`;
   } else {
@@ -4042,6 +4129,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         if(typeof fillDealTabs === 'function'){ const f = DTABS.findIndex(d => Object.keys(PRODS).some(i => PRODS[i].col === d[1])); if(f >= 0 && !Object.keys(PRODS).some(i => PRODS[i].col === DTABS[dtabOn][1])) dtabOn = f; fillDealTabs(); }
       }catch(e){ console.warn(e) }
       try{ liveHome(); }catch(e){ console.warn(e) }
+      try{ fillCatGrid(); _menuRank(); }catch(e){}
     }
     if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
       try{ renderPLP(lastCol); }catch(e){}
