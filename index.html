@@ -1374,6 +1374,21 @@ header{position:static!important}
   font-size:11.5px;font-weight:700;color:var(--muted);cursor:pointer}
 .rtabs button.on{background:var(--char);border-color:var(--char);color:#fff}
 .expcats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+.pdx{margin:48px 0 8px;padding-top:28px;border-top:1px solid var(--line,#E7DDCF)}.pdx h2{font-size:26px;margin:0 0 4px}.pdx-sub{color:#6A6258;margin:0 0 18px;font-size:14px}
+.expcats.big{grid-template-columns:repeat(6,1fr);gap:16px}.expcats.big .ec .im{aspect-ratio:4/3;border-radius:16px}.expcats.big .ec .im img{width:100%;height:100%;object-fit:cover;transition:transform .3s}.expcats.big .ec:hover .im img{transform:scale(1.05)}.expcats.big .ec span{font-size:14px;margin-top:8px;font-weight:600}
+@media(max-width:760px){.expcats.big{grid-template-columns:repeat(2,1fr);gap:10px}.expcats.big .ec span{font-size:12.5px}.pdx h2{font-size:21px}}
+/* 176: desktop photo grid + magnifier */
+.pdgrid{display:none}
+@media(min-width:900px){#pdp.pd-hasgrid .gal-main,#pdp.pd-hasgrid .thumbs{display:none!important}#pdp.pd-hasgrid .pdgrid{display:grid}
+ .pdgrid{grid-template-columns:1fr 1fr;gap:8px;border-radius:16px;overflow:hidden}.pdgrid .gi{position:relative;cursor:zoom-in;background:var(--sand-soft,#F3EEE6);overflow:hidden}
+ .pdgrid .gi img{width:100%;height:100%;object-fit:cover;display:block;aspect-ratio:1;transition:transform .35s}.pdgrid .gi:hover img{transform:scale(1.03)}
+ .pdgrid .gi:first-child{grid-column:1/-1}.pdgrid .gi:first-child img{aspect-ratio:16/11}.pdgrid.n2 .gi:nth-child(2){grid-column:1/-1}.pdgrid.n2 .gi:nth-child(2) img{aspect-ratio:16/11}.pdgrid.n4 .gi:last-child{grid-column:1/-1}.pdgrid.n4 .gi:last-child img{aspect-ratio:16/9}
+ .pdgrid .more{position:absolute;right:10px;bottom:10px;background:rgba(255,255,255,.95);border-radius:99px;padding:6px 12px;font-size:12px;font-weight:700;color:#2E2E2E}
+ #lbx{background:rgba(18,16,14,.9)}#lbx .lstage{inset:56px 80px 96px}#lbx img{cursor:none;border-radius:10px}
+ #lbx .lens{position:absolute;width:240px;height:240px;border-radius:50%;border:3px solid #fff;box-shadow:0 8px 28px rgba(0,0,0,.55);pointer-events:none;display:none;background-repeat:no-repeat;z-index:3}
+ #lbx .lthumbs{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:8px;z-index:2}#lbx .lthumbs img{width:72px;height:54px;object-fit:cover;border-radius:6px;opacity:.5;border:2px solid transparent;cursor:pointer;transform:none!important}#lbx .lthumbs img.on{opacity:1;border-color:#fff}
+ #lbx .lbar{bottom:72px;height:24px;font-size:13px}#lbx .lzb{display:none}
+}
 .expcats .ec{cursor:pointer;text-align:center}
 .expcats .ec .im{aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--sand-soft)}
 .expcats .ec span{display:block;font-size:10px;font-weight:600;margin-top:6px;line-height:1.3}
@@ -2231,8 +2246,6 @@ header{position:static!important}
         </ul></div></div>
       <div class="simhead">View similar items</div>
       <div class="simrow" id="simRow"></div>
-      <div class="simhead" style="margin-top:20px">Explore more in categories</div>
-      <div class="expcats" id="expCats"></div>
       <div class="bulkstrip" onclick="enqOpen('bulk')" style="margin-top:18px">
         <div class="ic">📦</div>
         <div><b>Need more than 10 of these?</b>
@@ -2249,6 +2262,7 @@ header{position:static!important}
     </div>
   </div>
   <div class="cmpsec" id="cmpSec"></div>
+  <section class="pdx" id="pdExp"><h2>Explore more categories</h2><p class="pdx-sub">Everything for your outdoor space</p><div class="expcats big" id="expCats"></div></section>
 </div></div>
 
 
@@ -2819,8 +2833,15 @@ function pdThumbs(id){
   window.PDG={id,list,i:0};
   const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
   box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdGo(${i})"><img src="${u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
-  pdGalUI();
+  pdGalUI(); pdGrid(x);
 }
+// 176: desktop — all photos in one grid, same size; a click opens the viewer over the page
+function pdGrid(x){ const pdp=document.getElementById('pdp'), g=window.PDG, col=document.querySelector('#pdp .pdp-grid > div:first-child'); if(!pdp||!g||!col) return;
+  let el=document.getElementById('pdGrid'); if(!el){ el=document.createElement('div'); el.id='pdGrid'; el.className='pdgrid'; const gm=col.querySelector('.gal-main'); col.insertBefore(el, gm||col.firstChild);
+    el.addEventListener('click',e=>{ const t=e.target.closest('[data-gi]'); if(!t) return; pdGo(+t.getAttribute('data-gi')); lbxOpen(); }); }
+  const n=g.list.length, show=g.list.slice(0,5); pdp.classList.toggle('pd-hasgrid', n>1);
+  el.className='pdgrid n'+show.length;
+  el.innerHTML=n>1?show.map((u,i)=>`<div class="gi" data-gi="${i}"><img src="${i?bigImg(u,900):u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="${i?'lazy':'eager'}">${i===show.length-1&&n>show.length?`<span class="more">+${n-show.length} more · view all</span>`:''}</div>`).join(''):''; }
 // 164: product photos — swipe, arrows, counter, tap for full screen with zoom
 function pdGo(i){ const g=window.PDG; if(!g||!g.list.length) return; g.i=(i+g.list.length)%g.list.length;
   const im=document.getElementById('pdImg'); im.src=g.list[g.i];
@@ -2846,11 +2867,14 @@ function lbxOpen(){ let b=document.getElementById('lbx');
     document.body.appendChild(b); lbxWire(b.querySelector('.lstage')); }
   b.classList.add('open'); document.body.classList.add('flt-open'); lbxShow();
   try{ history.pushState({v:'modal'},'',location.pathname+location.search); }catch(e){} }
-function lbxClose(){ const b=document.getElementById('lbx'); if(b&&b.classList.contains('open')){ b.classList.remove('open'); document.body.classList.remove('flt-open'); } }
+function lbxClose(){ const b=document.getElementById('lbx'); if(b&&b.classList.contains('open')){ b.classList.remove('open'); document.body.classList.remove('flt-open'); } if(window.PDG0){ window.PDG=window.PDG0; window.PDG0=null; } }
+window.lbxOne=function(url){ if(!window.PDG0) window.PDG0=window.PDG; window.PDG={id:null,list:[url],i:0}; lbxOpen(); };   // 176: one photo (a part) in the viewer
 function lbxShow(){ const b=document.getElementById('lbx'), g=window.PDG; if(!b||!g) return; LZ={s:1,x:0,y:0};
-  const im=b.querySelector('img'); im.src=bigImg(g.list[g.i]); lbxApply(); b.querySelector('.lc').textContent=(g.i+1)+' / '+g.list.length;
+  const im=b.querySelector('.lstage img'); im.src=bigImg(g.list[g.i]); lbxApply(); b.querySelector('.lc').textContent=(g.i+1)+' / '+g.list.length+(matchMedia('(min-width:900px) and (hover:hover)').matches?' · move the mouse to zoom':'');
+  let th=b.querySelector('.lthumbs'); if(!th){ th=document.createElement('div'); th.className='lthumbs'; b.appendChild(th); th.addEventListener('click',e=>{ const t=e.target.closest('[data-li]'); if(t) pdGo(+t.getAttribute('data-li')); }); }
+  th.innerHTML=g.list.length>1?g.list.map((u,i)=>`<img src="${bigImg(u,300)}" data-li="${i}" class="${i===g.i?'on':''}" alt="">`).join(''):'';
   b.classList.toggle('one', g.list.length<2); }
-function lbxApply(){ const im=document.querySelector('#lbx img'); if(im) im.style.transform=`translate(${LZ.x}px,${LZ.y}px) scale(${LZ.s})`; const z=document.querySelector('#lbx .lzb'); if(z) z.textContent=LZ.s>1?'Zoom out':'Zoom in'; }
+function lbxApply(){ const im=document.querySelector('#lbx .lstage img'); if(im) im.style.transform=`translate(${LZ.x}px,${LZ.y}px) scale(${LZ.s})`; const z=document.querySelector('#lbx .lzb'); if(z) z.textContent=LZ.s>1?'Zoom out':'Zoom in'; }
 function lbxZoom(cx,cy){ if(LZ.s>1){ LZ={s:1,x:0,y:0}; } else { const st=document.querySelector('#lbx .lstage').getBoundingClientRect(); const s=2.5;
   const px=(cx==null?st.width/2:cx-st.left)-st.width/2, py=(cy==null?st.height/2:cy-st.top)-st.height/2; LZ={s, x:-px*(s-1), y:-py*(s-1)}; } lbxApply(); }
 function lbxWire(st){ let p=null, pinch=null, lastTap=0, sw=null;
@@ -2862,10 +2886,17 @@ function lbxWire(st){ let p=null, pinch=null, lastTap=0, sw=null;
     if(p&&LZ.s>1){ const t=e.touches[0]; LZ.x=p.lx+t.clientX-p.x; LZ.y=p.ly+t.clientY-p.y; clamp(); lbxApply(); e.preventDefault(); } },{passive:false});
   st.addEventListener('touchend',e=>{ if(pinch&&e.touches.length<2){ pinch=null; if(LZ.s<1.05){LZ={s:1,x:0,y:0};lbxApply();} return; }
     if(sw&&LZ.s===1){ const t=e.changedTouches[0], dx=t.clientX-sw.x, dy=t.clientY-sw.y; if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)) pdGo(PDG.i+(dx<0?1:-1)); else if(dy>90&&Math.abs(dy)>Math.abs(dx)) history.back(); } sw=null; p=null; });
-  st.addEventListener('dblclick',e=>lbxZoom(e.clientX,e.clientY));
+  st.addEventListener('dblclick',e=>{ if(!lensOn()) lbxZoom(e.clientX,e.clientY); });
+  const lensOn=()=>matchMedia('(min-width:900px) and (hover:hover)').matches;
+  st.addEventListener('mousemove',e=>{ if(!lensOn()) return; const im=st.querySelector('img'); let ln=st.querySelector('.lens'); if(!ln){ ln=document.createElement('div'); ln.className='lens'; st.appendChild(ln); }
+    const r=im.getBoundingClientRect(), sr=st.getBoundingClientRect(), x=e.clientX-r.left, y=e.clientY-r.top, Z=2.6, R=120;
+    if(x<0||y<0||x>r.width||y>r.height){ ln.style.display='none'; return; }
+    ln.style.display='block'; ln.style.left=(e.clientX-sr.left-R)+'px'; ln.style.top=(e.clientY-sr.top-R)+'px'; ln.style.backgroundImage=`url("${im.src}")`;
+    ln.style.backgroundSize=(r.width*Z)+'px '+(r.height*Z)+'px'; ln.style.backgroundPosition=(-(x*Z-R))+'px '+(-(y*Z-R))+'px'; });
+  st.addEventListener('mouseleave',()=>{ const ln=st.querySelector('.lens'); if(ln) ln.style.display='none'; });
   st.addEventListener('mousemove',e=>{ if(LZ.s>1&&!('ontouchstart' in window)){ const r=st.getBoundingClientRect(), mx=r.width*(LZ.s-1)/2, my=r.height*(LZ.s-1)/2;
     LZ.x=mx-(e.clientX-r.left)/r.width*2*mx; LZ.y=my-(e.clientY-r.top)/r.height*2*my; lbxApply(); } });
-  st.addEventListener('click',e=>{ if(!('ontouchstart' in window)&&e.detail===1) lbxZoom(e.clientX,e.clientY); });
+  st.addEventListener('click',e=>{ if(!('ontouchstart' in window)&&e.detail===1&&!lensOn()) lbxZoom(e.clientX,e.clientY); });
   document.addEventListener('keydown',e=>{ const b=document.getElementById('lbx'); if(!b||!b.classList.contains('open')) return; if(e.key==='Escape') history.back(); if(e.key==='ArrowRight') pdGo(PDG.i+1); if(e.key==='ArrowLeft') pdGo(PDG.i-1); }); }
 function openProduct(id){
   if(PRODS[id]&&PRODS[id].bun) return openBundle(id);   // 127
@@ -4051,7 +4082,7 @@ function fillPDPv2(x,d,sku){
   const mf=document.getElementById('pdMfr');
   if(mf) mf.innerHTML=`Made in India by ${x.br?_esc(x.br)+', a verified outrr seller,':'a verified outrr seller,'} direct from their workshop. GST invoice issued on every order.`;
   const ec=document.getElementById('expCats');
-  if(ec) ec.innerHTML=ARCH.slice(0,8).map(a=>`<div class="ec" onclick="openCol('${a[1]}')">
+  if(ec) ec.innerHTML=ARCH.slice(0,12).map(a=>`<div class="ec" onclick="openCol('${a[1]}')">
     <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');
 }
 /* ===== outrr dynamic loader (Supabase) — fill url+anon to go dynamic; empty = embedded fallback ===== */
