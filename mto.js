@@ -723,7 +723,8 @@
   function mtoInit(id) {
     var x = PRODS[id]; if (!x || !x.cz) return;
     var m = x.cz;
-    S = { id: id, img: 0, o: { n: (m.n && num(m.n.min)) || '', l: '', w: '', h: arr(m.h && m.h.options)[0] || '', size: '', material: (arr(m.materials)[0] || {}).name || '', colour: '',
+    S = { id: id, img: 0, o: { n: (m.n && num(m.n.min)) || '', l: '', w: '', h: arr(m.h && m.h.options)[0] || '', size: m.unit === 'fixed' && arr(m.sizes).length === 1 ? m.sizes[0].label : '', material: (arr(m.materials)[0] || {}).name || '', colour: (arr((arr(m.materials)[0] || {}).colours)[0] || {}).name || '',   // 175: one size / the photo's finish preselected
+     
       addons: arr(m.addons).filter(function (a) { return a.on; }).map(function (a) { return a.name; }), install: !!(m.install && m.install.required), pin: lastPin(),
       groups: arr(m.groups).reduce(function (g, x) { var f = arr(x.options).filter(function (y) { return String(y.name || '').trim(); })[0]; if (f) g[x.name] = f.name; return g; }, {}),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
@@ -975,9 +976,9 @@
       if (hOpts.length) f.push(sel('data-k="h"', hOpts.map(function (h) { return [h, h + ' ft']; }), o.h, 'Height'));
       else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>');
     }
-    if (mats.length > 1) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, 'Finish'));
+    if (mats.length > 1) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, esc((m.labels && m.labels.material) || 'Finish')));
     var cols = arr(mat && mat.colours);
-    if (cols.length) f.push(sel('data-pick="colour"', [].concat(cols.map(function (c) { return [c.name, c.name + (+c.extra ? ' (+' + rs(c.extra) + ' / ' + uw + ')' : '')]; })), o.colour, 'Colour'));
+    if (cols.length) f.push(sel('data-pick="colour"', [].concat(cols.map(function (c) { return [c.name, c.name + (+c.extra ? ' (+' + rs(c.extra) + ' / ' + uw + ')' : '')]; })), o.colour, esc((m.labels && m.labels.colour) || 'Colour')));
     arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }).forEach(function (g) {
       f.push(sel('data-grp="' + esc(g.name) + '"', arr(g.options).filter(function (y) { return y.name; }).map(function (y) {
         var pr = [+y.fixed ? (+y.fixed > 0 ? '+' : '−') + rs(Math.abs(y.fixed)) : '', +y.rate ? '+' + rs(y.rate) + ' / ' + uw : '', +y.rate_w ? '+' + rs(y.rate_w) + ' / ft width' : ''].filter(Boolean).join(' ');
@@ -985,7 +986,7 @@
     });
     var adds = arr(m.addons).filter(function (a) { return a.name; });
     var hint = u === 'area' ? 'Length × width of the floor it covers, in feet.' : u === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : u === 'face' ? 'Width × height of the wall or opening, in feet.' : u === 'length' ? 'Total running length, in feet.' : '';
-    el.innerHTML = '<h3 class="mto-ph">Choose your size &amp; options</h3>' + (hint ? '<p class="mto-hint">' + hint + '</p>' : '') + '<div class="mto-pks">' + f.join('') + '</div>' +
+    el.innerHTML = '<h3 class="mto-ph">' + (m.labels ? 'Choose your options' : 'Choose your size &amp; options') + '</h3>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + (hint ? '<p class="mto-hint">' + hint + '</p>' : '') + '<div class="mto-pks">' + f.join('') + '</div>' +
       (adds.length ? '<div class="mto-adds"><span class="mto-al">Add-ons</span>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span><span class="r">+' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span></label>'; }).join('') + '</div>' : '') +
       pdpTail(x, m, o) + '<div class="mto-sum lt" id="mtoSum"></div>';
     paint();
@@ -1027,7 +1028,7 @@
         '</div><p style="font-size:13px;color:#6A6258;margin:8px 0 0">Measure the space in feet. ' + (u === 'area' ? 'Length × width is the area it covers.' : u === 'face' && m.panels ? 'Total length of the wall or parapet to cover. It is made in standard ' + panelSizes(m).join(' / ') + ' ft panels, rounded up to the next foot.' : u === 'face' ? 'Width × height of the opening or wall.' : 'Total running length.') + '</p>';
     var matHtml = u === 'cabin' || !mat ? '' : mats.length > 1 ? mats.map(function (y) { return '<label class="mto-opt' + (y === mat ? ' on' : '') + '"><input type="radio" name="mtoMat" data-mat="' + esc(y.name) + '"' + (y === mat ? ' checked' : '') + '><span><b>' + esc(y.name) + '</b><br><span style="color:#6A6258">' + (u === 'fixed' ? (y.prices && Object.keys(y.prices).length ? 'From ' + rs(Math.min.apply(null, arr(m.sizes).map(function (z) { return fixedAt(m, y, z); }))) : +y.rate ? '+ ' + rs(y.rate) : 'Standard') : m.panels ? 'Panels, frame and posts' : rs(y.rate) + ' / ' + uw) + '</span></span></label>'; }).join('') : '<p style="margin:0 0 8px;font-size:14px"><b>' + esc(mat.name) + '</b></p>';
     var cols = arr(mat && mat.colours);
-    var colHtml = cols.length ? '<p style="font-size:13px;color:#4A4640;margin:6px 0">Colour</p><div class="mto-sw">' + cols.map(function (c) { return '<button type="button" data-col="' + esc(c.name) + '" class="' + (o.colour === c.name ? 'on' : '') + '">' + esc(c.name) + (+c.extra ? ' (+' + rs(c.extra) + '/' + uw + ')' : '') + '</button>'; }).join('') + '</div>' : '';
+    var colHtml = cols.length ? '<p style="font-size:13px;color:#4A4640;margin:6px 0">' + esc((m.labels && m.labels.colour) || 'Colour') + '</p><div class="mto-sw">' + cols.map(function (c) { return '<button type="button" data-col="' + esc(c.name) + '" class="' + (o.colour === c.name ? 'on' : '') + '">' + esc(c.name) + (+c.extra ? ' (+' + rs(c.extra) + '/' + uw + ')' : '') + '</button>'; }).join('') + '</div>' : '';
     var adds = arr(m.addons).filter(function (a) { return a.name; });
     var addHtml = adds.length ? '<div class="mto-box"><h3>3 · Add-ons</h3>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span><span class="r">+ ' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span></label>'; }).join('') + '</div>' : '';
     var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; });
@@ -1060,7 +1061,7 @@
       (x.oo === false ? '' : '<p class="mto-from">From <b>' + rs(x.p) + '</b>' + (u === 'cabin' ? ' · this preset as shown' : u !== 'fixed' ? ' · ' + rs(Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; }))) + ' / ' + uw : '') + ' · incl. GST</p>') +
       (u === 'cabin' ? '<div class="mto-box"><h3>1 · Customise your cabin</h3>' + size + '</div>' + instHtml :
       '<div class="mto-box"><h3>1 · Your size</h3>' + size + '</div>' +
-      '<div class="mto-box"><h3>2 · Material &amp; finish</h3>' + matHtml + colHtml + '</div>' + addHtml + instHtml) +
+      '<div class="mto-box"><h3>2 · ' + (m.labels ? 'Frame &amp; finish' : 'Material &amp; finish') + '</h3>' + (m.photo_note ? '<p style="font-size:13px;color:#6A6258;margin:0 0 8px">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + matHtml + colHtml + '</div>' + addHtml + instHtml) +
       '<div class="mto-sum" id="mtoSum"></div></section>' +
       '<section class="mto-steps" aria-label="How it is made"><h2>How your order is made</h2><ol>' +
       ['Order & ' + PCT + '%|Size and options locked', u === 'cabin' ? 'Final drawings|Sent to you for approval — making starts only after you approve' : 'Drawing|If you chose it: approve online', 'Production|' + (daysTxt(m.make_days) || 'Made for you'), 'Balance|Pay the rest' + (inst ? ' + installation' : '') + ' before dispatch', 'Dispatch|Tracking shared', 'Installation|If added: OTP on completion']
