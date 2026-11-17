@@ -3587,7 +3587,7 @@ function catList(){
   const g={};
   ids.forEach(id=>{const x=PRODS[id],k=x.col; if(!k||!COLS[k]||/^(sp|bg|md)-|^__/.test(k)) return;
     const c=g[k]||(g[k]={k,t:COLS[k].t,n:0,mto:0,subs:{},ids:[]}); c.n++; if(x.cz) c.mto++; c.ids.push(id);
-    const sb=subOf(id); if(sb&&sb!=='More') c.subs[sb]=(c.subs[sb]||0)+1;});
+    const sb=subOf(id); if(sb&&sb!=='More'&&sb!=='All') c.subs[sb]=(c.subs[sb]||0)+1;});
   const l=Object.values(g).map(c=>{const pin=CAT_PIC[c.k]; const top=(pin&&PRODS[pin]&&_pimg(pin)&&pin)||_byRank(c.ids).find(id=>_pimg(id));
     const ms=MENU.subs||{};
     return {k:c.k,t:c.t,n:c.n,mto:c.mto>c.n/2,img:COLS[c.k].mimg||_pimg(top)||IMGS[COLS[c.k].img]||'',
