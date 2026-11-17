@@ -6,6 +6,7 @@
 <!-- End Meta Pixel -->
 <script>/* product photos from Supabase storage: served resized (900 px, ~100–150 KB) instead of the 1600–1920 px original */
 window.slimImg=function(u,w){u=String(u||'');var m=u.match(/^(https:\/\/[a-z0-9]+\.supabase\.co)\/storage\/v1\/object\/public\/([^?]+)(?:\?(.*))?$/);if(!m||!/\.(jpe?g|png|webp)$/i.test(m[2]))return u;return m[1]+'/storage/v1/render/image/public/'+m[2]+'?width='+(w||900)+'&resize=contain&quality=75'+(m[3]?'&'+m[3]:'');};
+window.bigImg=function(u,w){u=String(u||'');var o=u.replace('/render/image/public/','/object/public/').replace(/([?&])width=\d+&(?:resize=contain&)?quality=\d+&?/,'$1').replace(/[?&]$/,'');return w?slimImg(o,w):o};   // product page 1600 px, full screen = original (sharp on retina and when zoomed)
 /* if a resized photo fails (busy resizer), fall back to the original once */
 document.addEventListener('error',function(e){var t=e.target;if(t&&t.tagName==='IMG'&&/\/storage\/v1\/render\/image\/public\//.test(t.src)&&!t.dataset.orig){t.dataset.orig=1;t.src=t.src.replace('/render/image/public/','/object/public/').replace(/([?&])width=\d+&(?:resize=contain&)?quality=\d+&?/,'$1').replace(/[?&]$/,'');}},true);</script>
 <script>/* brand change (outdoo → outrr): keep this browser's cart, address and sign-in */
@@ -2758,7 +2759,7 @@ let curPid=null;
 // product page gallery: main photo + the product's other photos (GAL, from product_images); one thumb when there are none
 var GAL = window.GAL || {}; window.GAL = GAL;
 function pdThumbs(id){
-  const x=PRODS[id]; if(!x) return; const list=[IMGS[x.img], ...(GAL[id]||[])].filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
+  const x=PRODS[id]; if(!x) return; const list=[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])].filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
   window.PDG={id,list,i:0};
   const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
   box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdGo(${i})"><img src="${u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
@@ -2791,7 +2792,7 @@ function lbxOpen(){ let b=document.getElementById('lbx');
   try{ history.pushState({v:'modal'},'',location.pathname+location.search); }catch(e){} }
 function lbxClose(){ const b=document.getElementById('lbx'); if(b&&b.classList.contains('open')){ b.classList.remove('open'); document.body.classList.remove('flt-open'); } }
 function lbxShow(){ const b=document.getElementById('lbx'), g=window.PDG; if(!b||!g) return; LZ={s:1,x:0,y:0};
-  const im=b.querySelector('img'); im.src=g.list[g.i]; lbxApply(); b.querySelector('.lc').textContent=(g.i+1)+' / '+g.list.length;
+  const im=b.querySelector('img'); im.src=bigImg(g.list[g.i]); lbxApply(); b.querySelector('.lc').textContent=(g.i+1)+' / '+g.list.length;
   b.classList.toggle('one', g.list.length<2); }
 function lbxApply(){ const im=document.querySelector('#lbx img'); if(im) im.style.transform=`translate(${LZ.x}px,${LZ.y}px) scale(${LZ.s})`; const z=document.querySelector('#lbx .lzb'); if(z) z.textContent=LZ.s>1?'Zoom out':'Zoom in'; }
 function lbxZoom(cx,cy){ if(LZ.s>1){ LZ={s:1,x:0,y:0}; } else { const st=document.querySelector('#lbx .lstage').getBoundingClientRect(); const s=2.5;
@@ -2825,7 +2826,7 @@ function openProduct(id){
   document.getElementById('pdPrice').innerHTML = soon(x) ? soonH() : inr(x.p) + (off?`<span class="mrplab">MRP</span><span class="mrp">${inr(x.m)}</span><span class="off">${off}% OFF</span>`:'');
   document.getElementById('pdShip').textContent=x.ship; document.getElementById('pdMto').hidden=!x.mto;
   document.getElementById('pdDesc').textContent=x.ds||COLDESC[x.col]||'';   // the product's own description first
-  document.getElementById('pdImg').src=IMGS[x.img]; document.getElementById('pdImg').alt=x.alt||x.n;
+  document.getElementById('pdImg').src=bigImg(IMGS[x.img],1600); document.getElementById('pdImg').alt=x.alt||x.n;
   try{ document.title=x.n+' | outrr'; const md=document.querySelector('meta[name=description]'); if(md&&x.md) md.setAttribute('content',x.md); }catch(e){}
   pdThumbs(id);
   document.getElementById('crumbPath').textContent='Home / '+c.t;
