@@ -81,6 +81,7 @@
       utm_source: attr.utm_source || null, utm_medium: attr.utm_medium || null, utm_campaign: attr.utm_campaign || null, click_id: attr.click_id || null,
       referrer: referrer, device: device }
     try {
+      if (kind === 'view_item' && p.sku && window.mtoCrm && localStorage.getItem('outrr_session')) window.mtoCrm('view_item', { sku: p.sku })   // 172: on the customer's CRM lead (if any)
       fetch(S.url + '/rest/v1/rpc/track_event', { method: 'POST', keepalive: true, headers: { apikey: S.anon, Authorization: 'Bearer ' + S.anon, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: p }) }).catch(function () {})
     } catch (e) {}
   }

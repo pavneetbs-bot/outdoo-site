@@ -70,7 +70,7 @@
     view(`<div class="ac-sign">
       <div class="ac-card">
         <h2>${sent ? 'Enter the code' : (pendingWhy || 'Sign in or create your account')}</h2>
-        <p class="mut">${sent ? `We sent a 6-digit code to <b>${esc(email)}</b>. It works for 10 minutes.` : 'Track orders, cancel, return, save addresses and get GST invoices. No password needed: we email you a code.'}</p>
+        <p class="mut">${sent ? `We sent a 6-digit code to <b>${esc(email)}</b>. It works for 10 minutes.` : pendingWhy ? 'No password needed: we email you a 6-digit code. New here? The same code creates your account.' : 'Track orders, cancel, return, save addresses and get GST invoices. No password needed: we email you a code.'}</p>
         ${sent ? `<div class="fld"><label>6-DIGIT CODE</label><input id="acCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" class="ac-code"></div>
           <button class="btn ac-wide" id="acGo" onclick="acVerify('${esc(email)}')">Sign in</button>
           <div class="ac-row"><a onclick="acSend('${esc(email)}')">Send a new code</a><a onclick="acSignIn()">Use another email</a></div>`
@@ -79,7 +79,7 @@
         ${err ? `<div class="ac-err">${esc(err)}</div>` : ''}
         <p class="mut sm">Orders you placed earlier with this email show up in your account.</p>
       </div>
-      <div class="ac-card ac-side"><h3>Track without signing in</h3><p class="mut">Use the order number and mobile number from your order.</p><button class="btn ghost ac-wide" onclick="acTrack()">Track an order</button></div>
+      ${pendingWhy ? '' : `<div class="ac-card ac-side"><h3>Track without signing in</h3><p class="mut">Use the order number and mobile number from your order.</p><button class="btn ghost ac-wide" onclick="acTrack()">Track an order</button></div>`}
     </div>`)
     setTimeout(() => { const i = $(sent ? 'acCode' : 'acEmail'); if (i) { i.focus(); i.onkeydown = e => { if (e.key === 'Enter') $('acGo').click() } } }, 50)
   }

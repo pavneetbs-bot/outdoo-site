@@ -283,6 +283,10 @@
     '.mto-sw{display:flex;gap:8px;flex-wrap:wrap}.mto-sw button{border:1px solid #CFC3B1;background:#fff;border-radius:999px;padding:8px 14px;min-height:40px;font:inherit;font-size:13px;cursor:pointer}.mto-sw button.on{border:2px solid #C26445;font-weight:600}' +
     '.mto-chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:6px 0}.mto-chk input{margin-top:3px}.mto-chk span.r{margin-left:auto;white-space:nowrap;color:#6A6258}' +
     '.mto-warn{font-size:13px;background:#F3E3D9;color:#7E3A24;border-radius:10px;padding:10px 12px;margin-top:8px}' +
+    '.mto-lock{background:#FBF6EE;border:1px solid #E2D6C4;border-radius:16px;padding:18px}.mto-lock .mto-go{margin-top:10px}' +
+    '.mto-prof{position:fixed;inset:0;background:rgba(20,18,15,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}.mto-prof.open{display:flex}' +
+    '.mto-pbox{background:#fff;border-radius:18px;padding:22px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}.mto-pbox h3{margin:0 0 4px;font-size:20px}.mto-pbox p{margin:0 0 12px;color:#6A6258;font-size:14px}' +
+    '.mto-pbox label{display:block;font-size:12.5px;font-weight:600;color:#4a453e;margin:8px 0}.mto-pbox input{display:block;width:100%;margin-top:4px;padding:11px 12px;border:1px solid #D9CEBD;border-radius:10px;font:inherit;font-size:15px}.mto-pbox .mto-go{margin-top:12px}' +
     '.mto-sum{background:#2E2E2E;color:#FBF6EE;border-radius:16px;padding:16px}.mto-sum .rw{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:3px 0}.mto-sum .rw span:first-child{color:#CFC8BD}' +
     '.mto-sum .tt{border-top:1px solid #4A4946;margin-top:6px;padding-top:8px;font-weight:700}.mto-sum .tt span:first-child{color:#FBF6EE}' +
     '.mto-pay{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.mto-pay div{background:#3B3A38;border-radius:10px;padding:10px;font-size:12px;color:#CFC8BD}.mto-pay b{display:block;font-size:18px;color:#FBF6EE;margin-top:2px}' +
@@ -719,7 +723,7 @@
     window.buyNow = function () { if (S && S.pdp && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(); return _bn.apply(this, arguments); };
     window.addCart = function (id) { if (S && S.pdp && (!id || id === S.id) && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(); return _ac.apply(this, arguments); };
   }
-  function pdpOrder() { var c = document.getElementById('mtoCfg'), q = price(PRODS[S.id].cz, S.o, PCT); if (!q.ok || PRODS[S.id].oo === false) { if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return toast(PRODS[S.id].oo === false ? 'Coming soon — orders open soon' : q.error); } order(); }
+  function pdpOrder() { if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); var c = document.getElementById('mtoCfg'), q = price(PRODS[S.id].cz, S.o, PCT); if (!q.ok || PRODS[S.id].oo === false) { if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return toast(PRODS[S.id].oo === false ? 'Coming soon — orders open soon' : q.error); } order(); }
   // 160: the cabin builder on the product page — the 3D model takes the photo's place, a sticky bar carries the price and Next
   var CBV = [['3d', '3D'], ['cut', 'Roof off'], ['360', '360°'], ['inside', 'Inside'], ['top', 'Top'], ['plan', 'Plan'], ['front', 'Sides'], ['photos', 'Photos']];
   var FURN = [['lounge', 'Lounge'], ['office', 'Office'], ['cafe', 'Café'], ['stay', 'Stay'], ['none', 'No furniture']];
@@ -857,6 +861,7 @@
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     var hOpts = arr(m.h && m.h.options), f = [];
     if (u === 'cabin') { el.innerHTML = cabinUI(m, o); cbStage(); cbSheet(); paint(); return mount3d(); }
+    if (!mtoOk()) { el.innerHTML = lockHTML(x); ctaPaint(null); return; }   // 172
     if (u === 'seat') { var sv = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
     else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + ' — ' + rs(fixedAt(m, mat, z))]; })), o.size, 'Size'));
     else {
@@ -894,6 +899,7 @@
   function ctaPaint(q) {   // the page's own Buy button (and the sticky bar) follow the configuration
     var x = PRODS[S.id], closed = x.oo === false;
     document.querySelectorAll('button[onclick="buyNow()"]').forEach(function (b) { b.style.display = ''; var o = S.o, needPin = q && q.ok && q.delivery && q.delivery.fee == null, noInst = q && q.ok && o.install && q.install && !q.install.available, needOk = !o.drawing && !o.size_ok;
+      if (!mtoOk() && x.cz.unit !== 'cabin') { b.disabled = false; b.textContent = 'Check price'; return; }   // 172
       b.disabled = closed; b.textContent = closed ? 'Coming soon' : !(q && q.ok) ? 'Choose your size' : needPin || noInst ? 'Enter your pincode' : needOk ? 'Confirm your size' : 'Order now · pay ' + rs(q.pay_now); });
   }
 
@@ -971,6 +977,8 @@
 
   function paint() {
     var x = PRODS[S.id], m = x.cz, o = S.o; o.zone = zoneOf(m.ships_from, o.pin); var q = price(m, o, PCT), el = document.getElementById('mtoSum'), it = document.getElementById('mtoInstTxt');
+    if (!mtoOk() && m.unit !== 'cabin') { if (el) el.innerHTML = S.pdp ? '' : lockHTML(x); if (S.pdp) ctaPaint(null); return; }   // 172
+    if (q.ok && m.unit !== 'cabin') logPrice(S.id, o, q);
     if (S.pdp) { if (m.unit === 'cabin' && S.wz) cbBar(q); else ctaPaint(q); }
     if (it) it.textContent = !/^\d{6}$/.test(o.pin) ? 'Enter your pincode to see the installation charge' : q.ok && q.install ? (q.install.available ? q.install.city + ': ' + rs(q.install.fee) : 'Not available at this pincode yet: delivery only, with a fixing guide') : '';
     if (!el) return;
@@ -1046,7 +1054,7 @@
     if (t.hasAttribute('data-col')) { var c = t.getAttribute('data-col'); S.o.colour = S.o.colour === c ? '' : c; return draw(); }
     if (t.hasAttribute('data-img')) { S.img = +t.getAttribute('data-img'); return draw(); }
     if (t.hasAttribute('data-open')) { return window.mtoOpen(t.getAttribute('data-open')); }
-    var a = t.getAttribute('data-act');
+    var a = t.getAttribute('data-act'); if (a === 'unlock') return window.mtoUnlock(S.id);   // 172
     if (a === 'close') { if (history.state && history.state.v === 'modal') return history.back(); return window.mtoClose(); }
     if (a === 'bulk') { window.mtoClose(); try { if (window.openBulk) return openBulk(S.id); } catch (er) {} return toast('Write to us on WhatsApp for a bulk quote'); }
     if (a === 'order') return order();
@@ -1120,4 +1128,58 @@
       else CART = keep;
     }
   };
+
+  // ------------------------------------------------------------ 172: Made to Order prices open after sign-in (email code + name, mobile, city).
+  // The first price check makes the customer's CRM lead; every later price check / product view / login lands on it.
+  var OKK = 'outrr_mto_ok';
+  function mtoOk() { try { return !!(window.acToken && localStorage.getItem('outrr_session') && sessionStorage.getItem(OKK) === '1'); } catch (e) { return false; } }
+  window.mtoOk = mtoOk;
+  async function crm(kind, d) {
+    try { var t = window.acToken && await window.acToken(); if (!t) return null; var A = window.OUTRR_SUPA || {}, vid = null; try { vid = localStorage.getItem('outrr_vid'); } catch (e) {}
+      var r = await fetch(A.url + '/rest/v1/rpc/crm_touch', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: Object.assign({ kind: kind, vid: vid }, d || {}) }) });
+      return r.ok ? await r.json() : null; } catch (e) { return null; }
+  }
+  window.mtoCrm = crm;
+  async function profileOk() {
+    var t = window.acToken && await window.acToken(); if (!t) return false; var A = window.OUTRR_SUPA || {};
+    try { var r = await fetch(A.url + '/rest/v1/rpc/customer_profile_ok', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: '{}' }); return r.ok && (await r.json()) === true; } catch (e) { return false; }
+  }
+  function unlocked(id) { try { sessionStorage.setItem(OKK, '1'); } catch (e) {} crm('login'); if (typeof openProduct === 'function') openProduct(id); else if (S && S.id) draw(); }
+  window.mtoUnlock = async function (id) {
+    id = id || (S && S.id); if (!window.acRequire) return toast('Please try again in a moment');
+    window.acRequire(async function () { if (await profileOk()) return unlocked(id); profileForm(id); }, 'Sign in to see the price for your size');
+  };
+  function profileForm(id, err) {
+    var d = document.getElementById('mtoProf'); if (!d) { d = document.createElement('div'); d.id = 'mtoProf'; d.className = 'mto-prof'; document.body.appendChild(d); }
+    var v = function (k) { var i = document.getElementById('mp-' + k); return i ? i.value : ''; };
+    d.innerHTML = '<div class="mto-pbox" role="dialog" aria-modal="true" aria-label="Your details"><h3>One last step</h3><p>So our design team can help you with this order.</p>' +
+      '<label>Your name<input id="mp-n" autocomplete="name" value="' + esc(v('n')) + '"></label><label>Mobile number<input id="mp-p" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10-digit mobile" value="' + esc(v('p')) + '"></label>' +
+      '<label>City<input id="mp-c" autocomplete="address-level2" placeholder="e.g. Gurugram" value="' + esc(v('c')) + '"></label>' + (err ? '<div class="mto-err">' + esc(err) + '</div>' : '') +
+      '<button type="button" class="mto-go" id="mp-go">See the price</button></div>';
+    d.classList.add('open');
+    document.getElementById('mp-go').onclick = async function () {
+      var n = v('n').trim(), ph = v('p').replace(/\D/g, '').slice(-10), c = v('c').trim();
+      if (n.length < 2) return profileForm(id, 'Enter your name'); if (!/^[6-9]\d{9}$/.test(ph)) return profileForm(id, 'Enter a valid 10-digit mobile number'); if (c.length < 2) return profileForm(id, 'Enter your city');
+      this.disabled = true; this.textContent = 'Saving…';
+      try { var t = await window.acToken(), A = window.OUTRR_SUPA || {};
+        var r = await fetch(A.url + '/rest/v1/rpc/customer_save_profile', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: { name: n, phone: ph, city: c } }) });
+        if (!r.ok) { var j = await r.json().catch(function () { return {}; }); return profileForm(id, j.message || 'Something went wrong'); }
+      } catch (e) { return profileForm(id, 'Something went wrong — please try again'); }
+      d.classList.remove('open'); unlocked(id);
+    };
+  }
+  function lockHTML(x) {
+    return '<div class="mto-lock"><h3 class="mto-ph">Price for your size</h3><p class="mto-hint">Every ' + esc(x.n) + ' is made to your size' + (x.cz && x.cz.install && x.cz.install.offered ? ' and installed by our team' : '') +
+      '. Sign in with your email to see the price for your size, finish and options — it takes 30 seconds.</p><button type="button" class="mto-go" data-act="unlock">Check price</button></div>';
+  }
+  var sent = {}, sentT = null;
+  function logPrice(id, o, q) {   // one price check per product per configuration, after the customer stops changing it
+    var key = id + '|' + JSON.stringify([o.l, o.w, o.h, o.n, o.size, o.material, o.colour, o.groups, o.addons, o.install]);
+    if (sent[key]) return; clearTimeout(sentT);
+    sentT = setTimeout(function () { sent[key] = 1; crm('price_check', { sku: id, price: Math.round(q.total || 0), options: { l: o.l, w: o.w, h: o.h, n: o.n, size: o.size, finish: o.material, colour: o.colour, groups: o.groups, addons: o.addons, install: !!o.install, pin: o.pin } })
+      .then(function (r) { if (r && r.need_profile) { try { sessionStorage.removeItem(OKK); } catch (e) {} profileForm(id); } }); }, 2500);
+  }
+  // signed in earlier in this browser: check once whether the profile is complete, so prices open without asking again
+  (async function () { try { if (sessionStorage.getItem(OKK) !== '1' && localStorage.getItem('outrr_session')) { var w = 0; while (!window.acToken && w++ < 40) await new Promise(function (r) { setTimeout(r, 100); }); if (await profileOk()) { sessionStorage.setItem(OKK, '1'); if (S && S.pdp && S.id) draw(); } } } catch (e) {} })();
+  (async function () { try { if (!sessionStorage.getItem('outrr_login_logged') && localStorage.getItem('outrr_session')) { var w = 0; while (!window.acToken && w++ < 40) await new Promise(function (r) { setTimeout(r, 100); }); sessionStorage.setItem('outrr_login_logged', '1'); crm('login'); } } catch (e) {} })();
 })();

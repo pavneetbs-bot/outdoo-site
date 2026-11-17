@@ -2749,7 +2749,7 @@ function renderPLP(){
       <div class="im"><img src="${IMGS[x.img]}" alt=""></div>
       <div class="bd"><div class="nm">${vName(id)}</div>
         <div class="rate"><span class="st">${x.r} ★</span>${x.c}</div>
-        <div>${soon(x)?soonH():`<span class="pr">${x.cz?`<span class="vfrom">From</span> ${inr(x.p)}`:vFrom(id)!=null?`<span class="vfrom">From</span> ${inr(vFrom(id))}`:inr(x.p)}</span>${!x.cz&&x.m>x.p&&vFrom(id)==null?`<span class="mrp">${inr(x.m)}</span>`:''}`}</div>
+        <div>${soon(x)?soonH():`<span class="pr">${x.cz?(window.mtoOk&&!mtoOk()?`<span class="vfrom">Check price</span>`:`<span class="vfrom">From</span> ${inr(x.p)}`):vFrom(id)!=null?`<span class="vfrom">From</span> ${inr(vFrom(id))}`:inr(x.p)}</span>${!x.cz&&x.m>x.p&&vFrom(id)==null?`<span class="mrp">${inr(x.m)}</span>`:''}`}</div>
         <div class="ship">${x.ship}</div>${vCardNote(id)}${tbHTML(id)}</div>
     </div>`;
   }).join('');
@@ -4117,11 +4117,11 @@ async function shareProduct(){
   try{ await navigator.clipboard.writeText(url); toast('Link copied'); }catch(e){ toast(url); }
 }
 </script>
-<script src="/account.js?v=5"></script>
-<script src="/track.js"></script>
+<script src="/account.js?v=6"></script>
+<script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=5"></script>
-<script src="/mto.js?v=15"></script>
+<script src="/mto.js?v=16"></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };
