@@ -81,7 +81,7 @@ const MEGA = Object.fromEntries(cols.map(c => {
   if (!list.length) return [c.slug, '']
   const feat = c.menu_image || list[0].image_url
   return [c.slug, `<div class="dd"><div class="ddin"><div class="dd-subs">${(gs.length ? gs : [{ slug: '', title: 'All ' + c.title, items: list }]).map(g =>
-    `<a href="/c/${c.slug}/${g.slug ? '#' + g.slug : ''}"><img src="${esc(g.image || g.items[0].image_url)}" alt="" loading="lazy" width="160" height="160"><b>${esc(g.title)}</b><small>${g.items.length} product${g.items.length > 1 ? 's' : ''}</small></a>`).join('')}</div>
+    `<a href="/c/${c.slug}/${g.slug ? '#' + g.slug : ''}"><img src="${esc(slim(g.image || g.items[0].image_url))}" alt="" loading="lazy" width="160" height="160"><b>${esc(g.title)}</b><small>${g.items.length} product${g.items.length > 1 ? 's' : ''}</small></a>`).join('')}</div>
 <a class="dd-feat" href="/c/${c.slug}/"><img src="${esc(feat)}" alt="${esc(c.title)}" loading="lazy"><span><b>${esc(c.menu_note || c.tagline || c.title)}</b><u>Shop all ${list.length} →</u></span></a></div></div>`]
 }))
 
@@ -184,7 +184,9 @@ const shell = ({ title, desc, path, image, body, jsonld = [], keywords = [], rou
   set(/<div id="plp">/, `<section id="seoBody">${body}</section>\n<div id="plp">`)
   return h
 }
-const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(p.image_url)}" alt="${esc(p.image_alt || p.name)}" loading="lazy" width="400" height="400"></div>
+// listing / card photos: Supabase-resized (600 px) instead of the full original
+const slim = (u, w = 600) => { const m = String(u || '').match(/^(https:\/\/[a-z0-9]+\.supabase\.co)\/storage\/v1\/object\/public\/([^?]+)(?:\?(.*))?$/); return m && /\.(jpe?g|png|webp)$/i.test(m[2]) ? `${m[1]}/storage/v1/render/image/public/${m[2]}?width=${w}&quality=75${m[3] ? '&' + m[3] : ''}` : u }
+const card = p => `<a class="card" href="/p/${p.slug}/"><div class="im"><img src="${esc(slim(p.image_url))}" alt="${esc(p.image_alt || p.name)}" loading="lazy" width="400" height="400"></div>
 <div class="n">${esc(p.name)}</div><div class="p">${soon(p) ? SOON : isMto(p) ? `From ${inr(p.price)}` : `${inr(p.price)}${p.mrp > p.price ? `<s>${inr(p.mrp)}</s>` : ''}`}</div></a>`
 
 
@@ -197,7 +199,7 @@ const compare = p => {
   const L = [p, ...similar(p)]; if (L.length < 2) return ''
   const low = Math.min(...L.filter(x => !soon(x)).map(x => +x.price)), off = x => x.mrp > x.price ? Math.round((1 - x.price / x.mrp) * 100) : 0
   const rows = [
-    ['', (x, i) => `<a href="/p/${x.slug}/">${i ? '' : '<span class="tg">THIS ITEM</span>'}<img src="${esc(x.image_url)}" alt="${esc(x.name)}" loading="lazy" width="200" height="200"><b>${esc(x.name)}</b></a>`, 1],
+    ['', (x, i) => `<a href="/p/${x.slug}/">${i ? '' : '<span class="tg">THIS ITEM</span>'}<img src="${esc(slim(x.image_url))}" alt="${esc(x.name)}" loading="lazy" width="200" height="200"><b>${esc(x.name)}</b></a>`, 1],
     ['Price', x => soon(x) ? SOON : `<strong>${inr(x.price)}</strong>${+x.price === low && L.some(y => +y.price !== low) ? '<em>Lowest price</em>' : ''}`, 1],
     ['MRP · discount', x => !soon(x) && off(x) ? `<s>${inr(x.mrp)}</s> · ${off(x)}% off` : '—'],
     ['Type', x => esc(subT[x.subcategory_slug] || colOf[x.collection_slug]?.title || '—')],

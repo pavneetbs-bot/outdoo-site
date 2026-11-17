@@ -4,6 +4,8 @@
 <!-- Meta Pixel -->
 <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');window.__outrrPixel='2307680780051131';fbq('init','2307680780051131');fbq('track','PageView');</script>
 <!-- End Meta Pixel -->
+<script>/* product photos from Supabase storage: served resized (900 px, ~100–150 KB) instead of the 1600–1920 px original */
+window.slimImg=function(u,w){u=String(u||'');var m=u.match(/^(https:\/\/[a-z0-9]+\.supabase\.co)\/storage\/v1\/object\/public\/([^?]+)(?:\?(.*))?$/);if(!m||!/\.(jpe?g|png|webp)$/i.test(m[2]))return u;return m[1]+'/storage/v1/render/image/public/'+m[2]+'?width='+(w||900)+'&quality=75'+(m[3]?'&'+m[3]:'');};</script>
 <script>/* brand change (outdoo → outrr): keep this browser's cart, address and sign-in */
 try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var o='out'+'doo_'+k,v=localStorage.getItem(o);if(v!=null&&localStorage.getItem('outrr_'+k)==null)localStorage.setItem('outrr_'+k,v);if(v!=null)localStorage.removeItem(o)});
 ['sid'].forEach(function(k){var o='out'+'doo_'+k,v=sessionStorage.getItem(o);if(v!=null&&sessionStorage.getItem('outrr_'+k)==null)sessionStorage.setItem('outrr_'+k,v)})}catch(e){}</script>
@@ -3989,7 +3991,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, vop:Array.isArray(p.variant_options)?p.variant_options:null, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'', mto:!!p.made_to_order,
         cz:p.kind==='mto'&&p.mto&&typeof p.mto==='object'?p.mto:null, tg:Array.isArray(p.tags)?p.tags:[] };   // 133 Made to Order: priced by the customer's size (mto.js)
       if(PRODS[p.sku].cz){ const d=(PRODS[p.sku].cz.make_days||[]).filter(v=>v!=null); PRODS[p.sku].ship='Made to your size'+(d.length?' · '+(d.length>1&&d[0]!==d[1]?d[0]+'–'+d[1]:d[d.length-1])+' days':''); }
-      if(p.image_url) IMGS[p.sku] = p.image_url;
+      if(p.image_url) IMGS[p.sku] = slimImg(p.image_url);
     });
     // a category made in the admin (not one of the built-in six): its own page, menu entry and filters
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]) return;
@@ -4079,7 +4081,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     const col = COLS[x.col] ? x.col : Object.keys(COLS)[0];
     PRODS[id] = { n:String(x.n||'Product'), p:+x.p||0, m:+x.m||0, r:'4.5', c:0, ship:String(x.ship||'Ships in 10-14 days'), img:id, col,
       mat:String(x.mat||''), dim:String(x.dim||''), kg:0, stock:true, tier:x.tier||'select', sb:String(x.sb||'') };
-    IMGS[id] = /^https:\/\//.test(x.img||'') ? x.img : '';
+    IMGS[id] = /^https:\/\//.test(x.img||'') ? slimImg(x.img) : '';
     GAL[id] = (Array.isArray(x.g) ? x.g : []).filter(u => /^https:\/\//.test(u||'')).slice(0, 8);
     try{ openProduct(id); }catch(e){ console.warn(e); }
     const b = document.createElement('div');

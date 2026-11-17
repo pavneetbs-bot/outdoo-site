@@ -165,7 +165,7 @@
         var k = p.sku
         if (!PRODS[k]) {   // unpublished preview, or the live catalog didn't load
           PRODS[k] = { n: p.name, p: Math.round(+p.price), m: p.mrp ? Math.round(+p.mrp) : 0, r: String(p.rating || '4.5'), c: p.rating_count || 0, ship: p.ship_text || 'Ships in 7-10 days', img: k, col: colOk(p.collection_slug), stock: p.in_stock, tier: 'select', mat: '', dim: '', kg: 0 }
-          IMGS[k] = p.image_url || ''
+          IMGS[k] = (window.slimImg ? slimImg(p.image_url) : p.image_url) || ''
         }
         IDS.push(k)
       }
