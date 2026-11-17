@@ -129,3 +129,10 @@ The real store (per the build brief `claude_Replit_OutdoorStore_Build_Prompt.md`
 - Pitch-page kits come from admin → Pitch pages → Kit templates (`kit_templates`, one AI "Styled look" picture each): 2 of the
   prospect's products + one live product of another seller per other category (`kit_fill()`, shows the seller's shop name).
   On a pitch page the cart is grouped by seller (prospect first, marked sample).
+
+## Banner placements (ads.js, Nov 2026)
+Fixed template — slots and sizes don't change, only the `ADS` list at the top of `ads.js` does (one entry per banner: slots, categories, dates, photos, text, link, colours, sponsor).
+- **H1** home top slider (`#obnHero` in index.html, 1392×380 desktop) · **H2** home full width ×2 (1392×400 / 4:5 mobile) · **H3** home pair (680×300 ×2) · **H4** card inside home product strips
+- **C1** collection top (1392×200 / 16:7) · **C2** card in the collection grid (4th, then every 8th) · **C3** under the filters (260×360, desktop) · **C4** full width every 16 products (1392×220)
+- **P1** product page strip by the price · **P2** product page before "similar items" (1392×220) · **S1** card in search results
+A category page shows its own banners first, then general ones, then other categories (cross-sell); a slot with nothing of its own gets an automatic banner from the category's best photos. `sponsor: 'Seller name'` shows a "Sponsored" label (for paid seller ads later). Photos live in `img/banners/`; `'p:SKU'` uses a product's own photo.
