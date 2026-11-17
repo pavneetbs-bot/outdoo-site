@@ -319,7 +319,10 @@ write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="htt
 const slugRows = await getAll('product_slugs?select=slug,product_id&order=slug').catch(() => [])
 const curSlug = Object.fromEntries(products.map(p => [p.id, p.slug]))
 const redir = slugRows.filter(r => curSlug[r.product_id] && r.slug !== curSlug[r.product_id]).map(r => `/p/${r.slug}/ /p/${curSlug[r.product_id]}/ 301\n/p/${r.slug} /p/${curSlug[r.product_id]}/ 301`)
-write('_redirects', redir.length ? redir.join('\n') + '\n' : '# no renamed products yet\n')
+// 173: Partition Screens merged into Privacy Screens; wall-top sub-categories renamed "Parapet …"
+redir.push('/c/privacy-screens/cnc-jali-screens/* /c/privacy-screens/parapet-jali-screens/ 301', '/c/privacy-screens/louver-screens/* /c/privacy-screens/parapet-louver-screens/ 301',
+  '/c/privacy-screens/hedge-screens/* /c/privacy-screens/parapet-hedge-screens/ 301', '/c/partition-screens/* /c/privacy-screens/:splat 301')
+write('_redirects', redir.join('\n') + '\n')
 write('robots.txt', `User-agent: *\nAllow: /\nDisallow: /preview/\n\nSitemap: ${SITE}/sitemap.xml\n`)
 const x = s => esc(s)
 write('feed/google.xml', `<?xml version="1.0" encoding="UTF-8"?>
