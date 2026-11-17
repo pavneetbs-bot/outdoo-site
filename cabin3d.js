@@ -281,7 +281,7 @@ function ensure(el) {
     renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;border-radius:16px';
     R = { renderer, scene, cam, ortho, controls, sun, hemi, key: '', view: '', group: null, skyD: sky('#BFD8EA', '#F1EEE7'), skyN: sky('#0B1222', '#2B3550'), night: false };
     scene.background = R.skyD;
-    const loop = () => { R.raf = requestAnimationFrame(loop); if (!R.el || !R.el.isConnected) return; R.controls.update(); under(); R.renderer.render(R.scene, R.active || R.cam); };
+    const loop = () => { R.raf = requestAnimationFrame(loop); if (!R.el || !R.el.isConnected) return; R.controls.update(); keepNear(); under(); R.renderer.render(R.scene, R.active || R.cam); };
     loop();
     window.addEventListener('resize', () => R.el && size());
     const cv = renderer.domElement;
@@ -289,6 +289,16 @@ function ensure(el) {
   }
   if (R.el !== el) { R.el = el; el.innerHTML = ''; el.appendChild(R.renderer.domElement); }
   size();
+}
+function buttons() {   // ✋ move mode: one finger / left drag moves the model, right drag turns it
+  const C = R.controls, p = !!R.pan
+  C.mouseButtons = { LEFT: p ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: p ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN }
+  C.touches = { ONE: p ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }
+}
+function keepNear() {   // the model can be moved, but never lost: the point it turns around stays near the cabin
+  if (!R.group || R.active !== R.cam || !['3d', 'cut', '360'].includes(R.view)) return
+  const t = R.controls.target, m = Math.max(R.L, R.W) * 0.6 + 4, x = Math.min(R.L + m, Math.max(-m, t.x)), y = Math.min(R.H * 1.6, Math.max(-R.H * 0.8, t.y)), z = Math.min(R.W + m, Math.max(-m, t.z))
+  if (x !== t.x || y !== t.y || z !== t.z) { const dx = x - t.x, dy = y - t.y, dz = z - t.z; t.set(x, y, z); R.cam.position.x += dx; R.cam.position.y += dy; R.cam.position.z += dz }
 }
 function under() {   // orbiting below the floor: the ground, deck and floor fade out so the ceiling / false ceiling is seen from under
   if (!R.group) return; const b = (R.active || R.cam) === R.cam && R.view !== 'inside' && R.cam.position.y < -0.2
@@ -326,6 +336,7 @@ function setView(v, keepCam) {
     C.minPolarAngle = Math.PI * 0.3; C.maxPolarAngle = Math.PI * 0.7; C.minDistance = C.maxDistance = 0.4; C.enableZoom = false; C.rotateSpeed = -0.45; C.autoRotateSpeed = 0.6;
   } else {   // 3d / roof off / 360
     R.active = R.cam; C.minDistance = 3; C.maxDistance = d * 4; C.maxPolarAngle = Math.PI * 0.93;   // go round and under: see the ceiling from below
+    C.enablePan = true; C.screenSpacePanning = true; buttons();   // move the model: right-drag / two fingers, or the ✋ move mode
     if (!keepCam) { const k = Math.max(1.25, 1.5 / R.cam.aspect), hi = v === 'cut' ? 1.7 : 1;
       R.cam.position.set(cx + d * 0.95 * k, H * 0.4 + (H * 1.2 + d * 0.25) * k * hi, cz + d * 1.35 * k / (v === 'cut' ? 1.15 : 1)); C.target.set(cx, H * 0.3, cz); }
   }
@@ -422,6 +433,8 @@ export function show(el, c, lay, view, opts) {
   fitOrtho();
 }
 export function zoom(f) { if (!R || R.active !== R.cam) return; const C = R.controls, v = R.cam.position.clone().sub(C.target), len = Math.max(C.minDistance, Math.min(C.maxDistance, v.length() * f)); R.cam.position.copy(C.target).add(v.setLength(len)); C.update(); }
+export function panMode(on) { if (!R) return; R.pan = !!on; buttons(); }
+export function home() { if (R && R.group) setView(R.view, false); }
 export function resize() { if (R && R.el) size(); }
 export function snapshot() { return R ? R.renderer.domElement.toDataURL('image/png') : null; }
-window.Cabin3D = { show, snapshot, onEvent, zoom, resize, _r: () => R };
+window.Cabin3D = { show, snapshot, onEvent, zoom, resize, panMode, home, _r: () => R };
