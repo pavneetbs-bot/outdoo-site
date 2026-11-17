@@ -3199,7 +3199,7 @@ setTimeout(offShow,5000);
   let lock=false;
 
   function anyModal(){
-    return ['mcart','qv','fltPanel','offpop','wachat','lbx'].some(id=>{
+    return ['mcart','qv','fltPanel','offpop','wachat','lbx','mtoOv','cbSheet','mmenu'].some(id=>{
       const el=document.getElementById(id); return el && el.classList.contains('open');});
   }
   function closeModals(){
@@ -3209,7 +3209,10 @@ setTimeout(offShow,5000);
     try{ offClose(); }catch(e){}
     const w=document.getElementById('wachat'); if(w) w.classList.remove('open');
     try{ lbxClose(); }catch(e){}
-    document.body.classList.remove('flt-open');
+    try{ window.mtoClose&&mtoClose(); }catch(e){}   // Made to Order builder overlay
+    try{ const s=document.getElementById('cbSheet'); if(s) s.classList.remove('open'); }catch(e){}
+    try{ window.mMenu&&mMenu(false); }catch(e){}
+    document.body.classList.remove('flt-open'); document.body.style.overflow='';
   }
   // Meta Pixel: a new screen in this one-page shop counts as a page view (not pop-ups)
   function pv(st){ try{ if(window.fbq && st && st.v!=='modal') fbq('track','PageView'); }catch(e){} }
@@ -3240,6 +3243,7 @@ setTimeout(offShow,5000);
 
   window.addEventListener('popstate', function(e){
     if(anyModal()){ closeModals(); return; }
+    if(e.state && e.state.v==='modal'){ history.back(); return; }   // a pop-up closed by its own button left this entry: skip it
     lock=true;
     closeModals();
     const st=e.state||{v:'home'};
@@ -3253,6 +3257,11 @@ setTimeout(offShow,5000);
     lock=false;
   });
 
+  // back / forward always lands on a drawn page: Safari restores from its page cache and its own scroll,
+  // which could leave an overlay or an empty spot showing — redraw from the history entry instead
+  try{ history.scrollRestoration='manual'; }catch(e){}
+  window.addEventListener('pageshow', function(e){ if(!e.persisted) return; lock=true; closeModals(); const st=history.state||{v:'home'};
+    if(st.v==='plp' && COLS[st.k]) _col(st.k); else if(st.v==='pdp' && PRODS[st.id]) _prod(st.id); else if(st.v==='cart') _cart(); else _home(); lock=false; });
   window.__initHash=location.hash;   // #review= / #track= links from emails (account.js)
   history.replaceState({v:'home'},'',location.pathname+location.search);
   try{ fetch('/slugs.json').then(r=>r.ok?r.json():{}).then(j=>{ window.SLUG=j||{}; }).catch(()=>{}); }catch(e){}   // 163: sku → page address

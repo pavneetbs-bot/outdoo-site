@@ -704,6 +704,7 @@
       ov.addEventListener('input', onInput); ov.addEventListener('change', onChange); ov.addEventListener('click', onClick); }
     ov.setAttribute('aria-label', x.n);
     draw(); ov.classList.add('open'); ov.scrollTop = 0; document.body.classList.add('flt-open');
+    try { history.pushState({ v: 'modal' }, '', location.pathname + location.search) } catch (e) {}   // back closes the builder
     try { if (window.otrack) otrack('view_item', { sku: id, value: x.p }); } catch (e) {}
   };
   window.mtoClose = function () { var ov = document.getElementById('mtoOv'); if (ov) ov.classList.remove('open'); document.body.classList.remove('flt-open'); };
@@ -1046,7 +1047,7 @@
     if (t.hasAttribute('data-img')) { S.img = +t.getAttribute('data-img'); return draw(); }
     if (t.hasAttribute('data-open')) { return window.mtoOpen(t.getAttribute('data-open')); }
     var a = t.getAttribute('data-act');
-    if (a === 'close') return window.mtoClose();
+    if (a === 'close') { if (history.state && history.state.v === 'modal') return history.back(); return window.mtoClose(); }
     if (a === 'bulk') { window.mtoClose(); try { if (window.openBulk) return openBulk(S.id); } catch (er) {} return toast('Write to us on WhatsApp for a bulk quote'); }
     if (a === 'order') return order();
   }
