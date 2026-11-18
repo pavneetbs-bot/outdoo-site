@@ -1228,8 +1228,11 @@
   // 177: the parts list, for the customised cabin's last step (next to its price)
   // ------------------------------------------------------------ "Factory-made. Installed in 2 days." — what every pergola order gets (the same for every design)
   var TRUST_IMG = ['/img/trust/pg-weld.jpg', '/img/trust/pg-coat.jpg', '/img/trust/pg-pack.jpg', '/img/trust/pg-fit.jpg'];
+  var TRUST_CB = ['/img/trust/cb-panel.jpg', '/img/trust/cb-glass.jpg', '/img/trust/cb-kit.jpg', '/img/trust/cb-fit.jpg'];
+  function isCab(id) { return /^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(String(id || '')); }
   function trustSec(m) {
-    if (!S || !isPg(S.id)) return '';
+    if (!S || !(isPg(S.id) || isCab(S.id))) return '';
+    var cab = isCab(S.id);
     if (!document.getElementById('trustCss')) { var st = document.createElement('style'); st.id = 'trustCss';
       st.textContent = '.tr-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:14px}.tr-c{background:#fff;border:1px solid var(--line,#e8e2d8);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}' +
         '.tr-c img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#efe9df}.tr-c div{padding:12px 13px 14px}.tr-c b{display:flex;align-items:center;gap:8px;font-size:14.5px;margin-bottom:4px}.tr-c b svg{flex:none;color:var(--terra,#BE5633)}.tr-c p{margin:0;font-size:12.5px;line-height:1.5;color:#5d574e}' +
@@ -1237,16 +1240,22 @@
         '@media(max-width:760px){.tr-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.tr-c p{font-size:11.5px}}';
       document.head.appendChild(st); }
     var ic = function (d) { return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
-    var C = [
+    var C = cab ? [
+      [ic('<path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/>'), 'Made in the factory', 'Steel frame, insulated PUF wall panels and glass units are made in the factory to your approved drawing.'],
+      [ic('<path d="M4 4h16v16H4z"/><path d="M4 12h16M12 4v16"/>'), 'Factory finish', 'Powder-coated frame and ready-finished panels; doors, windows and glass come fitted in their frames.'],
+      [ic('<path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/>'), 'Delivered as a kit', 'Frame, panels, glass and doors are packed, numbered and delivered together on one truck.'],
+      [ic('<path d="M14 7l3-3 3 3-3 3M17 4v7"/><path d="M4 20l8-8M9 13l2 2"/>'), 'Assembled in 2–5 days', 'Male–female panels lock into each other and are screwed tight to the frame. No welding, no civil work by us.']] : [
       [ic('<path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/>'), 'Made in the factory', 'Cut, welded and drilled in the factory to your approved drawing, in frames sized to travel.'],
       [ic('<path d="M4 7h16v4H4zM6 11v9M18 11v9M9 15h6"/>'), 'Factory finish', 'Zinc primer and powder coat, baked in an oven: an even colour with no brush marks.'],
       [ic('<path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/>'), 'Packed & numbered', 'Every part is pre-drilled, tagged and wrapped, packed with its bolts and base plates.'],
       [ic('<path d="M14 7l3-3 3 3-3 3M17 4v7"/><path d="M4 20l8-8M9 13l2 2"/>'), 'Installed in 2 days', 'The factory frames bolt together at your home, with small touch-up welds only. Up to 12 × 10 ft is installed in 2 days.']];
-    var days = daysTxt(m.make_days) || '15–25 days';
-    return '<section class="mf" id="mfTrust"><h2>Factory-made. Installed in 2 days.</h2><p class="mf-sub">Every pergola is made in the factory and bolted together at your home</p><div class="tr-cards">' +
-      C.map(function (c, i) { return '<div class="tr-c"><img src="' + TRUST_IMG[i] + '" alt="" loading="lazy" onerror="this.remove()"><div><b>' + c[0] + esc(c[1]) + '</b><p>' + esc(c[2]) + '</p></div></div>'; }).join('') + '</div>' +
-      '<div class="tr-line" style="font-weight:600"><span><em>✓</em>3-year warranty on the steel frame</span><span><em>✓</em>Damage in delivery or fitting is ours to fix</span><span><em>✓</em>Fixed on steel base plates with chemical anchors</span></div>' +
-      '<div class="tr-line"><span><em>1</em>Site visit &amp; measure</span><span><em>2</em>Drawing for your approval</span><span><em>3</em>Made in the factory · ' + esc(days) + '</span><span><em>4</em>Installed in 2 days</span></div></section>';
+    var days = daysTxt(m.make_days) || (cab ? '20–30 days' : '15–25 days'), IMG = cab ? TRUST_CB : TRUST_IMG;
+    return '<section class="mf" id="mfTrust"><h2>' + (cab ? 'Factory-made. Assembled in 2–5 days.' : 'Factory-made. Installed in 2 days.') + '</h2><p class="mf-sub">' + (cab ? 'Every cabin is made in the factory and put together at your site — built for Indian heat, monsoon rain and strong winds' : 'Every pergola is made in the factory and bolted together at your home') + '</p><div class="tr-cards">' +
+      C.map(function (c, i) { return '<div class="tr-c"><img src="' + IMG[i] + '" alt="" loading="lazy" onerror="this.remove()"><div><b>' + c[0] + esc(c[1]) + '</b><p>' + esc(c[2]) + '</p></div></div>'; }).join('') + '</div>' +
+      (cab ? '<div class="tr-line" style="font-weight:600"><span><em>✓</em>10-year warranty on all items</span><span><em>✓</em>Built for Indian weather — heat, monsoon, strong winds</span><span><em>✓</em>No civil work by us — sits on our steel deck</span><span><em>✓</em>Electrical + LED lights included</span><span><em>✓</em>Damage in delivery or assembly is ours to fix</span></div>' +
+        '<div class="tr-line"><span><em>1</em>Drawing for your approval</span><span><em>2</em>Made in the factory · ' + esc(days) + '</span><span><em>3</em>Delivered as one kit</span><span><em>4</em>Assembled in 2–5 days</span></div></section>'
+      : '<div class="tr-line" style="font-weight:600"><span><em>✓</em>3-year warranty on the steel frame</span><span><em>✓</em>Built for Indian weather and Delhi wind loads</span><span><em>✓</em>Damage in delivery or fitting is ours to fix</span><span><em>✓</em>Fixed on steel base plates with chemical anchors</span></div>' +
+        '<div class="tr-line"><span><em>1</em>Site visit &amp; measure</span><span><em>2</em>Drawing for your approval</span><span><em>3</em>Made in the factory · ' + esc(days) + '</span><span><em>4</em>Installed in 2 days</span></div></section>');
   }
   function partsMini() { var ps = arr(mtoFull.parts); if (!ps.length) return '';
     return '<div class="wz-parts"><b>What goes into it</b><ul>' + ps.map(function (p) { return '<li><span>' + esc(p.name) + '</span><small>' + esc(p.spec) + '</small></li>'; }).join('') + '</ul></div>'; }

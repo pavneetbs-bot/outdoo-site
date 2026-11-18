@@ -2951,7 +2951,8 @@ var GALC = {};   // 187: sku → [[url, colour]] — photos that show one finish
 function pdColList(id){ const c=window.mtoColourOf&&mtoColourOf(id), l=(GALC[id]||[]).filter(g=>g[1]===c).map(g=>g[0]); return l.length?l:null; }
 function pdThumbs(id){
   const x=PRODS[id]; if(!x) return; const cl=pdColList(id), list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
-  if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg');   // every pergola: factory-made, finish, 2-day install, warranty   // a finish with its own photos: only those
+  if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg');
+  if(/^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(id)) list.push('/img/trust/cb-assurance.jpg');   // cabins: factory-made, kit, 2–5 day assembly, 10-year warranty   // every pergola: factory-made, finish, 2-day install, warranty   // a finish with its own photos: only those
   window.PDG={id,list,i:0};
   const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
   box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdGo(${i})"><img src="${u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
