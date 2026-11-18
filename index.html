@@ -4430,7 +4430,8 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       if(!ids.length) return;
       if(typeof NAVSETS !== 'undefined' && !NAVSETS.cat.some(x => x[1] === c.slug)) NAVSETS.cat.splice(1, 0, [c.title, c.slug]);
       const ft = document.getElementById('ftShop');
-      if(ft && !document.querySelector(`footer a[data-col="${c.slug}"]`)){   // a category made after the last build (the build's footer has the rest) const a = document.createElement('a'); a.href = '/c/' + c.slug + '/'; a.dataset.col = c.slug;
+      if(ft && !document.querySelector(`footer a[data-col="${c.slug}"]`)){ const a = document.createElement('a');   // a category made after the last build (the build's footer has the rest)
+        a.href = '/c/' + c.slug + '/'; a.dataset.col = c.slug;
         a.textContent = c.title; a.onclick = e => { e.preventDefault(); openCol(c.slug); }; ft.querySelector('.fh').after(a); }
       const img = COLS[c.slug].img;
       if(typeof ARCH !== 'undefined' && !ARCH.some(x => x[1] === c.slug)){ ARCH.splice(1, 0, [c.title, c.slug, img]); try{ fillArch(); }catch(e){} }
