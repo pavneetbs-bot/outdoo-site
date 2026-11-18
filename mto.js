@@ -892,6 +892,7 @@
       var pj2 = lay.proj && arr(lay.proj.sides).length ? 'Pergola projection (' + arr(lay.proj.sides).join(', ') + ') · ' + [lay.proj.design, lay.proj.top, lay.proj.under].filter(Boolean).join(' · ') : '';
       h += '<ul class="wz-sum"><li><b>' + fi(lay.L) + ' × ' + fi(lay.W) + '</b> · ' + (num(lay.L) * num(lay.W)) + ' sq ft</li><li>' + esc(gname) + ' · ' + esc(dname) + ' (' + esc(w.side) + ')' + (lay.full_doors === true ? ' · full-height doors' : ' · 8 ft doors') + (SIDES.some(function (sd) { return lay.walls[sd].indexOf('slide') >= 0; }) && lay.tracks ? ' · ' + esc(lay.tracks) : '') + '</li><li>' + esc(ins.join(' · ') || 'open inside') + '</li>' + (pj2 ? '<li>' + esc(pj2) + '</li>' : '') + (SIDES.indexOf(lay.gutter) >= 0 ? '<li>Rain gutter, slope to the ' + esc(lay.gutter) + '</li>' : '') + '<li>' + esc([lay.roof, lay.frame, lay.height].filter(Boolean).join(' · ')) + ' · LED lights included</li></ul>';
       h += '<div class="wz-note"><b>Before we make it:</b> final drawings of your cabin are sent to you for approval. Making starts only after you approve them.</div>';
+      h += '<button type="button" class="wz-back" onclick="mtoPlanFrom()" style="margin-bottom:8px">＋ Plan the rest of your ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'space') + ' — seating, planters, pergola…</button>';   // 193
       if (S.pdp) h += pdpTail(PRODS[S.id], m, o);
       h += partsMini();
       if (S && !S.cabDone) { S.cabDone = true; setTimeout(function () { try { var x0 = PRODS[S.id]; if (x0 && document.getElementById('mtoFull') && !document.getElementById('mfParts')) window.mtoShowParts(); } catch (e) {} }, 0); }
@@ -1637,7 +1638,7 @@
     if (x.oo === false) return toast('Orders for this maker open soon');
     if (!S.o.drawing && !S.o.size_ok && x.cz.drawing !== 'always') return toast('Please confirm your size first');
     var k = S.editK, i = -1; MC.forEach(function (c, j) { if (k && c.k === k) i = j; });
-    if (i < 0 && MC.length >= 5) return toast('Up to 5 Made to Order designs in one order');
+    if (i < 0 && MC.length >= 20) return toast('Up to 20 Made to Order designs in one order');   // 193
     var line = { k: i >= 0 ? k : 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), id: S.id, o: cfgOf(S.o), pin: S.o.pin };
     if (i >= 0) MC[i] = line; else MC.push(line);
     S.editK = null; mSave(); try { updBadge(); } catch (e) {}
@@ -1648,6 +1649,31 @@
     try { if (S.pdp) paint(); } catch (e) {}
   }
   function order() { addM(true); }
+  // 193 "Plan your space": put a whole plan in the cart — [{ id, o }] each priced like a design page; returns { added, skipped: [names] }
+  window.mtoCartAddMany = function (lines) {
+    var r = { added: 0, skipped: [] };
+    arr(lines).forEach(function (l) {
+      var x = PRODS[l.id]; if (!x || !x.cz) return r.skipped.push(l.id);
+      var o = Object.assign({ pin: lastPin(), addons: [], groups: {}, drawing: x.cz.drawing !== 'no', size_ok: true, note: '' }, l.o || {});
+      var q = priceR(l.id, x.cz, o, PCT);
+      if (!q.ok || x.oo === false || MC.length >= 20) return r.skipped.push(short(x.n));
+      MC.push({ k: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), id: l.id, o: cfgOf(o), pin: o.pin }); r.added++;
+      try { if (window.otrack) otrack('add_to_cart', { sku: l.id, value: q.total }); } catch (e) {}
+    });
+    mSave(); try { updBadge(); } catch (e) {} return r;
+  };
+  // 193: from a cabin studio / pergola designer into "Plan your space" with this design (and the studio's terrace) already on it
+  window.mtoPlanFrom = function () {
+    if (!S || !PRODS[S.id] || !window.outrrPlan) return; var x = PRODS[S.id], m = x.cz, seed = { item: null, site: null };
+    if (m.unit === 'cabin') { var lay = S.o.layout || {}, t = S.site;
+      seed.item = { cat: 'cabin', sku: S.id, pick: S.id, lsku: S.id, layout: cbClone(lay), label: short(x.n), w: (num(lay.L) || 12) + 1.2, d: (num(lay.W) || 10) + 1.2, h: 10, rot: 0 };
+      if (t && t.kind === 'terrace') { var F = tsFoot(t, lay); seed.site = JSON.parse(JSON.stringify(t)); seed.item.x = t.cx - F.e.l; seed.item.z = t.cz - F.e.b; seed.item.w = F.L + F.e.l + F.e.r; seed.item.d = F.W + F.e.b + F.e.f; }
+      else if (t && t.kind === 'ground') seed.site = { kind: 'ground' };
+    } else seed.item = { cat: 'pergola', pick: S.id, label: short(x.n), w: num(S.o.l) || 12, d: num(S.o.w) || 10, h: 9, rot: 0 };
+    try { window.mtoClose(); } catch (e) {} try { if (S.studio) window.cbStudio(null); } catch (e) {}
+    window.outrrPlan(seed);
+  };
+  window.mtoOpenCart = function () { try { openCart(); } catch (e) {} };
   window.mtoAddCart = function () { if (!S) return; if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); addM(false); };
   window.mtoCartRm = function (k) { MC = MC.filter(function (c) { return c.k !== k; }); mSave(); try { updBadge(); } catch (e) {} if (isOn('checkout')) { if (!MC.length && !CART.length) return openCart(); renderCheckout(); } else renderCart(); };
   window.mtoCartEdit = function (k) { var c = MC.filter(function (z) { return z.k === k; })[0]; if (!c) return; window.__mtoEdit = { id: c.id, k: k, o: c.o, pin: c.pin };
@@ -1909,7 +1935,7 @@
     var x = PRODS[S.id];
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(x.n) + ' · 3D</b><button type="button" id="pg3Night" data-p3="night">☾ Night</button><button type="button" data-p3="close" aria-label="Close">✕ Close</button></div>' +
       '<div class="pg3-bd"><div class="pg3-st" id="pg3St"><div class="pg3-cap" id="pg3Cap"></div></div><div class="pg3-pn" id="pg3Pn"></div></div>' +
-      '<div class="pg3-ft"><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see the price' : 'Done — check the price') + '</button></div>';
+      '<div class="pg3-ft"><button type="button" data-p3="plan" style="background:#fff;color:#2E2E2E;border:1px solid #D9CDBB;margin-right:8px">+ Plan the rest of your space</button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see the price' : 'Done — check the price') + '</button></div>';
     var oo = S.o, q = pgOpts(); oo.l = oo.l || q.l; oo.w = oo.w || q.w;   // the model's size becomes the order size
     ov.classList.add('open'); document.body.classList.add('pg3-on'); P3.open = true; draw(); p3Draw();
     try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: '3d' }); } catch (e) {}
@@ -1918,6 +1944,7 @@
     var t = e.target.closest('button'); if (!t || !S) return; var o = S.o, m = PRODS[S.id].cz, a = t.getAttribute('data-p3');
     if (a === 'close') return window.pg3Open(false);
     if (a === 'night') { P3.night = !P3.night; return p3Draw(); }
+    if (a === 'plan') { window.pg3Open(false); return window.mtoPlanFrom(); }   // 193
     if (a === 'done') { window.pg3Open(false); if (!mtoOk()) return window.mtoUnlock(S.id); var c = document.getElementById('mtoCfg'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     var d = t.getAttribute('data-p3d'); if (d) { var k = d.split(',')[0], q = pgOpts(), lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20; o[k] = Math.min(Math.max(q[k] + (+d.split(',')[1]), lo), hi); draw(); return p3Draw(); }
     var mt = t.getAttribute('data-p3m'); if (mt) { o.material = mt; var mm = arr(m.materials).filter(function (y) { return y.name === mt; })[0]; o.colour = (arr(mm && mm.colours)[0] || {}).name || ''; if (o.colour) colPic(o.colour); draw(); return p3Draw(); }
