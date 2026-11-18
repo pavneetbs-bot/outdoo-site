@@ -2773,7 +2773,7 @@ const COLS = {
 function showView(v){
   try{ const sb=document.getElementById('seoBody'), R=window.OUTRR_ROUTE; if(sb&&sb.classList.contains('in')) sb.style.display=(v==='plp'&&R&&lastCol===R.c)?'':'none'; }catch(e){}
   ['home','store','plp','pdp','cart','checkout','account'].forEach(x=>{const el=document.getElementById(x); if(el) el.style.display = x===v?'block':'none';});
-  try{ const f=document.querySelector('body>footer'); if(f) f.style.display = v==='checkout'?'none':''; }catch(e){}
+  try{ const f=document.querySelector('body>footer'), cur=document.getElementById(v); if(f){ f.style.display = v==='checkout'?'none':''; if(cur&&cur.parentNode===f.parentNode&&cur.nextElementSibling!==f) cur.insertAdjacentElement('afterend', f); } }catch(e){}   // the footer always sits under the page shown (sign-in, account…)
   document.body.classList.toggle('pdp-open', v==='pdp');
   window.scrollTo(0,0);
 }
@@ -4539,7 +4539,7 @@ async function shareProduct(){
 <script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=8"></script>
-<script src="/mto.js?v=24"></script>
+<script src="/mto.js?v=25"></script>
 <script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=7" defer></script>
 <script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */

@@ -1072,28 +1072,29 @@
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     var hOpts = arr(m.h && m.h.options), f = [];
     if (u === 'cabin') { el.innerHTML = cabinUI(m, o); if (S.studio) cbsGroup(el); cbStage(); cbSheet(); paint(); return mount3d(); }
-    if (!mtoOk()) { el.innerHTML = lockHTML(x); ctaPaint(null); return; }   // 172
+    var np = !mtoOk();   // 172: before sign-in every variant shows (to see the finishes / colours / photos), only the prices wait
     if (u === 'seat') { var sv = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
-    else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + ' — ' + rs(fixedAt(m, mat, z))]; })), o.size, 'Size'));
+    else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + (np ? '' : ' — ' + rs(fixedAt(m, mat, z)))]; })), o.size, 'Size'));
     else {
       if (u === 'area' || u === 'length') f.push('<label class="mto-pk"><span>Length (ft)</span><input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>');
       if (u === 'area' || u === 'face') f.push('<label class="mto-pk"><span>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '</span><input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>');
       if (hOpts.length) f.push(sel('data-k="h"', hOpts.map(function (h) { return [h, h + ' ft']; }), o.h, 'Height'));
       else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>');
     }
-    if (mats.length > 1) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, esc((m.labels && m.labels.material) || 'Finish')));
+    if (mats.length > 1) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (np ? '' : u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, esc((m.labels && m.labels.material) || 'Finish')));
     var cols = arr(mat && mat.colours);
-    if (cols.length) f.push(sel('data-pick="colour"', [].concat(cols.map(function (c) { return [c.name, c.name + (+c.extra ? ' (+' + rs(c.extra) + ' / ' + uw + ')' : '')]; })), o.colour, esc((m.labels && m.labels.colour) || 'Colour')));
+    if (cols.length) f.push(sel('data-pick="colour"', [].concat(cols.map(function (c) { return [c.name, c.name + (!np && +c.extra ? ' (+' + rs(c.extra) + ' / ' + uw + ')' : '')]; })), o.colour, esc((m.labels && m.labels.colour) || 'Colour')));
     arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }).forEach(function (g) {
       f.push(sel('data-grp="' + esc(g.name) + '"', arr(g.options).filter(function (y) { return y.name; }).map(function (y) {
         var pr = [+y.fixed ? (+y.fixed > 0 ? '+' : '−') + rs(Math.abs(y.fixed)) : '', +y.rate ? '+' + rs(y.rate) + ' / ' + uw : '', +y.rate_w ? '+' + rs(y.rate_w) + ' / ft width' : ''].filter(Boolean).join(' ');
-        return [y.name, y.name + (pr ? ' (' + pr + ')' : '')]; }), (o.groups || {})[g.name], esc(g.name)));
+        return [y.name, y.name + (pr && !np ? ' (' + pr + ')' : '')]; }), (o.groups || {})[g.name], esc(g.name)));
     });
     var adds = arr(m.addons).filter(function (a) { return a.name; });
     var hint = u === 'area' ? 'Length × width of the floor it covers, in feet.' : u === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : u === 'face' ? 'Width × height of the wall or opening, in feet.' : u === 'length' ? 'Total running length, in feet.' : '';
     el.innerHTML = '<h3 class="mto-ph">' + (m.labels ? 'Choose your options' : 'Choose your size &amp; options') + '</h3>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + (hint ? '<p class="mto-hint">' + hint + '</p>' : '') + '<div class="mto-pks">' + f.join('') + '</div>' +
-      (adds.length ? '<div class="mto-adds"><span class="mto-al">Add-ons</span>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span><span class="r">+' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span></label>'; }).join('') + '</div>' : '') +
-      pdpTail(x, m, o) + '<div class="mto-sum lt" id="mtoSum"></div>';
+      (adds.length ? '<div class="mto-adds"><span class="mto-al">Add-ons</span>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span>' + (np ? '' : '<span class="r">+' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span>') + '</label>'; }).join('') + '</div>' : '') +
+      (np ? lockHTML(x, true) : pdpTail(x, m, o) + '<div class="mto-sum lt" id="mtoSum"></div>');
+    if (np) { ctaPaint(null); return; }
     paint();
   }
   function pdpTail(x, m, o) {   // pincode (installation / delivery), drawing, note
@@ -1457,8 +1458,8 @@
       d.classList.remove('open'); unlocked(id);
     };
   }
-  function lockHTML(x) {
-    return '<div class="mto-lock"><h3 class="mto-ph">Price for your size</h3><p class="mto-hint">Every ' + esc(x.n) + ' is made to your size' + (x.cz && x.cz.install && x.cz.install.offered ? ' and installed by our team' : '') +
+  function lockHTML(x, below) {   // below = under the options: the price for the choices made above
+    return '<div class="mto-lock"' + (below ? ' style="margin-top:14px"' : '') + '><h3 class="mto-ph">Price for your ' + (below ? 'choices' : 'size') + '</h3><p class="mto-hint">Every ' + esc(x.n) + ' is made to your size' + (x.cz && x.cz.install && x.cz.install.offered ? ' and installed by our team' : '') +
       '. Sign in with your email to see the price for your size, finish and options — it takes 30 seconds.</p><button type="button" class="mto-go" data-act="unlock">Check price</button></div>';
   }
   var sent = {}, sentT = null;
