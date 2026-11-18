@@ -169,8 +169,12 @@ const isMto = p => p.kind === 'mto'
 // 163: the SEO pages are the shop itself (same product page, cards, cart) with this page's own head and text,
 // opened on that view by window.OUTRR_ROUTE; the text below is what crawlers read before the shop draws.
 const SHOP = readFileSync(join(ROOT, 'index.html'), 'utf8')
-const shell = ({ title, desc, path, image, body, jsonld = [], keywords = [], route }) => {
+const crumbNav = items => `<nav class="crumb" aria-label="Breadcrumb">${items.map(([n, u], i) => i === items.length - 1 ? `<span>${esc(n)}</span>` : `<a href="${u}">${esc(n)}</a>`).join('<i>›</i>')}</nav>`
+const shell = ({ title, desc, path, image, body, jsonld = [], keywords = [], route, h1 }) => {
   let h = SHOP
+  // one h1 per page: the shop's own headings become plain text, except a product page's title (filled with the product name)
+  h = h.replace(/<h1>The best room([\s\S]*?)<\/h1>/, '<div class="h1">The best room$1</div>')
+  if (h1) h = h.replace('<div class="h1" id="pdT"></div>', `<h1 id="pdT">${esc(h1)}</h1>`)
   const set = (re, rep) => { h = h.replace(re, () => rep) }
   set(/<title>[\s\S]*?<\/title>/, `<base href="/"><title>${esc(title)}</title>`)
   set(/<meta name="description" content="[^"]*">/, `<meta name="description" content="${esc(desc)}">${keywords.length ? `<meta name="keywords" content="${esc(keywords.join(', '))}">` : ''}`)
@@ -236,9 +240,9 @@ for (const p of products) {
       ...(c ? [{ '@type': 'ListItem', position: 2, name: c.title, item: `${SITE}/c/${c.slug}/` }] : []),
       { '@type': 'ListItem', position: c ? 3 : 2, name: p.name, item: SITE + url }],
   }]
-  write(`p/${p.slug}/index.html`, shell({ route: { p: p.sku },
+  write(`p/${p.slug}/index.html`, shell({ route: { p: p.sku }, h1: p.name,
     title: p.seo_title ? (/\| outrr$/.test(p.seo_title) ? p.seo_title : `${p.seo_title} | outrr`) : (soon(p) ? `${p.name} | Coming soon | outrr` : isMto(p) ? `${p.name} | Made to Size, from ${inr(p.price)} | outrr` : `${p.name} | Buy Online at ${inr(p.price)} | outrr`), desc: clip(p.seo_description || desc, 158), keywords: p.seo_keywords || [], path: url, image: p.image_url, jsonld, cur: p.collection_slug, view: p,
-    body: `<h1>${esc(p.name)}</h1><p>${soon(p) ? 'Coming soon' : `${isMto(p) ? 'From ' : ''}${inr(p.price)}${!isMto(p) && off ? ` (MRP ${inr(p.mrp)}, ${off}% off)` : ''} · inclusive of GST`}</p>
+    body: `${crumbNav([['Home', '/'], ...(c ? [[c.title, `/c/${c.slug}/`]] : []), [p.name]])}<h2>${esc(p.name)}</h2><p>${soon(p) ? 'Coming soon' : `${isMto(p) ? 'From ' : ''}${inr(p.price)}${!isMto(p) && off ? ` (MRP ${inr(p.mrp)}, ${off}% off)` : ''} · inclusive of GST`}</p>
 <p class="seo-intro">${esc(desc)}</p>${c ? `<p><a href="/c/${c.slug}/">More ${esc(c.title)}</a></p>` : ''}
 ${related.length ? `<h2>More in ${esc(c?.title || 'this range')}</h2><ul class="seo-list">${related.map(x => `<li><a href="/p/${x.slug}/">${esc(x.name)}</a></li>`).join('')}</ul>` : ''}`,
   }))
@@ -290,7 +294,7 @@ for (const c of cols) {
     title: `${clip(c.seo_title || at.title, 62)} | outrr`, desc: clip(c.seo_description || at.desc, 158),
     path: url, image: list[0].image_url, cur: c.slug,
     jsonld: [listLd(c.title, url, list), crumbLd([['Home', '/'], [c.title, url]]), ...faqLd(faqs)],
-    body: `<h1>${esc(c.title)}</h1><p class="seo-intro">${esc(c.seo_intro || at.intro)}</p>
+    body: `${crumbNav([['Home', '/'], [c.title]])}<h1>${esc(c.title)}</h1><p class="seo-intro">${esc(c.seo_intro || at.intro)}</p>
 ${real.length > 1 ? `<nav class="seo-subs" aria-label="${esc(c.title)} types">${real.map(g => `<a href="${subUrl[g.slug]}">${esc(g.title)} (${g.items.length})</a>`).join('')}</nav>` : ''}
 <ul class="seo-list">${list.map(x => `<li><a href="/p/${x.slug}/">${esc(x.name)}</a></li>`).join('')}</ul>
 ${faqHtml(faqs)}`,
@@ -302,7 +306,7 @@ ${faqHtml(faqs)}`,
       title: `${clip(x.seo_title || st.title, 62)} | outrr`, desc: clip(x.seo_description || st.desc, 158),
       path: su, image: g.items[0].image_url, cur: c.slug,
       jsonld: [listLd(g.title, su, g.items), crumbLd([['Home', '/'], [c.title, url], [g.title, su]]), ...faqLd(st.faqs)],
-      body: `<h1>${esc(g.title)}</h1><p class="seo-intro">${esc(x.seo_intro || st.intro)}</p>
+      body: `${crumbNav([['Home', '/'], [c.title, url], [g.title]])}<h1>${esc(g.title)}</h1><p class="seo-intro">${esc(x.seo_intro || st.intro)}</p>
 <nav class="seo-subs">${real.map(h => `<a href="${subUrl[h.slug]}">${esc(h.title)}</a>`).join('')}<a href="${url}">All ${esc(c.title)}</a></nav>
 <ul class="seo-list">${g.items.map(x => `<li><a href="/p/${x.slug}/">${esc(x.name)}</a></li>`).join('')}</ul>${faqHtml(st.faqs)}`,
     }))

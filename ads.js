@@ -148,7 +148,7 @@
     var body;
     if(slot === 'C1' && hero){   // the collection page's one top banner: the category title (h1) + the season's line
       var C = G('COLS') && COLS[hero] || {}, line = a.cols[0] === hero && a.em ? a.h + ' ' + a.em : '';
-      return '<div class="ad ad-w ad-hero" data-slot="C1" data-ad="' + esc(a.id) + '" ' + style + '>' + sp + '<div class="ad-tx"><span class="ad-eye">' + esc(a.eye) + '</span><h1 class="ad-h" id="colTitleH">' + esc(C.t || a.h) + '</h1>'
+      return '<div class="ad ad-w ad-hero" data-slot="C1" data-ad="' + esc(a.id) + '" ' + style + '>' + sp + '<div class="ad-tx"><span class="ad-eye">' + esc(a.eye) + '</span><h2 class="ad-h" id="colTitleH">' + esc(C.t || a.h) + '</h2>'
         + (line ? '<b class="ad-line">' + esc(line) + '</b>' : '') + '<p>' + esc(line ? a.p : (C.tag || a.p)) + '</p></div><div class="ad-ims">'
         + ims.slice(0, 3).map(function(u){ return '<img src="' + u + '" alt="" fetchpriority="high">'; }).join('') + '</div></div>';
     }
