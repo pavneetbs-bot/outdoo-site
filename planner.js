@@ -31,6 +31,14 @@ const CATS = [
   { k: 'graffiti', t: 'Graffiti art', e: '🎨', col: 'graffiti', kind: 'wall', w: 10, d: 0.3, h: 6, min: [3, 0.3], max: [60, 0.3], hr: [3, 12], size: 'wh' },
   { k: 'gate', t: 'Gate', e: '🚪', col: 'gates', kind: 'edge', w: 10, d: 0.4, h: 6, min: [3, 0.4], max: [30, 0.4], hr: [4, 10], size: 'wh', lawn: true },
 ];
+// 193 phase 3: ready-made setups — added to what's already there, each thing at the nearest free spot
+const SETUPS = [
+  { k: 'chill', t: 'Chill corner', e: '☕', d: 'Pergola, sofa, table, planters', items: ['pergola', 'sofa', 'table', 'planter', 'planter', 'planter'] },
+  { k: 'party', t: 'Party terrace', e: '🎉', d: 'Bar counter, pergola, sofa, dining', items: ['bar', 'pergola', 'sofa', 'dining', 'planter', 'planter'] },
+  { k: 'work', t: 'Work + relax', e: '💻', d: 'Cabin, deck, sofa, green wall', items: ['cabin', 'deck', 'sofa', 'vgarden', 'planter', 'planter'] },
+  { k: 'green', t: 'Green retreat', e: '🌿', d: 'Green walls, planters, bench, water', items: ['vgarden', 'vgarden', 'planter', 'planter', 'planter', 'bench', 'water', 'privacy'] },
+  { k: 'family', t: 'Family lawn', e: '🌳', d: 'Pergola, dining, bench, water, sculpture', items: ['pergola', 'dining', 'bench', 'water', 'sculpture', 'planter'], lawn: true },
+];
 const CAT = Object.fromEntries(CATS.map(c => [c.k, c]));
 const PR = () => (typeof PRODS !== 'undefined' ? PRODS : window.PRODS) || {};   // the store's catalogue is a page-level const
 const num = v => { const n = parseFloat(v); return isFinite(n) ? n : null; };
@@ -59,7 +67,7 @@ function clashes(it, i) {   // what it would sit on
   const r = rectI(it), fl = CAT[it.cat] && CAT[it.cat].kind === 'floor';
   if (!inside(r)) return 'edge';
   if ((S.site.kind === 'terrace' ? S.site.blocks : []).some(b => hit(r, b))) return 'block';
-  if (!fl && S.items.some((o, j) => j !== i && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && hit(r, rectI(o)))) return 'item';
+  if (S.items.some((o, j) => j !== i && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin') && hit(r, rectI(o)))) return 'item';   // decking goes under things, never under a cabin
   return '';
 }
 function placeFree(it, i, from) {   // nearest free spot to where it was dropped (spiral), keeping its turn
@@ -164,8 +172,19 @@ function newItem(k) {
   if (k === 'cabin') { const sk = cabinSkus().find(s => /PORTA/.test(s)) || cabinSkus()[0]; if (!sk) return null; const L = cabinLay({ sku: sk }); it.sku = sk; it.w = (num(L.L) || 12) + 1.2; it.d = (num(L.W) || 10) + 1.2; it.h = 10; it.label = PR()[sk].n.replace(/ —.*$/, ''); }
   it.x = r2((t.pw - it.w) / 2); it.z = r2(t.pd * 0.55 - it.d / 2); return it;
 }
+function roomy(it, i) {   // a free spot away from what's already there (so a setup spreads out instead of piling up)
+  const t = S.site, p = P0(), f = foot(it), others = S.items.filter((o, j) => j !== i).map(o => { const g = foot(o); return [o.x + g[0] / 2, o.z + g[1] / 2]; }).concat((t.kind === 'terrace' ? t.blocks : []).map(b => [b.x + b.w / 2, b.z + b.d / 2]));
+  let best = null;
+  for (let x = p; x <= t.pw - p - f[0] + 0.01; x += 1) for (let z = p; z <= t.pd - p - f[1] + 0.01; z += 1) {
+    it.x = r2(x); it.z = r2(z); if (clashes(it, i)) continue; const cx = x + f[0] / 2, cz = z + f[1] / 2;
+    const dmin = others.length ? Math.min(...others.map(o => Math.hypot(o[0] - cx, o[1] - cz))) : 0, score = Math.min(dmin, 14) - Math.hypot(cx - t.pw / 2, cz - t.pd / 2) * 0.08;
+    if (!best || score > best[0]) best = [score, it.x, it.z];
+  }
+  if (best) { it.x = best[1]; it.z = best[2]; } return !!best;
+}
 function addItem(k) {
   const it = newItem(k); if (!it) return; const i = S.items.length; S.items.push(it);
+  if (CAT[k].kind !== 'edge' && CAT[k].kind !== 'wall' && i > 0) roomy(it, i);
   if (!settle(it, i)) { S.items.pop(); S.msg = 'No free room for it — make the space bigger or move things'; return; }
   S.sel = i; S.msg = '';
 }
@@ -202,6 +221,7 @@ const CSS = `#plOv{position:fixed;inset:0;z-index:9000;background:#F6F1EA;displa
 #plOv .pl-row2{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}#plOv .pl-ds{flex:0 0 112px;scroll-snap-align:start;border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:5px;text-align:left;font:inherit;cursor:pointer}
 #plOv .pl-ds.on{border:2px solid #C26445;padding:4px}#plOv .pl-ds img,#plOv .pl-ds i{display:block;width:100%;height:72px;object-fit:cover;border-radius:7px;background:#F3ECE2}#plOv .pl-ds b{display:block;font-size:11.5px;line-height:1.25;margin:5px 0 2px;max-height:2.5em;overflow:hidden}#plOv .pl-ds small{font-size:12px;color:#55634A;font-weight:700}
 #plOv .pl-see{display:inline-block;margin-top:6px;font-size:12.5px;color:#C26445}#plOv .pl-go[disabled]{opacity:.4}
+#plOv .pl-set{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}#plOv .pl-set button{flex:0 0 138px;border:1px solid #E2D6C4;background:#FFFCF8;border-radius:12px;padding:10px;text-align:left;font:inherit;cursor:pointer}#plOv .pl-set button:hover{border-color:#C26445}#plOv .pl-set i{font-style:normal;font-size:20px}#plOv .pl-set b{display:block;font-size:13px;margin:4px 0 2px}#plOv .pl-set small{font-size:11px;color:#7A7268;line-height:1.3;display:block}
 #plOv .pl-lock{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:12.5px;cursor:pointer}
 @media(max-width:760px){#plOv .pl-bd{flex-direction:column}#plOv .pl-3d{flex:none;height:46vh}#plOv .pl-side{width:auto;max-width:none;border-left:0;border-top:1px solid #E2D6C4;flex:1}#plOv .pl-st button{padding:6px 10px;font-size:12px}#plOv .pl-hd small{display:none}#plOv .pl-l{display:none}#plOv .pl-hd h2{font-size:14px}}`;
 
@@ -252,9 +272,12 @@ function stepPlace() {
   h += '<h4>Add things</h4><p class="pl-sub">Tap to add, then drag on the 3D. You\'ll pick the exact design of each at the end — here one model stands for all designs of that kind.</p>';
   if (lock) h += '<button type="button" class="pl-lock" data-pl="unlock">🔒 Sign in to see prices</button>';
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
-  h += '<div class="pl-pal" style="margin-top:10px">' + CATS.filter(c => (!c.lawn || S.site.kind !== 'terrace') && designs(c).length).map(c => {
+  const sets = SETUPS.filter(x => !x.lawn || S.site.kind !== 'terrace');
+  h += '<p class="pl-h">Start from a setup</p><div class="pl-set">' + sets.map(x => `<button type="button" data-pl="setup:${x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div><p class="pl-h">Or add one by one</p>';
+  h += '<div class="pl-pal">' + CATS.filter(c => (!c.lawn || S.site.kind !== 'terrace') && designs(c).length).map(c => {
     const fp = fromPrice(Object.assign({ cat: c.k, w: c.w || 4, d: c.d || 4, h: c.h || 3 }, c.k === 'cabin' ? { sku: (cabinSkus().find(s => /PORTA/.test(s)) || cabinSkus()[0]) } : {}));
     return `<button type="button" data-pl="add:${c.k}"><i>${c.e}</i><span><b>${esc(c.t)}</b><small>${fp.price != null ? (lock ? fp.n + ' designs' : 'from ' + lakh(fp.price)) : fp.soon ? 'Coming soon' : fp.n + ' designs'}</small></span></button>`; }).join('') + '</div>';
+  if (lwOk()) h = lwCard() + h;
   if (S.items.length) h += '<p class="pl-h">On your plan</p>' + S.items.map((it, i) => { const fp = fromPrice(it); return `<div class="pl-it" data-pl="sel:${i}"><i>${CAT[it.cat].e}</i><span>${esc(it.label || CAT[it.cat].t)}${CAT[it.cat].size && CAT[it.cat].size !== 'fixed' ? ' <em>· ' + it.w + (CAT[it.cat].size === 'wh' ? ' × ' + it.h : CAT[it.cat].size === 'wd' ? ' × ' + it.d : '') + ' ft</em>' : ''}</span><em>${fp && fp.price != null && !lock ? 'from ' + rs(fp.price) : ''}</em></div>`; }).join('');
   return h;
 }
@@ -272,8 +295,10 @@ function stepPick() {
     h += '</div>';
   });
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
+  if (lwOk()) h += lwCard();
   return h;
 }
+function lwCard() { return '<div class="pl-note" style="margin:0 0 12px"><b>A big project?</b> For a whole terrace or a large cabin, our group company <b>LifeWall</b> can design and build it all turnkey — one team, one price. <button type="button" class="pl-lock" data-pl="lw" style="margin-top:8px;display:block">Talk to LifeWall (free consultation) →</button></div>'; }
 function exact() { let t = 0, n = 0; S.items.forEach(it => { const pk = picked(it); if (pk) { t += pk.q.price; n++; } }); return { t, n }; }
 function toCart() {
   if (!priceOk()) return unlock();
@@ -298,7 +323,7 @@ function draw(rec) {
     : S.step === 2 ? (lock || !S.items.length ? '' : `<div class="pl-tot"><b>${E.n ? lakh(E.t) : '—'}</b><small>${E.n} design${E.n === 1 ? '' : 's'} · before delivery & installation (added at checkout)</small></div><button type="button" class="pl-go" data-pl="cart"${E.n ? '' : ' disabled'}>Add all to cart</button>`)
     : `<div class="pl-tot">${S.items.length ? (lock ? '<b>🔒</b><small>Sign in to see the estimate</small>' : (T.n ? `<b>${lakh(T.t)}+</b><small>${S.items.length} thing${S.items.length > 1 ? 's' : ''} · starting price${T.n < S.items.length ? ' of ' + T.n : ''}, before delivery & installation</small>` : `<b>—</b><small>Prices open soon for these</small>`)) : '<b>—</b><small>Add something to see the estimate</small>'}</div>` + (S.items.length ? '<button type="button" class="pl-go" data-pl="step:2">Pick designs →</button>' : '');
   document.getElementById('plZ').innerHTML = `<button type="button" data-pl="undo" aria-label="Undo" title="Undo (Ctrl+Z)"${S.hi > 0 ? '' : ' disabled'}>↶</button><button type="button" data-pl="redo" aria-label="Redo" title="Redo (Ctrl+Y)"${S.hi < S.hist.length - 1 ? '' : ' disabled'}>↷</button>` +
-    `<button type="button" data-pl="view" class="${S.view === 'top' ? 'on' : ''}" aria-label="${S.view === 'top' ? '3D view' : 'Top view'}" title="${S.view === 'top' ? '3D view' : 'Top view'}">${S.view === 'top' ? '🧊' : '▦'}</button><button type="button" data-pl="zin" aria-label="Zoom in">+</button><button type="button" data-pl="zout" aria-label="Zoom out">−</button><button type="button" data-pl="home" aria-label="Whole space" title="Whole space">⌖</button>`;
+    `<button type="button" data-pl="view" class="${S.view === 'top' ? 'on' : ''}" aria-label="${S.view === 'top' ? '3D view' : 'Top view'}" title="${S.view === 'top' ? '3D view' : 'Top view'}">${S.view === 'top' ? '🧊' : '▦'}</button><button type="button" data-pl="zin" aria-label="Zoom in">+</button><button type="button" data-pl="zout" aria-label="Zoom out">−</button><button type="button" data-pl="home" aria-label="Whole space" title="Whole space">⌖</button>` + (S.items.length ? '<button type="button" data-pl="share" aria-label="Share this plan" title="Share this plan">🔗</button><button type="button" data-pl="pdf" aria-label="Save as PDF" title="Save as PDF">⎙</button>' : '');
   try { S3.show(document.getElementById('pl3d'), { site: S.site, items: S.items, sel: S.step === 1 ? S.sel : null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW' }, { place: S.step === 0, view: S.view }); } catch (e) { if (window.console) console.warn(e); }
 }
 
@@ -330,6 +355,12 @@ function onClick(e) {
     case 'unlock': return unlock();
     case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; const L = cabinLay(x); x.w = (num(L.L) || 12) + 1.2; x.d = (num(L.W) || 10) + 1.2; x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
     case 'cart': return toCart();
+    case 'setup': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; let n = 0, miss = 0; const sel0 = S.sel;
+      x.items.forEach(k => { if (!designs(CAT[k]).length) return; const before = S.items.length; addItem(k); if (S.items.length > before) n++; else miss++; });
+      S.sel = null; S.msg = n ? (miss ? `Added ${n} — ${miss} didn't fit; make the space bigger or move things` : '') : 'No free room — make the space bigger or move things'; if (!n) S.sel = sel0; break; }
+    case 'share': return share();
+    case 'pdf': return pdf();
+    case 'lw': return lifewall();
     default: return;
   }
   draw();
@@ -353,10 +384,51 @@ function on3d(ev) {
 function unlock() {
   if (window.mtoUnlock) window.mtoUnlock(() => { Object.keys(PC).forEach(k => delete PC[k]); open(); draw(false); });
 }
+// ---------------------------------------------------------------- phase 3: share link, PDF, LifeWall for big projects
+const b64 = t => btoa(unescape(encodeURIComponent(t))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64 = t => decodeURIComponent(escape(atob(String(t).replace(/-/g, '+').replace(/_/g, '/'))));
+function shareUrl() { return location.origin + '/?plan=' + b64(JSON.stringify({ v: 1, site: S.site, items: S.items })); }
+async function share() {
+  const u = shareUrl(); try { if (window.otrack) otrack('plan_share', { n: S.items.length }); } catch (e) {}
+  if (navigator.share) { try { await navigator.share({ title: 'My outdoor plan — outrr', url: u }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  try { await navigator.clipboard.writeText(u); S.msg = ''; if (window.toast) window.toast('Link copied ✓'); else alert('Link copied'); } catch (e) { prompt('Copy this link', u); }
+}
+function fromLink(q) {   // ?plan=<link>: someone shared a plan
+  try { const v = JSON.parse(unb64(q)); if (!v || !v.site || !Array.isArray(v.items)) return false;
+    if (S.items.length && snap() !== JSON.stringify([v.site, v.items]) && !confirm('Open the shared plan? It replaces the plan saved on this device.')) return false;
+    S.site = v.site; S.items = v.items.filter(it => CAT[it.cat]).slice(0, 40); S.step = S.items.length ? 2 : 0; S.sel = null; return true; } catch (e) { return false; }
+}
+function rowsNow() { return S.items.map(it => { const c = CAT[it.cat], pk = S.step === 2 || it.pick ? picked(it) : null, fp = fromPrice(it);
+  return { e: c.e, t: it.label || c.t, size: c.size === 'fixed' || it.cat === 'cabin' ? '' : it.w + (c.size === 'wh' ? ' × ' + it.h : c.size === 'wd' ? ' × ' + it.d : '') + ' ft', design: pk ? String(PR()[pk.id].n).replace(/ — .*$/, '') : '', price: pk ? pk.q.price : fp && fp.price, from: !pk }; }); }
+function pdf() {
+  const img = S3.snapshot(), rows = rowsNow(), ok = priceOk(), t = S.site, tot = rows.reduce((a, r) => a + (r.price || 0), 0);
+  const w = window.open('', '_blank'); if (!w) { S.msg = 'Allow pop-ups to save the PDF'; return draw(false); }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>My outdoor plan — outrr</title><style>body{font-family:Inter,system-ui,sans-serif;color:#2E2E2E;margin:28px}h1{font-size:22px;margin:0 0 4px}p{color:#6A6258;margin:0 0 14px;font-size:13px}img{width:100%;border-radius:12px;border:1px solid #E2D6C4}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}td,th{padding:8px;border-bottom:1px solid #EEE6DA;text-align:left}td:last-child,th:last-child{text-align:right}tfoot td{font-weight:700;font-size:15px}.n{font-size:11.5px;color:#7A7268;margin-top:14px;word-break:break-all}@media print{body{margin:10mm}}</style></head><body>
+<h1>My outdoor plan</h1><p>${t.kind === 'terrace' ? 'Terrace' : 'Lawn / garden'} · ${t.pw} × ${t.pd} ft${t.plot ? ' (' + t.plot + ' gaj plot)' : ''} · made on outrr.in</p>${img ? `<img src="${img}" alt="3D view of the plan">` : ''}
+<table><thead><tr><th>Thing</th><th>Size</th><th>Design</th><th>${ok ? 'Price' : ''}</th></tr></thead><tbody>${rows.map(r => `<tr><td>${r.e} ${esc(r.t)}</td><td>${esc(r.size)}</td><td>${esc(r.design || 'to pick')}</td><td>${ok && r.price != null ? (r.from ? 'from ' : '') + rs(r.price) : ''}</td></tr>`).join('')}</tbody>
+${ok ? `<tfoot><tr><td colspan="3">Total${rows.some(r => r.from) ? ' (starting)' : ''}</td><td>${rs(tot)}</td></tr></tfoot>` : ''}</table>
+<p class="n">Prices incl. GST, before delivery and installation (worked out at checkout for your pincode). Open this plan again: ${esc(shareUrl())}</p><script>setTimeout(function(){print()},400)<\/script></body></html>`);
+  w.document.close(); try { if (window.otrack) otrack('plan_pdf', { n: S.items.length }); } catch (e) {}
+}
+// LifeWall (turnkey design & build) only for big projects: ₹15 lakh+ AND the whole terrace / lawn (6+ things over several kinds) or a big cabin (300 sq ft+)
+function bigCabin() { return S.items.some(it => it.cat === 'cabin' && (() => { const L = cabinLay(it); return (num(L.L) || it.w) * (num(L.W) || it.d) >= 300; })()); }
+function wholeSpace() { return S.items.length >= 6 && new Set(S.items.map(i => i.cat)).size >= 4; }
+function lwOk() { if (!priceOk()) return false; const v = S.step === 2 ? exact().t : total().t; return v >= 1500000 && (wholeSpace() || bigCabin()); }
+function lifewall() {
+  if (typeof window.enqOpen !== 'function') return; const rows = rowsNow(), v = S.step === 2 ? exact().t : total().t;
+  close(); window.enqOpen('db');
+  setTimeout(() => { const set = (id, x) => { const e = document.getElementById(id); if (e && x) e.value = x; };
+    set('eInt', (S.site.kind === 'terrace' ? 'Whole terrace' : 'Whole lawn / garden') + ' — ' + [...new Set(rows.map(r => r.t))].slice(0, 6).join(', '));
+    set('eMsg', `My plan on outrr: ${S.site.pw} × ${S.site.pd} ft ${S.site.kind === 'terrace' ? 'terrace' : 'lawn'}, ${rows.length} things, about ${lakh(v)}. ${rows.map(r => r.t + (r.size ? ' ' + r.size : '')).join('; ')}. Plan: ${shareUrl()}`.slice(0, 1800));
+    const b = document.getElementById('eBud'); if (b) { const l = v / 100000, want = l < 20 ? '15L–20L' : l < 25 ? '20L–25L' : l < 50 ? '25L–50L' : '50L & Above'; if ([...b.options].some(o => o.value === want)) b.value = want; } }, 50);
+  try { if (window.otrack) otrack('plan_lifewall', { value: Math.round(v) }); } catch (e) {}
+}
 function close() { if (EL) EL.style.display = 'none'; document.body.style.overflow = ''; try { const u = new URL(location.href); if (u.searchParams.has('plan')) { u.searchParams.delete('plan'); history.replaceState(history.state, '', u.pathname + (u.search || '') + u.hash); } } catch (e) {} }
 
 export function open(seed) {
   for (const k in PC) delete PC[k]; shell(); if (!S) { S = load(); S.hist = []; S.hi = -1; }
+  let q = null; try { q = new URLSearchParams(location.search).get('plan'); } catch (e) {}
+  if (q && q.length > 10 && !S.linkDone) { S.linkDone = true; fromLink(q); }
   if (seed && seed.item) {   // 193: from the cabin studio / pergola designer
     if (seed.site && seed.site.kind === 'terrace') { const t = seed.site; S.site = { kind: 'terrace', plot: t.plot || '', pw: +t.pw, pd: +t.pd, par: +t.par || 3, corner: t.corner || '', high: t.high || {}, tanks: t.tanks !== false, blocks: (t.blocks || []).map(b => ({ type: BLK[b.type] ? b.type : 'room', side: b.side || 'free', w: +b.w, d: +b.d, x: +b.x, z: +b.z })) }; }
     else if (seed.site && seed.site.kind === 'ground' && S.site.kind !== 'ground') { S.site.kind = 'ground'; }
@@ -369,4 +441,4 @@ export function open(seed) {
   } EL.style.display = 'flex'; document.body.style.overflow = 'hidden';
   draw(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60);
 }
-window.outrrPlanState = () => S; window.outrrPlanPrice = it => fromPrice(it);   // for tests
+window.outrrPlanState = () => S; window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
