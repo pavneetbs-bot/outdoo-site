@@ -755,6 +755,15 @@
       addons: arr(m.addons).filter(function (a) { return a.on; }).map(function (a) { return a.name; }), install: !!(m.install && m.install.required), pin: lastPin(),
       groups: arr(m.groups).reduce(function (g, x) { var f = arr(x.options).filter(function (y) { return String(y.name || '').trim(); })[0]; if (f) g[x.name] = f.name; return g; }, {}),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
+    var pre = window.__mtoPre;   // home "Design it yourself": size / roof / finish picked there carry over (only valid choices)
+    if (pre && pre.id !== id) window.__mtoPre = null;   // kept for this product (also after signing in to see the price)
+    if (pre && pre.id === id) {
+      var inR = function (v, k) { v = num(v); return v != null && v >= (num(m[k] && m[k].min) || 0) && (num(m[k] && m[k].max) == null || v <= num(m[k].max)); };
+      if (inR(pre.l, 'l')) S.o.l = pre.l; if (inR(pre.w, 'w')) S.o.w = pre.w;
+      var mt = arr(m.materials).filter(function (x) { return x.name === pre.material; })[0];
+      if (mt) { S.o.material = mt.name; if (arr(mt.colours).some(function (c) { return c.name === pre.colour; })) S.o.colour = pre.colour; else S.o.colour = (arr(mt.colours)[0] || {}).name || ''; }
+      Object.keys(pre.groups || {}).forEach(function (k) { if (arr(m.groups).some(function (g) { return g.name === k && arr(g.options).some(function (y) { return y.name === pre.groups[k]; }); })) S.o.groups[k] = pre.groups[k]; });
+    }
     if (m.unit === 'cabin' && m.cabin && m.cabin.layout) { S.o.layout = cbClone(m.cabin.layout); cbDefaults(m.cabin, S.o.layout); S.o.material = ''; S.sel = { side: 'front', i: 0 }; S.psel = null; S.wz = wzRead(m.cabin, S.o.layout); S.wz.step = 0; S.wz.adv = false; }   // 156, 157, 158
     return S;
   }
@@ -932,6 +941,8 @@
       el.innerHTML = '<div class="cbs-hd"><button type="button" class="cbs-x" onclick="cbStudio(false)" aria-label="Back to the product">←</button><div class="cbs-tt"><b>' + esc(String(PRODS[S.id].n).replace(/ — .*$/, '')) + '</b><small id="cbsStep">Step 1 of 7</small></div><div class="cbs-st" id="cbsSteps"></div><button type="button" class="cbs-x" onclick="cbStudio(false)" aria-label="Close">✕</button></div>';
       if (!el.dataset.w) { el.dataset.w = 1; el.addEventListener('click', function (e) { var t = e.target.closest('[data-wzgo]'); if (!t || t.disabled || !S || !S.studio) return; if (wzClick(t)) { draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; } }); }
       if (!S.cbsInit || fresh) { cbCheap(); S.cbsInit = true; }
+      var pz = window.__cbsSize; if (pz) { window.__cbsSize = null; var c0 = PRODS[S.id].cz.cabin;   // home "Design it yourself": the size picked there
+        if (pz[0] >= (num(c0.L && c0.L.min) || 8) && pz[0] <= (num(c0.L && c0.L.max) || 40) && pz[1] >= (num(c0.W && c0.W.min) || 8) && pz[1] <= (num(c0.W && c0.W.max) || 20)) { S.o.layout.L = pz[0]; S.o.layout.W = pz[1]; wzBuild(c0, S.o.layout, S.wz); } }
       S.studio = true; el.classList.add('open'); document.body.classList.add('cb-studio');
       try { history.pushState({ v: 'modal' }, '', location.pathname + location.search); } catch (e) {}
       draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0;

@@ -869,7 +869,30 @@ sec2,.sec2{display:block;padding:30px 0 6px}
 .bhalves{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
 
 /* package cards */
-/* 181: AI room sets (Settings → Homepage) */
+/* Design it yourself: two mini configurators (cabin, pergola) that open the real studio with the choices made here */
+.dzrow{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.dz{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column}
+.dz .vw{position:relative;aspect-ratio:16/10;background:var(--sand)}
+.dz .vw>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.dz .eye{position:absolute;top:12px;left:12px;background:rgba(255,255,255,.94);border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700;color:var(--char);letter-spacing:.02em}
+.dz .pl{position:absolute;right:10px;bottom:10px;width:46%;max-width:250px;background:rgba(255,255,255,.95);border-radius:12px;padding:6px 6px 2px;box-shadow:0 4px 18px rgba(0,0,0,.14)}
+.dz .pl svg{width:100%;height:auto;display:block;max-height:150px}.dz .pl small{display:block;text-align:center;font-size:10px;color:var(--muted);padding-bottom:3px}
+.dz .bd{padding:14px 16px 16px;display:flex;flex-direction:column;gap:11px;flex:1}
+.dz h3{font-size:18px;margin:0;line-height:1.2}
+.dz .lb{font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.dz .chips{display:flex;gap:6px;flex-wrap:wrap}
+.dz .chips button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-weight:600;font-size:12px;font-family:inherit;color:var(--char);cursor:pointer}
+.dz .chips button.on{border-color:var(--terra);background:var(--terra-soft);color:var(--terra-deep)}
+.dz .chips button.sw{width:28px;height:28px;border-radius:50%;padding:0;border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.dz .chips button.sw.on{box-shadow:0 0 0 2px var(--terra)}
+.dz .stp{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--char)}
+.dz .stp span{display:inline-flex;align-items:center;gap:6px}
+.dz .stp button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:15px;cursor:pointer;line-height:1;font-family:inherit}
+.dz .ft{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:4px;flex-wrap:wrap}
+.dz .ft small{display:block;font-size:11px;color:var(--muted)}.dz .ft b{font-size:17px}
+.dz .go{background:var(--terra);color:#fff;border:0;border-radius:10px;padding:12px 16px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer}
+@media(min-width:760px){.dzrow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+/* 182: AI room sets (Settings → Homepage) */
 #room{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,93vw);max-height:88vh;overflow-y:auto;background:#fff;border-radius:18px;z-index:76;display:none;padding:22px 20px 18px}
 #room.open{display:block}
 #room .x{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
@@ -1967,11 +1990,10 @@ header{position:static!important}
     <span class="pillv" onclick="openCol('furniture')">View all products</span>
   </div>
 
-  <div class="sec2">
-    <div class="sh"><h2>Built for Indian weather</h2><p>Powder-coated frames, UV-stabilised weaves, quick-dry cushions — tested across 300+ projects.</p></div>
+  <div class="sec2" id="dzSec" hidden>
+    <div class="sh"><h2>Design it yourself</h2><p>Pick a style and a size, watch it take shape — then customise every detail in the studio.</p></div>
     <div style="height:14px"></div>
-    <div class="edit"><div class="im"><img data-img="SOFA" alt=""></div></div>
-    <div class="otiles" id="tilesWeather"></div>
+    <div class="dzrow"><div class="dz" id="dzCab"></div><div class="dz" id="dzPer"></div></div>
   </div>
 
 
@@ -3608,7 +3630,76 @@ function fillDealTabs(){
   if(v){v.textContent='View all '+DTABS[dtabOn][0]; v.setAttribute('onclick',`openCol('${DTABS[dtabOn][1]}')`);}
 }
 function pickDtab(i){dtabOn=i; fillDealTabs();}
-// ---- 181: AI homepage picks (admin Settings → Homepage). A section keeps its default when nothing is picked ----
+// ---- Design it yourself: cabin + pergola mini configurators. Choices carry into the real studio / product page. ----
+var DZ = { c: { t: 0, s: 1 }, p: { d: 0, l: 12, w: 10, cov: 0, c: 0 } };
+var DZ_SIZES = [['Small', 10, 8], ['Medium', 12, 10], ['Large', 20, 10], ['Extra large', 20, 12]];   // = WZ_SIZES in mto.js
+function dzImgs(id){ const x=PRODS[id]; return [].concat((window.GAL&&GAL[id])||[], IMGS[x.img]||[]).filter(Boolean); }
+function dzPrice(id){ const x=PRODS[id]; return x.oo===false ? '<small>Orders open soon</small><b>Design yours now</b>' : `<small>Starts at</small><b>${inr(x.p)}</b>`; }
+function dzInit(){
+  const sec=document.getElementById('dzSec'); if(!sec) return;
+  const cab=Object.keys(PRODS).filter(i=>PRODS[i].cz&&PRODS[i].cz.unit==='cabin'&&PRODS[i].cz.cabin), o=i=>/glass/i.test(PRODS[i].n)?0:/hybrid/i.test(PRODS[i].n)?1:2;
+  cab.sort((a,b)=>o(a)-o(b));
+  const all=Object.keys(PRODS).filter(i=>PRODS[i].cz&&PRODS[i].cz.unit==='area'&&/^MTO-PG-/.test(i)&&IMGS[PRODS[i].img]);
+  const fav=['MTO-PG-OV','MTO-PG-AL','MTO-PG-WV','MTO-PG-WC'].filter(i=>all.includes(i)); all.forEach(i=>{ if(fav.length<4&&!fav.includes(i)) fav.push(i); });
+  DZ.cab=cab; DZ.per=fav;
+  if(!cab.length&&!fav.length) return;
+  sec.hidden=false;
+  document.getElementById('dzCab').style.display=cab.length?'':'none'; document.getElementById('dzPer').style.display=fav.length?'':'none';
+  if(cab.length) dzCab(); if(fav.length) dzPer();
+}
+function dzCabPlan(t, L, W){   // top view: glass walls blue, solid walls grey, the door, the mumty beside it
+  const s=6.2, x0=24, y0=16, w=L*s, h=W*s, G='#6fa8d6', R='#8d8a83', D='#a0522d';
+  const side=(x1,y1,x2,y2,c)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="4" stroke-linecap="square"/>`;
+  const wall={front:t<2?G:R, right:t<2?G:R, back:t===0?G:R, left:t===0?G:R};
+  let o=`<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#f6f1e8"/>`;
+  o+=side(x0,y0,x0+w,y0,wall.back)+side(x0+w,y0,x0+w,y0+h,wall.right)+side(x0,y0,x0,y0+h,wall.left);
+  const dx=x0+w/2-9; o+=side(x0,y0+h,dx,y0+h,wall.front)+side(dx+18,y0+h,x0+w,y0+h,wall.front);
+  if(t===2) o+=side(x0+w*0.12,y0+h,x0+w*0.12+16,y0+h,G)+side(x0+w*0.88-16,y0+h,x0+w*0.88,y0+h,G);
+  o+=`<path d="M${dx} ${y0+h} A18 18 0 0 1 ${dx+18} ${y0+h-18}" fill="none" stroke="${D}" stroke-width="1.5"/><line x1="${dx}" y1="${y0+h}" x2="${dx}" y2="${y0+h-18}" stroke="${D}" stroke-width="2"/>`;
+  const mx=x0+w+12, mh=Math.min(h,52); o+=`<rect x="${mx}" y="${y0}" width="34" height="${mh}" fill="#ddd8cf" stroke="#b9b2a6"/><text x="${mx+17}" y="${y0+mh/2+3}" font-size="8" text-anchor="middle" fill="#6b655c">mumty</text>`;
+  o+=`<text x="${x0+w/2}" y="${y0+h/2+4}" font-size="11" font-weight="700" text-anchor="middle" fill="#2E2E2E">${L*W} sq ft</text>`;
+  o+=`<text x="${x0+w/2}" y="${y0+h+16}" font-size="9" text-anchor="middle" fill="#6b655c">${L} ft</text><text x="${x0-9}" y="${y0+h/2}" font-size="9" text-anchor="middle" fill="#6b655c" transform="rotate(-90 ${x0-9} ${y0+h/2})">${W} ft</text>`;
+  return `<svg viewBox="0 0 ${x0+w+52} ${y0+h+24}" role="img" aria-label="Top view, ${L} by ${W} feet">${o}</svg>`;
+}
+function dzCab(){ const st=DZ.c, id=DZ.cab[st.t], z=DZ_SIZES[st.s], im=dzImgs(id), nm=i=>String(PRODS[i].n).replace(/ — .*$/,'').replace(/ Cabin$/,'');
+  document.getElementById('dzCab').innerHTML=`<div class="vw"><img src="${im[0]||''}" alt="${_hesc(nm(id))} on a terrace"><span class="eye">✦ Cabin studio</span>
+    <div class="pl">${dzCabPlan(st.t,z[1],z[2])}<small>Top view · changes as you choose</small></div></div>
+    <div class="bd"><h3>Design your terrace cabin</h3>
+    <div><div class="lb">Type</div><div class="chips">${DZ.cab.map((i,k)=>`<button type="button" class="${k===st.t?'on':''}" onclick="DZ.c.t=${k};dzCab()">${_hesc(nm(i))}</button>`).join('')}</div></div>
+    <div><div class="lb">Size</div><div class="chips">${DZ_SIZES.map((y,k)=>`<button type="button" class="${k===st.s?'on':''}" onclick="DZ.c.s=${k};dzCab()">${y[0]} · ${y[1]}×${y[2]} ft</button>`).join('')}</div></div>
+    <div class="ft"><div>${dzPrice(id)}</div><button type="button" class="go" onclick="dzCabGo()">Customise in 3D →</button></div></div>`; }
+window.addEventListener('outrr-catalog',()=>{ try{ if(DZ.cab&&DZ.cab.length) dzCab(); }catch(e){} });   // the terrace photos arrive with the gallery
+function dzCabGo(){ const id=DZ.cab[DZ.c.t], z=DZ_SIZES[DZ.c.s]; window.__cbsOpen=id; window.__cbsSize=[z[1],z[2]]; try{ window.otrack&&otrack('customise_start',{sku:id,ref:'home'}) }catch(e){} openProduct(id); }
+function dzCovers(id){ const g=((PRODS[id].cz.groups)||[]).find(g=>/roof|cover/i.test(g.name)); return g?{g:g.name,o:(g.options||[]).map(y=>y.name)}:{g:null,o:[]}; }
+function dzShort(n){ return /^open/i.test(n)?'Open':/poly/i.test(n)?'Polycarbonate':/glass/i.test(n)?'Glass':/louv/i.test(n)?'Louvres':String(n).split(' (')[0]; }
+function dzCols(id){ const out=[]; ((PRODS[id].cz.materials)||[]).forEach(m=>(m.colours||[]).forEach(c=>out.push({m:m.name,n:c.name,hex:c.hex,hex2:c.hex2,img:c.img}))); return out.slice(0,8); }
+function dzPerPlan(L, W, cov, frame){   // top view: posts, frame, the roof (slats / sheet / glass / louvres)
+  const s=6.2, x0=24, y0=14, w=L*s, h=W*s, f=frame&&frame.toLowerCase()!=='#f3f3ef'?frame:'#9a968d', name=dzShort(cov||'');
+  let o=`<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#eef3e6"/>`;
+  if(name==='Polycarbonate') o+=`<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#d9a35b" opacity=".35"/>`;
+  if(name==='Glass') o+=`<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#8cc1e3" opacity=".45"/>`;
+  const n=Math.round(L/(name==='Louvres'?0.7:1.5)); for(let i=1;i<n;i++){ const xx=x0+i*w/n; o+=`<line x1="${xx}" y1="${y0}" x2="${xx}" y2="${y0+h}" stroke="${f}" stroke-width="${name==='Louvres'?2.2:1.4}" opacity=".75"/>`; }
+  o+=`<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="none" stroke="${f}" stroke-width="3"/>`;
+  [[x0,y0],[x0+w,y0],[x0,y0+h],[x0+w,y0+h]].forEach(p=>o+=`<rect x="${p[0]-4}" y="${p[1]-4}" width="8" height="8" fill="${f}"/>`);
+  o+=`<rect x="${x0+w/2-34}" y="${y0+h/2-9}" width="68" height="18" rx="9" fill="#fff" opacity=".92"/><text x="${x0+w/2}" y="${y0+h/2+4}" font-size="10.5" font-weight="700" text-anchor="middle" fill="#2E2E2E">${L*W} sq ft</text>`;
+  o+=`<text x="${x0+w/2}" y="${y0+h+15}" font-size="9" text-anchor="middle" fill="#6b655c">${L} ft</text><text x="${x0-11}" y="${y0+h/2}" font-size="9" text-anchor="middle" fill="#6b655c" transform="rotate(-90 ${x0-11} ${y0+h/2})">${W} ft</text>`;
+  return `<svg viewBox="0 0 ${x0+w+12} ${y0+h+22}" role="img" aria-label="Top view, ${L} by ${W} feet">${o}</svg>`;
+}
+function dzPer(){ const st=DZ.p, id=DZ.per[st.d], x=PRODS[id], cz=x.cz, cv=dzCovers(id), cols=dzCols(id);
+  const lim=k=>[+(cz[k]&&cz[k].min)||8, +(cz[k]&&cz[k].max)||20]; st.l=Math.min(Math.max(st.l,lim('l')[0]),lim('l')[1]); st.w=Math.min(Math.max(st.w,lim('w')[0]),lim('w')[1]); if(st.cov>=cv.o.length) st.cov=0; if(st.c>=cols.length) st.c=0;
+  const col=cols[st.c], im=(col&&col.img)||IMGS[x.img];
+  document.getElementById('dzPer').innerHTML=`<div class="vw"><img src="${im}" alt="${_hesc(x.n)}"><span class="eye">✦ Pergola studio</span>
+    <div class="pl">${dzPerPlan(st.l,st.w,cv.o[st.cov],col&&col.hex)}<small>Top view · changes as you choose</small></div></div>
+    <div class="bd"><h3>Design your pergola</h3>
+    <div><div class="lb">Style</div><div class="chips">${DZ.per.map((i,k)=>`<button type="button" class="${k===st.d?'on':''}" onclick="DZ.p.d=${k};dzPer()">${_hesc(String(PRODS[i].n).replace(/ Pergola$/,''))}</button>`).join('')}</div></div>
+    ${cv.o.length?`<div><div class="lb">Roof</div><div class="chips">${cv.o.map((n,k)=>`<button type="button" class="${k===st.cov?'on':''}" onclick="DZ.p.cov=${k};dzPer()">${_hesc(dzShort(n))}</button>`).join('')}</div></div>`:''}
+    <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end">
+    ${cols.length?`<div><div class="lb">Finish · ${_hesc(col.n)}</div><div class="chips">${cols.map((c,k)=>`<button type="button" class="sw${k===st.c?' on':''}" title="${_hesc(c.n)}" aria-label="${_hesc(c.n)}" style="background:${c.hex2?`linear-gradient(135deg,${c.hex} 50%,${c.hex2} 50%)`:c.hex}" onclick="DZ.p.c=${k};dzPer()"></button>`).join('')}</div></div>`:''}
+    <div><div class="lb">Size</div><div class="stp"><span><button type="button" aria-label="Shorter" onclick="DZ.p.l--;dzPer()">−</button>${st.l} ft<button type="button" aria-label="Longer" onclick="DZ.p.l++;dzPer()">+</button></span><span>×<button type="button" aria-label="Narrower" onclick="DZ.p.w--;dzPer()">−</button>${st.w} ft<button type="button" aria-label="Wider" onclick="DZ.p.w++;dzPer()">+</button></span></div></div></div>
+    <div class="ft"><div>${dzPrice(id)}</div><button type="button" class="go" onclick="dzPerGo()">Customise and order →</button></div></div>`; }
+function dzPerGo(){ const st=DZ.p, id=DZ.per[st.d], cv=dzCovers(id), col=dzCols(id)[st.c], g={}; if(cv.g&&cv.o[st.cov]) g[cv.g]=cv.o[st.cov];
+  window.__mtoPre={id, l:st.l, w:st.w, material:col?col.m:'', colour:col?col.n:'', groups:g}; try{ window.otrack&&otrack('customise_start',{sku:id,ref:'home'}) }catch(e){} openProduct(id); }
+// ---- 182: AI homepage picks (admin Settings → Homepage). A section keeps its default when nothing is picked ----
 var ROOMS = [];
 function homeLoad(){ const S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon) return;
   _supaRpc('home_public',{}).then(h=>{ if(h&&typeof h==='object') try{ homePaint(h); }catch(e){ console.warn('[outrr] home',e); } }).catch(()=>{}); }
@@ -3672,7 +3763,6 @@ function sphTick(){const el=document.getElementById('q'); if(!el) return;
 
 // ---- boot ----
 fillArch(); fillPkgs(); fillDealTabs(); dealDayPaint();
-fillTiles('tilesWeather', ['lounge','accent','stool','throws']);
 fillTiles('tilesBest', ['lounge','dining','umbp12','awl124']);
 fillTiles('tilesNew', ['pl119c','orm03','awl37','tusker']);
 fillStrip('stripTrend', ['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena']);
@@ -4307,7 +4397,6 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         const pool = one(Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0));
         const pick = (keep, f, n, skip) => keep.filter(id => PRODS[id]).length === keep.length ? keep : pool.filter(f || (() => true)).slice(skip || 0, (skip || 0) + n);
         const big = i => ['furniture', 'shade'].includes(PRODS[i].col);
-        fillTiles('tilesWeather', pick(['lounge','accent','stool','throws'], big, 4));
         fillTiles('tilesBest', pick(['lounge','dining','umbp12','awl124'], null, 4));
         fillTiles('tilesNew', pick(['pl119c','orm03','awl37','tusker'], null, 4, 4));
         fillStrip('stripWinter', winterIds());
@@ -4316,7 +4405,8 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       }catch(e){ console.warn(e) }
       try{ liveHome(); }catch(e){ console.warn(e) }
       try{ fillCatGrid(); _menuRank(); }catch(e){}
-      if(typeof homeLoad === 'function') homeLoad();   // 181: today's AI homepage picks
+      if(typeof homeLoad === 'function') homeLoad();   // 182: today's AI homepage picks
+      try{ dzInit(); }catch(e){ console.warn('[outrr] design banners', e) }
     }
     if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
       try{ renderPLP(lastCol); }catch(e){}
@@ -4398,7 +4488,7 @@ async function shareProduct(){
 <script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=8"></script>
-<script src="/mto.js?v=22"></script>
+<script src="/mto.js?v=23"></script>
 <script src="/ads.js?v=6" defer></script>
 <script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */
 (function(){
