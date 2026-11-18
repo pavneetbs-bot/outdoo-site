@@ -3530,22 +3530,30 @@ function mHome(){
     tr.dataset.done = 1;
   }
   const tiles = (window.MTILES || ARCH || []);
-  const cols = [...new Set(tiles.map(t => t[1]))].filter(c => COLS[c] && !/^(sp|bg|md)-/.test(c));
+  let CL = []; try{ CL = catList(); }catch(e){}
+  const cols = CL.length ? CL.map(c => c.k) : [...new Set(tiles.map(t => t[1]))].filter(c => COLS[c] && !/^(sp|bg|md)-/.test(c));
+  if(MCHIP && !cols.includes(MCHIP)) MCHIP = '';
+  const cimg = c => { const x = CL.find(y => y.k === c); if(x && x.img) return x.img; const t = tiles.find(y => y[1] === c); return t ? (IMGS[t[2]] || '') : ''; };
   const ch = document.getElementById('mchips');
   ch.innerHTML = [['', 'All'], ...cols.map(c => [c, COLS[c].t])].map(([k, l]) => `<button role="tab" aria-selected="${k === MCHIP}" class="${k === MCHIP ? 'on' : ''}" onclick="MCHIP='${k}';mHome()">${l}</button>`).join('');
   const esc = v => String(v).replace(/'/g, "\\'");
-  const circ = (label, img, act) => `<div class="mcir" role="link" tabindex="0" onclick="${act}"><div class="im"><img src="${IMGS[img] || ''}" alt="" loading="lazy"></div><span>${label}</span></div>`;
-  const list = !MCHIP ? cols.map(c => { const t = tiles.find(x => x[1] === c); return circ(COLS[c].t, t[2], `openCol('${c}')`); })
+  const circ = (label, img, act, url) => `<div class="mcir" role="link" tabindex="0" onclick="${act}"><div class="im"><img src="${url || IMGS[img] || ''}" alt="" loading="lazy"></div><span>${label}</span></div>`;
+  const list = !MCHIP ? cols.map(c => circ(COLS[c].t, '', `openCol('${c}')`, cimg(c)))
     : tiles.filter(t => t[1] === MCHIP).map(t => circ(t[0], t[2], t[3] ? `openSub('${t[1]}','${esc(t[3])}')` : `openCol('${t[1]}')`));
   document.getElementById('mcircles').innerHTML = list.join('');
   const mc = document.getElementById('mmCats');
-  if(mc) mc.innerHTML = cols.map(c => { const t = tiles.find(x => x[1] === c); return `<a onclick="mMenu(false);openCol('${c}')"><img src="${IMGS[t[2]] || ''}" alt="" loading="lazy">${COLS[c].t}</a>`; }).join('');
+  if(mc) mc.innerHTML = cols.map(c => `<a onclick="mMenu(false);openCol('${c}')"><img src="${cimg(c)}" alt="" loading="lazy">${COLS[c].t}</a>`).join('');
   const ms = document.getElementById('mmSpaces');
   if(ms) ms.innerHTML = Object.keys(COLS).filter(c => /^sp-/.test(c)).map(c => `<a onclick="mMenu(false);openCol('${c}')">${COLS[c].t}</a>`).join('');
 }
 function mMenu(on){ const m = document.getElementById('mmenu'); if(!m) return; m.classList.toggle('open', !!on); m.setAttribute('aria-hidden', on ? 'false' : 'true'); document.body.style.overflow = on ? 'hidden' : ''; }
 document.addEventListener('DOMContentLoaded', () => { try{ mHome(); }catch(e){} });
 
+// "Top categories" tiles: the biggest sub-category of each category in catScore order, then the next ones (12 in all)
+function archFromTiles(tiles){ if(!tiles.length) return;
+  const by={}; tiles.forEach(t=>(by[t[1]]=by[t[1]]||[]).push(t)); const ks=Object.keys(by).sort((a,b)=>catScore(a)-catScore(b));
+  const out=[]; for(let r=0;out.length<12&&r<6;r++) for(const k of ks){ if(by[k][r]) out.push(by[k][r]); if(out.length>=12) break; }
+  ARCH.length=0; out.forEach(t=>ARCH.push(t)); fillArch(); }
 function liveHome(){
   const ids = Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0);
   if(!ids.length) return;
@@ -3554,8 +3562,7 @@ function liveHome(){
   // category / sub-category tiles, biggest first
   const g = {}; one(ids).forEach(i => { const x = PRODS[i], sb = x.sb && x.sb !== 'More' ? x.sb : ''; (g[x.col + '|' + sb] = g[x.col + '|' + sb] || []).push(i) });
   const tiles = Object.entries(g).sort((a, b) => b[1].length - a[1].length).map(([k, l]) => { const [col, sb] = k.split('|'); return [sb || (COLS[col] ? COLS[col].t : col), col, PRODS[l[0]].img, sb] });
-  if(tiles.length){ ARCH.length = 0; tiles.slice(0, 12).forEach(t => ARCH.push(t)); fillArch(); }
-  window.MTILES = tiles; try{ mHome(); }catch(e){ console.warn(e) }
+  window.MTILES = tiles; archFromTiles(tiles); try{ mHome(); }catch(e){ console.warn(e) }
   // photos of the old sample catalogue → a live product's photo (furniture where it shows furniture)
   const used = new Set(), pickImg = col => { const l = one(ids).filter(i => !used.has(i) && (!col || PRODS[i].col === col)); const i = l[0] || one(ids).find(x => !used.has(x)); if(!i) return null; used.add(i); return IMGS[PRODS[i].img]; };
   const SAMPLE = { BFURN: 'furniture', BDINE: 'furniture', TCASSIO: 'furniture', SOFA: 'furniture', STOOL: 'furniture', TGIULIAA: 'furniture', CHAIR: 'furniture' };
@@ -3720,9 +3727,7 @@ function homePaint(h){
   if(seo&&Array.isArray(h.seo)&&h.seo.length) seo.innerHTML=h.seo.map(b=>`<h3>${_hesc(b.h)}</h3><p>${_hesc(b.p)}</p>`).join('');
   if(h.stats){ const a=document.getElementById('statPieces'); if(a&&+h.stats.products) a.textContent=h.stats.products+'+';
     const m=document.getElementById('statMakers'); if(m&&+h.stats.makers>1) m.textContent=h.stats.makers+'+'; }
-  if(Array.isArray(h.cats)&&h.cats.length&&typeof ARCH!=='undefined'&&ARCH.length){   // categories people look at most come first
-    const r=c=>{const i=h.cats.indexOf(c); return i<0?999:i;}; const s0=ARCH.map((a,i)=>[a,i]).sort((x,y)=>r(x[0][1])-r(y[0][1])||x[1]-y[1]).map(x=>x[0]);
-    ARCH.length=0; s0.forEach(a=>ARCH.push(a)); try{ fillArch(); }catch(e){} }
+  if(Array.isArray(h.cats)&&h.cats.length){ window.HOMECATS=h.cats.filter(c=>typeof c==='string'); catsRefresh(); }   // categories people look at most come first, everywhere
   ROOMS=(h.rooms||[]).map(r=>({name:r.name,inc:r.inc||'',ids:(r.skus||[]).filter(i=>PRODS[i]&&IMGS[PRODS[i].img])})).filter(r=>r.ids.length>=2);
   const pr=document.getElementById('pkgRow');
   if(pr&&ROOMS.length){
@@ -3845,8 +3850,21 @@ function openSub(k,t){openCol(k); FLT.sub=new Set([t]); buildChips(); renderPLP(
 const CAT_ORDER=['furniture','fire-pits','lighting','planters','plants','shade','bar-counters','cabins','sculptures','water-features','vertical-gardens','privacy-screens','feature-walls','gates','railings','decking','graffiti','art'];
 const CAT_PIC={'bar-counters':'MTO-BR-ARCH','cabins':'MTO-CB-GLASS','shade':'MTO-PG-AL','sculptures':'MTO-SC-ABS-KNOT-FRP','vertical-gardens':'MTO-VG-PVC-WALL','water-features':'MTO-WC-TRIPLE'};
 let _CATS=null,_CATS_N=-1;
+// categories everywhere (menu, home grid, top categories, mobile chips / circles / drawer) follow one order:
+// Claude's "categories by interest" (home_public.cats, refreshed with the homepage picks) → else the store's
+// search ranking (best-ranked product) → else how many products. Built from the live catalogue, so a new
+// category / sub-category shows as soon as it has a listed product and one that empties disappears.
+window.HOMECATS=window.HOMECATS||[];
+function catScore(k){ const i=HOMECATS.indexOf(k); if(i>=0) return i;
+  const R=MENU.rank; if(R){ let m=1e9; for(const id in PRODS) if(PRODS[id].col===k&&id in R&&R[id]<m) m=R[id]; if(m<1e9) return 100+m/10; }
+  const j=CAT_ORDER.indexOf(k); return 1000+(j<0?99:j); }
+function catsRefresh(){ _CATS=null;
+  try{ fillCatGrid(); }catch(e){}
+  try{ if(window.MTILES&&MTILES.length){ archFromTiles(MTILES); } }catch(e){}
+  try{ mHome(); }catch(e){}
+  try{ const p=document.getElementById('navPanel'); if(navCur==='cat'&&p&&p.classList.contains('open')){ const k=navCur; navCur=null; navOpen(k,null,true); } }catch(e){} }
 function catList(){
-  const ids=Object.keys(PRODS); if(_CATS&&_CATS_N===ids.length&&!!MENU.rank===!!_CATS.r) return _CATS.l;
+  const ids=Object.keys(PRODS); if(_CATS&&_CATS_N===ids.length&&!!MENU.rank===!!_CATS.r&&_CATS.h===HOMECATS.join()) return _CATS.l;
   const g={};
   ids.forEach(id=>{const x=PRODS[id],k=x.col; if(!k||!COLS[k]||/^(sp|bg|md)-|^__/.test(k)) return;
     const c=g[k]||(g[k]={k,t:COLS[k].t,n:0,mto:0,subs:{},ids:[],from:0}); c.n++; if(x.cz) c.mto++; c.ids.push(id);
@@ -3857,8 +3875,8 @@ function catList(){
     const ms=MENU.subs||{};
     return {k:c.k,t:c.t,n:c.n,from:c.from,mto:c.mto>c.n/2,img:COLS[c.k].mimg||pkImg||_pimg(top)||IMGS[COLS[c.k].img]||'',
       subs:Object.keys(c.subs).map(t=>({t,n:c.subs[t],so:(ms[c.k+'|'+t]||{}).sort})).sort((a,b)=>(a.so??1e4-a.n)-(b.so??1e4-b.n))};})
-   .sort((a,b)=>{const i=CAT_ORDER.indexOf(a.k),j=CAT_ORDER.indexOf(b.k);return (i<0?99:i)-(j<0?99:j)||b.n-a.n;});
-  _CATS={l,r:!!MENU.rank}; _CATS_N=ids.length; return l;
+   .sort((a,b)=>catScore(a.k)-catScore(b.k)||b.n-a.n);
+  _CATS={l,r:!!MENU.rank,h:HOMECATS.join()}; _CATS_N=ids.length; return l;
 }
 function fillCatGrid(){const el=document.getElementById('cgrid'); if(!el) return;
   el.innerHTML=catList().map(c=>`<div class="cg" data-col="${c.k}" role="link" tabindex="0"><div class="im"><img loading="lazy" src="${c.img}" alt="${_esc(c.t)}"></div><b>${_esc(c.t)}</b><small>${c.from?'From '+inr(c.from):'Explore →'}</small></div>`).join('');}
@@ -3871,7 +3889,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 function _menuRank(){ if(MENU.rank||MENU._asked) return; MENU._asked=1;
-  _supaRpc('search_products',{q:'',p_category:null,p_limit:2000}).then(rows=>{MENU.rank={};rows.forEach((r,i)=>MENU.rank[r.sku]=i); try{fillCatGrid();}catch(e){}
+  _supaRpc('search_products',{q:'',p_category:null,p_limit:2000}).then(rows=>{MENU.rank={};rows.forEach((r,i)=>MENU.rank[r.sku]=i); catsRefresh();
     }).catch(()=>{});}
 function navOpen(kind,el,hover){
   const p=document.getElementById('navPanel');
@@ -4405,6 +4423,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         if(typeof dealsLoad === 'function') dealsLoad();   // 180: today's AI deals
       }catch(e){ console.warn(e) }
       try{ liveHome(); }catch(e){ console.warn(e) }
+      try{ catsRefresh(); }catch(e){}
       try{ fillCatGrid(); _menuRank(); }catch(e){}
       if(typeof homeLoad === 'function') homeLoad();   // 182: today's AI homepage picks
       try{ dzInit(); }catch(e){ console.warn('[outrr] design banners', e) }
