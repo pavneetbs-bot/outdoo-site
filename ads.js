@@ -105,17 +105,18 @@
     if(!col) return all;
     if(slot === 'C1') return [ownAd('C1', col) || auto(col)].filter(Boolean);
     var later = function(r){ return ADS.some(function(a){ return a.cols[0] === r && a.from && Date.now() < t(a.from); }); };   // its season hasn't started: no banner yet
-    var rel = (RELATED[col] || []).filter(function(r){ return !later(r); }).map(function(r){ return ownAd(slot, r) || auto(r); }).filter(Boolean);
+    var rel = (RELATED[col] || []).map(function(r){ return later(r) ? auto(r) : (ownAd(slot, r) || auto(r)); }).filter(Boolean);   // season not started: its plain category banner
     var own = ownAd(slot, col), gen = all.filter(function(a){ return !a.cols.length && (!a.rts || RTS_COLS[col]); });
-    return slot === 'P2' ? rel : rel.concat(own ? [own] : [], gen);   // a product page never advertises its own category
+    if(slot === 'P2') return rel;   // a product page never advertises its own category
+    return rel.length ? rel.concat(slot === 'C2' ? gen : []) : (own ? [own] : []).concat(gen);   // 2026-11-18: grid / side banners = related categories only (own only when none)
   }
   function pick(slot, col, n){
     var pool = candidates(slot, col).filter(function(a, i, l){ return a && l.indexOf(a) === i; });
     if(!pool.length) return [];
     var k = slot + '|' + (col || ''), s = col ? 0 : (seen[k] == null ? (seen[k] = Math.floor(Math.random() * pool.length)) : seen[k]), out = [];   // a category page: fixed order; elsewhere a random start per visit
     var order = pool.map(function(_, i){ return pool[(s + i) % pool.length]; });
-    var U = USED[CTX], fresh = order.filter(function(a){ return !U[a.id]; }).concat(order.filter(function(a){ return U[a.id]; }));   // not yet on this page first
-    for(var i = 0; i < (n || 1); i++){ var a = fresh[i % fresh.length]; out.push(a); U[a.id] = 1; }
+    var U = USED[CTX];   // not yet on this page first, then the one shown longest ago (never the same twice in a row)
+    for(var i = 0; i < (n || 1); i++){ var a = order.slice().sort(function(x, y){ return (U[x.id] || 0) - (U[y.id] || 0); })[0]; out.push(a); out._rep = !!U[a.id]; U[a.id] = (U._n = (U._n || 0) + 1); }
     return out;
   }
   // a category without a banner of its own: its title, tagline and hand-picked photos
@@ -184,11 +185,12 @@
     var g = document.getElementById('plpGrid'); if(!g) return;
     var cards = [].slice.call(g.children).filter(function(c){ return c.classList.contains('pc') || c.classList.contains('bunc'); });
     if(cards.length < 6) return;
-    for(var i = cards.length - 1; i >= 0; i--){
-      var pos = i + 1, tmp = document.createElement('div'), a;
-      if(pos % 16 === 0 && pos < cards.length){ a = pick(search ? 'S1' : 'C4', col, 1)[0]; if(a){ tmp.innerHTML = html(a, search ? 'S1' : 'C4'); cards[i].after(tmp.firstChild); } }
-      else if(pos % 8 === 0 && pos < cards.length || pos === 4){ a = pick(search ? 'S1' : 'C2', col, 1)[0]; if(a){ tmp.innerHTML = html(a, search ? 'S1' : 'C2'); cards[i].after(tmp.firstChild); } }
-    }
+    // 2026-11-18: top to bottom, so the first screens get different banners (the side one included); 4 at most,
+    // well apart: a card after 8, full width after 20, a card after 36, full width after 52
+    var AT = { 8:'C2', 20:'C4', 36:'C2', 52:'C4' }, ins = [];
+    cards.forEach(function(c, i){ var s0 = AT[i + 1]; if(s0 && i + 1 < cards.length) ins.push([c, search ? 'S1' : s0]); });
+    ins.forEach(function(x){ var l = pick(x[1], col, 1), a = l._rep ? null : l[0], tmp = document.createElement('div'); if(!a) return;   // each banner once per page
+      tmp.innerHTML = html(a, x[1]); x[0].after(tmp.firstChild); });
   }
   // ---------------------------------------------------------------- product page: P1, P2
   function pdp(id){ USED.pdp = {}; CTX = 'pdp'; var x = G('PRODS') && PRODS[id], col = x ? x.col : '';
