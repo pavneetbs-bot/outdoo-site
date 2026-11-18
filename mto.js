@@ -1032,6 +1032,7 @@
     var x = PRODS[id], m = x.cz, u = m.unit, uw = UW(u), pdp = document.getElementById('pdp'); pdp.classList.add('pdp-mto'); document.body.classList.add('pdp-mto-on');
     if (u === 'cabin') { pdp.classList.add('pdp-cab'); document.body.classList.add('pdp-cab-on'); S.v3 = null; var j0 = JSON.stringify(m.cabin.layout); S.tpl = (arr(m.cabin.templates).filter(function (t) { return JSON.stringify(t.layout) === j0; })[0] || {}).code || null; S.furn = furnGuess(x); S.night = false; S.sel3 = null; }
     var c0 = arr((arr(m.materials)[0] || {}).colours)[0]; if (c0 && !S.o.colour) S.o.colour = c0.name;
+    setTimeout(function () { try { colGal(); } catch (e) {} }, 0);   // 187
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), lo = mats.length ? Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; })) : 0;
     var pr = document.getElementById('pdPrice'); if (pr && x.oo !== false) pr.innerHTML = '<span class="mfrom">From</span> ' + rs(x.p) + (u !== 'fixed' && u !== 'cabin' && u !== 'seat' && lo ? '<span class="mrplab">' + rs(lo) + ' / ' + uw + '</span>' : '');
     var tl = document.querySelector('#pdp .taxline'); if (tl) { tl.style.display = ''; tl.textContent = 'Inclusive of GST · priced for your size and options below'; }
@@ -1114,7 +1115,11 @@
   }
 
   // a colour with its own photo (pergola finishes): picking the colour shows that photo
-  function colPic(name) { var x = PRODS[S.id], c = null; arr(x && x.cz && x.cz.materials).forEach(function (mm) { arr(mm.colours).forEach(function (cc) { if (cc.name === name) c = cc; }); }); if (!c || !c.img) return;
+  window.mtoColourOf = function (id) { return S && S.id === id ? S.o.colour : null; };   // 187: the product page shows the picked finish's photos
+  function colGal() { if (!S || !window.GALC || !(GALC[S.id] || []).length || !window.pdThumbs) return false;
+    var G = window.PDG; if (!G || G.id !== S.id) return false; window.pdThumbs(S.id);   // a finish without its own photos: every photo again
+    if (!GALC[S.id].some(function (g) { return g[1] === S.o.colour; })) return false; if (window.pdGo) window.pdGo(0); return true; }
+  function colPic(name) { if (colGal()) return; var x = PRODS[S.id], c = null; arr(x && x.cz && x.cz.materials).forEach(function (mm) { arr(mm.colours).forEach(function (cc) { if (cc.name === name) c = cc; }); }); if (!c || !c.img) return;
     var key = function (u) { u = String(u || '').split('?')[0]; return u.split('product-images/')[1] || u; }, g = gal(S.id).map(key), k = g.indexOf(key(c.img)); if (k >= 0) S.img = k;
     var G = window.PDG; if (G && G.id === S.id && window.pdGo) { var j = G.list.map(key).indexOf(key(c.img)); if (j >= 0) window.pdGo(j); } }   // the product page's own gallery
   function gal(id) { var x = PRODS[id]; return [IMGS[x.img]].concat((window.GAL && GAL[id]) || []).filter(Boolean).filter(function (u, i, a) { return a.indexOf(u) === i; }); }

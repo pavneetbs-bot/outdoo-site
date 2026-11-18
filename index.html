@@ -2947,8 +2947,10 @@ function renderPLP(){ try{ plpCrumb(); }catch(e){}
 let curPid=null;
 // product page gallery: main photo + the product's other photos (GAL, from product_images); one thumb when there are none
 var GAL = window.GAL || {}; window.GAL = GAL;
+var GALC = {};   // 187: sku → [[url, colour]] — photos that show one finish
+function pdColList(id){ const c=window.mtoColourOf&&mtoColourOf(id), l=(GALC[id]||[]).filter(g=>g[1]===c).map(g=>g[0]); return l.length?l:null; }
 function pdThumbs(id){
-  const x=PRODS[id]; if(!x) return; const list=[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])].filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
+  const x=PRODS[id]; if(!x) return; const cl=pdColList(id), list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);   // a finish with its own photos: only those
   window.PDG={id,list,i:0};
   const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
   box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdGo(${i})"><img src="${u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
@@ -4487,9 +4489,10 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     cartX(); CART = CART.filter(c => PRODS[c.id]); updBadge();
     // each product's other photos (Image Studio: side, front, close-up, measurements) for the product page gallery
     try{
-      const gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort');
+      let gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort,colour');   // 187: the finish a photo shows
+      if(!gr.ok) gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort');
       if(gr.ok){ const bySku = {}; prods.forEach(p => bySku[p.id] = p.sku);
-        (await gr.json()).sort((a,b) => (a.sort||0) - (b.sort||0)).forEach(g => { const k = bySku[g.product_id]; if(k){ (GAL[k] = GAL[k] || []).push(g.url); } });
+        (await gr.json()).sort((a,b) => (a.sort||0) - (b.sort||0)).forEach(g => { const k = bySku[g.product_id]; if(k){ (GAL[k] = GAL[k] || []).push(g.url); if(g.colour) (GALC[k] = GALC[k] || []).push([g.url, g.colour]); } });
         try{ if(curPid && document.getElementById('pdp').style.display==='block' && window.PDG && PDG.id===curPid) pdThumbs(curPid); }catch(e){} }   // 164: a product page opened before the photos loaded
     }catch(e){}
     try{ window.dispatchEvent(new Event('outrr-catalog')); }catch(e){}
