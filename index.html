@@ -3279,7 +3279,7 @@ function renderCart(){
  const sub0=CART.reduce((a,c)=>a+P0(c.id)*c.q,0), sub=ship===null?CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0):sub0+ship;
  const mrp=CART.reduce((a,c)=>a+(M0(c.id)>P0(c.id)?M0(c.id):P0(c.id))*c.q,0)+(sub-sub0);
  const save=mrp-sub;
- const bc=bestCoupon(nbSub()), coup=bc.amt;   // 127: never on bundles
+ const bc=bestOff(), coup=bc.amt;   // 127: never on bundles · 180: or today's deals
  const total=sub-coup;
  const th=200000, pct=Math.min(100,Math.round(total/th*100));
  const progTxt = total>=th? '🎉 <b>Room package pricing unlocked</b> — best bundle rate applied to this order'
@@ -3304,7 +3304,7 @@ function renderCart(){
    <div class="csum">
     <div class="r"><span>Price (${CART.reduce((a,c)=>a+c.q,0)} items, incl. delivery)</span><span>${inr(sub)}</span></div>
     ${save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(save)}</span></div>`:''}
-    ${bc.code?`<div class="r"><span>Coupon ${bc.code} <span class="grn">(auto-applied)</span></span><span class="grn">− ${inr(coup)}</span></div>`:''}
+    ${bc.code?`<div class="r"><span>${offLabel(bc.code)} <span class="grn">(auto-applied)</span></span><span class="grn">− ${inr(coup)}</span></div>`:''}
     ${shipRow(ship)}
     <div class="r tot"><span>Total</span><span>${inr(total)}</span></div>
     <div class="secline" style="margin-top:6px">Inclusive of all taxes · GST invoice available</div>
@@ -3345,26 +3345,29 @@ fillStrip('stripLight', byCol('lighting',10));
 fillStrip('stripRugs', byPrice(12000,10));
 fillStrip('stripPlant', byCol('planters',10));
 fillStrip('stripArt', byCol('art',10));
-// deal of the day: rotates daily
-(function(){
-  const ids=Object.keys(PRODS).filter(i=>!soon(i)&&PRODS[i].m>PRODS[i].p);
-  const pool=ids.length?ids:Object.keys(PRODS).filter(i=>!soon(i));
-  const day=Math.floor(Date.now()/864e5);
-  const id=pool[day%pool.length]; const x=PRODS[id];
-  const mr=x.m>x.p? `<span class="dm">${inr(x.m)}</span>`:'';
-  const card=document.getElementById('dealCard');
-  if(card){card.setAttribute('onclick',`openProduct('${id}')`);
-    card.innerHTML=`<div class="im"><img src="${IMGS[x.img]}" alt=""></div>
-      <div class="tx"><span class="db">TODAY ONLY</span><h3>${x.n}</h3>
-      <div class="dp">${inr(Math.round(x.p*0.95/100)*100)}${mr}</div>
-      <div class="tm">Ends in <b id="dealTimer">--:--:--</b></div></div>`;
-    function tick(){const now=new Date();const end=new Date(now);end.setHours(24,0,0,0);
-      let s=Math.max(0,(end-now)/1000|0);
-      const t=`${String(s/3600|0).padStart(2,'0')}:${String((s%3600)/60|0).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
-      const a=document.getElementById('dealTimer'); if(a) a.textContent=t;
-      const b=document.getElementById('dealTimerTop'); if(b) b.textContent='Ends in '+t;}
-    tick(); setInterval(tick,1000);}
-})();
+// 180: today's deals (AI-picked, from deals_public) — a real discount at checkout; the deal or the coupon, whichever saves more
+var DEALS={};
+function dealSave(id){ var d=DEALS[id], x=PRODS[id]; if(!d||!x||x.bun) return 0; var b=window.baseP?baseP(x):x.p; return Math.max(0,b-d.price); }
+function bestOff(){ var bc=bestCoupon(nbSub()), dd=CART.reduce(function(a,c){return a+dealSave(c.id)*c.q},0);
+  return dd>bc.amt?{code:'DEAL',amt:dd,coupon:bc.code}:Object.assign({coupon:bc.code},bc); }
+const offLabel=c=>c==='DEAL'?"Today's deal":'Coupon '+c;
+// 180: deal of the day = today's AI pick (deals_public); none → the section stays hidden
+function dealDayPaint(){
+  const card=document.getElementById('dealCard'), sec=card&&card.closest('.sec2'); if(!card) return;
+  const id=Object.keys(DEALS).find(i=>DEALS[i].kind==='day'&&PRODS[i]&&!soon(i));
+  if(!id){ if(sec) sec.style.display='none'; return; }
+  const x=PRODS[id], dp=x.p-dealSave(id);
+  if(sec) sec.style.display='';
+  card.setAttribute('onclick',`openProduct('${id}')`);
+  card.innerHTML=`<div class="im"><img src="${IMGS[x.img]}" alt=""></div>
+    <div class="tx"><span class="db">TODAY ONLY · ${DEALS[id].pct}% OFF</span><h3>${x.n}</h3>
+    <div class="dp">${inr(dp)}<span class="dm">${inr(x.p)}</span></div>
+    <div class="tm">Ends in <b id="dealTimer">--:--:--</b></div></div>`;
+}
+(function(){ function tick(){ const n=new Date(), ist=new Date(n.getTime()+(330+n.getTimezoneOffset())*60000), end=new Date(ist); end.setHours(24,0,0,0);
+    let s=Math.max(0,(end-ist)/1000|0); const t=`${String(s/3600|0).padStart(2,'0')}:${String((s%3600)/60|0).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    const a=document.getElementById('dealTimer'); if(a) a.textContent=t; const b=document.getElementById('dealTimerTop'); if(b) b.textContent='Ends in '+t; }
+  tick(); setInterval(tick,1000); })();
 
 
 // ---- tile buttons + quick view ----
@@ -3566,11 +3569,6 @@ function liveHome(){
     const pr = document.getElementById('pkgRow'); if(pr) pr.closest('.sec2').style.display = 'none';
     document.querySelectorAll('.sn2[onclick^="navOpen(\'pkg\'"]').forEach(e => e.style.display = 'none');
   }
-  // deals tabs: only categories that have products, with their photo
-  if(typeof DTABS !== 'undefined'){
-    const dt = Object.entries(g).reduce((m, [k, l]) => { const col = k.split('|')[0]; if(!m.some(d => d[1] === col)) m.push([(COLS[col] ? COLS[col].t : col).split(' & ')[0], col, PRODS[l[0]].img]); return m }, []);
-    if(dt.length){ DTABS.length = 0; dt.slice(0, 6).forEach(d => DTABS.push(d)); dtabOn = 0; try{ fillDealTabs(); }catch(e){} }
-  }
   const sp = document.getElementById('statPieces'); if(sp) sp.textContent = ids.length + '+';
 }
 
@@ -3614,21 +3612,28 @@ function oTile(id){const x=PRODS[id];
    <div class="pw">${soon(x)?soonH():`${inr(x.p)}${x.m>x.p?`<s>${inr(x.m)}</s>`:''}`}</div></div>`;}
 function fillTiles(el,ids){const d=document.getElementById(el); if(d) d.innerHTML=ids.map(oTile).join('');}
 
-// ---- deals tabs ----
-const DTABS=[['Rugs','furnishings','RORM03'],['Planters','planters','PPL119C'],['Lamps','lighting','LAWL36'],
-             ['Umbrellas','shade','UUMBP26'],['Art','art','ATUSKER']];
-let dtabOn=0;
+// ---- 180: Deals you can't miss = today's AI picks, one tab per category (deals_public); none → hidden ----
+let DTABS=[], dtabOn=0;
 function fillDealTabs(){
-  const t=document.getElementById('dealTabs'); if(!t) return;
+  const t=document.getElementById('dealTabs'), sec=t&&t.closest('.sec2'); if(!t) return;
+  const by={}; Object.keys(DEALS).filter(i=>DEALS[i].kind==='pick'&&PRODS[i]&&!soon(i)).sort((a,b)=>DEALS[a].sort-DEALS[b].sort).forEach(i=>{const k=DEALS[i].tab||PRODS[i].col;(by[k]=by[k]||[]).push(i)});
+  DTABS=Object.keys(by).map(k=>[(COLS[k]&&COLS[k].t)||k,k,by[k]]);
+  if(!DTABS.length){ if(sec) sec.style.display='none'; return; }
+  if(sec) sec.style.display=''; if(dtabOn>=DTABS.length) dtabOn=0;
   t.innerHTML=DTABS.map((d,i)=>`<div class="dtab${i===dtabOn?' on':''}" onclick="pickDtab(${i})">
-    <div class="im"><img src="${IMGS[d[2]]||''}" alt=""></div><span>${d[0]}</span></div>`).join('');
-  const col=DTABS[dtabOn][1];
-  const ids=Object.keys(PRODS).filter(i=>PRODS[i].col===col).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,6);
-  fillTiles('tilesDeals', ids);
+    <div class="im"><img src="${IMGS[PRODS[d[2][0]].img]||''}" alt=""></div><span>${_esc(d[0])}</span></div>`).join('');
+  const ids=DTABS[dtabOn][2];
+  const d=document.getElementById('tilesDeals'); if(d) d.innerHTML=ids.map(id=>{const x=PRODS[id];
+    return `<div class="otile" onclick="openProduct('${id}')"><div class="im"><img src="${IMGS[x.img]}" alt=""><span class="addp" onclick="event.stopPropagation();addCart('${id}')">+ Add</span></div>
+      <div class="nm2">${x.n}</div><div class="pw">${inr(x.p-dealSave(id))}<s>${inr(x.p)}</s> <span class="grn" style="font-size:11px;font-weight:700">−${DEALS[id].pct}%</span></div></div>`;}).join('');
   const v=document.getElementById('dealsViewAll');
-  if(v){v.textContent='View all '+DTABS[dtabOn][0]; v.setAttribute('onclick',`openCol('${col}')`);}
+  if(v){v.textContent='View all '+DTABS[dtabOn][0]; v.setAttribute('onclick',`openCol('${DTABS[dtabOn][1]}')`);}
 }
 function pickDtab(i){dtabOn=i; fillDealTabs();}
+function dealsLoad(){ const S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon){ dealDayPaint(); fillDealTabs(); return; }
+  fetch(S.url+'/rest/v1/rpc/deals_public',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:'{}'})
+    .then(r=>r.ok?r.json():[]).then(j=>{ DEALS={}; (Array.isArray(j)?j:[]).forEach(d=>{DEALS[d.sku]=d}); },()=>{})
+    .then(()=>{ try{dealDayPaint(); fillDealTabs();}catch(e){} try{ const cb=document.getElementById('cartBody'); if(cb&&cb.offsetParent) renderCart(); }catch(e){} try{ if(typeof curPid!=='undefined'&&curPid&&window.pdPaint) pdPaint(curPid); }catch(e){} }); }
 
 // ---- trending timer ----
 function trendTick(){
@@ -3645,7 +3650,7 @@ function sphTick(){const el=document.getElementById('q'); if(!el) return;
   el.placeholder='Search for '+SPH[sphI%SPH.length]; sphI++;}
 
 // ---- boot ----
-fillArch(); fillPkgs(); fillDealTabs();
+fillArch(); fillPkgs(); fillDealTabs(); dealDayPaint();
 fillTiles('tilesWeather', ['lounge','accent','stool','throws']);
 fillTiles('tilesBest', ['lounge','dining','umbp12','awl124']);
 fillTiles('tilesNew', ['pl119c','orm03','awl37','tusker']);
@@ -3813,7 +3818,7 @@ function bestCoupon(sub){ var n=Date.now(), best={code:null,amt:0};
   return best; }
 // ================= checkout =================
 function coTotals(){
-  const bc=bestCoupon(nbSub()), coup=bc.amt;   // 127: never on bundles
+  const bc=bestOff(), coup=bc.amt;   // 127: never on bundles · 180: or today's deals
   // 076: packaging + delivery by the address pincode (else the city the visitor picked)
   const pinEl=document.getElementById('coPin'), pin=pinEl?pinEl.value.trim():(coLast.pincode||'');
   const loc=(window.locFromPin&&locFromPin(pin))||(window.nearLoc&&nearLoc())||null;
@@ -3821,7 +3826,7 @@ function coTotals(){
   // 178: delivery folded into the price (sub); total = own prices − coupon + delivery, same as the server
   const sub0=CART.reduce((a,c)=>a+P0(c.id)*c.q,0), sub=ship===null?CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0):sub0+ship;
   const mrp=CART.reduce((a,c)=>a+(M0(c.id)>P0(c.id)?M0(c.id):P0(c.id))*c.q,0)+(sub-sub0);
-  return {sub,mrp,save:mrp-sub,coup,code:bc.code,ship,loc,total:sub-coup,items:CART.reduce((a,c)=>a+c.q,0)};
+  return {sub,mrp,save:mrp-sub,coup,code:bc.code,coupon:bc.coupon,ship,loc,total:sub-coup,items:CART.reduce((a,c)=>a+c.q,0)};
 }
 // "Delivery" row: amount for the place, FREE, or "enter pincode"
 function shipRow(ship,loc,id){
@@ -3894,7 +3899,7 @@ function renderCheckout(){
       <div class="osum" style="margin-top:12px">
         <div class="r"><span>Price (incl. delivery)</span><span id="coSub">${inr(t.sub)}</span></div>
         ${t.save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(t.save)}</span></div>`:''}
-        ${t.code?`<div class="r"><span>Coupon ${t.code}</span><span class="grn">− ${inr(t.coup)}</span></div>`:''}
+        ${t.code?`<div class="r"><span>${offLabel(t.code)}</span><span class="grn">− ${inr(t.coup)}</span></div>`:''}
         ${shipRow(t.ship,t.loc,'coShipR')}
         <div class="r tot"><span>Total payable</span><span id="coTot">${inr(t.total)}</span></div>
       </div>
@@ -3937,7 +3942,7 @@ async function placeOrder(){
   let res, err;
   try{
     const r=await fetch(S.url+'/rest/v1/rpc/place_order',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(utok||S.anon),'Content-Type':'application/json'},
-      body:JSON.stringify({p:{items:CART.map(c=>c.mto?{sku:c.id,qty:1,mto:c.mto}:PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().code,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
+      body:JSON.stringify({p:{items:CART.map(c=>c.mto?{sku:c.id,qty:1,mto:c.mto}:PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().coupon,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
@@ -4266,7 +4271,6 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         a.textContent = c.title; a.onclick = e => { e.preventDefault(); openCol(c.slug); }; ft.querySelector('.fh').after(a); }
       const img = COLS[c.slug].img;
       if(typeof ARCH !== 'undefined' && !ARCH.some(x => x[1] === c.slug)){ ARCH.splice(1, 0, [c.title, c.slug, img]); try{ fillArch(); }catch(e){} }
-      if(typeof DTABS !== 'undefined' && !DTABS.some(x => x[1] === c.slug)){ DTABS.unshift([c.title.split(' & ')[0], c.slug, img]); try{ fillDealTabs(); }catch(e){} }
     });
     if(typeof COLS !== 'undefined') colsDB.forEach(c => { if(COLS[c.slug]){
       COLS[c.slug].t = c.title || COLS[c.slug].t;
@@ -4287,7 +4291,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         fillTiles('tilesNew', pick(['pl119c','orm03','awl37','tusker'], null, 4, 4));
         fillStrip('stripWinter', winterIds());
         fillStrip('stripTrend', pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8).length ? pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8) : pool.slice(0, 8));
-        if(typeof fillDealTabs === 'function'){ const f = DTABS.findIndex(d => Object.keys(PRODS).some(i => PRODS[i].col === d[1])); if(f >= 0 && !Object.keys(PRODS).some(i => PRODS[i].col === DTABS[dtabOn][1])) dtabOn = f; fillDealTabs(); }
+        if(typeof dealsLoad === 'function') dealsLoad();   // 180: today's AI deals
       }catch(e){ console.warn(e) }
       try{ liveHome(); }catch(e){ console.warn(e) }
       try{ fillCatGrid(); _menuRank(); }catch(e){}
@@ -4371,7 +4375,7 @@ async function shareProduct(){
 <script src="/account.js?v=6"></script>
 <script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
-<script src="/near.js?v=7"></script>
+<script src="/near.js?v=8"></script>
 <script src="/mto.js?v=22"></script>
 <script src="/ads.js?v=6" defer></script>
 <script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */

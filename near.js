@@ -396,7 +396,8 @@ function pdPaint(id){
   var p0 = baseP(x), m0 = baseM(x), f = hasCh(x) ? c.fee : 0, pp = Math.round(p0 + f), mm = m0 > p0 ? Math.round(m0 + f) : 0;
   off = mm > pp ? Math.round((1 - pp / mm) * 100) : 0;
   mrp = off ? '<span class="mrplab">MRP</span><span class="mrp">' + inr(mm) + '</span><span class="off">' + off + '% OFF</span>' : '';
-  el.innerHTML = inr(pp) + mrp;
+  var dl = window.DEALS && DEALS[id] && !x.bun ? DEALS[id] : null;   // 180: today's deal — real price at checkout
+  el.innerHTML = dl ? inr(pp - Math.max(0, p0 - dl.price)) + '<span class="mrp">' + inr(pp) + '</span><span class="off">Today\'s deal · ' + dl.pct + '% OFF</span>' : inr(pp) + mrp;
   if (chip) chip.textContent = 'Delivery included';
   if (LOC && !ships) br.innerHTML = '<b class="dlv-no">Doesn\'t deliver to ' + esc(where()) + '</b> · <a class="dlv-a" onclick="nearOpen(\'change\')">Change city</a>';
   else if (LOC) br.innerHTML = 'Price incl. delivery to ' + esc(where()) + how + ' · <a class="dlv-a" onclick="nearOpen(\'change\')">Change</a>';
