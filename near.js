@@ -147,15 +147,15 @@ if (typeof _tb === 'function') window.tbHTML = tbHTML = function (id){
   var h = _tb(id), r = rank(id), x = PRODS[id] || {};
   if (!LOC) return (x.sp === false ? '<div class="near-lb">Local delivery only</div>' : '') + h;
   if (r === 9) return '<div class="near-lb no">Doesn\'t deliver to ' + esc(where()) + '</div>' + h;
-  var d = hasCh(x) ? '<div class="near-lb dlv">+ ' + inr(charge(x, LOC).fee) + ' delivery</div>' : '<div class="near-lb dlv">Free delivery</div>';   // 076
-  if (r <= 2) return '<div class="near-lb ok">⚡ Local delivery in ' + esc(where()) + '</div>' + d + h;
-  return d + h };
+  if (r <= 2) return '<div class="near-lb ok">⚡ Local delivery in ' + esc(where()) + '</div>' + h;   // 178: price already includes delivery
+  return h };
 
 /* home strips + listings re-ordered when the place changes */
 var STRIPS = {};
 var _fill = window.fillStrip;
 if (typeof _fill === 'function') window.fillStrip = fillStrip = function (el, ids){ STRIPS[el] = ids; return _fill(el, window.nearSort(ids)) };
 function refresh(){
+  try { applyDelivered() } catch (e) {}
   Object.keys(STRIPS).forEach(function (el) { try { _fill(el, window.nearSort(STRIPS[el])) } catch (e) {} });
   try { var plp = document.getElementById('plp'); if (plp && plp.style.display !== 'none' && typeof lastCol !== 'undefined' && lastCol) renderPLP() } catch (e) {}
   try { if (document.getElementById('checkout') && document.getElementById('checkout').style.display === 'block') checkoutCheck() } catch (e) {}
@@ -340,6 +340,16 @@ function hasCh(x){ var c = (x && x.ch) || {}; return [c.pk, c.l, c.s, c.i].some(
 function charge(x, loc){ var pk = num((x.ch || {}).pk) || 0;
   if (!loc) { var lo = Math.min(rateOf(x, 'local'), rateOf(x, 'state'), rateOf(x, 'india')); return { zone: null, pack: pk, ship: lo, fee: pk + lo, from: true } }
   var z = zoneOf(x, loc), sh = rateOf(x, z); return { zone: z, pack: pk, ship: sh, fee: pk + sh } }
+/* 178: prices shown everywhere include packaging + delivery to the visitor's pincode (no separate delivery line).
+   x._p0 / x._m0 = the product's own price / MRP; x.p / x.m = delivered price for LOC (no place yet: the lowest it can be). */
+function baseP(x){ if (!x) return 0; if (x._pd == null || x.p !== x._pd) { x._p0 = x.p; x._m0 = x.m } return x._p0 }
+function baseM(x){ baseP(x); return x._m0 }
+function applyDelivered(){ if (typeof PRODS !== 'object' || !PRODS) return;
+  Object.keys(PRODS).forEach(function (id) { var x = PRODS[id]; if (!x || x.bun) return; var p0 = baseP(x), m0 = baseM(x);
+    var f = hasCh(x) ? charge(x, LOC).fee : 0; x.p = Math.round(p0 + f); x.m = m0 > p0 ? Math.round(m0 + f) : m0; x._pd = x.p }) }
+window.baseP = function (id){ return baseP(typeof id === 'string' ? PRODS[id] : id) };
+window.baseM = function (id){ return baseM(typeof id === 'string' ? PRODS[id] : id) };
+window.applyDelivered = applyDelivered;
 window.shipCharge = function (id, loc){ var x = PRODS[id]; return x ? charge(x, loc === undefined ? LOC : loc) : null };
 window.hasCharges = function (id){ return hasCh(PRODS[id]) };
 window.locFromPin = function (pin){ return /^[1-9][0-9]{5}$/.test(pin || '') ? { city: pinCity(pin), state: pinState(pin), pincode: pin } : null };
@@ -382,17 +392,15 @@ function pdPaint(id){
     var q = quote([{ sku: id, qty: 1 }], LOC, function () { if (typeof curPid !== 'undefined' && curPid === id) pdPaint(id) }), ln = q && q.lines && q.lines[0];
     if (ln && ln.mode === 'vehicle') { c = { pack: +ln.pack, ship: +ln.ship, fee: +ln.pack + +ln.ship }; how = ' <span class="dlv-veh">local delivery by ' + esc(String(ln.note || '').split(' · ')[0]) + '</span>' }
   }
-  if (!hasCh(x)) { el.innerHTML = inr(x.p) + mrp; br.innerHTML = LOC && ships ? 'Free delivery to ' + esc(where()) : 'Free delivery'; if (chip) chip.textContent = 'Free delivery'; return }
-  if (LOC && ships) {
-    el.innerHTML = inr(x.p + c.fee) + '<span class="dlv-to">delivered to ' + esc(where()) + '</span>';
-    br.innerHTML = '<span class="dlv-pp">' + inr(x.p) + ' product</span>' + mrp + '<span class="dlv-plus"> + ' + inr(c.fee) + ' delivery</span>'
-      + how + ' · <a class="dlv-a" onclick="nearOpen(\'change\')">Change city</a>';
-    if (chip) chip.textContent = 'Delivery ' + inr(c.fee);
-  } else {
-    el.innerHTML = inr(x.p) + mrp;
-    br.innerHTML = (LOC && !ships ? '<b class="dlv-no">Doesn\'t deliver to ' + esc(where()) + '</b>' : '+ delivery from ' + inr(c.fee)) + check;
-    if (chip) chip.textContent = 'Delivery extra';
-  }
+  // 178: one price, delivery included — no separate delivery amount anywhere
+  var p0 = baseP(x), m0 = baseM(x), f = hasCh(x) ? c.fee : 0, pp = Math.round(p0 + f), mm = m0 > p0 ? Math.round(m0 + f) : 0;
+  off = mm > pp ? Math.round((1 - pp / mm) * 100) : 0;
+  mrp = off ? '<span class="mrplab">MRP</span><span class="mrp">' + inr(mm) + '</span><span class="off">' + off + '% OFF</span>' : '';
+  el.innerHTML = inr(pp) + mrp;
+  if (chip) chip.textContent = 'Delivery included';
+  if (LOC && !ships) br.innerHTML = '<b class="dlv-no">Doesn\'t deliver to ' + esc(where()) + '</b> · <a class="dlv-a" onclick="nearOpen(\'change\')">Change city</a>';
+  else if (LOC) br.innerHTML = 'Price incl. delivery to ' + esc(where()) + how + ' · <a class="dlv-a" onclick="nearOpen(\'change\')">Change</a>';
+  else br.innerHTML = 'Price incl. delivery · <a class="dlv-a" onclick="pinFocus()">Enter pincode</a>';
 }
 window.pdPaint = pdPaint;
 window.pinFocus = function (){ var i = document.getElementById('pin'); if (!i) return; try { i.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch (e) {} setTimeout(function () { try { i.focus() } catch (e) {} }, 350) };
@@ -451,7 +459,7 @@ pill();
 var skipped = null; try { skipped = localStorage.getItem(DK) } catch (e) {}
 var quiet = /[?&](preview|pitch)=/.test(location.search) || /^#(review|track)=/.test(location.hash);
 if (!LOC && !skipped && !quiet) setTimeout(function () { var off = document.getElementById('offpop'); if (!LOC && !ov && !(off && off.classList.contains('open'))) open('welcome') }, 3000);
-if (LOC) setTimeout(refresh, 0);
+setTimeout(refresh, 0);   // 178: delivered prices even before a place is picked
 window.addEventListener('outrr-catalog', refresh);
 })();
 })();

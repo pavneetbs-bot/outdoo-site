@@ -1086,6 +1086,9 @@ header{position:static!important}
 .mm2-hd b{font-size:15px;color:var(--char)}.mm2-hd small{font-size:12px;color:var(--muted)}
 .mm2-g{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px 18px}
 .mm2-c{min-width:0}
+.navpanel.mega{background:#F3EEE6}   /* 178: menu stands apart from the page */
+.mm2-c h4{font-size:14px!important;margin:0 0 4px!important}.mm2-c small{display:block;font-size:12px;color:#7a756c;line-height:1.4}
+.mm2-g{row-gap:22px!important}
 .mm2-c .im{display:block;aspect-ratio:2/1;border-radius:10px;overflow:hidden;background:var(--sand-soft);cursor:pointer}
 .mm2-c .im img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s}
 .mm2-c .im:hover img{transform:scale(1.05)}
@@ -1096,6 +1099,7 @@ header{position:static!important}
 .mm2-c .mt{display:inline-block;margin-left:6px;font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--olive,#55634A);vertical-align:1px}
 @media(max-width:1180px){.mm2-g,.cgrid{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(max-width:980px){.mm2-g,.cgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:760px){.mm2-g{grid-template-columns:repeat(2,minmax(0,1fr))}.mm2{padding:14px 16px 16px}}
 @media(min-width:900px){.mm-grid .mm-t .im{aspect-ratio:16/10}}
 
 
@@ -2069,7 +2073,7 @@ header{position:static!important}
     <div class="sh"><h2>Frequently asked questions</h2></div>
     <div style="height:14px"></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">Do you deliver across India?<span class="pm">+</span></div>
-      <div class="acc-b">Delivered across India; the delivery charge for your pincode shows on the product page. Assembly is simple and done by you — every piece ships with fittings and a step-by-step guide, and our team is on WhatsApp if you get stuck.</div></div>
+      <div class="acc-b">Delivered across India; prices include delivery to your pincode. Assembly is simple and done by you — every piece ships with fittings and a step-by-step guide, and our team is on WhatsApp if you get stuck.</div></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">Will products survive rain &amp; sun?<span class="pm">+</span></div>
       <div class="acc-b">Everything on outrr is built for the outdoors — powder-coated frames, UV-stabilised weaves, quick-dry foam and weatherproof composites, made in India.</div></div>
     <div class="acc"><div class="acc-h" onclick="accT(this)">What about warranty &amp; returns?<span class="pm">+</span></div>
@@ -2210,7 +2214,7 @@ header{position:static!important}
   <span class="tchip"><svg viewBox="0 0 24 24"><path d="M6 3 h9 l4 4 v14 H6z"/><path d="M9 12 h6 M9 16 h6"/></svg>GST Invoice</span>
   <span class="tchip"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10 V7 a4 4 0 0 1 8 0 v3"/></svg>Secure Payments</span>
 </div>
-<div class="secline" style="margin-top:8px">Secure online payment · UPI, cards, netbanking · Delivery charge shown for your pincode</div>
+<div class="secline" style="margin-top:8px">Secure online payment · UPI, cards, netbanking · Prices include delivery to your pincode</div>
       </div>
       <div class="etamod">
         <div class="top">
@@ -2878,7 +2882,8 @@ function openBundle(id){const x=PRODS[id]; if(!x||!x.bun) return; let ov=documen
 function closeBundle(){const ov=document.getElementById('bunOv'); if(ov) ov.classList.remove('open'); document.body.classList.remove('flt-open');}
 function addBundle(id){const x=PRODS[id]; if(!x||x.oo===false){toast('Coming soon');return;}
   const f=CART.find(c=>c.id===id); f?f.q++:CART.push({id,q:1}); updBadge(); closeBundle(); toast('Bundle added to cart'); try{miniCart(true)}catch(e){}}
-function nbSub(){return CART.reduce((a,c)=>a+(PRODS[c.id]&&PRODS[c.id].bun?0:PRODS[c.id].p*c.q),0);}   // coupons: everything except bundles
+const P0=id=>window.baseP?baseP(PRODS[id]):PRODS[id].p, M0=id=>window.baseM?baseM(PRODS[id]):PRODS[id].m;   // 178: own price (shown prices include delivery)
+function nbSub(){return CART.reduce((a,c)=>a+(PRODS[c.id]&&PRODS[c.id].bun?0:P0(c.id)*c.q),0);}   // coupons: everything except bundles
 // breadcrumbs: Home › Category › Sub-category (› Product). Links go to the page; clicks stay in the app.
 window.COLS_T=k=>COLS[k]?COLS[k].t:'';
 function crumbSet(el,parts){ const n=document.getElementById(el); if(!n) return;
@@ -3274,12 +3279,13 @@ function renderCart(){
  const body=document.getElementById('cartBody');
  document.getElementById('cartCnt').textContent=CART.length?CART.reduce((a,c)=>a+c.q,0)+' items':'';
  if(!CART.length){body.innerHTML=`<div class="cempty"><h3>Your cart is empty</h3>Explore outdoor pieces made for Indian weather<br><button class="btn" onclick="showHome()">Start shopping</button></div>`;return;}
- const sub=CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0);
- const mrp=CART.reduce((a,c)=>a+(PRODS[c.id].m>PRODS[c.id].p?PRODS[c.id].m:PRODS[c.id].p)*c.q,0);
+ const ship=window.cartShip?cartShip():0;   // 076: packaging + delivery to the visitor's city (null = city not set yet)
+ // 178: delivery is inside the price — no separate row. Place not known yet: the shown (lowest) delivered prices.
+ const sub0=CART.reduce((a,c)=>a+P0(c.id)*c.q,0), sub=ship===null?CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0):sub0+ship;
+ const mrp=CART.reduce((a,c)=>a+(M0(c.id)>P0(c.id)?M0(c.id):P0(c.id))*c.q,0)+(sub-sub0);
  const save=mrp-sub;
  const bc=bestCoupon(nbSub()), coup=bc.amt;   // 127: never on bundles
- const ship=window.cartShip?cartShip():0;   // 076: packaging + delivery to the visitor's city (null = city not set yet)
- const total=sub-coup+(ship||0);
+ const total=sub-coup;
  const th=200000, pct=Math.min(100,Math.round(total/th*100));
  const progTxt = total>=th? '🎉 <b>Room package pricing unlocked</b> — best bundle rate applied to this order'
    : 'Add <b>'+inr(th-total)+'</b> more to unlock <b>room package pricing</b> - our best bundle rate';
@@ -3301,7 +3307,7 @@ function renderCart(){
    <div class="cprog">${progTxt}<div class="tr"><div class="fl" style="width:${pct}%"></div></div></div>
    ${lines}${xsHtml}</div>
    <div class="csum">
-    <div class="r"><span>Subtotal (${CART.reduce((a,c)=>a+c.q,0)} items)</span><span>${inr(sub)}</span></div>
+    <div class="r"><span>Price (${CART.reduce((a,c)=>a+c.q,0)} items, incl. delivery)</span><span>${inr(sub)}</span></div>
     ${save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(save)}</span></div>`:''}
     ${bc.code?`<div class="r"><span>Coupon ${bc.code} <span class="grn">(auto-applied)</span></span><span class="grn">− ${inr(coup)}</span></div>`:''}
     ${shipRow(ship)}
@@ -3376,7 +3382,7 @@ function qvOpen(id){qvId=id;const x=PRODS[id];
  document.getElementById('qvC').textContent=x.c+' ratings';
  document.getElementById('qvP').textContent=soon(x)?'Coming soon':inr(x.p);
  document.getElementById('qvM').textContent=!soon(x)&&x.m>x.p?inr(x.m):'';
- document.getElementById('qvShip').textContent=x.ship+(window.hasCharges&&hasCharges(qvId)?' · + delivery':' · Free delivery');
+ document.getElementById('qvShip').textContent=x.ship+' · Delivery included';
  document.getElementById('qvDesc').textContent=x.ds||((typeof COLDESC!=='undefined'&&COLDESC[x.col])?COLDESC[x.col]:'');
  document.getElementById('qvAdd').setAttribute('onclick',soon(x)?'':`qvClose();addCart('${id}')`); document.getElementById('qvAdd').textContent=soon(x)?'Coming soon':'Add to Cart'; document.getElementById('qvAdd').disabled=soon(x); document.getElementById('qvAdd').classList.toggle('soonbtn',soon(x));
  document.getElementById('qvFull').setAttribute('onclick',`qvClose();openProduct('${id}')`);
@@ -3724,7 +3730,7 @@ function mmCat(k){const p=document.getElementById('navPanel'); if(!p) return;
 }
 function openSub(k,t){openCol(k); FLT.sub=new Set([t]); buildChips(); renderPLP();}
 // ---- 2026-11: categories once (menu + home grid): photo, count, sub-categories; built once per catalogue load ----
-const CAT_ORDER=['furniture','fire-pits','lighting','planters','shade','bar-counters','cabins','sculptures','water-features','vertical-gardens','privacy-screens','feature-walls','gates','railings','decking','graffiti','art'];
+const CAT_ORDER=['furniture','fire-pits','lighting','planters','plants','shade','bar-counters','cabins','sculptures','water-features','vertical-gardens','privacy-screens','feature-walls','gates','railings','decking','graffiti','art'];
 const CAT_PIC={'bar-counters':'MTO-BR-ARCH','cabins':'MTO-CB-GLASS','shade':'MTO-PG-AL','sculptures':'MTO-SC-ABS-KNOT-FRP','vertical-gardens':'MTO-VG-PVC-WALL','water-features':'MTO-WC-TRIPLE'};
 let _CATS=null,_CATS_N=-1;
 function catList(){
@@ -3764,14 +3770,13 @@ function navOpen(kind,el,hover){
   const tile=(on,img,t,sm)=>`<div class="mm-t" onclick="navPick();${on}"><div class="im"><img loading="lazy" src="${img}" alt=""></div><b>${_esc(t)}</b>${sm?`<small>${_esc(sm)}</small>`:''}</div>`;
   if(kind==='cat'){   // 2026-11: every category at once (no hover switching) — photo, name, top sub-categories
     const cats=catList();
-    p.innerHTML=`<div class="mm2"><div class="mm2-g">${cats.map(c=>`<div class="mm2-c"><span class="im" data-col="${c.k}"><img loading="lazy" src="${c.img}" alt=""></span>
-      <h4 data-col="${c.k}">${_esc(c.t)}</h4>${c.subs.slice(0,3).map(x=>`<a data-col="${c.k}" data-sub="${_esc(x.t)}">${_esc(x.t)}</a>`).join('')}<a class="all" data-col="${c.k}">View all ${c.n} →</a></div>`).join('')}</div></div>`;
+    p.innerHTML=`<div class="mm2"><div class="mm2-g">${cats.map(c=>`<div class="mm2-c">
+      <h4 data-col="${c.k}">${_esc(c.t)}</h4>${c.subs.slice(0,5).map(x=>`<a data-col="${c.k}" data-sub="${_esc(x.t)}">${_esc(x.t)}</a>`).join('')}<a class="all" data-col="${c.k}">View all ${c.n} →</a></div>`).join('')}</div></div>`;
   } else if(kind==='pkg'){
-    p.innerHTML=`<div class="mm-grid g5">${PKGS.map((k,i)=>tile(`openPkg(${i})`,IMGS[k.img]||_pimg(k.items.find(id=>PRODS[id])),k.n,k.inc)).join('')}</div>`;
+    p.innerHTML=`<div class="mm2"><div class="mm2-g mm2-t">${PKGS.map((k,i)=>`<div class="mm2-c"><h4 onclick="navPick();openPkg(${i})">${_esc(k.n)}</h4>${k.inc?`<small>${_esc(k.inc)}</small>`:''}</div>`).join('')}</div></div>`;   // 178: text only
   } else {
-    p.innerHTML=`<div class="mm-grid${NAVSETS[kind].length>4?' g5':''}">${NAVSETS[kind].map(c=>{const C=COLS[c[1]]||{};
-      const img=(LIVE_HOME&&_pimg(_byRank(_idsOf(c[1])).find(id=>_pimg(id))))||IMGS[C.img]||_pimg(_byRank(_idsOf(c[1])).find(id=>_pimg(id)));
-      return tile(`openCol('${c[1]}')`,img,c[0],C.tag);}).join('')}</div>`;
+    p.innerHTML=`<div class="mm2"><div class="mm2-g mm2-t">${NAVSETS[kind].map(c=>{const C=COLS[c[1]]||{};
+      return `<div class="mm2-c"><h4 onclick="navPick();openCol('${c[1]}')">${_esc(c[0])}</h4>${C.tag?`<small>${_esc(C.tag)}</small>`:''}</div>`;}).join('')}</div></div>`;   // 178: text only
   }
   p.classList.add('open','mega');
 }
@@ -3813,30 +3818,33 @@ function bestCoupon(sub){ var n=Date.now(), best={code:null,amt:0};
   return best; }
 // ================= checkout =================
 function coTotals(){
-  const sub=CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0);
-  const mrp=CART.reduce((a,c)=>a+(PRODS[c.id].m>PRODS[c.id].p?PRODS[c.id].m:PRODS[c.id].p)*c.q,0);
   const bc=bestCoupon(nbSub()), coup=bc.amt;   // 127: never on bundles
   // 076: packaging + delivery by the address pincode (else the city the visitor picked)
   const pinEl=document.getElementById('coPin'), pin=pinEl?pinEl.value.trim():(coLast.pincode||'');
   const loc=(window.locFromPin&&locFromPin(pin))||(window.nearLoc&&nearLoc())||null;
   const ship=window.cartShip?cartShip(loc):0;
-  return {sub,mrp,save:mrp-sub,coup,code:bc.code,ship,loc,total:sub-coup+(ship||0),items:CART.reduce((a,c)=>a+c.q,0)};
+  // 178: delivery folded into the price (sub); total = own prices − coupon + delivery, same as the server
+  const sub0=CART.reduce((a,c)=>a+P0(c.id)*c.q,0), sub=ship===null?CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0):sub0+ship;
+  const mrp=CART.reduce((a,c)=>a+(M0(c.id)>P0(c.id)?M0(c.id):P0(c.id))*c.q,0)+(sub-sub0);
+  return {sub,mrp,save:mrp-sub,coup,code:bc.code,ship,loc,total:sub-coup,items:CART.reduce((a,c)=>a+c.q,0)};
 }
 // "Delivery" row: amount for the place, FREE, or "enter pincode"
 function shipRow(ship,loc,id){
   const w=window.nearWhere?nearWhere(loc):'';
-  if(ship===null) return `<div class="r"${id?` id="${id}"`:''}><span>Delivery</span><span>Enter pincode</span></div>`;
-  return `<div class="r"${id?` id="${id}"`:''}><span>Delivery${w?' to '+w.replace(/[<>&]/g,''):''}</span>${ship>0?`<span>${inr(ship)}</span>`:'<span class="grn">FREE</span>'}</div>`;
+  // 178: delivery is inside the prices — only a hint while the pincode isn't known
+  if(ship===null) return `<div class="r"${id?` id="${id}"`:''}><span style="font-size:12px;color:#7a756c">Exact price for your pincode</span><span style="font-size:12px"><a style="color:#a14f33;cursor:pointer" onclick="nearOpen&&nearOpen('change')">Enter pincode</a></span></div>`;
+  return `<div${id?` id="${id}"`:''} hidden></div>`;
 }
 // checkout: pincode typed → new charge and total, without re-drawing the form
 function coShipPaint(){
   const t=coTotals(), r=document.getElementById('coShipR'), tot=document.getElementById('coTot'), b=document.getElementById('coPlace'), dv=document.getElementById('coDlvTxt');
   if(r) r.outerHTML=shipRow(t.ship,t.loc,'coShipR');
   if(tot) tot.textContent=inr(t.total);
+  const cs=document.getElementById('coSub'); if(cs) cs.textContent=inr(t.sub);
   const sp=document.getElementById('coSplit'); if(sp) sp.innerHTML=coSplitHTML(t);
   if(b && !coBusy) b.textContent=coPayLabel(t);
   if(window.etaFill) etaFill(t.loc);
-  if(dv) dv.innerHTML=t.ship===null?'<b>Standard</b><span>Enter your pincode to see the delivery charge</span>':t.ship>0?`<b>Standard — ${inr(t.ship)}</b><span>Delivery for your pincode · dispatch as per each item's timeline</span>`:'<b>Standard — FREE</b><span>Dispatch as per each item\'s timeline · weather-safe packing</span>';
+  if(dv) dv.innerHTML=t.ship===null?'<b>Standard</b><span>Enter your pincode for the exact price</span>':'<b>Standard — included in the price</b><span>Dispatch as per each item\'s timeline · weather-safe packing</span>';
 }
 // 122: orders above ₹1.5 lakh can pay 50% now and the balance before dispatch
 const SPLIT_ABOVE=150000, SPLIT_PCT=50; let coSplitOn=false;
@@ -3877,7 +3885,7 @@ function renderCheckout(){
     </div>
     <div class="cobox"><h3>Delivery</h3>
       <div class="payopt on"><input type="radio" name="dlv" checked>
-        <div id="coDlvTxt"><b>Standard — FREE</b><span>Dispatch as per each item's timeline · weather-safe packing</span></div></div>
+        <div id="coDlvTxt"><b>Standard — included in the price</b><span>Dispatch as per each item's timeline · weather-safe packing</span></div></div>
       <div class="secline">Assembly is by you — fittings and a step-by-step guide ship with every piece.</div>
     </div>
     <div class="cobox"><h3>Payment</h3>
@@ -3889,7 +3897,7 @@ function renderCheckout(){
     <div class="cobox"><h3>Order summary (${t.items} items)</h3>
       ${lines}
       <div class="osum" style="margin-top:12px">
-        <div class="r"><span>Subtotal</span><span>${inr(t.sub)}</span></div>
+        <div class="r"><span>Price (incl. delivery)</span><span id="coSub">${inr(t.sub)}</span></div>
         ${t.save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(t.save)}</span></div>`:''}
         ${t.code?`<div class="r"><span>Coupon ${t.code}</span><span class="grn">− ${inr(t.coup)}</span></div>`:''}
         ${shipRow(t.ship,t.loc,'coShipR')}
@@ -3975,7 +3983,7 @@ function coPaid(){const {res,customer,utok,skus}=window.__coLast||{};if(!res)ret
       <div class="r"><span>Order</span><span>${res.order_no}</span></div>
       ${res.pay_plan==='split'?`<div class="r"><span>Paid online</span><span>${inr(res.advance_amount)}</span></div><div class="r"><span>Balance, before dispatch</span><span>${inr(res.balance_amount)}</span></div>`:`<div class="r"><span>Paid online</span><span>${inr(res.total)}</span></div>`}
       <div class="r"><span>Items</span><span>${res.items}</span></div>
-      <div class="r"><span>Delivery</span>${+res.shipping>0?`<span>${inr(+res.shipping)}</span>`:'<span class="grn">FREE</span>'}</div></div>
+      <div class="r"><span>Delivery</span><span class="grn">Included</span></div></div>
     <button class="btn" style="padding:13px 26px" onclick="showHome()">Continue shopping</button>
     <p class="secline" style="margin-top:14px">${utok?'Track, cancel or return it from <a onclick="acOpen()">My account</a>.':'Track it any time: <a onclick="acTrack(\''+res.order_no+'\')">Track order</a> · or <a onclick="acOpen()">sign in</a> with '+(customer.email?customer.email.replace(/[<>&]/g,''):'your email')+' to manage it.'}</p></div>`;
   window.scrollTo(0,0);
@@ -4368,7 +4376,7 @@ async function shareProduct(){
 <script src="/account.js?v=6"></script>
 <script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
-<script src="/near.js?v=6"></script>
+<script src="/near.js?v=7"></script>
 <script src="/mto.js?v=22"></script>
 <script src="/ads.js?v=6" defer></script>
 <script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */
