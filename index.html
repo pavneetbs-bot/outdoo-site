@@ -1897,19 +1897,19 @@ header{position:static!important}
   <div class="sec2 spaces4">
     <div class="sh"><h2>Shop by space</h2><p>Start with where you live outdoors — we'll show you what belongs there.</p></div>
     <div style="height:14px"></div>
-    <div class="bcard big" onclick="openCol('furniture')">
-      <div class="im"><img data-img="BFURN" alt="Terrace"></div>
+    <div class="bcard big" onclick="openCol('sp-terrace')">
+      <div class="im"><img src="/img/banners/ph-terrace-sunset.jpg" alt="Terrace" loading="lazy"></div>
       <div class="tx"><h3>The Terrace</h3></div><span class="sn">Shop terrace →</span></div>
     <div class="bhalves">
-      <div class="bcard half" onclick="openCol('planters')">
-        <div class="im"><img data-img="FOLIAGE" alt="Balcony"></div>
+      <div class="bcard half" onclick="openCol('sp-balcony')">
+        <div class="im"><img src="/img/banners/ph-diwali-balcony.jpg" alt="Balcony" loading="lazy"></div>
         <div class="tx"><h3>The Balcony</h3></div><span class="sn">Shop →</span></div>
-      <div class="bcard half" onclick="openCol('shade')">
-        <div class="im"><img data-img="COURTYARD" alt="Poolside"></div>
+      <div class="bcard half" onclick="openCol('sp-poolside')">
+        <div class="im"><img src="/img/banners/cat-bar-counters-4.jpg" alt="Poolside" loading="lazy"></div>
         <div class="tx"><h3>Poolside</h3></div><span class="sn">Shop →</span></div>
     </div>
-    <div class="bcard big" onclick="openCol('art')">
-      <div class="im"><img data-img="BDINE" alt="Garden"></div>
+    <div class="bcard big" onclick="openCol('sp-garden')">
+      <div class="im"><img src="/img/banners/cat-shade-1.jpg" alt="Garden" loading="lazy"></div>
       <div class="tx"><h3>The Garden</h3></div><span class="sn">Shop garden →</span></div>
   </div>
 
@@ -1946,12 +1946,7 @@ header{position:static!important}
       <span class="cta">Start an enquiry →</span>
     </div>  </div>
 
-  <div class="sec2">
-    
-        <div class="bcard big" data-obn-alt onclick="openCol('lighting')" style="margin-bottom:0">
-      <div class="im"><img data-img="PARTY" alt="Warm outdoor lights"></div>
-      <div class="tx"><h3>Warm light for winter evenings</h3></div><span class="sn">Shop outdoor lights →</span></div>
-  </div>
+  
 
   <div class="sec2">
     <div class="sh"><h2>Trending this season</h2><p id="trendTimer" style="font-variant-numeric:tabular-nums"></p></div>
@@ -3661,19 +3656,19 @@ sphTick(); setInterval(sphTick,3000);
 document.querySelectorAll('img[data-img]').forEach(im=>{const k=im.getAttribute('data-img'); if(IMGS[k]) im.src=IMGS[k];});
 
 // ================= Shop-by nav (category / space / budget / mood) =================
+function _spOk(x,place,cols,more){const pl=(x.tg||[]).filter(t=>/^place\s*:/i.test(t)).map(t=>t.split(':').slice(1).join(':').trim().toLowerCase());
+  if(pl.length) return pl.includes(place.toLowerCase());
+  return cols.includes(x.col)||(!!more&&more(x));}
 Object.assign(COLS, {
- 'sp-balcony':{t:'Balcony',tag:'Compact pieces, planters, lights & rugs for small outdoor spaces',off:'SHOP BY SPACE',img:'FOLIAGE',
-   offer:'Everything that fits a 6x10 ft balcony',
-   f:(x,id)=>((x.col==='planters'||x.col==='furnishings'||x.col==='lighting')||(x.col==='furniture'&&x.p<=90000))},
- 'sp-terrace':{t:'Terrace',tag:'Sofa sets, dining, shade & statement lighting',off:'SHOP BY SPACE',img:'BFURN',
-   offer:'Built for open terraces and rooftop evenings',
-   f:(x)=>(x.col==='furniture'||x.col==='shade'||x.col==='lighting'||x.col==='fire-pits')},
- 'sp-garden':{t:'Garden',tag:'Sculpture, water features, green walls & planters',off:'SHOP BY SPACE',img:'BDINE',
-   offer:'Landscape elements from our art & planter studios',
-   f:(x)=>(x.col==='art'||x.col==='planters'||x.col==='fire-pits')},
- 'sp-poolside':{t:'Poolside',tag:'Loungers, umbrellas & weather-proof furnishings',off:'SHOP BY SPACE',img:'COURTYARD',
-   offer:'Quick-dry, fade-resistant, chlorine-safe',
-   f:(x)=>(x.col==='shade'||/Lounger|Daybed|Cabana/i.test(x.n)||x.col==='furnishings')},
+/* 178: Place tag decides ("Place: Balcony"); untagged products by category */
+ 'sp-balcony':{t:'Balcony',tag:'Planters, plants, lights, screens & compact seating',off:'SHOP BY SPACE',img:'FOLIAGE',
+   offer:'Everything that fits a city balcony',f:(x)=>_spOk(x,'Balcony',['planters','plants','lighting','vertical-gardens','privacy-screens','railings'],x=>x.col==='furniture'&&x.p<=60000)},
+ 'sp-terrace':{t:'Terrace',tag:'Sofa sets, dining, pergolas, fire pits & bars',off:'SHOP BY SPACE',img:'BFURN',
+   offer:'Built for open terraces and rooftop evenings',f:(x)=>_spOk(x,'Terrace',['furniture','shade','lighting','fire-pits','bar-counters','planters','privacy-screens','decking','cabins','feature-walls'])},
+ 'sp-garden':{t:'Garden',tag:'Sculptures, water features, planters, plants & fire pits',off:'SHOP BY SPACE',img:'BDINE',
+   offer:'Landscape pieces for lawns and courtyards',f:(x)=>_spOk(x,'Garden',['sculptures','water-features','planters','plants','fire-pits','art','gates','shade'])},
+ 'sp-poolside':{t:'Poolside',tag:'Loungers, shade, bars, decking & water features',off:'SHOP BY SPACE',img:'COURTYARD',
+   offer:'Quick-dry, fade-resistant, chlorine-safe',f:(x)=>_spOk(x,'Poolside',['shade','bar-counters','decking','water-features'],x=>/Lounger|Daybed|Cabana/i.test(x.n))},
  'bg-1':{t:'Under ₹10,000',tag:'Entry pieces — rugs, planters & accents',off:'SHOP BY BUDGET',img:'CUSHION',
    offer:'Start small, build the room over time',f:(x)=>x.p<=10000},
  'bg-2':{t:'₹10,000 – ₹50,000',tag:'Planters, lamps, umbrellas & art',off:'SHOP BY BUDGET',img:'PENDANT',
