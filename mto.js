@@ -312,6 +312,11 @@
     '.cbs-hint{white-space:normal;text-align:center;font-size:10.5px;width:86%;line-height:1.3}.cbs-ed{right:56px}}'+
     'body.cb-studio .cb-sheet{z-index:950}body.cb-studio .cb-avg{z-index:960}'+
     'body.cb-studio .pdp-cab .pdp-grid>div:first-child{position:static!important}body.cb-studio .ctas{z-index:902!important}body.cb-studio .ctas{background:none!important;box-shadow:none!important;border:0!important;padding:0!important}body.cb-studio .ctas .cbcta{display:none!important}body.cb-studio #nearPill,body.cb-studio .wafab{display:none!important}'+
+    'body.cb-studio .pdp-info{position:static!important;top:auto!important}'+   /* a sticky column makes its own layer and hid the options under the studio */
+    '@media(min-width:900px){body.cb-studio{--cbsw:400px}body.cb-studio #cbStage{right:var(--cbsw);height:calc(100vh - var(--cbsh));padding:10px 6px 10px 12px!important}body.cb-studio.cbs-big #cbStage{right:0}'+
+    'body.cb-studio #mtoCfg{top:var(--cbsh);left:auto!important;right:0;width:var(--cbsw);bottom:156px;height:auto;display:block;overflow-y:auto;padding:16px 18px!important;border-top:0!important;border-left:1px solid #E7DDCF!important}'+
+    '.cbs-t{margin:0 0 12px}.cbs-o{display:block;height:auto;overflow:visible}.cbs-o>*{max-width:none}.cbs-o .wz-cards{flex-wrap:wrap}.cbs-o .wz-card{flex:1 1 150px}.cbs-o .wz-row,.cbs-o .wz-note,.cbs-o .wz-sum,.cbs-o .wz-elev{width:auto}'+
+    'body.cb-studio:not(.cbs-big) .ctas .cbbar{width:var(--cbsw);height:156px;border-top:1px solid #E7DDCF}}'+   /* desktop: big model on the left, every choice in a panel on the right (like the pergola studio) */
     '.cb-ov{position:absolute;top:8px;left:8px;display:flex;gap:6px;z-index:2}.cb-ov button{border:0;background:rgba(255,255,255,.92);border-radius:99px;padding:6px 11px;min-height:32px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}'+
     '.cb-fn{position:absolute;left:10px;bottom:8px;font-size:10.5px;color:#fff;background:rgba(46,46,46,.6);padding:3px 8px;border-radius:99px;pointer-events:none}'+
     '.cb-hint{font-size:12px;color:#6A6258;margin:8px 2px 0}.cb-ed{display:flex;gap:6px;overflow-x:auto;margin-top:8px;align-items:center;padding-bottom:2px;scrollbar-width:none}'+
