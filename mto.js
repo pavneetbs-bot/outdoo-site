@@ -1718,7 +1718,8 @@
       '@media(max-width:760px){.pg3-bd{grid-template-columns:1fr;grid-template-rows:46vh auto}.pg3-pn{border-left:0;border-top:1px solid #eee}.pg3-ft{width:100%;border-left:0}}';
     document.head.appendChild(st);
   }
-  function p3Btn() { return isPg(S && S.id) ? '<button type="button" class="pg3-btn" data-act="pg3"><span style="font-size:22px">◎</span><span>Design it in 3D<small>Your size, height, colour and roof on a live model</small></span></button>' : ''; }
+  function p3Btn() { if (!isPg(S && S.id)) return ''; p3Css();   // its styles were added only when the 3D opened, so the button showed tiny and unstyled
+    return '<button type="button" class="pg3-btn" data-act="pg3"><span style="font-size:22px">✦</span><span>Customise your pergola<small>Your size, height, colour and roof on a live 3D model</small></span></button>'; }
   function p3Panel() {
     var x = PRODS[S.id], m = x.cz, o = S.o, q = pgOpts(), h = '', chips = function (g, cur) { return '<div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + '</button>'; }).join('') + '</div>'; };
     h += '<div class="lb">Size (ft)</div><div class="pg3-sz"><span>Length <button type="button" data-p3d="l,-1" aria-label="Shorter">−</button><b>' + q.l + '</b><button type="button" data-p3d="l,1" aria-label="Longer">+</button></span><span>Width <button type="button" data-p3d="w,-1" aria-label="Narrower">−</button><b>' + q.w + '</b><button type="button" data-p3d="w,1" aria-label="Wider">+</button></span></div>';
