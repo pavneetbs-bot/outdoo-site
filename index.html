@@ -3815,9 +3815,9 @@ function _spOk(x,place,cols,more){const pl=(x.tg||[]).filter(t=>/^place\s*:/i.te
 Object.assign(COLS, {
 /* 178: Place tag decides ("Place: Balcony"); untagged products by category */
  'sp-balcony':{t:'Balcony',tag:'Planters, plants, lights, screens & compact seating',off:'SHOP BY SPACE',img:'FOLIAGE',
-   offer:'Everything that fits a city balcony',f:(x)=>_spOk(x,'Balcony',['planters','plants','lighting','vertical-gardens','privacy-screens','railings'],x=>x.col==='furniture'&&x.p<=60000)},
+   offer:'Everything that fits a city balcony',f:(x)=>_spOk(x,'Balcony',['planters','plants','lighting','vertical-gardens','privacy-screens','ac-covers','railings'],x=>x.col==='furniture'&&x.p<=60000)},
  'sp-terrace':{t:'Terrace',tag:'Sofa sets, dining, pergolas, fire pits & bars',off:'SHOP BY SPACE',img:'BFURN',
-   offer:'Built for open terraces and rooftop evenings',f:(x)=>_spOk(x,'Terrace',['furniture','shade','lighting','fire-pits','bar-counters','planters','privacy-screens','decking','cabins','feature-walls'])},
+   offer:'Built for open terraces and rooftop evenings',f:(x)=>_spOk(x,'Terrace',['furniture','shade','lighting','fire-pits','bar-counters','planters','privacy-screens','ac-covers','decking','cabins','feature-walls'])},
  'sp-garden':{t:'Garden',tag:'Sculptures, water features, planters, plants & fire pits',off:'SHOP BY SPACE',img:'BDINE',
    offer:'Landscape pieces for lawns and courtyards',f:(x)=>_spOk(x,'Garden',['sculptures','water-features','planters','plants','fire-pits','art','gates','shade'])},
  'sp-poolside':{t:'Poolside',tag:'Loungers, shade, bars, decking & water features',off:'SHOP BY SPACE',img:'COURTYARD',
@@ -4545,7 +4545,7 @@ async function shareProduct(){
 <script src="/mto.js?v=33"></script>
 <script>/* 192 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){return import('/planner.js?v=2').then(function(m){m.open(seed&&seed.item?seed:null);});};(function(){function go(){if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
 <script src="/assist.js?v=1"></script>
-<script src="/ads.js?v=7" defer></script>
+<script src="/ads.js?v=8" defer></script>
 <script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */
 (function(){
   var mq=window.matchMedia('(min-width:900px)');

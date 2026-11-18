@@ -71,7 +71,7 @@
     "art": ["cat-art-1"],
     "furniture": ["mto-sofa-teak", "mto-chair", "mto-sofa-rope"]};
   // what goes well with what: a category page shows these categories' banners (cross-sell), in this order
-  var RELATED = {"furniture": ["fire-pits", "lighting", "planters", "shade"],
+  var RELATED = {"ac-covers": ["privacy-screens", "planters", "vertical-gardens"], "furniture": ["fire-pits", "lighting", "planters", "shade"],
     "fire-pits": ["lighting", "furniture", "bar-counters"],
     "lighting": ["fire-pits", "furniture", "shade"],
     "planters": ["vertical-gardens", "sculptures", "privacy-screens"],
