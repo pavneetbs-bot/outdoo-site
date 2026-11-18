@@ -1157,12 +1157,13 @@ header{position:static!important}
   .ad-w,.ad-w[data-slot=H2],.ad-w[data-slot=C1]{display:block;height:auto;aspect-ratio:16/7}
   .ad-w[data-slot=H2]{aspect-ratio:4/5}
   .ad-w .ad-ims{position:absolute;inset:0;padding:0!important}.ad-w .ad-ims img{border-radius:0}.ad-w .ad-ims img+img{display:none}
-  .ad-w:before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,var(--bg) 0%,var(--bg) 18%,transparent 78%)}
+  .ad-w:before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(90deg,var(--bg) 0%,var(--bg) 40%,color-mix(in srgb,var(--bg) 55%,transparent) 62%,transparent 90%)}
+  .ad-w .ad-ims img{object-position:72% center}
   .ad-w[data-slot=H2]:before{background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 26%,transparent 62%)}
   .ad-w .ad-tx,.ad-w[data-slot=H2] .ad-tx{position:relative;z-index:2;width:62%;height:100%;padding:14px 16px;justify-content:center}
   .ad-w[data-slot=H2] .ad-tx{width:100%;height:auto;padding:22px 20px}
   .ad-w .ad-h,.ad-w[data-slot=C1] .ad-h{font-size:19px}
-  .ad-hero{height:auto!important;aspect-ratio:16/10!important}.ad-hero .ad-h{font-size:24px!important}.ad-hero .ad-line{font-size:13.5px;margin-top:5px}.ad-hero .ad-tx{width:70%!important}.ad-w[data-slot=H2] .ad-h{font-size:30px}
+  .ad-hero{height:auto!important;aspect-ratio:16/10!important}.ad-hero .ad-h{font-size:24px!important}.ad-hero .ad-line{font-size:13.5px;margin-top:5px}.ad-hero .ad-tx{width:64%!important}.ad-w[data-slot=H2] .ad-h{font-size:30px}
   .ad-w p{display:none}.ad-w[data-slot=H2] p{display:-webkit-box;font-size:13.5px}
   .ad-w .ad-btn{margin-top:8px;padding:7px 13px;font-size:12px}
   .adslot[data-slot=H3]{grid-template-columns:1fr;gap:12px}
@@ -4283,7 +4284,7 @@ async function shareProduct(){
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=6"></script>
 <script src="/mto.js?v=21"></script>
-<script src="/ads.js?v=2" defer></script>
+<script src="/ads.js?v=4" defer></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };
