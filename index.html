@@ -2952,10 +2952,10 @@ function pdColList(id){ const c=window.mtoColourOf&&mtoColourOf(id), l=(GALC[id]
 function pdThumbs(id){
   const x=PRODS[id]; if(!x) return; const cl=pdColList(id), list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
   if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg');
-  if(/^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(id)) list.push('/img/trust/cb-assurance.jpg');   // cabins: factory-made, kit, 2–5 day assembly, 10-year warranty   // every pergola: factory-made, finish, 2-day install, warranty   // a finish with its own photos: only those
+  if(/^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(id)) list.push('/img/trust/cb-assurance.jpg');   // cabins: factory-made, kit, 2–5 day assembly, 10-year warranty
   window.PDG={id,list,i:0};
   const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
-  box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdGo(${i})"><img src="${u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
+  box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdGo(${i})"><img src="${bigImg(u,240)}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
   pdGalUI(); pdGrid(x);
 }
 // 176: desktop — all photos in one grid, same size; a click opens the viewer over the page
@@ -2967,7 +2967,7 @@ function pdGrid(x){ const pdp=document.getElementById('pdp'), g=window.PDG, col=
   el.innerHTML=n>1?show.map((u,i)=>`<div class="gi" data-gi="${i}"><img src="${i?bigImg(u,900):u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="${i?'lazy':'eager'}">${i===show.length-1&&n>show.length?`<span class="more">+${n-show.length} more · view all</span>`:''}</div>`).join(''):''; }
 // 164: product photos — swipe, arrows, counter, tap for full screen with zoom
 function pdGo(i){ const g=window.PDG; if(!g||!g.list.length) return; g.i=(i+g.list.length)%g.list.length;
-  const im=document.getElementById('pdImg'); im.src=g.list[g.i];
+  const im=document.getElementById('pdImg'); im.src=bigImg(g.list[g.i],1600);   // 1600 px, never the 2–4 MB original
   document.querySelectorAll('#pdp .thumbs .th').forEach((t,k)=>t.classList.toggle('on',k===g.i));
   const th=document.querySelectorAll('#pdp .thumbs .th')[g.i]; if(th&&th.scrollIntoView) try{th.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}
   pdGalUI(); if(document.getElementById('lbx')&&document.getElementById('lbx').classList.contains('open')) lbxShow(); }
