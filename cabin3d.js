@@ -21,8 +21,8 @@ function mat(name) {
     roofPuf: S({ color: 0xE4E1DA, roughness: 0.8 }), roofMetal: S({ color: 0xA9AAA6, roughness: 0.5, metalness: 0.4 }),
     roofGlass: new THREE.MeshPhysicalMaterial({ color: 0xBFDCE6, roughness: 0.05, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }),
     poly: new THREE.MeshPhysicalMaterial({ color: 0xF4F6F2, roughness: 0.4, transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false }),
-    hpl: S({ color: 0x9C7650, roughness: 0.6 }), wood: S({ color: 0x8B5A2B, roughness: 0.6 }), gutter: S({ color: 0x3C3C3C, roughness: 0.4, metalness: 0.5 }),
-    light: S({ color: 0xFFF6D8, emissive: 0xFFE7A8, emissiveIntensity: 1.6 }), ceiling: S({ color: 0xFBFAF7, roughness: 0.9 }),
+    hpl: S({ color: 0x9C7650, roughness: 0.6 }), wood: S({ color: 0x8B5A2B, roughness: 0.6 }), gutter: S({ color: 0xC4C8CC, roughness: 0.35, metalness: 0.35 }),
+    light: S({ color: 0xFFF6D8, emissive: 0xFFE7A8, emissiveIntensity: 1.6 }), cement: S({ color: 0xB3AFA8, roughness: 0.95 }), wpc: S({ color: 0x7A5537, roughness: 0.7 }), ceiling: S({ color: 0xFBFAF7, roughness: 0.9 }),
     white: S({ color: 0xFFFFFF, roughness: 0.3 }), grass: S({ color: 0x8FA86A, roughness: 1 }), pave: S({ color: 0xCFC6B6, roughness: 0.95 }), leaf: S({ color: 0x4F7A3A, roughness: 0.9 }), leaf2: S({ color: 0x6B8F4A, roughness: 0.9 }), bark: S({ color: 0x6B4A2F, roughness: 1 }),
     hit: new THREE.MeshBasicMaterial({ visible: false }), sel: new THREE.MeshBasicMaterial({ color: 0xC26445, transparent: true, opacity: 0.28, depthWrite: false }),
     fab: S({ color: 0xBFAF96, roughness: 0.95 }), fab2: S({ color: 0x55634A, roughness: 0.95 }), terra: S({ color: 0xC26445, roughness: 0.9 }), oak: S({ color: 0x9A6B43, roughness: 0.6 }), blk: S({ color: 0x2B2B2B, roughness: 0.5 }),
@@ -30,6 +30,14 @@ function mat(name) {
     lamp: S({ color: 0xFFF3D6, emissive: 0xFFD99A, emissiveIntensity: 0.6 }), counter: S({ color: 0x6E6A63, roughness: 0.5 }), steel: S({ color: 0xBFC3C7, roughness: 0.3, metalness: 0.8 }),
   };
   return (M[name] = t[name] || S({ color: name }));
+}
+function floorTex(kind) {   // 188: planks / vinyl look, drawn once
+  const key = 'fl_' + kind; if (M[key]) return M[key];
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256; const x = cv.getContext('2d');
+  if (kind === 'wood') { const cs = ['#A87A4E', '#9C6E43', '#B3865A', '#94673F']; for (let r = 0; r < 8; r++) { let px = -((r * 53) % 256); while (px < 256) { const w = 120 + ((r * 31 + px) % 60); x.fillStyle = cs[(r + Math.abs(px)) % 4]; x.fillRect(px, r * 32, w, 32); x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(px + w - 2, r * 32, 2, 32); px += w; } x.fillStyle = 'rgba(0,0,0,.3)'; x.fillRect(0, r * 32 + 31, 256, 1.5); } }
+  else { x.fillStyle = '#D6CDBF'; x.fillRect(0, 0, 256, 256); x.strokeStyle = 'rgba(0,0,0,.12)'; x.lineWidth = 2; for (let i = 0; i <= 256; i += 64) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 256); x.stroke(); x.beginPath(); x.moveTo(0, i); x.lineTo(256, i); x.stroke(); } }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 4);
+  return (M[key] = new THREE.MeshStandardMaterial({ map: t, roughness: 0.7 }));
 }
 function frameMat(lay) { const f = (lay.frame || '').toLowerCase(); return mat(/grey/.test(f) ? 0x8A8A8A : /white/.test(f) ? 0xE8E8E8 : /wood/.test(f) ? 0x8B5A2B : 0x2B2B2B); }
 function box(g, w, h, d, x, y, z, m, cast = true) { const b = new THREE.Mesh(new THREE.BoxGeometry(Math.max(w, 0.01), Math.max(h, 0.01), Math.max(d, 0.01)), m); b.position.set(x, y, z); b.castShadow = cast; b.receiveShadow = true; g.add(b); return b; }
@@ -45,6 +53,39 @@ function piece(g, sf, a, e, y0, y1, m, t, off = 0) {   // a panel between u = a.
   const [x0, z0] = sf.at(a, off), [x1, z1] = sf.at(e, off), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, len = Math.abs(e - a);
   return sf.along === 'x' ? box(g, len, y1 - y0, t, cx, (y0 + y1) / 2, cz, m) : box(g, t, y1 - y0, len, cx, (y0 + y1) / 2, cz, m);
 }
+// 188: a big readable label (sprite) and floor symbols (swing arc / slide arrows) drawn on a canvas
+function label(text, w = 3.4) {
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const x = cv.getContext('2d');
+  x.fillStyle = 'rgba(255,255,255,0.92)'; const r = 28; x.beginPath(); x.moveTo(r, 4); x.arcTo(508, 4, 508, 124, r); x.arcTo(508, 124, 4, 124, r); x.arcTo(4, 124, 4, 4, r); x.arcTo(4, 4, 508, 4, r); x.fill();
+  x.strokeStyle = '#C26445'; x.lineWidth = 5; x.stroke();
+  x.fillStyle = '#2E2E2E'; let fs = 58; x.font = `700 ${fs}px Inter, Arial, sans-serif`; while (x.measureText(text).width > 470 && fs > 28) { fs -= 2; x.font = `700 ${fs}px Inter, Arial, sans-serif`; }
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, 256, 66);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  const sp = new THREE.Mesh(new THREE.PlaneGeometry(w, w / 4), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -4 })); sp.renderOrder = 10; return sp;   // flat on the wall, facing out
+}
+function floorSym(kind, len, dep) {   // a flat symbol inside the room: canvas bottom edge = the wall, up = into the room
+  const cv = document.createElement('canvas'), px = 64; cv.width = Math.max(64, Math.round(len * px)); cv.height = Math.max(64, Math.round(dep * px)); const x = cv.getContext('2d'), W2 = cv.width, H2 = cv.height;
+  x.strokeStyle = '#C26445'; x.fillStyle = '#C26445'; x.lineWidth = 7; x.setLineDash([]);
+  const head = (x0, y0, ang) => { x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 - 26 * Math.cos(ang - 0.45), y0 - 26 * Math.sin(ang - 0.45)); x.lineTo(x0 - 26 * Math.cos(ang + 0.45), y0 - 26 * Math.sin(ang + 0.45)); x.closePath(); x.fill(); };
+  if (kind === 'swing' || kind === 'swing2') {   // door leaf(s) opening into the room: arc from the wall
+    const leaves = kind === 'swing2' ? 2 : 1, lw = W2 / leaves;
+    for (let i = 0; i < leaves; i++) { const hx = i === 0 ? 0 : W2, dir = i === 0 ? 1 : -1, rad = Math.min(lw, H2);
+      x.setLineDash([14, 10]); x.beginPath(); x.arc(hx, H2, rad - 6, dir > 0 ? -Math.PI / 2 : Math.PI, dir > 0 ? 0 : -Math.PI / 2); x.stroke(); x.setLineDash([]);
+      x.beginPath(); x.moveTo(hx, H2); x.lineTo(hx, H2 - rad + 6); x.stroke(); head(hx + dir * (rad - 6) * Math.cos(Math.PI / 4) , H2 - (rad - 6) * Math.sin(Math.PI / 4), dir > 0 ? -Math.PI * 0.75 + Math.PI : -Math.PI / 4 - Math.PI / 2); }
+  } else {   // sliding / folding: arrows along the wall
+    const y0 = H2 * 0.45; x.beginPath(); x.moveTo(40, y0); x.lineTo(W2 - 40, y0); x.stroke(); head(W2 - 14, y0, 0); head(14, y0, Math.PI);
+    if (kind === 'fold') { x.beginPath(); for (let i = 0; i <= 6; i++) x.lineTo(40 + (W2 - 80) * i / 6, y0 + (i % 2 ? 22 : -22)); x.stroke(); }
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(len, dep), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; const g = new THREE.Group(); g.add(m); return g;
+}
+const BAY_LABEL = { puf: 'Wall', window: 'Wall + window', vent: 'Wall + vent', glass: 'Fixed glass', frost: 'Fixed glass (frosted)', door: 'Swing door', gdoor: 'Swing door · glass', pdouble: 'Swing door · double', double: 'Swing door · glass double', slide: 'Sliding door', fold: 'Folding door' };
+function shadeHex(c, lay, side) {   // 188: wall finish + shade of one wall → a colour (WPC looks like wood)
+  const wf = (lay.wall_fin || {})[side] || {}, fin = String(wf.fin || ''), sh = (c.shades || []).find(x => x.name === wf.shade) || (c.shades || [])[0];
+  if (/wpc|laminate|wood/i.test(fin)) return 'wpc';
+  return sh && sh.hex ? sh.hex : null;
+}
 function bayOf(c, k) { return (c.bays || []).find(b => b.key === k) || null; }
 function spanOf(c, k) { const b = bayOf(c, k); return b ? Math.max(Math.trunc(+b.span || 1), 1) : 1; }
 
@@ -53,25 +94,36 @@ function build(c, lay, opts) {
   const tracks = Math.max(2, parseInt(lay.tracks || '2', 10) || 2);
   if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site); else site(g, L, W);
   box(g, L + 0.6, 0.6, W + 0.6, L / 2, -0.3, W / 2, mat('deck')).userData.under = 1;
-  box(g, L, 0.05, W, L / 2, 0.02, W / 2, mat('floor'), false).userData.under = 1;
+  const ff = String(lay.floor || ''), FL = /wood|plank|laminate/i.test(ff) ? floorTex('wood') : /no finish|client/i.test(ff) ? mat('cement') : /vinyl/i.test(ff) ? floorTex('vinyl') : mat('floor');   // 188: floor finish
+  box(g, L, 0.05, W, L / 2, 0.02, W / 2, FL, false).userData.under = 1;
+  // 188: deck profile lights along the deck edge on the sides picked
+  for (const sd of (Array.isArray(lay.deck_lights) ? lay.deck_lights : [])) { if (!SIDES.includes(sd)) continue; const sf = sideFrame(sd, L, W), ln = sd === 'front' || sd === 'back' ? L : W; const st = piece(g, sf, -0.25, ln + 0.25, -0.2, -0.12, mat('light'), 0.05, 0.32); st.castShadow = false; st.name = 'decklight'; }
   const walls = new THREE.Group(); walls.name = 'walls'; g.add(walls);
+  const labels = new THREE.Group(); labels.name = 'labels'; g.add(labels);   // 188: "Wall", "Fixed glass", "Swing door"… + door direction on the floor
   const hits = new THREE.Group(); hits.name = 'hits'; g.add(hits);
   const wallOf = {};
   for (const side of SIDES) {
     const wg = new THREE.Group(); wg.name = 'wall-' + side; walls.add(wg); wallOf[side] = wg;
     const ks = (lay.walls || {})[side] || [], len = side === 'front' || side === 'back' ? L : W, sf = sideFrame(side, L, W);
+    const sh = shadeHex(c, lay, side), WM = sh === 'wpc' ? mat('wpc') : sh ? mat(sh) : mat('puf');   // 188: wall finish / shade
+    let prevSolid = false; const runs = [];
     for (let i = 0; i < ks.length;) {
-      const k = ks[i], b = bayOf(c, k), sp = spanOf(c, k), a = i * bay, e = Math.min((i + sp) * bay, len);
+      const k = ks[i], b = bayOf(c, k), sp = spanOf(c, k), a = i * bay, e = Math.min((i + sp) * bay, len), solid = !b || (!b.glass && !b.door);
       const post = (u) => piece(wg, sf, u - 0.06, u + 0.06, 0, H, FM, T + 0.04);
       const hb = piece(hits, sf, a + 0.05, e - 0.05, 0, H, mat('hit'), 0.8); hb.userData = { bay: { side, i } }; hb.castShadow = false;
-      post(a);
+      if (i === 0 || !(prevSolid && solid)) post(a);   // 188: no steel posts inside a run of solid wall — only at corners and beside doors / glass
+      prevSolid = solid;
+      { const lt = BAY_LABEL[k] || (b && b.name) || 'Wall', run = runs[runs.length - 1];   // one label per run of the same kind (not one per panel)
+        if (run && run.t === lt && run.e === a && !(b && b.door)) run.e = e; else runs.push({ t: lt, a, e });
+        if (b && b.door) { const kind = k === 'slide' ? 'slide' : k === 'fold' ? 'fold' : sp > 1 || k === 'double' || k === 'pdouble' ? 'swing2' : 'swing', dep = kind === 'slide' || kind === 'fold' ? 1.6 : Math.min(e - a - 0.2, 3.2);
+          const fs = floorSym(kind, e - a - 0.2, dep), [fx, fz] = sf.at((a + e) / 2, -dep / 2 - 0.2); fs.position.set(fx, 0.08, fz); fs.rotation.y = side === 'front' ? 0 : side === 'back' ? Math.PI : side === 'right' ? Math.PI / 2 : -Math.PI / 2; labels.add(fs); } }
       if (!b || (!b.glass && !b.door)) {
-        piece(wg, sf, a, e, 0, H, mat('puf'), T);
+        piece(wg, sf, a, e, 0, H, WM, T);
         if (k === 'window') { piece(wg, sf, a + (e - a) * 0.18, e - (e - a) * 0.18, 3, 6.4, mat('glass'), T + 0.06, 0.01); piece(wg, sf, a + (e - a) * 0.18, e - (e - a) * 0.18, 2.94, 3.0, FM, T + 0.1); piece(wg, sf, a + (e - a) * 0.18, e - (e - a) * 0.18, 6.4, 6.46, FM, T + 0.1); piece(wg, sf, (a + e) / 2 - 0.03, (a + e) / 2 + 0.03, 3, 6.4, FM, T + 0.1); }
         if (k === 'vent') piece(wg, sf, a + (e - a) * 0.3, e - (e - a) * 0.3, 6.6, 7.5, mat('glass'), T + 0.06);
       } else if (b.door) {
         const leaves = k === 'fold' ? 6 : k === 'slide' ? tracks : sp > 1 ? 2 : 1, dh = Math.min(DH, H);
-        if (dh < H) piece(wg, sf, a, e, dh, H, mat('puf'), T);   // PUF above a standard 8 ft door
+        if (dh < H) piece(wg, sf, a, e, dh, H, WM, T);   // PUF above a standard 8 ft door
         piece(wg, sf, a, e, dh - 0.08, dh, FM, T + 0.06);
         for (let j = 0; j < leaves; j++) {
           const la = a + 0.08 + j * (e - a - 0.16) / leaves, le = a + 0.08 + (j + 1) * (e - a - 0.16) / leaves, off = k === 'slide' ? (j % 2 ? 0.06 : -0.06) : 0;
@@ -87,6 +139,8 @@ function build(c, lay, opts) {
       i += sp;
     }
     piece(wg, sf, len - 0.06, len + 0.06, 0, H, FM, T + 0.04);
+    for (const r of runs) { const lb = label(r.t, Math.min(3.8, Math.max(2.8, r.e - r.a - 0.4))), [lx, lz] = sf.at((r.a + r.e) / 2, T / 2 + 0.16); lb.position.set(lx, 4.4, lz);
+      lb.rotation.y = side === 'front' ? 0 : side === 'back' ? Math.PI : side === 'right' ? Math.PI / 2 : -Math.PI / 2; labels.add(lb); }
   }
   // roof (+ lights on the ceiling: always included) and false ceiling
   const roof = new THREE.Group(); roof.name = 'roof'; g.add(roof);
@@ -99,7 +153,12 @@ function build(c, lay, opts) {
   [[-0.25, W / 2, 0.3, W + 0.5], [L + 0.25, W / 2, 0.3, W + 0.5]].forEach(([x, z, w, d]) => box(roof, w, 0.5, d, x, H + 0.25, z, FM));
   [[L / 2, -0.25, L + 0.8, 0.3], [L / 2, W + 0.25, L + 0.8, 0.3]].forEach(([x, z, w, d]) => box(roof, w, 0.5, d, x, H + 0.25, z, FM));
   const items = lay.items || {}, ceil = +items.ceiling > 0, ly = ceil ? H - 0.62 : H - 0.03;
-  if (ceil) { const cg = new THREE.Group(); cg.name = 'ceiling'; g.add(cg); box(cg, L - 0.3, 0.1, W - 0.3, L / 2, H - 0.6, W / 2, mat('ceiling'), false); box(cg, L - 2.2, 0.06, W - 2.2, L / 2, H - 0.67, W / 2, mat('light'), false); }
+  if (ceil) { const cg = new THREE.Group(); cg.name = 'ceiling'; g.add(cg); const ct = String(lay.ceiling_type || '');   // 188: the false ceiling type shows
+    const CM = /real wood/i.test(ct) ? mat('oak') : /pvc wooden/i.test(ct) ? mat(0xB08A62) : mat('ceiling');
+    box(cg, L - 0.3, 0.1, W - 0.3, L / 2, H - 0.6, W / 2, CM, false);
+    if (/grid/i.test(ct)) { for (let x = 2; x < L - 0.3; x += 2) box(cg, 0.06, 0.05, W - 0.3, x, H - 0.66, W / 2, mat(0xBDBDB8), false); for (let z = 2; z < W - 0.3; z += 2) box(cg, L - 0.3, 0.05, 0.06, L / 2, H - 0.66, z, mat(0xBDBDB8), false); }
+    else if (/wood/i.test(ct)) for (let z = 0.6; z < W - 0.3; z += 0.6) box(cg, L - 0.3, 0.04, 0.03, L / 2, H - 0.66, z, mat(0x6B4A2F), false);
+    else box(cg, L - 2.2, 0.06, W - 2.2, L / 2, H - 0.67, W / 2, mat('light'), false); }
   const lg = new THREE.Group(); lg.name = 'lights'; g.add(lg);
   for (let x = 2; x < L; x += 4) for (let z = 2; z < W; z += 4) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.05, 20), mat('light')); l.position.set(x, ly - 0.03, z); lg.add(l); }
   const pl = new THREE.PointLight(0xFFE9C0, 60, Math.max(L, W) * 1.6, 1.4); pl.position.set(L / 2, ly - 0.5, W / 2); lg.add(pl);
@@ -118,7 +177,7 @@ function build(c, lay, opts) {
       if (p.rot === 90) box(g, 0.2, 0.1, len, p.x + 0.1, H - 0.05, p.y + len / 2, FM); else box(g, len, 0.1, 0.2, p.x + len / 2, H - 0.05, p.y + 0.1, FM);
       return;
     }
-    const f = FOOT[p.key]; if (!f) return;
+    const f0 = FOOT[p.key]; if (!f0) return; const f = [+p.w || f0[0], +p.d || f0[1]];   // 188: rooms can be bigger
     const w = p.rot === 90 ? f[1] : f[0], d = p.rot === 90 ? f[0] : f[1], cx = p.x + w / 2, cz = p.y + d / 2;
     if (p.key === 'pantry') { box(g, w, 3, d, cx, 1.5, cz, mat('counter')); box(g, w, 0.1, d, cx, 3.05, cz, mat('white')); box(g, 1.4, 0.15, 1, cx, 3.1, cz, mat('steel')); }
     else if (p.key === 'pdoor' || p.key === 'gdoorp') box(g, w, 7, d, cx, 3.5, cz, p.key === 'gdoorp' ? mat('glass') : mat(0xD9D4CB));
@@ -148,7 +207,19 @@ function build(c, lay, opts) {
       piece(pg, sf, -0.1, len + 0.1, y + 0.02, y + 0.06, /glass/i.test(pj.top || '') ? mat('roofGlass') : mat('poly'), dep + 0.2, dep / 2);
       if (/hpl/i.test(pj.under || '')) piece(pg, sf, 0, len, y - 0.62, y - 0.55, mat('hpl'), dep, dep / 2 + 0.1);
       if (/louver/i.test(pj.under || '')) for (let u = 0.25; u < len; u += 0.5) piece(pg, sf, u, u + 0.15, y - 0.7, y - 0.55, mat('hpl'), dep, dep / 2 + 0.1);
-      for (let u = 1.5; u < len; u += 3) { const [lx, lz] = sf.at(u, dep / 2 + 0.1), l = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.04, 16), mat('light')); l.position.set(lx, y - 0.74, lz); pg.add(l); }
+      const lyp = /hpl/i.test(pj.under || '') ? y - 0.645 : /louver/i.test(pj.under || '') ? y - 0.725 : y - 0.4;   // 188: lights sit on the underside, not in the air
+      for (let u = 1.5; u < len; u += 3) { const [lx, lz] = sf.at(u, dep / 2 + 0.1), l = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.04, 16), mat('light')); l.position.set(lx, lyp, lz); pg.add(l); }
+    }
+    // 188: where two projection sides meet, the corner square is built too (fascia, rafters, top, underside, a light)
+    const y = H + 0.1, top = /glass/i.test(pj.top || '') ? mat('roofGlass') : mat('poly'), stp = /grid/i.test(design) ? 1.5 : 0.75, D = dep + 0.12;
+    for (const [s1, s2] of [['front', 'right'], ['right', 'back'], ['back', 'left'], ['left', 'front']]) {
+      if (!pj.sides.includes(s1) || !pj.sides.includes(s2)) continue;
+      const sx = [s1, s2].includes('right') ? 1 : -1, sz = [s1, s2].includes('front') ? 1 : -1, x0 = sx > 0 ? L : 0, z0 = sz > 0 ? W : 0, cx = x0 + sx * D / 2, cz = z0 + sz * D / 2;
+      box(pg, D + 0.25, 0.5, 0.25, x0 + sx * (D + 0.25) / 2, y - 0.25, z0 + sz * D, FM); box(pg, 0.25, 0.5, D + 0.25, x0 + sx * D, y - 0.25, z0 + sz * (D + 0.25) / 2, FM);
+      for (let u = 0.3; u < D; u += stp) box(pg, 0.12, 0.35, D, x0 + sx * u, y - 0.2, cz, RF);
+      box(pg, D + 0.2, 0.04, D + 0.2, cx, y + 0.04, cz, top);
+      if (/hpl|louver/i.test(pj.under || '')) box(pg, D, 0.07, D, cx, y - 0.585, cz, mat('hpl'));
+      const l = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.04, 16), mat('light')); l.position.set(cx, /hpl/i.test(pj.under || '') ? y - 0.645 : /louver/i.test(pj.under || '') ? y - 0.725 : y - 0.4, cz); pg.add(l);
     }
   }
   // rain gutter with a downpipe at the end
@@ -370,6 +441,7 @@ function visible(v) {   // what each view shows
   by('roof').visible = !open; const ce = by('ceiling'); if (ce) ce.visible = !open; by('lights').visible = !open;
   const pj = by('proj'); if (pj) pj.visible = !top; const fu = by('furn'); if (fu) fu.visible = PERSP.includes(v); const st = by('site'); if (st) st.visible = (!top || !!R.ts) && !elev;
   const n = by('night'); if (n) n.visible = R.night && !top;
+  const lb = by('labels'); if (lb) lb.visible = !['inside', '360'].includes(v);   // 188: labels and door arrows only when looking at the model
   R.sun.castShadow = !top && !elev; R.below = undefined;
 }
 function topCam() {   // from above: a terrace is seen whole, road at the bottom; else the cabin
@@ -463,7 +535,7 @@ function walk(f) {   // move to where the floor was tapped, keep looking the sam
   R.cam.position.set(x, 5, z); C.target.copy(R.cam.position).add(dir); C.update();
 }
 const FOOT = { toilet: [4, 6], wc: [4, 4], pantry: [6, 2], pdoor: [3, 0.6], gdoorp: [3, 0.6] };
-function dimsOf(p) { const it = (R.c.items || []).find(x => x.key === p.key); if (it && it.unit === 'rft') return p.rot === 90 ? [0.4, +p.len || 1] : [+p.len || 1, 0.4]; const f = FOOT[p.key] || [3, 3]; return p.rot === 90 ? [f[1], f[0]] : [f[0], f[1]]; }
+function dimsOf(p) { const it = (R.c.items || []).find(x => x.key === p.key); if (it && it.unit === 'rft') return p.rot === 90 ? [0.4, +p.len || 1] : [+p.len || 1, 0.4]; const f0 = FOOT[p.key] || [3, 3], f = [+p.w || f0[0], +p.d || f0[1]]; return p.rot === 90 ? [f[1], f[0]] : [f[0], f[1]]; }
 function snap(i, x, y) {   // to the walls, the corners and the edges of the other things inside (within 0.75 ft), else to ½ ft
   const ps = R.lay.places || [], p = ps[i], [w, d] = dimsOf(p), L = R.L, W = R.W, T = 0.75;
   const xs = [0, L - w], ys = [0, W - d];
