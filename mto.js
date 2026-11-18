@@ -614,8 +614,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=8').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=8'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=9').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=9'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1831,7 +1831,7 @@
     var t = window.acToken && await window.acToken(); if (!t) return false; var A = window.OUTRR_SUPA || {};
     try { var r = await fetch(A.url + '/rest/v1/rpc/customer_profile_ok', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: '{}' }); return r.ok && (await r.json()) === true; } catch (e) { return false; }
   }
-  function unlocked(id) { try { sessionStorage.setItem(OKK, '1'); } catch (e) {} crm('login'); if (typeof openProduct === 'function') openProduct(id); else if (S && S.id) draw(); }
+  function unlocked(id) { try { sessionStorage.setItem(OKK, '1'); } catch (e) {} crm('login'); if (typeof id === 'function') return id(); if (typeof openProduct === 'function') openProduct(id); else if (S && S.id) draw(); }
   window.mtoUnlock = async function (id) {
     id = id || (S && S.id); if (!window.acRequire) return toast('Please try again in a moment');
     window.acRequire(async function () { if (await profileOk()) return unlocked(id); profileForm(id); }, 'Sign in to see the price for your size');
@@ -1899,7 +1899,7 @@
     if (P3.st === 2) { try { window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=1').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=2').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');

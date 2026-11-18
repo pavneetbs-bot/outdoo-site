@@ -92,7 +92,7 @@ function spanOf(c, k) { const b = bayOf(c, k); return b ? Math.max(Math.trunc(+b
 function build(c, lay, opts) {
   const g = new THREE.Group(), L = +lay.L, W = +lay.W, H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = +(c.bay || 4), FM = frameMat(lay), T = 0.25, DH = lay.full_doors ? H : 8;
   const tracks = Math.max(2, parseInt(lay.tracks || '2', 10) || 2);
-  if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site); else site(g, L, W);
+  if (opts && opts.bare) {} else if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site); else site(g, L, W);   // 192: bare = the cabin alone (space planner)
   box(g, L + 0.6, 0.6, W + 0.6, L / 2, -0.3, W / 2, mat('deck')).userData.under = 1;
   const ff = String(lay.floor || ''), FL = /wood|plank|laminate/i.test(ff) ? floorTex('wood') : /no finish|client/i.test(ff) ? mat('cement') : /vinyl/i.test(ff) ? floorTex('vinyl') : mat('floor');   // 188: floor finish
   box(g, L, 0.05, W, L / 2, 0.02, W / 2, FL, false).userData.under = 1;
@@ -258,6 +258,13 @@ function tsFootDims(t, L, W) { return (+t.rot || 0) % 180 ? [W, L] : [L, W]; }
 function terrace(g, L, W, t) {
   const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); sg.position.set(L / 2, 0, W / 2); sg.rotation.y = -(+t.rot || 0) * Math.PI / 180;
   const tg = new THREE.Group(); tg.name = 'plot'; sg.add(tg); const [fw, fd] = tsFootDims(t, L, W); tg.position.set(-(+t.cx + fw / 2), 0, -(+t.cz + fd / 2));
+  drawPlot(tg, t);
+  // red when the cabin doesn't fit there; terracotta outline while it is being placed
+  if (t.clash || t.place) { const Y = -0.6, col = t.clash ? 0xE0352B : 0xC26445, ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.8, 0.2, W + 0.8)), new THREE.LineBasicMaterial({ color: col })); ln.position.set(L / 2, Y + 0.15, W / 2); g.add(ln);
+    const pl = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 0.06, W + 0.8), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, depthWrite: false })); pl.position.set(L / 2, Y + 0.1, W / 2); g.add(pl); }
+}
+// the terrace itself in plot coords (slab surface at y = -0.6): slab, parapet, building below, neighbours, roads, blocks on the roof
+function drawPlot(tg, t) {
   const pw = +t.pw || 30, pd = +t.pd || 60, Y = -0.6, par = +t.par || 3, PT = 0.75, BH = 50, hi = t.high || {};
   const P = (n, col) => M[n] || (M[n] = new THREE.MeshStandardMaterial({ color: col, roughness: 0.95 }));
   const plaster = P('t_pl', 0xEAE5DC), tile = P('t_tile', 0xC4BDB1), side2 = P('t_side', 0xDCD3C4), dark = P('t_dark', 0x2F3437), road = P('t_road', 0x6E6C68), win = P('t_win', 0x55626B);
@@ -292,9 +299,6 @@ function terrace(g, L, W, t) {
     }
     if (bk.type === 'mumty' && t.tanks !== false) { const n = Math.max(bk.w, bk.d) >= 12 ? 2 : 1, along = bk.d >= bk.w; for (let j = 0; j < n; j++) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 4, 20), P('t_tank', 0x1F2224)); const o = n > 1 ? (j ? 3 : -3) : 0; tk.position.set(x + (along ? 0 : o), Y + h + 2.35, z + (along ? o : 0)); tk.castShadow = true; bg.add(tk); } }
   });
-  // red when the cabin doesn't fit there; terracotta outline while it is being placed
-  if (t.clash || t.place) { const col = t.clash ? 0xE0352B : 0xC26445, ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.8, 0.2, W + 0.8)), new THREE.LineBasicMaterial({ color: col })); ln.position.set(L / 2, Y + 0.15, W / 2); g.add(ln);
-    const pl = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 0.06, W + 0.8), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, depthWrite: false })); pl.position.set(L / 2, Y + 0.1, W / 2); g.add(pl); }
 }
 function plotOf() { return R.group && R.group.getObjectByName('plot'); }
 function toPlot(p) { const tg = plotOf(); return tg ? tg.worldToLocal(p.clone()) : p; }
@@ -592,3 +596,7 @@ export function home() { if (R && R.group) setView(R.view, false); }
 export function resize() { if (R && R.el) size(); }
 export function snapshot() { return R ? R.renderer.domElement.toDataURL('image/png') : null; }
 window.Cabin3D = { show, snapshot, onEvent, zoom, resize, panMode, home, _r: () => R };
+// 192: for the space planner — the cabin alone (x 0..L, z 0..W, floor at y 0) and a terrace in plot coords (slab at y -0.6)
+export function cabinModel(c, lay) { return build(c, lay, { bare: true }); }
+export function plotModel(t) { const tg = new THREE.Group(); tg.name = 'plot'; drawPlot(tg, t); return tg; }
+export function sharedMat(n) { return mat(n); }

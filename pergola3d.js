@@ -60,15 +60,15 @@ function rod(g, a, b, w, d, m) {   // a square member from point a to point b
   mesh.castShadow = mesh.receiveShadow = true; g.add(mesh); return mesh;
 }
 
-function build(sku, o) {
+function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner)
   const r = D[sku] || {}, F = finish(o), X = S(), g = new THREE.Group();
   const L = Math.max(6, +o.l || 12), W = Math.max(6, +o.w || 10), H = Math.max(7, parseFloat(o.height) || 8);
   const P = MM(r.post || 100), BH = MM((r.beam || [100, 200])[1]), BW = MM((r.beam || [100, 200])[0]), RW = MM((r.raf || [50, 150])[0]), RH = MM((r.raf || [50, 150])[1]);
   const over = MM(r.over ?? 450), bover = MM(r.bover ?? 300), inset = MM(r.inset || 0), gap = MM(r.gap || 450);
   const lay = String(o.layout || '').toLowerCase(), wall = /wall/.test(lay), dbl = /double/.test(lay), lsh = /l-shape/.test(lay);
   // ground, a terrace floor, a back wall when wall-mounted
-  box(g, L + 16, 0.1, W + 16, L / 2, -0.05, W / 2, X.ground); box(g, L + 4, 0.12, W + 4, L / 2, 0.01, W / 2, X.deck);
-  if (wall) box(g, L + 4, H + 3, 0.6, L / 2, (H + 3) / 2, -0.3 - P / 2, X.wall);
+  if (!bare) { box(g, L + 16, 0.1, W + 16, L / 2, -0.05, W / 2, X.ground); box(g, L + 4, 0.12, W + 4, L / 2, 0.01, W / 2, X.deck); }
+  if (wall && !bare) box(g, L + 4, H + 3, 0.6, L / 2, (H + 3) / 2, -0.3 - P / 2, X.wall);
   const top = H, rows = wall ? [W - inset - P / 2] : [inset + P / 2, W - inset - P / 2];
   const cols = [inset + P / 2, L - inset - P / 2]; if (dbl || L > 18) cols.splice(1, 0, L / 2);
   const post = (x, z, h = top, s = P) => box(g, s, h, s, x, h / 2, z, F.frame);
@@ -206,3 +206,5 @@ export function show(el, sku, o, opts) {
 }
 export function resize() { size(); }
 window.Pergola3D = { show, resize };
+export function pergolaModel(sku, o) { return build(sku, o, true); }   // 192: x 0..L, z 0..W, ground at y 0
+export const PERGOLA_SKUS = Object.keys(D);

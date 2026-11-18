@@ -54,7 +54,7 @@ export function buildFooter({ cols, subs, products, subUrl, home = {}, slugOf, r
   const mtoP = products.filter(p => p.kind === 'mto' && p.mto && typeof p.mto === 'object')
   const cabins = mtoP.filter(p => p.mto.unit === 'cabin').slice(0, 3)
   const pergola = mtoP.find(p => /^MTO-PG-/.test(p.sku) && p.mto.unit === 'area')
-  const studio = [['Design it yourself', '/#dzSec'],
+  const studio = [['Design it yourself', '/#dzSec'], ['Plan your space (terrace / lawn)', '/?plan'],
     ...cabins.map(p => [`Design your ${p.name.replace(/\s*[—–(-].*$/, '').trim()}`, `/p/${slugOf(p)}/`]),
     ...(pergola ? [['Pergola designer', `/p/${slugOf(pergola)}/`]] : []),
     ...mto.slice(0, 3).filter(c => !/cabin/.test(c.slug)).map(c => [`Made to size ${lc(c.title)}`, `/c/${c.slug}/`]),
