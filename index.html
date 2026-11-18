@@ -1600,6 +1600,10 @@ header{position:static!important}
 .obn-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .obn-track::-webkit-scrollbar{display:none}
 .obn-track .obn{flex:0 0 100%;scroll-snap-align:start;border-radius:0}
+.sarr{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:var(--char);font-size:22px;line-height:1;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;transition:opacity .2s}
+.sarr:hover{background:#fff;color:var(--terra)}.sarr.l{left:12px}.sarr.r{right:12px}.sarr[disabled]{opacity:0;pointer-events:none}
+.sarr-w{position:relative}.sarr-w .sarr{width:36px;height:36px;font-size:19px;top:40%}.sarr-w .sarr.l{left:-8px}.sarr-w .sarr.r{right:-8px}
+@media(hover:none){.sarr-w .sarr{display:none}}
 .obn-dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:6px;pointer-events:none;z-index:4}
 .obn-dots button{pointer-events:auto;width:8px;height:8px;border-radius:5px;border:0;padding:0;background:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(46,46,46,.25);cursor:pointer;transition:width .2s}
 .obn-dots button.on{width:24px;background:var(--terra)}
@@ -2032,6 +2036,12 @@ header{position:static!important}
     <div class="sh"><h2>New arrivals</h2></div>
     <div style="height:14px"></div>
     <div class="otiles" id="tilesNew"></div>
+  </div>
+
+  <div class="sec2" id="homeRecentSec" hidden>
+    <div class="sh"><h2>Recently viewed</h2></div>
+    <div style="height:14px"></div>
+    <div class="simrow" id="homeRecent"></div>
   </div>
 
   <div class="sec2">
@@ -2767,7 +2777,7 @@ function showView(v){
   document.body.classList.toggle('pdp-open', v==='pdp');
   window.scrollTo(0,0);
 }
-function showHome(){ lastCol=null; showView('home'); }
+function showHome(){ lastCol=null; showView('home'); try{ homeRecent(); }catch(e){} }
 function openCol(k){
   lastCol=k; const c=COLS[k];
   const shb=document.getElementById('colShare'); if(shb) shb.style.display=k==='__seller'?'':'none';   // 099: copy link on a seller's catalogue only
@@ -3007,12 +3017,28 @@ function lbxWire(st){ let p=null, pinch=null, lastTap=0, sw=null;
     LZ.x=mx-(e.clientX-r.left)/r.width*2*mx; LZ.y=my-(e.clientY-r.top)/r.height*2*my; lbxApply(); } });
   st.addEventListener('click',e=>{ if(!('ontouchstart' in window)&&e.detail===1&&!lensOn()) lbxZoom(e.clientX,e.clientY); });
   document.addEventListener('keydown',e=>{ const b=document.getElementById('lbx'); if(!b||!b.classList.contains('open')) return; if(e.key==='Escape') history.back(); if(e.key==='ArrowRight') pdGo(PDG.i+1); if(e.key==='ArrowLeft') pdGo(PDG.i-1); }); }
+// left / right arrows on a horizontal row (hidden at either end, and on touch screens where you swipe)
+function sArrows(row, wrap){ if(!row||row.dataset.arr) return; row.dataset.arr=1; wrap=wrap||row.parentNode; if(!wrap.classList.contains('obn-hero')) wrap.classList.add('sarr-w');
+  const mk=(c,t,d)=>{const b=document.createElement('button'); b.type='button'; b.className='sarr '+c; b.setAttribute('aria-label',t); b.innerHTML=c==='l'?'&#8249;':'&#8250;';
+    b.onclick=e=>{e.stopPropagation(); row.scrollBy({left:d*Math.max(200,row.clientWidth*.85),behavior:'smooth'});}; wrap.appendChild(b); return b;};
+  const L=mk('l','Previous',-1), R=mk('r','Next',1);
+  const upd=()=>{L.disabled=row.scrollLeft<=4; R.disabled=row.scrollLeft+row.clientWidth>=row.scrollWidth-4;};
+  row.addEventListener('scroll',upd,{passive:true}); window.addEventListener('resize',upd); setTimeout(upd,50); row._arrUpd=upd; }
+function homeRecent(){ const sec=document.getElementById('homeRecentSec'), row=document.getElementById('homeRecent'); if(!sec||!row) return;
+  let r=[]; try{ r=JSON.parse(localStorage.getItem('outrr_rv')||'[]'); }catch(e){}
+  r=r.filter(k=>PRODS[k]&&IMGS[PRODS[k].img]).slice(0,16); sec.hidden=!r.length; if(!r.length) return;
+  row.innerHTML=r.map(i=>{const y=PRODS[i]; return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt="${_esc(y.n)}" loading="lazy"></div>
+    <div class="bd"><div class="nm">${_esc(y.n)}</div><div class="pr">${soon(y)?soonH():y.cz&&window.mtoOk&&!mtoOk()?'Check price':(y.cz?'From ':'')+inr(y.p)}</div></div></div>`;}).join('');
+  sArrows(row); row._arrUpd&&setTimeout(row._arrUpd,60); }
+window.addEventListener('outrr-catalog',()=>{ try{ homeRecent(); }catch(e){} });
+document.addEventListener('DOMContentLoaded',()=>{ try{ homeRecent(); }catch(e){} });
 function recentPush(id){ try{ let r=JSON.parse(localStorage.getItem('outrr_rv')||'[]').filter(k=>k!==id); r.unshift(id); localStorage.setItem('outrr_rv',JSON.stringify(r.slice(0,16))); }catch(e){} }
 function recentDraw(id){ const sec=document.getElementById('pdRecent'), row=document.getElementById('recentRow'); if(!sec||!row) return;
   let r=[]; try{ r=JSON.parse(localStorage.getItem('outrr_rv')||'[]'); }catch(e){}
   r=r.filter(k=>k!==id&&PRODS[k]&&IMGS[PRODS[k].img]).slice(0,8); sec.hidden=!r.length;
   row.innerHTML=r.map(i=>{const y=PRODS[i]; return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt="${_esc(y.n)}" loading="lazy"></div>
-    <div class="bd"><div class="nm">${_esc(y.n)}</div><div class="pr">${soon(y)?soonH():y.cz&&window.mtoOk&&!mtoOk()?'Check price':(y.cz?'From ':'')+inr(y.p)}</div></div></div>`;}).join(''); }
+    <div class="bd"><div class="nm">${_esc(y.n)}</div><div class="pr">${soon(y)?soonH():y.cz&&window.mtoOk&&!mtoOk()?'Check price':(y.cz?'From ':'')+inr(y.p)}</div></div></div>`;}).join('');
+  sArrows(row); row._arrUpd&&setTimeout(row._arrUpd,60); }
 function openProduct(id){ window.PDID=id; try{ recentDraw(id); recentPush(id); }catch(e){}
   if(PRODS[id]&&PRODS[id].bun) return openBundle(id);   // 127
   window.mtoPdpReset&&mtoPdpReset();   // 159: Made to Order uses this same page (mto.js fills the options card)
@@ -4585,6 +4611,8 @@ async function shareProduct(){
       track.addEventListener('scroll', function(){ var i = Math.round(track.scrollLeft / Math.max(1, track.clientWidth)); if(i !== cur){ cur = i; mark(); } }, {passive:true});
       ['pointerdown','touchstart','mouseenter'].forEach(function(ev){ hero.addEventListener(ev, function(){ paused = true; }, {passive:true}); });
       hero.addEventListener('mouseleave', function(){ paused = false; });
+      if(slides.length > 1) ['l', 'r'].forEach(function(c){ var b = document.createElement('button'); b.type = 'button'; b.className = 'sarr ' + c; b.setAttribute('aria-label', c === 'l' ? 'Previous banner' : 'Next banner');
+        b.innerHTML = c === 'l' ? '&#8249;' : '&#8250;'; b.onclick = function(e){ e.preventDefault(); e.stopPropagation(); go(cur + (c === 'l' ? -1 : 1)); paused = true; }; hero.appendChild(b); });
       mark();
       var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
       if(slides.length > 1 && !still) setInterval(function(){ if(!paused && !document.hidden && document.getElementById('home').offsetParent !== null) go(cur + 1); }, 5500);
