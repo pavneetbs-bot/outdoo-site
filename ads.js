@@ -15,32 +15,43 @@
                eye, h, em, p, btn, act ('col:slug' | 'sub:slug|Sub' | 'p:SKU' | 'url:https…'), bg, fg, ac, sponsor ('' = ours; a seller name = shown as Sponsored) }
    A slot with no banner of its own falls back to an automatic one built from the category (its title + best photos), so no slot is ever empty. */
 (function(){
+  var FEB = '2027-02-01T00:00:00+05:30';   // vertical gardens & water features: people put them in from February
   var ADS = [
-    // ---- seasonal: winter build season, wedding & gifting, New Year (Nov–Jan)
-    { id:'glass', slots:['H2','C1','C4','P2','H3','C3'], cols:['cabins'], img:['mto-glasshouse'], bg:'#1F2A24', fg:'#fff', ac:'#E9C46A',
-      eye:'Winter build season', h:'A glass room for', em:'winter sun.', p:'Glass houses and garden cabins, designed to your size and built on site.', btn:'Design yours', act:'col:cabins' },
+    // ---- in season now (Nov–Jan): fire pits, bar counters, pergolas, furniture, benches, planters (+ glass houses for winter sun)
+    { id:'fire', slots:['H2','C1','C4','P2','C2','H4','C3','S1'], cols:['fire-pits'], img:['fp-teardrop','fp-orb'], bg:'#1E1D1B', fg:'#fff', ac:'#F4C76B',
+      eye:'Fire pits & BBQ · ready to ship', h:'Gather round', em:'the fire.', p:'Hand-cut steel fire pits and barbecues for long winter evenings.', btn:'Shop fire pits', act:'col:fire-pits' },
     { id:'bar', slots:['H2','H3','C1','C4','P2','C3','C2','H4'], cols:['bar-counters'], img:['mto-bar-subway','mto-bar-arch'], bg:'#262422', fg:'#fff', ac:'#F4C76B',
       eye:'New Year · Outdoor kitchens', h:'Host the New Year', em:'outdoors.', p:'Bar counters, BBQ stations and pizza-oven counters, made to your length.', btn:'Plan your bar', act:'col:bar-counters' },
-    { id:'furn', slots:['H3','C1','C4','P2','C2','H4','C3'], cols:['furniture'], img:['mto-sofa-teak','mto-chair'], bg:'#EADCC8', fg:'#2E2E2E', ac:'#C26445',
-      eye:'Made to order', h:'Your frame.', em:'Your finish.', p:'Rope and wicker sofas, chairs and dining sets in MS, aluminium, steel or teak.', btn:'Shop furniture', act:'col:furniture' },
-    { id:'pergola', slots:['H2','C1','C4','P2','C3','C2'], cols:['shade'], img:['mto-pergola'], bg:'#55634A', fg:'#fff', ac:'#EADCC8',
+    { id:'pergola', slots:['H2','C1','C4','P2','C3','C2'], cols:['shade'], img:['mto-pergola','cat-shade-2'], bg:'#55634A', fg:'#fff', ac:'#EADCC8',
       eye:'Build in winter, sit out in summer', h:'Plan your pergola', em:'this season.', p:'Louvre, slatted and gable pergolas, made to your terrace size.', btn:'See pergolas', act:'col:shade' },
-    { id:'sculpt', slots:['H3','C1','C4','P2','C2','H4','C3'], cols:['sculptures','art'], img:['mto-sculpt-knot','mto-sculpt-flame'], bg:'#F6F1E7', fg:'#2E2E2E', ac:'#C26445',
+    { id:'furn', slots:['H2','C1','C4','P2','C2','H4','C3'], cols:['furniture'], img:['mto-sofa-teak','mto-chair'], bg:'#EADCC8', fg:'#2E2E2E', ac:'#C26445',
+      eye:'Made to order', h:'Your frame.', em:'Your finish.', p:'Rope and wicker sofas, chairs and dining sets in MS, aluminium, steel or teak.', btn:'Shop furniture', act:'col:furniture' },
+    { id:'bench', slots:['H2','C4','P2','C2','C3'], cols:['furniture'], img:['mto-bench-1','mto-bench-2'], bg:'#2F3A2C', fg:'#fff', ac:'#E9C46A',
+      eye:'Benches · made to order', h:'Sit out in', em:'the winter sun.', p:'Garden, tree-surround and planter benches in WPC and steel, made to your length.', btn:'Shop benches', act:'sub:furniture|Benches' },
+    { id:'plant', slots:['H2','C1','C4','P2','C2','C3'], cols:['planters'], img:['cat-planters-1','cat-planters-2'], bg:'#F2E9DD', fg:'#2E2E2E', ac:'#55634A',
+      eye:'Winter planting season', h:'Planters made', em:'to your size.', p:'WPC, wooden and steel planters for balconies, terraces and entrances.', btn:'Shop planters', act:'col:planters' },
+    { id:'glass', slots:['C1','C4','P2','C3'], cols:['cabins'], img:['mto-glasshouse','cat-cabins-2'], bg:'#1F2A24', fg:'#fff', ac:'#E9C46A',
+      eye:'Winter build season', h:'A glass room for', em:'winter sun.', p:'Glass houses and garden cabins, designed to your size and built on site.', btn:'Design yours', act:'col:cabins' },
+    { id:'sculpt', slots:['C1','C4','P2','C2','C3'], cols:['sculptures','art'], img:['mto-sculpt-knot','mto-sculpt-flame'], bg:'#F6F1E7', fg:'#2E2E2E', ac:'#C26445',
       eye:'Wedding & gifting season', h:'A statement', em:'for the season.', p:'Abstract, Buddha and animal sculptures in FRP or stone, 2 to 6 ft.', btn:'Shop sculptures', act:'col:sculptures' },
-    { id:'green', slots:['H3','C1','C4','P2','C2','C3'], cols:['vertical-gardens','planters'], img:['mto-greenwall','mto-greenwall2'], bg:'#24352B', fg:'#fff', ac:'#CFE3A8',
-      eye:'Vertical gardens', h:'Keep it green', em:'all winter.', p:'Living walls in PVC pots, wooden and HPL troughs.', btn:'Shop green walls', act:'col:vertical-gardens' },
-    { id:'water', slots:['H2','C1','C4','P2','C2','C3'], cols:['water-features'], img:['mto-cascade'], bg:'#1E1D1B', fg:'#fff', ac:'#9FD3E0',
+    { id:'lights', slots:['C1','C4','P2','C2','H4','C3','S1'], cols:['lighting'], img:['lt-globe','lt-petal'], bg:'#F2E9DD', fg:'#2E2E2E', ac:'#C26445',
+      eye:'Handwoven by artisans · ready to ship', h:'Cane & wicker', em:'lights.', p:'Pendants and lanterns with a warm, woven glow.', btn:'Shop the lights', act:'col:lighting' },
+    // ---- home pair (H3): privacy screens + feature walls
+    { id:'privacy', slots:['H3','C1','C4','P2','C2','C3'], cols:['privacy-screens'], img:['cat-privacy-screens-1','cat-privacy-screens-2'], bg:'#2A2522', fg:'#fff', ac:'#E9A26B',
+      eye:'Privacy screens', h:'Your terrace,', em:'your privacy.', p:'Jali, slat and green screens made to your parapet, 1 to 8 ft.', btn:'Shop screens', act:'col:privacy-screens' },
+    { id:'fwall', slots:['H3','C1','C4','P2','C2','C3'], cols:['feature-walls'], img:['cat-feature-walls-1','cat-feature-walls-2'], bg:'#1E1D1B', fg:'#fff', ac:'#F4C76B',
+      eye:'Feature walls', h:'A wall worth', em:'coming home to.', p:'Backlit jali, fluted and stone feature walls for entrances and terraces.', btn:'Shop feature walls', act:'col:feature-walls' },
+    // ---- from February
+    { id:'green', from:FEB, slots:['H2','C1','C4','P2','C2','C3'], cols:['vertical-gardens','planters'], img:['mto-greenwall','mto-greenwall2'], bg:'#24352B', fg:'#fff', ac:'#CFE3A8',
+      eye:'Vertical gardens', h:'Green walls,', em:'ready for spring.', p:'Living walls in PVC pots, wooden and HPL troughs.', btn:'Shop green walls', act:'col:vertical-gardens' },
+    { id:'water', from:FEB, slots:['H2','C1','C4','P2','C2','C3'], cols:['water-features'], img:['mto-cascade'], bg:'#1E1D1B', fg:'#fff', ac:'#9FD3E0',
       eye:'Water features', h:'The sound of water,', em:'lit at night.', p:'Cascades, fountains and water walls for courtyards and terraces.', btn:'Shop water features', act:'col:water-features' },
-    { id:'fire', slots:['H3','C1','C4','P2','C2','H4','C3','S1'], cols:['fire-pits'], img:['fp-teardrop','fp-orb'], bg:'#1E1D1B', fg:'#fff', ac:'#F4C76B',
-      eye:'Fire pits & BBQ', h:'Gather round', em:'the fire.', p:'Hand-cut steel fire pits and barbecues for long winter evenings.', btn:'Shop fire pits', act:'col:fire-pits' },
-    { id:'lights', slots:['H3','C1','C4','P2','C2','H4','C3','S1'], cols:['lighting'], img:['lt-globe','lt-petal'], bg:'#F2E9DD', fg:'#2E2E2E', ac:'#C26445',
-      eye:'Handwoven by artisans', h:'Cane & wicker', em:'lights.', p:'Pendants and lanterns with a warm, woven glow.', btn:'Shop the lights', act:'col:lighting' },
-    // ---- offers (anywhere)
-    { id:'outrr5', slots:['P1','C2','S1','H4','C3'], cols:[], img:['ph-terrace-sunset'], bg:'#C26445', fg:'#fff', ac:'#fff',
+    // ---- offer (ready-to-ship only)
+    { id:'outrr5', slots:['P1','S1','H4'], cols:[], rts:1, img:['ph-terrace-sunset'], bg:'#C26445', fg:'#fff', ac:'#fff',
       eye:'Launch offer', h:'Extra 5% off', em:'with OUTRR5', p:'On ready-to-ship orders. Applied at checkout by itself.', btn:'Shop now', act:'col:fire-pits' },
-    { id:'mto-p1', slots:['P1'], cols:['furniture','bar-counters','cabins','shade','sculptures','vertical-gardens','water-features','privacy-screens','feature-walls','gates','railings','decking','graffiti','planters'],
-      img:['mto-glasshouse'], bg:'#F6F1E7', fg:'#2E2E2E', ac:'#C26445', eye:'Made to order', h:'Need another size?', em:'We make it to fit.', p:'Talk to our design team on WhatsApp, free.', btn:'Chat with us', act:'wa' },
   ];
+  var H4_FOR = { stripTrend:'outrr5', tilesBest:'fire', tilesNew:'lights' };   // the card inside each home strip
+  var RTS_COLS = { 'fire-pits':1, 'lighting':1 };   // the OUTRR5 card shows only on ready-to-ship categories
   // 2026-11-18: hand-picked photos per category (lifestyle shots only — no sketches / drawings). Used by banners, the category grid and the menu.
   var PICS = {"bar-counters": ["cat-bar-counters-1", "cat-bar-counters-2", "cat-bar-counters-3", "cat-bar-counters-4"],
     "cabins": ["cat-cabins-1", "cat-cabins-2"],
@@ -94,8 +105,8 @@
     if(!col) return all;
     if(slot === 'C1') return [ownAd('C1', col) || auto(col)].filter(Boolean);
     var rel = (RELATED[col] || []).map(function(r){ return ownAd(slot, r) || auto(r); }).filter(Boolean);
-    var own = ownAd(slot, col), gen = all.filter(function(a){ return !a.cols.length; });
-    return slot === 'P2' ? [own].concat(rel, gen).filter(Boolean) : rel.concat(own ? [own] : [], gen);
+    var own = ownAd(slot, col), gen = all.filter(function(a){ return !a.cols.length && (!a.rts || RTS_COLS[col]); });
+    return slot === 'P2' ? rel : rel.concat(own ? [own] : [], gen);   // a product page never advertises its own category
   }
   function pick(slot, col, n){
     var pool = candidates(slot, col).filter(function(a, i, l){ return a && l.indexOf(a) === i; });
@@ -157,7 +168,7 @@
     [['stripTrend', 2], ['tilesBest', 3], ['tilesNew', 5]].forEach(function(x){
       var d = document.getElementById(x[0]); if(!d) return;
       var put = function(){ if(d.querySelector('.ad') || d.children.length < 4) return; CTX = 'home';
-        var tmp = document.createElement('div'), a = d._ad || (d._ad = pick('H4', '', 1)[0]); if(!a) return; tmp.innerHTML = html(a, 'H4');   // same banner when the strip re-draws
+        var tmp = document.createElement('div'), a = d._ad || (d._ad = ADS.filter(function(z){ return z.id === H4_FOR[x[0]] && live(z); })[0] || pick('H4', '', 1)[0]); if(!a) return; tmp.innerHTML = html(a, 'H4');   // same banner when the strip re-draws
         var el = tmp.firstChild; if(d.classList.contains('hstrip')) el.classList.add('ad-instrip'); else d.removeChild(d.lastElementChild);   // a grid keeps its rows full
         d.insertBefore(el, d.children[x[1]] || null); };
       put(); if(window.MutationObserver) new MutationObserver(put).observe(d, { childList: true });
@@ -180,8 +191,8 @@
   }
   // ---------------------------------------------------------------- product page: P1, P2
   function pdp(id){ USED.pdp = {}; CTX = 'pdp'; var x = G('PRODS') && PRODS[id], col = x ? x.col : '';
-    var p1 = document.getElementById('adP1');   // P1: ready to ship → the OUTRR5 offer; made to order → "need another size?"
-    if(p1){ var a1 = ADS.filter(function(a){ return a.id === (x && x.cz ? 'mto-p1' : 'outrr5') && live(a); })[0]; p1.innerHTML = a1 ? html(a1, 'P1') : ''; p1.hidden = !a1; }
+    var p1 = document.getElementById('adP1');   // P1: ready to ship → the OUTRR5 offer
+    if(p1){ var a1 = x && !x.cz ? ADS.filter(function(a){ return a.id === 'outrr5' && live(a); })[0] : null; p1.innerHTML = a1 ? html(a1, 'P1') : ''; p1.hidden = !a1; }   // made to order: no strip
     fill(document.getElementById('adP2'), 'P2', col, 1); }
 
   function wrap(name, after){ var f = window[name]; if(typeof f !== 'function' || f._ad) return; var g = function(){ var r = f.apply(this, arguments); try{ after.apply(this, arguments); }catch(e){} return r; }; g._ad = 1; window[name] = g; }

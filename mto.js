@@ -674,6 +674,8 @@
       h += '<ul class="wz-sum"><li><b>' + fi(lay.L) + ' × ' + fi(lay.W) + '</b> · ' + (num(lay.L) * num(lay.W)) + ' sq ft</li><li>' + esc(gname) + ' · ' + esc(dname) + ' (' + esc(w.side) + ')' + (lay.full_doors === true ? ' · full-height doors' : ' · 8 ft doors') + (SIDES.some(function (sd) { return lay.walls[sd].indexOf('slide') >= 0; }) && lay.tracks ? ' · ' + esc(lay.tracks) : '') + '</li><li>' + esc(ins.join(' · ') || 'open inside') + '</li>' + (pj2 ? '<li>' + esc(pj2) + '</li>' : '') + (SIDES.indexOf(lay.gutter) >= 0 ? '<li>Rain gutter, slope to the ' + esc(lay.gutter) + '</li>' : '') + '<li>' + esc([lay.roof, lay.frame, lay.height].filter(Boolean).join(' · ')) + ' · LED lights included</li></ul>';
       h += '<div class="wz-note"><b>Before we make it:</b> final drawings of your cabin are sent to you for approval. Making starts only after you approve them.</div>';
       if (S.pdp) h += pdpTail(PRODS[S.id], m, o);
+      h += partsMini();
+      if (S && !S.cabDone) { S.cabDone = true; setTimeout(function () { try { var x0 = PRODS[S.id]; if (x0 && document.getElementById('mtoFull') && !document.getElementById('mfParts')) window.mtoShowParts(); } catch (e) {} }, 0); }
       h += '<button type="button" class="wz-back" data-wzadv="1">✎ Edit each wall yourself</button>';
     }
     if (S.pdp) return S.studio ? h + '</div>' : h;
@@ -960,20 +962,41 @@
   var PART_GROUPS = /^(construction|build|structure|finish|mounting|fittings|pots|design|materials?|frame|roof|walls?|doors?|what's included)$/i, PART_LABEL = /^(walls?|roof|floor|frame|lighting|lights|electrical|doors?|windows?|glass|pergola projection|posts|panels?|panel frame|top|body|cladding|hardware|base|deck|cushions?|fabric|materials?|structure)$/i;
   function isPart(sp) { return (PART_GROUPS.test(String(sp.group || '').trim()) || PART_LABEL.test(String(sp.label || '').trim())) && !NOT_PART.test(sp.label); }
   function partImg(t) { for (var i = 0; i < PART_RE.length; i++) if (PART_RE[i][0].test(t) && PART_IMG[PART_RE[i][1]]) return PART_IMG[PART_RE[i][1]]; return ''; }
+  // 177: thin line icons for the order steps, picked from each step's title
+  var SI = {
+    pay: '<path d="M3 7h18v10H3z"/><path d="M3 10h18"/><path d="M7 14h3"/>',
+    draw: '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',
+    make: '<path d="M3 20h18"/><path d="M5 20V10l5 3V10l5 3V7l4 2v11"/>',
+    ship: '<path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/>',
+    fit: '<path d="M14 6a4 4 0 0 0-5 5l-6 6 3 3 6-6a4 4 0 0 0 5-5l-3 3-2-2z"/>',
+    ok: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+    measure: '<path d="M3 15l12-12 6 6-12 12z"/><path d="M7 11l2 2M10 8l2 2M13 5l2 2"/>',
+    home: '<path d="M4 11l8-6 8 6v9H4z"/><path d="M10 20v-5h4v5"/>'
+  };
+  function stepIcon(t) { t = String(t || '').toLowerCase();
+    var k = /pay|order|advance|balance|book/.test(t) ? 'pay' : /draw|design|approve/.test(t) ? 'draw' : /measure|site|visit|survey/.test(t) ? 'measure' : /mak|build|craft|factory|product/.test(t) ? 'make'
+      : /dispatch|deliver|ship|transit/.test(t) ? 'ship' : /install|fit|assembl/.test(t) ? 'fit' : /hand|done|complete|enjoy/.test(t) ? 'home' : 'ok';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + SI[k] + '</svg>'; }
+  // 177: the parts list, for the customised cabin's last step (next to its price)
+  function partsMini() { var ps = arr(mtoFull.parts); if (!ps.length) return '';
+    return '<div class="wz-parts"><b>What goes into it</b><ul>' + ps.map(function (p) { return '<li><span>' + esc(p.name) + '</span><small>' + esc(p.spec) + '</small></li>'; }).join('') + '</ul></div>'; }
   function mtoFull(x, m, stp, faqs, own) {
+    mtoFull.args = [x, m, stp, faqs, own];
     var pdp = document.getElementById('pdp'), cmp = document.getElementById('cmpSec'); if (!pdp || !cmp) return;
-    var el = document.getElementById('mtoFull'); if (!el) { el = document.createElement('div'); el.id = 'mtoFull'; cmp.parentNode.insertBefore(el, cmp); el.addEventListener('click', function (e) { var t = e.target.closest('[data-pimg]'); if (t && window.lbxOne) window.lbxOne(t.getAttribute('data-pimg')); }); }
+    var el = document.getElementById('mtoFull'); if (!el) { el = document.createElement('div'); el.id = 'mtoFull'; var at = document.getElementById('pdMore') || cmp; at.parentNode.insertBefore(el, at); el.addEventListener('click', function (e) { var t = e.target.closest('[data-pimg]'); if (t && window.lbxOne) window.lbxOne(t.getAttribute('data-pimg')); }); }
     var specs = arr(m.specs).filter(function (s) { return s && s.label && s.value; }), parts = arr(m.parts).length ? arr(m.parts) : specs.filter(isPart).map(function (s) { return { name: s.label, spec: s.value }; });
     var rest = arr(m.parts).length ? specs : specs.filter(function (s) { return !isPart(s); });
     var nm = String(x.n || '').replace(/ — .*$/, '');
     var h = '';
-    if (parts.length) h += '<section class="mf"><h2>What goes into it</h2><p class="mf-sub">Every part of your ' + esc(nm.toLowerCase()) + ' — the same parts as on your drawing</p><div class="mf-parts">' +
+    var seen = m.unit === 'cabin' ? !!(S && S.cabDone) : mtoOk();   // 177: shown with the price, not before
+    mtoFull.parts = parts; mtoFull.nm = nm;
+    if (parts.length && seen) h += '<section class="mf" id="mfParts"><h2>What goes into it</h2><p class="mf-sub">Every part of your ' + esc(nm.toLowerCase()) + ' — the same parts as on your drawing</p><div class="mf-parts">' +
       parts.map(function (p) { var im = p.img || partImg(p.name + ' ' + p.spec); return '<div class="mf-part">' + (im ? '<button type="button" class="mf-pi" data-pimg="' + esc(im) + '" aria-label="See the photo of ' + esc(p.name) + '"><img src="' + esc(im) + '" alt="' + esc(p.name) + '" loading="lazy"></button>' : '<span class="mf-pi mf-noimg">' + esc(String(p.name).charAt(0)) + '</span>') +
         '<div><b>' + esc(p.name) + '</b>' + (p.brand ? '<small class="mf-br">' + esc(p.brand) + '</small>' : '') + '<small>' + esc(p.spec) + '</small></div></div>'; }).join('') + '</div></section>';
     var kv = rest.map(function (s) { return '<div><span>' + esc(s.label) + (s.group && rest.filter(function (z) { return z.label === s.label; }).length > 1 ? ' · ' + esc(s.group) : '') + '</span><b>' + esc(s.value) + '</b></div>'; }).join('') +
       '<div><span>Made in</span><b>' + esc(daysTxt(m.make_days) || '—') + ' after you order' + (m.drawing !== 'no' ? ' (and approve the drawing)' : '') + '</b></div><div><span>Installation</span><b>' + (m.install && m.install.required ? 'Included' : m.install && m.install.offered ? 'Optional — priced for your city' : 'By you, with the fixing guide') + '</b></div><div><span>SKU</span><b>' + esc(x.sku || S.id) + ' · Made in India</b></div>';
     h += '<section class="mf"><h2>Specifications</h2><div class="mf-spec">' + kv + '</div></section>';
-    h += '<section class="mf"><h2>How your order is made</h2><p class="mf-sub">You see and approve everything before making starts</p><div class="mf-steps">' + stp.map(function (t, i) { var q = t.split('|'); return '<div><i>' + (i + 1) + '</i><b>' + esc(q[0]) + '</b><small>' + esc(q[1]) + '</small></div>'; }).join('') + '</div></section>';
+    h += '<section class="mf"><h2>How your order is made</h2><p class="mf-sub">You see and approve everything before making starts</p><div class="mf-steps">' + stp.map(function (t, i) { var q = t.split('|'); return '<div><i class="mf-ic" aria-hidden="true">' + stepIcon(q[0]) + '<em>' + (i + 1) + '</em></i><b>' + esc(q[0]) + '</b><small>' + esc(q[1]) + '</small></div>'; }).join('') + '</div></section>';
     h += '<section class="mf" id="mfRev"><h2>Reviews</h2><p class="mf-sub">Only verified buyers can review, after delivery — with photos of their own</p><div class="mf-rv"></div></section>';
     var mine = faqs.slice(0, own), seen = mine.map(function (f) { return String(f.q).toLowerCase().trim(); }), ours = faqs.slice(own).filter(function (f) { return seen.indexOf(String(f.q).toLowerCase().trim()) < 0; });
     var qa = function (f, i) { return '<details' + (i === 0 ? ' open' : '') + '><summary>' + esc(f.q) + '</summary><p>' + esc(f.a) + '</p></details>'; };
@@ -983,6 +1006,7 @@
     var rl = document.getElementById('pdRevList'); if (rl) { if (!mtoFull.home) mtoFull.home = rl.parentNode; el.querySelector('.mf-rv').appendChild(rl); }
     pdp.classList.add('pdp-mtofull');
   }
+  window.mtoShowParts = function () { if (mtoFull.args) mtoFull.apply(null, mtoFull.args); };
   window.mtoPdpReset = function () {
     try { var mf = document.getElementById('mtoFull'), rl = document.getElementById('pdRevList'); if (rl && mtoFull.home && rl.parentNode !== mtoFull.home) mtoFull.home.insertBefore(rl, mtoFull.home.firstChild); if (mf) mf.remove(); var pp = document.getElementById('pdp'); if (pp) pp.classList.remove('pdp-mtofull'); } catch (e) {}
     try { var sd = document.getElementById('cbStudio'); if (sd) sd.classList.remove('open'); document.body.classList.remove('cb-studio', 'cbs-big'); var cc = document.querySelector('.ctas .cbcta'); if (cc) cc.remove(); var cm = document.getElementById('cmpSec'); if (cm) cm.style.display = ''; } catch (e) {}
@@ -1000,7 +1024,7 @@
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), lo = mats.length ? Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; })) : 0;
     var pr = document.getElementById('pdPrice'); if (pr && x.oo !== false) pr.innerHTML = '<span class="mfrom">From</span> ' + rs(x.p) + (u !== 'fixed' && u !== 'cabin' && u !== 'seat' && lo ? '<span class="mrplab">' + rs(lo) + ' / ' + uw + '</span>' : '');
     var tl = document.querySelector('#pdp .taxline'); if (tl) { tl.style.display = ''; tl.textContent = 'Inclusive of GST · priced for your size and options below'; }
-    var sk = document.getElementById('pdSku'); if (sk) sk.textContent = 'SKU ' + id + ' · ' + String((document.getElementById('crumbPath') || {}).textContent || '').replace(/^Home \/ /, '') + ' · Made to Order';
+    var sk = document.getElementById('pdSku'); if (sk) sk.textContent = 'SKU ' + id + ' · ' + ((window.COLS_T && COLS_T(x.col)) || '') + ' · Made to Order';
     var mt = document.getElementById('pdMat'); if (mt) mt.textContent = x.mat || '';
     // the configurator card: right under the title card
     var first = document.querySelector('#pdp .pdp-info .pcard'), cfg = document.createElement('div'); cfg.id = 'mtoCfg'; cfg.className = 'pcard mto-pcfg';
