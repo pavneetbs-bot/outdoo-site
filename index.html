@@ -2799,7 +2799,9 @@ function subOf(id){const x=PRODS[id],n=x.n; if(x.sb) return x.sb;
 function chipOf(id){return lastCol==='__seller'||(lastCol==='__search'&&!SRCH_CAT)?((COLS[PRODS[id].col]||{}).t||'Other'):subOf(id);}
 // 175: search results — the category most results are from (60%+), else null (mixed: category chips + filters marked "on mixed search")
 let SRCH_CAT=null;
-function srchCat(ids){if(lastCol!=='__search'||!ids.length) return null; const m={}; ids.forEach(id=>{const c=PRODS[id].col;m[c]=(m[c]||0)+1});
+function srchCat(ids){if((lastCol!=='__search'&&lastCol!=='__seller')||!ids.length) return null;
+ if(lastCol==='__seller'&&FLT.sub.size===1){const t=[...FLT.sub][0], c=Object.keys(COLS).find(k=>COLS[k]&&COLS[k].t===t); if(c) return c;}   // 176: a seller's catalogue — the category chip picked
+ const m={}; ids.forEach(id=>{const c=PRODS[id].col;m[c]=(m[c]||0)+1});
  const top=Object.keys(m).sort((a,b)=>m[b]-m[a])[0]; return m[top]/ids.length>=0.6?top:null;}
 let FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false,tag:{}};
 function fltReset(){FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false,tag:{}};
@@ -2841,9 +2843,9 @@ function tagSplit(t){const i=String(t).indexOf(':');return i>0?[t.slice(0,i).tri
 //      search: the main category's list when 60%+ of results are from it, else only groups marked "on mixed search"
 function tagGroupsFor(g){const C=window.TAGCFG; let keys=Object.keys(g);
  if(!C) return keys;
- const ctx=lastCol==='__search'?SRCH_CAT:lastCol==='__seller'?null:lastCol, own=ctx&&C.cat[ctx];
+ const mix=lastCol==='__search'||lastCol==='__seller', ctx=mix?SRCH_CAT:lastCol, own=ctx&&C.cat[ctx];
  if(own&&own.length) return own.filter(k=>g[k]);
- if(lastCol==='__search'&&!SRCH_CAT) keys=keys.filter(k=>C.g[k]&&C.g[k].ev);
+ if(mix&&!SRCH_CAT) keys=keys.filter(k=>C.g[k]&&C.g[k].ev);
  return keys.filter(k=>!C.g[k]||!C.g[k].off).sort((a,b)=>((C.g[a]||{}).s??1e4)-((C.g[b]||{}).s??1e4)||a.localeCompare(b));}
 function buildTags(ids){const box=document.getElementById('fTagSecs'); if(!box) return; const g={};
  ids.forEach(id=>(PRODS[id].tg||[]).forEach(t=>{const [k,v]=tagSplit(t); if(!v) return; (g[k]=g[k]||{})[v]=(g[k][v]||0)+1}));
