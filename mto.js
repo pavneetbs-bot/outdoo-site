@@ -333,7 +333,9 @@
     '.wz-card.on{border:2px solid #C26445;background:#FBEDE7}.wz-card[disabled]{opacity:.45;cursor:not-allowed}.wz-card b{font-size:14px}.wz-card small{font-size:12px;color:#6A6258}.wz-pic{display:block;width:100%;height:70px;margin-bottom:4px}'+
     '.wz-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E2D6C4;border-radius:14px;padding:12px;margin-bottom:10px;cursor:pointer}.wz-row>span:first-child{flex:1;display:flex;flex-direction:column}.wz-row small{font-size:12px;color:#6A6258}.wz-pr{font-size:12.5px;color:#6A6258;white-space:nowrap}'+
     '.wz-sw{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:99px;background:#D9D4CB;position:relative;cursor:pointer;flex:none;margin:0;transition:background .15s}.wz-sw:checked{background:#C26445}.wz-sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .15s}.wz-sw:checked::after{left:23px}'+
-    '.ts-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:0 0 8px}.ts-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px;position:relative}.ts-n input{width:84px;height:38px;border:1px solid #D9CDBB;border-radius:10px;padding:0 26px 0 10px;font:600 14px Inter,sans-serif;box-sizing:border-box}.ts-n i{position:absolute;right:9px;bottom:11px;font-style:normal;font-size:12px;color:#8A8276}.ts-i{align-self:center;width:22px;font-size:13px}.ts-x{width:38px;height:38px;border-radius:10px;border:1px solid #E2D6C4;background:#fff;cursor:pointer}' +
+    '.ts-h{margin:16px 0 8px;font-size:13px;font-weight:700;color:#2E2E2E}.ts-h span{font-weight:400;color:#7A7268;font-size:12px}.ts-lb{margin:0 0 6px;font-size:12px;color:#6A6258}.ts-big{margin:2px 0 4px!important}.ts-big button{padding:10px 16px!important;font-size:14px!important}.ts-sm button{padding:5px 10px!important;font-size:12px!important}.ts-add{margin-top:6px!important}.ts-add button{border-style:dashed!important}'+
+    '.ts-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:8px 0}.ts-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px;position:relative}.ts-n input{width:80px;height:38px;border:1px solid #D9CDBB;border-radius:10px;padding:0 24px 0 10px;font:600 14px Inter,sans-serif;box-sizing:border-box}.ts-n i{position:absolute;right:9px;bottom:11px;font-style:normal;font-size:12px;color:#8A8276}.ts-x{width:32px;height:32px;border-radius:8px;border:1px solid #E2D6C4;background:#fff;cursor:pointer;flex:none}.ts-c{height:38px;padding:0 12px;border-radius:10px;border:1px solid #2E2E2E;background:#fff;font-weight:600;font-size:12.5px;cursor:pointer}'+
+    '.ts-blk{border:1px solid #E7DDCF;border-radius:12px;padding:10px 12px;margin:0 0 8px;background:#FFFCF8}.ts-bh{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px}.ts-bh b{font-size:13.5px}.ts-ck{display:flex;gap:6px;align-items:center;font-size:12.5px;color:#4A4640}'+
     '.wz-pm{width:40px;height:40px;border-radius:50%;border:1px solid #C9BBA6;background:#fff;font-size:20px;cursor:pointer}.wz-tabs{display:flex;gap:8px;flex-wrap:wrap}.wz-tabs button,.wz-chip{border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:8px 14px;min-height:40px;font:inherit;font-size:13px;cursor:pointer}.wz-tabs button.on{border:2px solid #C26445;font-weight:700}'+
     '.wz-sw-col{width:46px;height:46px;border-radius:50%;border:1px solid #BBB;cursor:pointer}.wz-sw-col.on{outline:3px solid #C26445;outline-offset:2px}.wz-elev{background:#fff;border:1px solid #E2D6C4;border-radius:12px;padding:10px;margin-top:10px}'+
     '.wz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:10px}.wz-next{background:#2E2E2E;color:#fff;border:0;border-radius:12px;padding:13px 22px;font:inherit;font-weight:700;min-height:46px;cursor:pointer}.wz-prev{background:none;border:0;font:inherit;color:#4A4640;cursor:pointer;min-height:44px}'+
@@ -542,8 +544,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=5').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=5'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=6').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=6'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -596,94 +598,132 @@
     }).join('') + '</div>';
   }
   function wzTry(c, lay, f) { var l2 = cbClone(lay); f(l2); var q = cabin(c, l2); return q.ok ? q.total : null; }
-  // ---- 2026-11-18 terrace: show the cabin on a Delhi builder-floor terrace (looks only — never changes the price or the order)
+  // ---- 2026-11-18 step 1 "Where": lawn or a Delhi builder-floor terrace (looks only — never changes the price or the order).
+  // A terrace: plot size, corner plot (road left / right), parapet, higher neighbour walls, what is already on the roof
+  // (mumty, lift room, shafts, rooms — each on a wall or free, sized, dragged in 3D, never on top of each other), and the
+  // cabin placed on it (drag it, turn its front). Plot coords: x from the left, z from the back (pd = front / road).
   var TS_PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['500', 50, 90]];
-  function tsNew(lay) { var t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, corner: false, par: 3, tanks: true, shafts: [] }; tsPlot(t, 30, 60, lay, true); return t; }
-  function tsPlot(t, pw, pd, lay, fresh) {   // a new plot size: mumty on a side wall in the middle of the depth, one shaft opposite, cabin near the front
+  var TS_KIND = { mumty: ['Mumty (stair room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft', 'Shaft'], room: ['Room already built', 'Room'] };
+  var TS_WALLS = [['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']];
+  var TS_ROT = [[0, 'Road side'], [90, 'Right'], [180, 'Back'], [270, 'Left']];
+  function tsNew(lay) { var t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, corner: '', par: 3, tanks: true, rot: 0, high: {}, blocks: [] }; tsPlot(t, 30, 60, lay, true); return t; }
+  function tsDims(t, lay) { return (num(t.rot) || 0) % 180 ? [num(lay.W), num(lay.L)] : [num(lay.L), num(lay.W)]; }
+  function tsWall(t, b, side) {   // put a block against a wall (keeps its place along that wall)
+    var P = 0.75; b.side = side;
+    if (side === 'left') b.x = P; else if (side === 'right') b.x = t.pw - P - b.w; else if (side === 'back') b.z = P; else if (side === 'front') b.z = t.pd - P - b.d;
+    b.x = Math.max(P, Math.min(t.pw - P - b.w, b.x)); b.z = Math.max(P, Math.min(t.pd - P - b.d, b.z));
+  }
+  function tsHit(a, b) { return a.x < b.x + b.w - 0.01 && a.x + a.w > b.x + 0.01 && a.z < b.z + b.d - 0.01 && a.z + a.d > b.z + 0.01; }
+  function tsFree(t, i) {   // block i sits on another one: slide it along its wall (or anywhere when free) to the nearest clear spot
+    var b = t.blocks[i], P = 0.75, others = t.blocks.filter(function (o, j) { return j !== i; });
+    if (!others.some(function (o) { return tsHit(b, o); })) return true;
+    var alongZ = b.side === 'left' || b.side === 'right', alongX = b.side === 'back' || b.side === 'front', best = null;
+    for (var dd = 0.5; dd < Math.max(t.pw, t.pd) && !best; dd += 0.5) [-dd, dd].forEach(function (s0) { if (best) return;
+      var tries = alongZ ? [[b.x, b.z + s0]] : alongX ? [[b.x + s0, b.z]] : [[b.x + s0, b.z], [b.x, b.z + s0]];
+      tries.forEach(function (q) { if (best || q[0] < P || q[1] < P || q[0] > t.pw - P - b.w || q[1] > t.pd - P - b.d) return; var c2 = { x: q[0], z: q[1], w: b.w, d: b.d }; if (!others.some(function (o) { return tsHit(c2, o); })) best = q; }); });
+    if (!best) return false; b.x = best[0]; b.z = best[1]; return true;
+  }
+  function tsAdd(t, type, side, w, d, at) {   // a new block on a wall, at a clear spot
+    var b = { type: type, side: side, w: w, d: d, x: 0, z: 0 }; b.x = at && at[0] != null ? at[0] : (t.pw - w) / 2; b.z = at && at[1] != null ? at[1] : (t.pd - d) / 2;
+    tsWall(t, b, side); t.blocks.push(b); if (!tsFree(t, t.blocks.length - 1)) { t.blocks.pop(); return false; } return true;
+  }
+  function tsPlot(t, pw, pd, lay, fresh) {   // a new plot size: everything keeps its wall and its place in proportion
     var opw = t.pw, opd = t.pd; t.pw = Math.max(15, Math.min(120, Math.round(pw))); t.pd = Math.max(20, Math.min(150, Math.round(pd)));
-    if (!fresh && opw && opd) arr(t.shafts).forEach(function (h) { h.x = Math.round((h.x + h.w / 2) / opw * t.pw - h.w / 2); h.z = Math.round((h.z + h.d / 2) / opd * t.pd - h.d / 2); });   // shafts keep their place on the plot
-    var sm = t.pw <= 25, left = !t.mumty || (t.mumty.x + t.mumty.w / 2) < t.pw / 2;
-    if (fresh || !t.mumty) t.mumty = { w: sm ? 8 : 10, d: sm ? 16 : 18, x: 0, z: 0 };
-    var mu = t.mumty; mu.w = Math.min(mu.w, t.pw - 3); mu.d = Math.min(mu.d, t.pd - 3); mu.x = left ? 0.75 : t.pw - 0.75 - mu.w; mu.z = Math.round((t.pd - mu.d) / 2);
-    if (fresh) t.shafts = [{ w: 3, d: 4, x: left ? t.pw - 3.75 : 0.75, z: Math.round(t.pd / 2 - 2) }];
-    t.shafts.forEach(function (h) { h.x = Math.max(0.75, Math.min(t.pw - 0.75 - h.w, h.x)); h.z = Math.max(0.75, Math.min(t.pd - 0.75 - h.d, h.z)); });
+    if (fresh) { var sm = t.pw <= 25; t.blocks = []; tsAdd(t, 'mumty', 'left', sm ? 8 : 10, sm ? 16 : 18); var m = t.blocks[0]; tsAdd(t, 'lift', 'left', 6, 6, [0, m.z - 6]); tsAdd(t, 'shaft', 'right', 3, 4); }
+    else t.blocks.forEach(function (b, i) { b.w = Math.min(b.w, t.pw - 3); b.d = Math.min(b.d, t.pd - 3); b.x = Math.round((b.x + b.w / 2) / opw * t.pw - b.w / 2); b.z = Math.round((b.z + b.d / 2) / opd * t.pd - b.d / 2); tsWall(t, b, b.side); tsFree(t, i); });
     tsCentre(t, lay);
   }
-  function tsFoot(lay) {   // the cabin + its pergola projection
-    var pj = lay.proj ? arr(lay.proj.sides) : [], dep = 1.5, has = function (sd) { return pj.indexOf(sd) >= 0 ? dep : 0; };
-    return { L: num(lay.L), W: num(lay.W), e: { l: has('left'), r: has('right'), b: has('back'), f: has('front') } };
-  }
-  function tsCentre(t, lay) {   // the best free spot: near the front and the middle first, never on the mumty / a shaft
-    var F = tsFoot(lay), x0 = Math.max(0.75 + F.e.l, Math.round((t.pw - F.L) / 2 * 2) / 2), z0 = Math.max(0.75 + F.e.b, t.pd - 0.75 - F.W - F.e.f - 3), best = null;
-    for (var z = z0; z >= 0.75 + F.e.b; z -= 0.5) for (var dx = 0; dx <= t.pw; dx += 0.5) [x0 - dx, x0 + dx].forEach(function (x) {
-      if (best) return; t.cx = x; t.cz = z; if (!tsClash(t, lay)) best = [x, z]; });
-    t.cx = best ? best[0] : x0; t.cz = best ? best[1] : z0;
+  function tsFoot(t, lay) {   // the cabin + its pergola projection, on the plot (its front turned by t.rot)
+    var pj = lay.proj ? arr(lay.proj.sides) : [], dep = 1.5, SD = ['front', 'right', 'back', 'left'], k = Math.round((num(t.rot) || 0) / 90) % 4, e = { front: 0, right: 0, back: 0, left: 0 };
+    pj.forEach(function (sd) { var j = SD.indexOf(sd); if (j >= 0) e[SD[(j + k) % 4]] = dep; });
+    var d = tsDims(t, lay); return { L: d[0], W: d[1], e: { l: e.left, r: e.right, b: e.back, f: e.front } };
   }
   function tsClash(t, lay) {   // why it doesn't fit there, or ''
-    var F = tsFoot(lay), x0 = t.cx - F.e.l, x1 = t.cx + F.L + F.e.r, z0 = t.cz - F.e.b, z1 = t.cz + F.W + F.e.f;
-    if (F.L + F.e.l + F.e.r > t.pw - 1.5 || F.W + F.e.b + F.e.f > t.pd - 1.5) return 'The cabin is bigger than this terrace — make it smaller';
-    if (x0 < 0.75 || z0 < 0.75 || x1 > t.pw - 0.75 || z1 > t.pd - 0.75) return 'The cabin goes over the parapet — move it in';
-    var hit = function (r) { return x0 < r.x + r.w && x1 > r.x && z0 < r.z + r.d && z1 > r.z; };
-    if (t.mumty && hit(t.mumty)) return 'The cabin hits the mumty — move one of them';
-    if (arr(t.shafts).some(hit)) return 'The cabin sits on a shaft — move one of them';
-    return '';
+    var F = tsFoot(t, lay), r = { x: t.cx - F.e.l, z: t.cz - F.e.b, w: F.L + F.e.l + F.e.r, d: F.W + F.e.b + F.e.f };
+    if (r.w > t.pw - 1.5 || r.d > t.pd - 1.5) return 'The cabin is bigger than this terrace — make it smaller in the next steps';
+    if (r.x < 0.75 || r.z < 0.75 || r.x + r.w > t.pw - 0.75 || r.z + r.d > t.pd - 0.75) return 'The cabin goes over the parapet — drag it in';
+    var b = arr(t.blocks).filter(function (o) { return tsHit(r, o); })[0];
+    return b ? 'The cabin sits on the ' + TS_KIND[b.type][1].toLowerCase() + ' — drag one of them' : '';
   }
-  function tsOpts() { var t = S.site; if (!t || t.kind !== 'terrace') return null; var o2 = JSON.parse(JSON.stringify(t)); o2.clash = !!tsClash(t, S.o.layout); return o2; }
+  function tsCentre(t, lay) {   // the best free spot: near the front and the middle first
+    var F = tsFoot(t, lay), x0 = Math.max(0.75 + F.e.l, Math.round((t.pw - F.L) / 2 * 2) / 2), z0 = Math.max(0.75 + F.e.b, t.pd - 0.75 - F.W - F.e.f - 3), best = null;
+    for (var z = z0; z >= 0.75 + F.e.b && !best; z -= 0.5) for (var dx = 0; dx <= t.pw && !best; dx += 0.5) [x0 - dx, x0 + dx].forEach(function (x) { if (best) return; t.cx = x; t.cz = z; if (!tsClash(t, lay)) best = [x, z]; });
+    t.cx = best ? best[0] : x0; t.cz = best ? best[1] : z0;
+  }
+  function tsOpts() { var t = S.site; if (!t || t.kind !== 'terrace') return null; var o2 = JSON.parse(JSON.stringify(t)); o2.clash = !!tsClash(t, S.o.layout); o2.place = !!S.siteEd; return o2; }
   function terraceUI(lay) {
     var t = S.site || { kind: 'ground' }, on = t.kind === 'terrace', h = '';
     var btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
     var nIn = function (key, val, lbl, min, max) { return '<label class="ts-n"><span>' + lbl + '</span><input type="number" inputmode="decimal" min="' + min + '" max="' + max + '" step="0.5" data-tsin="' + key + '" value="' + val + '"><i>ft</i></label>'; };
-    var note = function (txt) { return ' <span style="font-weight:400;color:#6A6258">— ' + txt + '</span>'; };
-    h += '<div class="cbs-t"><h4 class="wz-h">Where will it go?</h4><p class="wz-sub">See it on a terrace like yours — close, not exact. This doesn\'t change the price.</p></div><div class="cbs-o">';
-    h += '<div class="wz-tabs">' + btn('data-ts="kind:ground"', !on, '🌳 Lawn / garden') + btn('data-ts="kind:terrace"', on, '🏙 Terrace') + '</div>';
+    var sec = function (title, sub) { return '<p class="ts-h">' + title + (sub ? ' <span>' + sub + '</span>' : '') + '</p>'; };
+    h += '<div class="cbs-t"><h4 class="wz-h">Where will it go?</h4><p class="wz-sub">' + (on ? 'Set up your terrace, then place the cabin on it — close, not exact. Doesn\'t change the price.' : 'A lawn or a terrace? We\'ll show the cabin there.') + '</p></div><div class="cbs-o">';
+    h += '<div class="wz-tabs ts-big">' + btn('data-ts="kind:ground"', !on, '🌳 Lawn / garden') + btn('data-ts="kind:terrace"', on, '🏙 Terrace') + '</div>';
     if (on) {
-      var mu = t.mumty, mR = mu.x + mu.w / 2 >= t.pw / 2;
-      h += '<p class="wz-lbl">Plot size</p><div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], p[0] + ' gaj'); }).join('') + '</div>';
-      h += '<p class="wz-lbl">Exact terrace size' + note('type yours') + '</p><div class="ts-row">' + nIn('pw', t.pw, 'Width', 15, 120) + nIn('pd', t.pd, 'Depth', 20, 150) + '</div>';
-      h += '<div class="wz-tabs">' + btn('data-ts="corner"', t.corner, (t.corner ? '✓ ' : '') + 'Corner plot') + btn('data-ts="par:3"', t.par === 3, 'Parapet 3 ft') + btn('data-ts="par:4"', t.par === 4, 'Parapet 4 ft') + '</div>';
-      h += '<p class="wz-lbl">Mumty (stair room)' + note('drag it on the 3D to move') + '</p><div class="wz-tabs">' + btn('data-ts="mside:left"', !mR, 'Left side') + btn('data-ts="mside:right"', mR, 'Right side') + btn('data-ts="tanks"', t.tanks !== false, (t.tanks !== false ? '✓ ' : '') + 'Water tanks on top') + '</div>';
-      h += '<div class="ts-row">' + nIn('mw', mu.w, 'Width', 5, 30) + nIn('md', mu.d, 'Length', 5, 40) + nIn('mz', Math.round((t.pd - mu.z - mu.d) * 2) / 2, 'From front', 0.75, t.pd) + '</div>';
-      h += '<p class="wz-lbl">Shafts' + note('drag them on the 3D to move') + '</p>' + arr(t.shafts).map(function (sh, i) { return '<div class="ts-row"><b class="ts-i">' + (i + 1) + '</b>' + nIn('sw:' + i, sh.w, 'Width', 1, 15) + nIn('sd:' + i, sh.d, 'Length', 1, 20) + '<button type="button" class="ts-x" data-ts="sdel:' + i + '" aria-label="Remove shaft ' + (i + 1) + '">✕</button></div>'; }).join('') + '<button type="button" class="wz-back" style="margin-top:4px" data-ts="sadd">+ Add a shaft</button>';
-      h += '<p class="wz-lbl">Where the cabin sits</p><div class="ts-row">' + nIn('cx', t.cx, 'From left', 0, t.pw) + nIn('cf', Math.round((t.pd - t.cz - num(lay.W)) * 2) / 2, 'From front', 0, t.pd) + '<button type="button" class="wz-back" data-ts="centre">Centre it</button></div>';
+      h += sec('Plot') + '<div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], p[0] + ' gaj'); }).join('') + '</div>';
+      h += '<div class="ts-row">' + nIn('pw', t.pw, 'Width', 15, 120) + nIn('pd', t.pd, 'Depth', 20, 150) + '</div>';
+      h += sec('Corner plot?', 'road on which side') + '<div class="wz-tabs">' + btn('data-ts="corner:"', !t.corner, 'No') + btn('data-ts="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-ts="corner:right"', t.corner === 'right', 'Road on the right') + '</div>';
+      h += sec('Parapet') + '<div class="wz-tabs">' + btn('data-ts="par:3"', t.par === 3, '3 ft') + btn('data-ts="par:4"', t.par === 4, '4 ft') + '</div>';
+      h += sec('Neighbour\'s wall higher than yours?') + '<div class="wz-tabs">' + [['left', 'Left'], ['right', 'Right'], ['back', 'Back']].filter(function (s0) { return s0[0] !== t.corner; }).map(function (s0) { var hi = t.high && t.high[s0[0]]; return btn('data-ts="high:' + s0[0] + '"', hi, (hi ? '✓ ' : '') + s0[1]); }).join('') + '</div>';
+      h += sec('Already on the roof', 'drag them on the 3D too') + arr(t.blocks).map(function (b, i) {
+        return '<div class="ts-blk"><div class="ts-bh"><b>' + esc(TS_KIND[b.type][0]) + '</b><button type="button" class="ts-x" data-ts="del:' + i + '" aria-label="Remove">✕</button></div>' +
+          '<div class="wz-tabs ts-sm">' + TS_WALLS.map(function (wl) { return btn('data-ts="wall:' + i + ':' + wl[0] + '"', b.side === wl[0], wl[1]); }).join('') + '</div>' +
+          '<div class="ts-row">' + nIn('w:' + i, b.w, 'Width', 1, 40) + nIn('d:' + i, b.d, 'Length', 1, 40) + nIn('l:' + i, Math.round(b.x * 2) / 2, 'From left', 0.75, t.pw) + nIn('f:' + i, Math.round((t.pd - b.z - b.d) * 2) / 2, 'From front', 0.75, t.pd) + '</div>' +
+          (b.type === 'mumty' ? '<label class="ts-ck"><input type="checkbox" data-ts="tanks"' + (t.tanks !== false ? ' checked' : '') + '> Water tanks on top</label>' : '') + '</div>';
+      }).join('');
+      h += '<div class="wz-tabs ts-add">' + ['mumty', 'lift', 'shaft', 'room'].map(function (k) { return '<button type="button" data-ts="add:' + k + '">+ ' + TS_KIND[k][1] + '</button>'; }).join('') + '</div>';
+      if (S.tsMsg) h += '<div class="wz-note" style="background:#FFF4E5;border-color:#F1D3A8">' + esc(S.tsMsg) + '</div>';
+      h += sec('Place the cabin', 'drag it on the 3D') + '<p class="ts-lb">Its front faces</p><div class="wz-tabs">' + TS_ROT.map(function (r) { return btn('data-ts="rot:' + r[0] + '"', (num(t.rot) || 0) === r[0], r[1]); }).join('') + '</div>';
+      h += '<div class="ts-row">' + nIn('cx', t.cx, 'From left', 0, t.pw) + nIn('cf', Math.round((t.pd - t.cz - tsDims(t, lay)[1]) * 2) / 2, 'From front', 0, t.pd) + '<button type="button" class="ts-c" data-ts="centre">Find a free spot</button></div>';
+      h += '<div class="wz-tabs ts-sm">' + btn('data-ts="view:3d"', S.view3 !== 'top', 'See in 3D') + btn('data-ts="view:top"', S.view3 === 'top', 'See from the top') + '</div>';
       var cl = tsClash(t, lay); h += cl ? '<div class="wz-note" style="background:#FDECEA;border-color:#F3B8B0;color:#9B2C22">⚠ ' + esc(cl) + '</div>' : '<div class="wz-note">✓ It fits here.</div>';
     }
-    h += '<button type="button" class="wz-next" style="margin-top:12px" data-ts="close">← Back to the steps</button></div>';
-    return h;
+    return h + '</div>';
   }
   function tsClick(t) {
-    var k = t.getAttribute('data-ts'); if (k == null) return false; var lay = S.o.layout, x = S.site, a = k.split(':');
-    if (a[0] === 'close') { S.siteEd = false; return true; }
+    var k = t.getAttribute('data-ts'); if (k == null) return false; var lay = S.o.layout, x = S.site, a = k.split(':'); S.tsMsg = '';
+    if (a[0] === 'open') { S.siteEd = true; S.sel3 = null; S.psel = null; return true; }
     if (a[0] === 'kind') { if (a[1] === 'terrace') { S.site = x && x.pw ? x : tsNew(lay); S.site.kind = 'terrace'; } else if (x) x.kind = 'ground'; S.v3 = S.view3 = '3d'; return true; }
+    if (a[0] === 'view') { S.v3 = S.view3 = a[1]; return true; }
     if (!x) return true;
+    var b = a[1] != null && /^\d+$/.test(a[1]) ? x.blocks[+a[1]] : null, keep = b ? { x: b.x, z: b.z, side: b.side } : null;
     if (a[0] === 'plot') { var p = TS_PLOTS.filter(function (z) { return z[0] === a[1]; })[0]; x.plot = a[1]; tsPlot(x, p[1], p[2], lay); }
-    else if (a[0] === 'corner') x.corner = !x.corner;
+    else if (a[0] === 'corner') { x.corner = a[1] || ''; if (x.high && x.corner) x.high[x.corner] = false; }
     else if (a[0] === 'par') x.par = +a[1];
+    else if (a[0] === 'high') { x.high = x.high || {}; x.high[a[1]] = !x.high[a[1]]; }
     else if (a[0] === 'tanks') x.tanks = x.tanks === false;
-    else if (a[0] === 'mside') x.mumty.x = a[1] === 'left' ? 0.75 : x.pw - 0.75 - x.mumty.w;
-    else if (a[0] === 'sadd') x.shafts.push({ w: 3, d: 4, x: Math.round(x.pw / 2), z: 1 });
-    else if (a[0] === 'sdel') x.shafts.splice(+a[1], 1);
+    else if (a[0] === 'del' && b) x.blocks.splice(+a[1], 1);
+    else if (a[0] === 'wall' && b) { tsWall(x, b, a[2]); if (!tsFree(x, +a[1])) { b.x = keep.x; b.z = keep.z; b.side = keep.side; S.tsMsg = 'No free room on that wall'; } }
+    else if (a[0] === 'add') { var D = { mumty: [10, 18], lift: [6, 6], shaft: [3, 4], room: [10, 12] }[a[1]]; if (!tsAdd(x, a[1], a[1] === 'room' ? 'back' : 'right', D[0], D[1])) S.tsMsg = 'No free room for it — make the others smaller or move them'; }
+    else if (a[0] === 'rot') { var d0 = tsDims(x, lay), mx = x.cx + d0[0] / 2, mz = x.cz + d0[1] / 2; x.rot = +a[1]; var d1 = tsDims(x, lay); x.cx = Math.round((mx - d1[0] / 2) * 2) / 2; x.cz = Math.round((mz - d1[1] / 2) * 2) / 2; }
     else if (a[0] === 'centre') tsCentre(x, lay);
     return true;
   }
   function tsInput(el) {   // the exact sizes typed in
-    var k = el.getAttribute('data-tsin'), x = S.site, lay = S.o.layout, v = parseFloat(el.value); if (!k || !x || !(v >= 0)) return false; var a = k.split(':');
-    if (a[0] === 'pw' || a[0] === 'pd') { x.plot = ''; tsPlot(x, a[0] === 'pw' ? v : x.pw, a[0] === 'pd' ? v : x.pd, lay); }
-    else if (a[0] === 'mw' || a[0] === 'md') { var mu = x.mumty, right = mu.x + mu.w / 2 >= x.pw / 2, mid = mu.z + mu.d / 2; mu[a[0] === 'mw' ? 'w' : 'd'] = Math.max(5, Math.min(a[0] === 'mw' ? x.pw - 3 : x.pd - 3, v)); if (right) mu.x = x.pw - 0.75 - mu.w; mu.z = Math.max(0.75, Math.min(x.pd - 0.75 - mu.d, Math.round((mid - mu.d / 2) * 2) / 2)); }
-    else if (a[0] === 'mz') x.mumty.z = Math.max(0.75, Math.min(x.pd - 0.75 - x.mumty.d, x.pd - v - x.mumty.d));
-    else if (a[0] === 'sw' || a[0] === 'sd') { var sh = x.shafts[+a[1]]; if (sh) { sh[a[0] === 'sw' ? 'w' : 'd'] = Math.max(1, Math.min(20, v)); sh.x = Math.max(0.75, Math.min(x.pw - 0.75 - sh.w, sh.x)); sh.z = Math.max(0.75, Math.min(x.pd - 0.75 - sh.d, sh.z)); } }
-    else if (a[0] === 'cx') x.cx = Math.max(0, Math.min(x.pw, v));
-    else if (a[0] === 'cf') x.cz = Math.max(0, x.pd - v - num(lay.W));
+    var k = el.getAttribute('data-tsin'), x = S.site, lay = S.o.layout, v = parseFloat(el.value); if (!k || !x || !(v >= 0)) return false; var a = k.split(':'), b = a[1] != null ? x.blocks[+a[1]] : null; S.tsMsg = '';
+    if (a[0] === 'pw' || a[0] === 'pd') { x.plot = ''; tsPlot(x, a[0] === 'pw' ? v : x.pw, a[0] === 'pd' ? v : x.pd, lay); return true; }
+    if (a[0] === 'cx') { x.cx = Math.max(0, Math.min(x.pw, v)); return true; }
+    if (a[0] === 'cf') { x.cz = Math.max(0, x.pd - v - tsDims(x, lay)[1]); return true; }
+    if (!b) return false; var keep = JSON.stringify(b);
+    if (a[0] === 'w') b.w = Math.max(1, Math.min(x.pw - 1.5, v)); else if (a[0] === 'd') b.d = Math.max(1, Math.min(x.pd - 1.5, v));
+    else if (a[0] === 'l') { b.x = v; b.side = 'free'; } else if (a[0] === 'f') { b.z = x.pd - v - b.d; b.side = 'free'; }
+    tsWall(x, b, b.side); if (!tsFree(x, +a[1])) { var o = JSON.parse(keep); Object.keys(o).forEach(function (kk) { b[kk] = o[kk]; }); S.tsMsg = 'That would sit on top of another one'; }
     return true;
   }
+  function tsDrop(ev) {   // a block dragged in 3D: snaps to a wall within 1 ft; never on another block
+    var x = S.site, b = x && arr(x.blocks)[ev.i]; if (!b) return; var keep = { x: b.x, z: b.z, side: b.side }, P = 0.75; b.x = ev.x; b.z = ev.z;
+    b.side = b.x <= P + 1 ? 'left' : b.x + b.w >= x.pw - P - 1 ? 'right' : b.z <= P + 1 ? 'back' : b.z + b.d >= x.pd - P - 1 ? 'front' : 'free'; tsWall(x, b, b.side);
+    S.tsMsg = ''; if (x.blocks.some(function (o, j) { return j !== ev.i && tsHit(b, o); })) { b.x = keep.x; b.z = keep.z; b.side = keep.side; S.tsMsg = 'It can\'t go on top of another one — try a clear spot'; }
+  }
   function cabinUI(m, o) {
-    if (S.studio && S.siteEd) return terraceUI(o.layout);
     var c = m.cabin, lay = o.layout, w = S.wz, q0 = cabin(c, lay), st = w.step, TITLES = ['Glass & roof', 'How big?', 'Doors', 'Rooms inside', 'Outside', 'The look', 'Your cabin'];
     var SUBS = ['How much glass on the walls, and the roof — these set the look of your cabin', 'Pick a size — or set it exactly with − / +', 'Pick the door, the wall it goes on and its height', 'Switch on what you need — move things on the plan if you like', 'Pergola projection over the walls, and a rain gutter', 'Roof, frame colour and a few upgrades', 'Check it, then order — final drawings come to you for approval first'];
     var v3 = S.view3 = S.studio ? (S.v3 || (st === 3 && !w.adv ? 'cut' : '3d')) : S.v3 || (w.adv ? (w.aside || 'front') : wzAuto(st, w, lay));
     var h = S.pdp ? '' : '<div class="wz-3d"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(c, lay)) + '</div>' + (C3.st === -1 ? '' : '<div class="wz-views" role="tablist" aria-label="Views">' + V3.map(function (v) { return '<button type="button" role="tab" data-wzv="' + v[0] + '" class="' + (v[0] === v3 ? 'on' : '') + '" aria-selected="' + (v[0] === v3) + '">' + v[1] + '</button>'; }).join('') + '</div>') + '</div>';
     var SHORT = ['Glass & roof', 'Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Done'];
-    var chips = '<div class="wz-stc" role="tablist" aria-label="Steps">' + SHORT.map(function (t, i) { var mx = Math.max(w.max || 0, st); return '<button type="button" role="tab" data-wzgo="' + i + '" class="' + (i === st && !w.adv ? 'on' : i <= mx ? 'dn' : '') + '" aria-selected="' + (i === st) + '"' + (i > mx ? ' disabled' : '') + '>' + (i < st || (i <= mx && i !== st) ? '✓ ' : '') + (i + 1) + ' · ' + t + '</button>'; }).join('') + '</div>';
+    var off = S.studio ? 1 : 0, sE = S.studio && S.siteEd;   // studio: step 1 is "Where" (lawn / terrace)
+    var chips = '<div class="wz-stc" role="tablist" aria-label="Steps">' + (off ? '<button type="button" role="tab" data-ts="open" class="' + (sE ? 'on' : 'dn') + '" aria-selected="' + sE + '">' + (sE ? '' : '✓ ') + '1 · Where</button>' : '') + SHORT.map(function (t, i) { var mx = Math.max(w.max || 0, st), cur = i === st && !w.adv && !sE; return '<button type="button" role="tab" data-wzgo="' + i + '" class="' + (cur ? 'on' : i <= mx && !(sE && !S.siteDone) ? 'dn' : '') + '" aria-selected="' + cur + '"' + (i > mx || (sE && !S.siteDone && i > 0) ? ' disabled' : '') + '>' + ((i < st || (i <= mx && i !== st)) && !(sE && !S.siteDone) ? '✓ ' : '') + (i + 1 + off) + ' · ' + t + '</button>'; }).join('') + '</div>';
     if (S.studio) { var hc = document.getElementById('cbsSteps'); if (hc) { hc.innerHTML = chips; var on = hc.querySelector('.on'), sc = hc.querySelector('.wz-stc'); [hc, sc].forEach(function (b) { if (b && on && b.scrollWidth > b.clientWidth) b.scrollLeft = Math.max(0, on.offsetLeft - b.clientWidth / 2 + on.offsetWidth / 2); }); } }
+    if (S.studio && S.siteEd) return terraceUI(lay);   // step 1: where it goes
     h += S.studio ? '' : S.pdp ? chips
       : '<div class="wz-steps">' + TITLES.map(function (t, i) { return '<button type="button" data-wzgo="' + i + '" class="' + (i <= st ? 'on' : '') + '" aria-label="Step ' + (i + 1) + ': ' + t + '"></button>'; }).join('') + '</div>';
     h += (S.studio ? '<div class="cbs-t">' : '') +
@@ -770,7 +810,7 @@
   }
   function wzClick(t) {   // returns true when it handled the click
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, w = S.wz, k;
-    if ((k = t.getAttribute('data-wzgo')) != null) { if (S.studio && +k > Math.max(w.max || 0, w.step)) return true; w.step = +k; w.adv = false; S.psel = null; S.v3 = null; return true; }
+    if ((k = t.getAttribute('data-wzgo')) != null) { if (S.studio && +k > Math.max(w.max || 0, w.step)) return true; if (S.siteEd) { S.siteEd = false; S.siteDone = true; } w.step = +k; w.adv = false; S.psel = null; S.v3 = null; return true; }
     if ((k = t.getAttribute('data-wzv')) != null) { S.v3 = k; return true; }
     if ((k = t.getAttribute('data-wztpl')) != null) { var tp = arr(c.templates).filter(function (x) { return x.code === k; })[0]; if (tp) { var keep = { step: w.step }; S.o.layout = lay = cbClone(tp.layout); cbDefaults(c, lay); S.wz = wzRead(c, lay); S.wz.step = keep.step; S.wz.adv = false; S.tpl = k; S.v3 = '3d'; S.sel3 = null; S.psel = null; if (S.pdp) S.furn = furnGuess(PRODS[S.id]); } return true; }
     if ((k = t.getAttribute('data-cstep')) != null) { var cs = k.split(':'); setDim(cs[0], num(lay[cs[0]]) + (+cs[1])); return true; }
@@ -894,7 +934,8 @@
     if (ev.t === 'none') { if (!S.sel3 && S.psel == null) return; S.sel3 = null; S.psel = null; }
     else if (ev.t === 'selbay') { S.sel3 = { side: ev.side, i: cbHead(lay.walls[ev.side], ev.i) }; S.psel = null; }
     else if (ev.t === 'selpl') { S.psel = ev.i; S.sel3 = null; }
-    else if (ev.t === 'movesite') { var x9 = S.site; if (!x9) return; var o9 = ev.k === 'mumty' ? x9.mumty : arr(x9.shafts)[ev.i]; if (!o9) return; o9.x = ev.x; o9.z = ev.z; }
+    else if (ev.t === 'movesite') tsDrop(ev);
+    else if (ev.t === 'movecab') { if (!S.site) return; S.site.cx = ev.cx; S.site.cz = ev.cz; }
     else if (ev.t === 'movepl') { var p = arr(lay.places)[ev.i]; if (!p) return; p.x = ev.x; p.y = ev.y; cbClamp(c, lay, p); S.psel = ev.i; S.sel3 = null; }
     draw();
   }
@@ -924,7 +965,7 @@
           '<button type="button" data-cbz="pan" class="' + (S.pan ? 'on' : '') + '" aria-pressed="' + !!S.pan + '" aria-label="Move mode: drag to move the model" title="Move: drag to slide the model">✋</button>' +
           '<button type="button" data-cbz="home" aria-label="Back to the start view" title="Centre the model">⌖</button>' +
           '<button type="button" data-cbz="big" aria-label="' + (S.big ? 'Smaller view' : 'Bigger view') + '">' + (S.big ? '⤡' : '⤢') + '</button></div>' : '') +
-        (ok3 ? (function (eb) { eb = eb.replace(/<p class="cb-hint">[\s\S]*?<\/p>/, ''); return eb ? '<div class="cbs-ed">' + eb + '</div>' : (C3.st === 2 ? '<p class="cbs-hint">' + (S.pan ? '✋ Drag to move the model · tap ✋ again to turn it' : 'Drag to turn it 360° · two fingers / right-drag to move · pinch to zoom') + '</p>' : ''); })(cbEditBar(cS, S.o.layout, vS === 'cut' ? 'cut' : '360')) : '') + '</div>';
+        (ok3 ? (function (eb) { eb = eb.replace(/<p class="cb-hint">[\s\S]*?<\/p>/, ''); return eb ? '<div class="cbs-ed">' + eb + '</div>' : (C3.st === 2 ? '<p class="cbs-hint">' + (S.pan ? '✋ Drag to move the model · tap ✋ again to turn it' : S.siteEd && S.site && S.site.kind === 'terrace' ? 'Drag the cabin, mumty, lift room or shafts to move them · drag elsewhere to turn' : 'Drag to turn it 360° · two fingers / right-drag to move · pinch to zoom') + '</p>' : ''); })(cbEditBar(cS, S.o.layout, vS === 'cut' ? 'cut' : '360')) : '') + '</div>';
       return;
     }
     cbTop(); if (!cbStage.on) { cbStage.on = true; window.addEventListener('scroll', cbTop, { passive: true }); window.addEventListener('resize', cbTop); }
@@ -945,7 +986,7 @@
   }
   function stageClick(e) {
     var t = e.target.closest('[data-wzv],[data-gi],[data-e3k],[data-e3x],[data-e3p],[data-e3add],[data-e3furn],[data-e3night],[data-cbz],[data-cbroof],[data-cbsite]'); if (!t || !S || t.disabled) return;
-    if (t.hasAttribute('data-cbsite')) { S.siteEd = !S.siteEd; return draw(); }
+    if (t.hasAttribute('data-cbsite')) { S.siteEd = true; S.sel3 = null; S.psel = null; return draw(); }
     if (t.hasAttribute('data-cbz')) { var zk = t.getAttribute('data-cbz'); if (zk === 'pan') { S.pan = !S.pan; try { window.Cabin3D.panMode(S.pan); } catch (er) {} cbStage(); return mount3d(); } if (zk === 'home') { try { window.Cabin3D.home(); } catch (er) {} return; } if (zk === 'big') { S.big = !S.big; document.body.classList.toggle('cbs-big', S.big); cbStage(); mount3d(); setTimeout(function () { try { window.Cabin3D.resize(); } catch (er) {} }, 60); } else try { window.Cabin3D.zoom(zk === 'in' ? 0.8 : 1.25); } catch (er) {} return; }
     if (t.hasAttribute('data-cbroof')) { S.v3 = S.view3 = S.view3 === 'cut' ? '3d' : 'cut'; if (S.view3 !== 'cut') S.psel = null; cbStage(); return mount3d(); }
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, k;
@@ -973,17 +1014,18 @@
   window.cbOpenSheet = function () { var sh = document.getElementById('cbSheet'); if (sh) sh.classList.add('open'); };
   window.cbNext = function () {
     if (!S || !S.wz) return; var w = S.wz;
-    if (w.adv) { w.adv = false; } else if (w.step < 6) { w.step++; w.max = Math.max(w.max || 0, w.step); S.v3 = null; S.psel = null; } else return pdpOrder();
+    if (S.studio && S.siteEd) { S.siteEd = false; S.siteDone = true; S.v3 = null; } else if (w.adv) { w.adv = false; } else if (w.step < 6) { w.step++; w.max = Math.max(w.max || 0, w.step); S.v3 = null; S.psel = null; } else return pdpOrder();
     draw(); if (S.studio) { var cf0 = document.getElementById('mtoCfg'); if (cf0) cf0.scrollTop = 0; var sc0 = cf0 && cf0.querySelector('.wz-stc .on'); if (sc0 && sc0.scrollIntoView) sc0.scrollIntoView({ block: 'nearest', inline: 'center' }); return; } var cfg = document.getElementById('mtoCfg'), stg = document.getElementById('cbStage'), hd = document.querySelector('.stickytop') || document.querySelector('header');
     if (cfg) { var off = (window.innerWidth < 900 && stg ? stg.offsetHeight : 0) + (hd ? Math.max(0, hd.getBoundingClientRect().bottom) : 0) + 8; window.scrollTo({ top: cfg.getBoundingClientRect().top + window.scrollY - off, behavior: 'smooth' }); }
   };
   function cbBar(q) {
     var ct = document.querySelector('.ctas'); if (!ct) return; var b = ct.querySelector('.cbbar'); if (!b) { b = document.createElement('div'); b.className = 'cbbar'; ct.appendChild(b); }
     var x = PRODS[S.id], last = S.wz.step >= 6 && !S.wz.adv, closed = x.oo === false, o = S.o, needPin = !(q.ok && q.install && q.install.available);
-    var NX = ['Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Review'], hs = document.getElementById('cbsStep'); if (hs) hs.textContent = S.wz.adv ? 'Edit each wall' : 'Step ' + (S.wz.step + 1) + ' of 7';
-    b.innerHTML = (S.studio && (S.wz.step > 0 || S.wz.adv) ? '<button type="button" class="cbb" onclick="cbPrev()" aria-label="Back">←</button>' : '') +
+    var NX = ['Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Review'], hs = document.getElementById('cbsStep'), sE = S.studio && S.siteEd; if (hs) hs.textContent = S.wz.adv ? 'Edit each wall' : S.studio ? 'Step ' + (sE ? 1 : S.wz.step + 2) + ' of 8' : 'Step ' + (S.wz.step + 1) + ' of 7';
+    if (sE) last = false;
+    b.innerHTML = (S.studio && !sE ? '<button type="button" class="cbb" onclick="cbPrev()" aria-label="Back">←</button>' : '') +
       (last && !closed && !needPin && q.ok ? '<button type="button" class="cbb" style="width:auto;padding:0 12px;font-size:13px;font-weight:600" onclick="mtoAddCart()">' + (S.editK ? 'Update cart' : '+ Cart') + '</button>' : '') + '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
-      '<button type="button" class="cbn" onclick="cbNext()"' + (last && (closed || needPin || !q.ok) ? ' disabled' : '') + '>' + (!last ? (S.studio && !S.wz.adv ? 'Next: ' + NX[S.wz.step] + ' →' : 'Next →') : closed ? 'Coming soon' : needPin ? 'Enter your pincode' : 'Order · pay ' + rs(q.pay_now)) + '</button>';
+      '<button type="button" class="cbn" onclick="cbNext()"' + (last && (closed || needPin || !q.ok) ? ' disabled' : '') + '>' + (!last ? (sE ? 'Next: Glass & roof →' : S.studio && !S.wz.adv ? 'Next: ' + NX[S.wz.step] + ' →' : 'Next →') : closed ? 'Coming soon' : needPin ? 'Enter your pincode' : 'Order · pay ' + rs(q.pay_now)) + '</button>';
     var pr = document.getElementById('pdPrice'); if (pr && q.ok && x.oo !== false && S.studio) pr.innerHTML = rs(q.total) + '<span class="mrplab">your design, incl. GST</span>';
   }
   // 175: cabins — the product page shows photos, a highlighted Customise button and Check price (average cost of the three types);
@@ -1032,11 +1074,11 @@
     if (on) {
       if (!el) { el = document.createElement('div'); el.id = 'cbStudio'; el.className = 'cbs-ov'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el); }
       el.innerHTML = '<div class="cbs-hd"><button type="button" class="cbs-x" onclick="cbStudio(false)" aria-label="Back to the product">←</button><div class="cbs-tt"><b>' + esc(String(PRODS[S.id].n).replace(/ — .*$/, '')) + '</b><small id="cbsStep">Step 1 of 7</small></div><div class="cbs-st" id="cbsSteps"></div><button type="button" class="cbs-x" onclick="cbStudio(false)" aria-label="Close">✕</button></div>';
-      if (!el.dataset.w) { el.dataset.w = 1; el.addEventListener('click', function (e) { var t = e.target.closest('[data-wzgo]'); if (!t || t.disabled || !S || !S.studio) return; if (wzClick(t)) { draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; } }); }
+      if (!el.dataset.w) { el.dataset.w = 1; el.addEventListener('click', function (e) { var t = e.target.closest('[data-wzgo],[data-ts]'); if (!t || t.disabled || !S || !S.studio) return; if (t.hasAttribute('data-ts')) { tsClick(t); draw(); return; } if (wzClick(t)) { draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; } }); }
       if (!S.cbsInit || fresh) { cbCheap(); S.cbsInit = true; }
       var pz = window.__cbsSize; if (pz) { window.__cbsSize = null; var c0 = PRODS[S.id].cz.cabin;   // home "Design it yourself": the size picked there
         if (pz[0] >= (num(c0.L && c0.L.min) || 8) && pz[0] <= (num(c0.L && c0.L.max) || 40) && pz[1] >= (num(c0.W && c0.W.min) || 8) && pz[1] <= (num(c0.W && c0.W.max) || 20)) { S.o.layout.L = pz[0]; S.o.layout.W = pz[1]; wzBuild(c0, S.o.layout, S.wz); } }
-      S.studio = true; el.classList.add('open'); document.body.classList.add('cb-studio');
+      S.studio = true; if (!S.siteDone) { S.siteEd = true; S.sel3 = null; S.psel = null; } el.classList.add('open'); document.body.classList.add('cb-studio');
       try { history.pushState({ v: 'modal' }, '', location.pathname + location.search); } catch (e) {}
       draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0;
       setTimeout(function () { try { window.Cabin3D && window.Cabin3D.resize(); } catch (er) {} }, 80);
@@ -1052,7 +1094,7 @@
     [].slice.call(o.querySelectorAll(':scope > .wz-lbl')).forEach(function (l) { var n = l.nextElementSibling, g = document.createElement('div'); g.className = 'cbs-g'; o.insertBefore(g, l); g.appendChild(l); if (n && !n.classList.contains('wz-lbl')) g.appendChild(n); });
   }
   window.cbStudioClose = function () { window.cbStudio(null); };   // from the store's back-button handler
-  window.cbPrev = function () { if (!S || !S.wz) return; var w = S.wz; if (w.adv) w.adv = false; else if (w.step > 0) { w.step--; S.v3 = null; S.psel = null; } draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; };
+  window.cbPrev = function () { if (!S || !S.wz) return; var w = S.wz; if (w.adv) w.adv = false; else if (S.studio && w.step === 0) { S.siteEd = true; S.sel3 = null; S.psel = null; } else if (w.step > 0) { w.step--; S.v3 = null; S.psel = null; } draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; };
   // 176: Made to Order — full-width sections under the product: what goes into it (parts with photos), specs, how it's made, reviews, questions
   var PART_IMG = window.OUTRR_PART_IMG || {"frame-ms":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_01_hero_v1.png?width=500&resize=contain&quality=75","frame-alu":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_02_side_v1.png?width=500&resize=contain&quality=75","base-gi":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_03_front_v1.png?width=500&resize=contain&quality=75","puf":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_04_closeup_v1.png?width=500&resize=contain&quality=75","glass":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_06_scene2_v1.png?width=500&resize=contain&quality=75","dgu":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_01_hero_v1.png?width=500&resize=contain&quality=75","glassroof":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_02_side_v1.png?width=500&resize=contain&quality=75","frosted":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_03_front_v1.png?width=500&resize=contain&quality=75","slidedoor":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_04_closeup_v1.png?width=500&resize=contain&quality=75","door":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_06_scene2_v1.png?width=500&resize=contain&quality=75","window":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_01_hero_v1.png?width=500&resize=contain&quality=75","ledpanel":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_02_side_v1.png?width=500&resize=contain&quality=75","ledstrip":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_03_front_v1.png?width=500&resize=contain&quality=75","switch":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_04_closeup_v1.png?width=500&resize=contain&quality=75","metalroof":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_06_scene2_v1.png?width=500&resize=contain&quality=75","gutter":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_01_hero_v1.png?width=500&resize=contain&quality=75","louver":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_02_side_v1.png?width=500&resize=contain&quality=75","wpcdeck":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_03_front_v1.png?width=500&resize=contain&quality=75","wpcslat":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_04_closeup_v1.png?width=500&resize=contain&quality=75","hpl":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_06_scene2_v1.png?width=500&resize=contain&quality=75","jali":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_01_hero_v1.png?width=500&resize=contain&quality=75","powder":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_02_side_v1.png?width=500&resize=contain&quality=75","teak":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_03_front_v1.png?width=500&resize=contain&quality=75","acacia":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_04_closeup_v1.png?width=500&resize=contain&quality=75","rattan":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_06_scene2_v1.png?width=500&resize=contain&quality=75","fabric":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_01_hero_v1.png?width=500&resize=contain&quality=75","ss":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_02_side_v1.png?width=500&resize=contain&quality=75","anchor":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_03_front_v1.png?width=500&resize=contain&quality=75","granite":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_04_closeup_v1.png?width=500&resize=contain&quality=75","onyx":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_06_scene2_v1.png?width=500&resize=contain&quality=75","pustone":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_01_hero_v1.png?width=500&resize=contain&quality=75","mosaic":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_02_side_v1.png?width=500&resize=contain&quality=75","hedge":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_03_front_v1.png?width=500&resize=contain&quality=75","polycarb":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_04_closeup_v1.png?width=500&resize=contain&quality=75","corten":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_06_scene2_v1.png?width=500&resize=contain&quality=75","stone":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_01_hero_v1.png?width=500&resize=contain&quality=75","frp":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_02_side_v1.png?width=500&resize=contain&quality=75","pump":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_03_front_v1.png?width=500&resize=contain&quality=75","rafter":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_04_closeup_v1.png?width=500&resize=contain&quality=75","bamboo":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_06_scene2_v1.png?width=500&resize=contain&quality=75"};   // 176: the parts photo library (Runway, MTO-PL-1..8 in the admin — drafts, not for sale)
   var PART_RE = [[/^(pergola|projection)/i, 'louver'], [/^floor/i, 'wpcdeck'], [/^doors?\b/i, 'door'], [/^windows?\b/i, 'window'], [/^(lighting|lights)\b/i, 'ledpanel'], [/^electrical/i, 'switch'], [/^base\b/i, 'base-gi'], [/^frame\b[\s\S]*alumin/i, 'frame-alu'], [/^frame\b/i, 'frame-ms'], [/^roof\b[\s\S]*glass/i, 'glassroof'], [/^walls?\b[\s\S]*puf/i, 'puf'], [/glass roof|laminated glass|purlin/i, 'glassroof'], [/dgu|double glass|double glaz/i, 'dgu'], [/flut.*glass|frost|reeded/i, 'frosted'], [/toughened|glass/i, 'glass'],
