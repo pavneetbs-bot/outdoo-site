@@ -3,7 +3,7 @@
 # Needs GitHub → Settings → Secrets and variables → Actions: CF_DEPLOY_HOOK (Cloudflare Pages → Settings → Builds → Deploy hooks).
 name: Daily rebuild
 on:
-  schedule: [{ cron: '30 0 * * *' }]   # 6:00 am IST
+  schedule: [{ cron: '30 0 * * *' }, { cron: '30 12 * * *' }]   # 6:00 am + 6:00 pm IST (footer, pages, feed follow the catalogue + AI picks)
   workflow_dispatch: {}
 jobs:
   rebuild:

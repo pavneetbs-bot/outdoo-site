@@ -4,6 +4,7 @@
 //   sitemap.xml, robots.txt, feed/google.xml (Google Merchant Center)
 // Run it whenever products change, then Republish:  node scripts/build-seo.mjs
 import { PIXEL_HEAD } from './pixel.mjs'
+import { buildFooter, withFooter } from './footer.mjs'
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -153,11 +154,7 @@ ${jsonld.map(j => `<script type="application/ld+json">${JSON.stringify(j).replac
 <nav class="nav">${cols.map(c => `<div class="nv"><a href="/c/${c.slug}/"${c.slug === cur ? ' class="on"' : ''}>${esc(c.title)}</a>${MEGA[c.slug] || ''}</div>`).join('')}</nav>
 <a class="cart acc" href="/?account=1">Account</a><a class="cart" href="/?cart=1">Cart<span id="cartn">0</span></a></div></header>
 <main class="wrap">${body}</main>
-<footer><div class="wrap cols">
-<div><b>outrr</b><br>Every Outdoor Possibility<br>A LifeWall Group Company<br>Delivered across India · Secure online payment</div>
-<div><b>Shop</b>${cols.map(c => `<a href="/c/${c.slug}/">${esc(c.title)}</a>`).join('')}</div>
-<div><b>outrr</b><a href="/">Home</a><a href="/about/">About outrr</a><a href="https://seller.outrr.in/?utm_source=outrr.in&utm_medium=site&utm_campaign=footer" target="_blank" rel="noopener">Sell on outrr</a><a href="/?account=1">My account</a><a href="/?track=">Track your order</a><a href="/shipping/">Shipping &amp; Delivery</a><a href="/returns/">Returns &amp; Refunds</a><a href="/privacy/">Privacy Policy</a><a href="/terms/">Terms of Service</a><a href="/contact/">Contact</a><a href="https://seller.outrr.in">Sell on outrr</a></div>
-</div></footer>
+${FOOT}
 <div class="toast" id="toast"></div>
 <script>${CART_JS}</script>
 <script>window.OUTRR_SUPA = { url: "${SUPA.url}", anon: "${SUPA.anon}" };</script>
@@ -168,7 +165,7 @@ ${view ? `<script>if(window.otrack)otrack('view_item',{sku:${JSON.stringify(view
 const isMto = p => p.kind === 'mto'
 // 163: the SEO pages are the shop itself (same product page, cards, cart) with this page's own head and text,
 // opened on that view by window.OUTRR_ROUTE; the text below is what crawlers read before the shop draws.
-const SHOP = readFileSync(join(ROOT, 'index.html'), 'utf8')
+let SHOP = readFileSync(join(ROOT, 'index.html'), 'utf8')
 const crumbNav = items => `<nav class="crumb" aria-label="Breadcrumb">${items.map(([n, u], i) => i === items.length - 1 ? `<span>${esc(n)}</span>` : `<a href="${u}">${esc(n)}</a>`).join('<i>›</i>')}</nav>`
 const shell = ({ title, desc, path, image, body, jsonld = [], keywords = [], route, h1 }) => {
   let h = SHOP
@@ -219,6 +216,19 @@ const compare = p => {
 // no live products yet (sellers not Active): keep the pages already in the repo instead of publishing an empty catalog
 if (!products.length) { console.log('SEO pages: no live products right now, keeping the existing product pages, sitemap and feed'); process.exit(0) }
 for (const d of ['p', 'c', 'feed']) if (existsSync(join(ROOT, d))) rmSync(join(ROOT, d), { recursive: true })
+// 162: sub-category page URLs (also used by the footer)
+const subPath = (c, x) => { let t = String(x.title || '').toLowerCase().replace(/&/g, ' and ').replace(/[—–]/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); return t || x.slug }
+const subUrl = {}
+for (const c of cols) { const seen = new Set(); for (const x of subs.filter(y => y.category_slug === c.slug)) { let k = subPath(c, x); if (seen.has(k)) k = x.slug; seen.add(k); subUrl[x.slug] = `/c/${c.slug}/${k}/` } }
+// SEO footer (footer.mjs): from the live catalogue + Claude's homepage picks, the same on every page
+const HOME = await fetch(`${SUPA.url}/rest/v1/rpc/home_public`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.ok ? r.json() : {}).catch(() => ({}))
+const FOOT = buildFooter({ cols, subs, products, subUrl, home: HOME || {}, slugOf: p => p.slug, ranked })
+SHOP = withFooter(SHOP, FOOT)   // every product / category page is a copy of the shop page
+// the shop itself, the product page shell and the policy pages (build-pages.mjs) get the same footer
+for (const f of ['index.html', 'product.html', ...['about', 'contact', 'privacy', 'returns', 'shipping', 'terms', 'warranty', 'payments', 'quote'].map(d => d + '/index.html')]) {
+  const fp = join(ROOT, f); if (!existsSync(fp)) continue
+  const t = readFileSync(fp, 'utf8'), n = withFooter(t, FOOT); if (n !== t) writeFileSync(fp, n)
+}
 const write = (rel, text) => { const f = join(ROOT, rel); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, text) }
 
 for (const p of products) {
@@ -249,9 +259,6 @@ ${related.length ? `<h2>More in ${esc(c?.title || 'this range')}</h2><ul class="
 }
 
 // 162: category and sub-category pages — own title / description / intro / FAQs (admin text first, else written from the catalogue)
-const subPath = (c, x) => { let t = String(x.title || '').toLowerCase().replace(/&/g, ' and ').replace(/[—–]/g, ' ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); return t || x.slug }
-const subUrl = {}
-for (const c of cols) { const seen = new Set(); for (const x of subs.filter(y => y.category_slug === c.slug)) { let k = subPath(c, x); if (seen.has(k)) k = x.slug; seen.add(k); subUrl[x.slug] = `/c/${c.slug}/${k}/` } }
 const lc = t => String(t || '').split(' ').map(w => /^[A-Z0-9]{2,}$/.test(w) ? w : w.toLowerCase()).join(' ')
 const priceSpan = L => { const ps = L.filter(p => !soon(p) && +p.price > 0).map(p => +p.price); return ps.length ? [Math.min(...ps), Math.max(...ps)] : null }
 const COLW = /^(black|white|grey|gray|brown|natural|teak|walnut|charcoal|gold|silver|beige|cream|metal|multi.*)$/i
