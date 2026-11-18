@@ -3732,9 +3732,9 @@ function dzPer(){ const st=DZ.p, id=DZ.per[st.d], x=PRODS[id], cz=x.cz, cv=dzCov
     <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end">
     ${cols.length?`<div><div class="lb">Finish · ${_hesc(col.n)}</div><div class="chips">${cols.map((c,k)=>`<button type="button" class="sw${k===st.c?' on':''}" title="${_hesc(c.n)}" aria-label="${_hesc(c.n)}" style="background:${c.hex2?`linear-gradient(135deg,${c.hex} 50%,${c.hex2} 50%)`:c.hex}" onclick="DZ.p.c=${k};dzPer()"></button>`).join('')}</div></div>`:''}
     <div><div class="lb">Size</div><div class="stp"><span><button type="button" aria-label="Shorter" onclick="DZ.p.l--;dzPer()">−</button>${st.l} ft<button type="button" aria-label="Longer" onclick="DZ.p.l++;dzPer()">+</button></span><span>×<button type="button" aria-label="Narrower" onclick="DZ.p.w--;dzPer()">−</button>${st.w} ft<button type="button" aria-label="Wider" onclick="DZ.p.w++;dzPer()">+</button></span></div></div></div>
-    <div class="ft"><div>${dzPrice(id)}</div><button type="button" class="go" onclick="dzPerGo()">Customise and order →</button></div></div>`; }
+    <div class="ft"><div>${dzPrice(id)}</div><button type="button" class="go" onclick="dzPerGo()">Design it in 3D →</button></div></div>`; }
 function dzPerGo(){ const st=DZ.p, id=DZ.per[st.d], cv=dzCovers(id), col=dzCols(id)[st.c], g={}; if(cv.g&&cv.o[st.cov]) g[cv.g]=cv.o[st.cov];
-  window.__mtoPre={id, l:st.l, w:st.w, material:col?col.m:'', colour:col?col.n:'', groups:g}; try{ window.otrack&&otrack('customise_start',{sku:id,ref:'home'}) }catch(e){} openProduct(id); }
+  window.__mtoPre={id, l:st.l, w:st.w, material:col?col.m:'', colour:col?col.n:'', groups:g, open3d:true}; try{ window.otrack&&otrack('customise_start',{sku:id,ref:'home'}) }catch(e){} openProduct(id); }
 // ---- 182: AI homepage picks (admin Settings → Homepage). A section keeps its default when nothing is picked ----
 var ROOMS = [];
 function homeLoad(){ const S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon) return;

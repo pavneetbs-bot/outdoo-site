@@ -839,6 +839,7 @@
     var pre = window.__mtoPre;   // home "Design it yourself": size / roof / finish picked there carry over (only valid choices)
     if (pre && pre.id !== id) window.__mtoPre = null;   // kept for this product (also after signing in to see the price)
     if (pre && pre.id === id) {
+      if (pre.open3d) { pre.open3d = false; setTimeout(function () { try { window.pg3Open(true); } catch (e) {} }, 400); }
       var inR = function (v, k) { v = num(v); return v != null && v >= (num(m[k] && m[k].min) || 0) && (num(m[k] && m[k].max) == null || v <= num(m[k].max)); };
       if (inR(pre.l, 'l')) S.o.l = pre.l; if (inR(pre.w, 'w')) S.o.w = pre.w;
       var mt = arr(m.materials).filter(function (x) { return x.name === pre.material; })[0];
@@ -1174,7 +1175,7 @@
     });
     var adds = arr(m.addons).filter(function (a) { return a.name; });
     var hint = u === 'area' ? 'Length × width of the floor it covers, in feet.' : u === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : u === 'face' ? 'Width × height of the wall or opening, in feet.' : u === 'length' ? 'Total running length, in feet.' : '';
-    el.innerHTML = '<h3 class="mto-ph">' + (m.labels ? 'Choose your options' : 'Choose your size &amp; options') + '</h3>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + (hint ? '<p class="mto-hint">' + hint + '</p>' : '') + '<div class="mto-pks">' + f.join('') + '</div>' +
+    el.innerHTML = p3Btn() + '<h3 class="mto-ph">' + (m.labels ? 'Choose your options' : 'Choose your size &amp; options') + '</h3>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + (hint ? '<p class="mto-hint">' + hint + '</p>' : '') + '<div class="mto-pks">' + f.join('') + '</div>' +
       (adds.length ? '<div class="mto-adds"><span class="mto-al">Add-ons</span>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span>' + (np ? '' : '<span class="r">+' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span>') + '</label>'; }).join('') + '</div>' : '') +
       (np ? lockHTML(x, true) : pdpTail(x, m, o) + '<div class="mto-sum lt" id="mtoSum"></div>');
     if (np) { ctaPaint(null); return; }
@@ -1397,6 +1398,7 @@
     if (t.hasAttribute('data-img')) { S.img = +t.getAttribute('data-img'); return draw(); }
     if (t.hasAttribute('data-open')) { return window.mtoOpen(t.getAttribute('data-open')); }
     var a = t.getAttribute('data-act'); if (a === 'unlock') return window.mtoUnlock(S.id);   // 172
+    if (a === 'pg3') return window.pg3Open(true);
     if (a === 'close') { if (history.state && history.state.v === 'modal') return history.back(); return window.mtoClose(); }
     if (a === 'bulk') { window.mtoClose(); try { if (window.openBulk) return openBulk(S.id); } catch (er) {} return toast('Write to us on WhatsApp for a bulk quote'); }
     if (a === 'order') return order();
@@ -1542,6 +1544,74 @@
       } catch (e) { return profileForm(id, 'Something went wrong — please try again'); }
       d.classList.remove('open'); unlocked(id);
     };
+  }
+  // ------------------------------------------------------------ pergolas: "Design it in 3D" — size, height, finish, colour, roof and layout on a live model
+  var P3 = { st: 0, open: false, night: false };
+  function isPg(id) { return /^MTO-PG-/.test(String(id || '')); }
+  function pgGrp(m, re) { return arr(m.groups).filter(function (g) { return re.test(g.name || ''); })[0] || null; }
+  function pgOpts() {
+    var x = PRODS[S.id], m = x.cz, o = S.o, gv = function (re) { var g = pgGrp(m, re); return g ? (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name : ''; };
+    var lim = function (k, d) { var lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20; return Math.min(Math.max(num(o[k]) || d, lo), hi); };
+    return { l: lim('l', 12), w: lim('w', 10), height: gv(/height/i) || o.h || '8 ft', material: o.material, colour: o.colour, cover: gv(/roof|cover/i), layout: gv(/layout/i) };
+  }
+  function p3Css() {
+    if (document.getElementById('pg3Css')) return; var st = document.createElement('style'); st.id = 'pg3Css';
+    st.textContent = '.pg3-btn{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 14px;padding:12px 14px;border:1.5px solid var(--terra,#BE5633);border-radius:12px;background:#fbefe9;color:#8a3a1f;font:700 14px inherit;font-family:inherit;cursor:pointer;text-align:left}.pg3-btn small{display:block;font-weight:500;font-size:11.5px;color:#7a5a4c}' +
+      'body.pg3-on .near-pill,body.pg3-on #wachat,body.pg3-on .wa-fab{display:none!important}.pg3-ov{position:fixed;inset:0;z-index:300;background:#fff;display:none;flex-direction:column}.pg3-ov.open{display:flex}body.pg3-on{overflow:hidden}' +
+      '.pg3-hd{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #eee}.pg3-hd b{font-size:15px;flex:1}.pg3-hd button{border:1px solid #ddd;background:#fff;border-radius:999px;padding:7px 12px;font:600 12px inherit;font-family:inherit;cursor:pointer}' +
+      '.pg3-bd{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 340px;min-height:0}.pg3-st{position:relative;min-height:0;background:#eef0ea}.pg3-st canvas{display:block}' +
+      '.pg3-cap{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.94);border-radius:10px;padding:7px 11px;font-size:12px;font-weight:600;color:#2E2E2E;pointer-events:none}' +
+      '.pg3-pn{overflow:auto;padding:14px 16px 90px;border-left:1px solid #eee}.pg3-pn .lb{font-size:10.5px;font-weight:700;color:#8a857c;letter-spacing:.06em;text-transform:uppercase;margin:12px 0 6px}' +
+      '.pg3-ch{display:flex;flex-wrap:wrap;gap:6px}.pg3-ch button{border:1px solid #ddd;background:#fff;border-radius:999px;padding:6px 11px;font:600 12px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.pg3-ch button.on{border-color:var(--terra,#BE5633);background:#fbefe9;color:#8a3a1f}' +
+      '.pg3-sw{width:30px;height:30px;border-radius:50%;padding:0!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #ccc}.pg3-sw.on{box-shadow:0 0 0 2px var(--terra,#BE5633)}' +
+      '.pg3-sz{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}.pg3-sz span{display:inline-flex;align-items:center;gap:7px}.pg3-sz button{width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:16px;cursor:pointer}' +
+      '.pg3-ft{position:absolute;right:0;bottom:0;width:340px;padding:12px 16px;background:#fff;border-top:1px solid #eee;border-left:1px solid #eee}.pg3-ft button{width:100%;padding:13px;border:0;border-radius:10px;background:var(--terra,#BE5633);color:#fff;font:700 14px inherit;font-family:inherit;cursor:pointer}' +
+      '@media(max-width:760px){.pg3-bd{grid-template-columns:1fr;grid-template-rows:46vh auto}.pg3-pn{border-left:0;border-top:1px solid #eee}.pg3-ft{width:100%;border-left:0}}';
+    document.head.appendChild(st);
+  }
+  function p3Btn() { return isPg(S && S.id) ? '<button type="button" class="pg3-btn" data-act="pg3"><span style="font-size:22px">◎</span><span>Design it in 3D<small>Your size, height, colour and roof on a live model</small></span></button>' : ''; }
+  function p3Panel() {
+    var x = PRODS[S.id], m = x.cz, o = S.o, q = pgOpts(), h = '', chips = function (g, cur) { return '<div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + '</button>'; }).join('') + '</div>'; };
+    h += '<div class="lb">Size (ft)</div><div class="pg3-sz"><span>Length <button type="button" data-p3d="l,-1" aria-label="Shorter">−</button><b>' + q.l + '</b><button type="button" data-p3d="l,1" aria-label="Longer">+</button></span><span>Width <button type="button" data-p3d="w,-1" aria-label="Narrower">−</button><b>' + q.w + '</b><button type="button" data-p3d="w,1" aria-label="Wider">+</button></span></div>';
+    var mats = arr(m.materials).filter(function (y) { return y.name; }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
+    if (mats.length > 1) h += '<div class="lb">' + esc((m.labels && m.labels.material) || 'Finish') + '</div><div class="pg3-ch">' + mats.map(function (y) { return '<button type="button" class="' + (y === mat ? 'on' : '') + '" data-p3m="' + esc(y.name) + '">' + esc(y.name) + '</button>'; }).join('') + '</div>';
+    var cols = arr(mat && mat.colours);
+    if (cols.length) h += '<div class="lb">Colour · ' + esc(o.colour || '') + '</div><div class="pg3-ch">' + cols.map(function (c) { return '<button type="button" class="pg3-sw' + (c.name === o.colour ? ' on' : '') + '" title="' + esc(c.name) + '" aria-label="' + esc(c.name) + '" data-p3c="' + esc(c.name) + '" style="background:' + (c.hex2 ? 'linear-gradient(135deg,' + c.hex + ' 50%,' + c.hex2 + ' 50%)' : c.hex || '#999') + '"></button>'; }).join('') + '</div>';
+    [/roof|cover/i, /height/i, /layout/i].forEach(function (re) { var g = pgGrp(m, re); if (g) h += '<div class="lb">' + esc(g.name) + '</div>' + chips(g, (o.groups || {})[g.name]); });
+    return h;
+  }
+  function p3Draw() {
+    var ov = document.getElementById('pg3'); if (!ov || !P3.open || !S || !isPg(S.id)) return; var q = pgOpts();
+    var pn = document.getElementById('pg3Pn'); if (pn) pn.innerHTML = p3Panel();
+    var cap = document.getElementById('pg3Cap'); if (cap) cap.textContent = q.l + ' × ' + q.w + ' ft · ' + q.height + ' clear · ' + (q.colour || '') + (q.cover && !/^open/i.test(q.cover) ? ' · ' + String(q.cover).split(' (')[0] : '') + (q.layout && !/free/i.test(q.layout) ? ' · ' + String(q.layout).split(' (')[0] : '');
+    var nb = document.getElementById('pg3Night'); if (nb) nb.textContent = P3.night ? '☀ Day' : '☾ Night';
+    if (P3.st === 2) { try { window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
+    if (P3.st !== 0) return; P3.st = 1;
+    var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=1').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+  }
+  window.pg3Open = function (on) {
+    if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
+    if (on === false) { if (ov) ov.classList.remove('open'); document.body.classList.remove('pg3-on'); P3.open = false; return; }
+    if (!ov) { ov = document.createElement('div'); ov.id = 'pg3'; ov.className = 'pg3-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Design your pergola in 3D'); document.body.appendChild(ov);
+      ov.addEventListener('click', p3Click); }
+    var x = PRODS[S.id];
+    ov.innerHTML = '<div class="pg3-hd"><b>' + esc(x.n) + ' · 3D</b><button type="button" id="pg3Night" data-p3="night">☾ Night</button><button type="button" data-p3="close" aria-label="Close">✕ Close</button></div>' +
+      '<div class="pg3-bd"><div class="pg3-st" id="pg3St"><div class="pg3-cap" id="pg3Cap"></div></div><div class="pg3-pn" id="pg3Pn"></div></div>' +
+      '<div class="pg3-ft"><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see the price' : 'Done — check the price') + '</button></div>';
+    var oo = S.o, q = pgOpts(); oo.l = oo.l || q.l; oo.w = oo.w || q.w;   // the model's size becomes the order size
+    ov.classList.add('open'); document.body.classList.add('pg3-on'); P3.open = true; draw(); p3Draw();
+    try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: '3d' }); } catch (e) {}
+  };
+  function p3Click(e) {
+    var t = e.target.closest('button'); if (!t || !S) return; var o = S.o, m = PRODS[S.id].cz, a = t.getAttribute('data-p3');
+    if (a === 'close') return window.pg3Open(false);
+    if (a === 'night') { P3.night = !P3.night; return p3Draw(); }
+    if (a === 'done') { window.pg3Open(false); if (!mtoOk()) return window.mtoUnlock(S.id); var c = document.getElementById('mtoCfg'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    var d = t.getAttribute('data-p3d'); if (d) { var k = d.split(',')[0], q = pgOpts(), lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20; o[k] = Math.min(Math.max(q[k] + (+d.split(',')[1]), lo), hi); draw(); return p3Draw(); }
+    var mt = t.getAttribute('data-p3m'); if (mt) { o.material = mt; var mm = arr(m.materials).filter(function (y) { return y.name === mt; })[0]; o.colour = (arr(mm && mm.colours)[0] || {}).name || ''; if (o.colour) colPic(o.colour); draw(); return p3Draw(); }
+    var c2 = t.getAttribute('data-p3c'); if (c2) { o.colour = c2; colPic(c2); draw(); return p3Draw(); }
+    var g = t.getAttribute('data-p3g'); if (g) { o.groups = Object.assign({}, o.groups); o.groups[g] = t.getAttribute('data-v'); if (/height/i.test(g)) { var hv = parseFloat(o.groups[g]); if (hv && arr(m.h && m.h.options).length) o.h = arr(m.h.options).filter(function (z) { return parseFloat(z) === hv; })[0] || o.h; } draw(); return p3Draw(); }
   }
   function lockHTML(x, below) {   // below = under the options: the price for the choices made above
     return '<div class="mto-lock"' + (below ? ' style="margin-top:14px"' : '') + '><h3 class="mto-ph">Price for your ' + (below ? 'choices' : 'size') + '</h3><p class="mto-hint">Every ' + esc(x.n) + ' is made to your size' + (x.cz && x.cz.install && x.cz.install.offered ? ' and installed by our team' : '') +
