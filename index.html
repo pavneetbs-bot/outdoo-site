@@ -2783,7 +2783,11 @@ function subOf(id){const x=PRODS[id],n=x.n; if(x.sb) return x.sb;
   if(/Lamp/i.test(n))return 'Sculpture Lamps';return 'Sculptures';}
  return 'All';}
 // the chips above the grid: sub-categories; on a seller's catalogue, its categories (099)
-function chipOf(id){return lastCol==='__seller'?((COLS[PRODS[id].col]||{}).t||'Other'):subOf(id);}
+function chipOf(id){return lastCol==='__seller'||(lastCol==='__search'&&!SRCH_CAT)?((COLS[PRODS[id].col]||{}).t||'Other'):subOf(id);}
+// 175: search results — the category most results are from (60%+), else null (mixed: category chips + filters marked "on mixed search")
+let SRCH_CAT=null;
+function srchCat(ids){if(lastCol!=='__search'||!ids.length) return null; const m={}; ids.forEach(id=>{const c=PRODS[id].col;m[c]=(m[c]||0)+1});
+ const top=Object.keys(m).sort((a,b)=>m[b]-m[a])[0]; return m[top]/ids.length>=0.6?top:null;}
 let FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false,tag:{}};
 function fltReset(){FLT={sub:new Set(),type:new Set(),price:new Set(),rating:0,dispatch:'',offer:false,tag:{}};
  document.querySelectorAll('#fltPanel input').forEach(i=>{i.checked=false});}
@@ -2812,6 +2816,7 @@ function buildTypes(ids){
 function buildChips(){
  const c0=COLS[lastCol];
  const ids=Object.keys(PRODS).filter(id=>c0&&c0.f?c0.f(PRODS[id],id):PRODS[id].col===lastCol);
+ SRCH_CAT=srchCat(ids);
  const m={}; ids.forEach(id=>{const sb=chipOf(id);m[sb]=(m[sb]||0)+1});
  const subs=Object.keys(m).sort((a,b)=>m[b]-m[a]);
  document.getElementById('subChips').innerHTML = subs.length>1 ?
@@ -2819,11 +2824,20 @@ function buildChips(){
  buildTypes(ids); buildTags(ids);}
 // 158: product tags "Group: Value" → one filter section per group (Place, Style, Colour…)
 function tagSplit(t){const i=String(t).indexOf(':');return i>0?[t.slice(0,i).trim(),t.slice(i+1).trim()]:['Tags',String(t).trim()];}
+// 175: which groups, in which order — the category's own list (admin → Settings → Filters & tags), else every group in the master order;
+//      search: the main category's list when 60%+ of results are from it, else only groups marked "on mixed search"
+function tagGroupsFor(g){const C=window.TAGCFG; let keys=Object.keys(g);
+ if(!C) return keys;
+ const ctx=lastCol==='__search'?SRCH_CAT:lastCol==='__seller'?null:lastCol, own=ctx&&C.cat[ctx];
+ if(own&&own.length) return own.filter(k=>g[k]);
+ if(lastCol==='__search'&&!SRCH_CAT) keys=keys.filter(k=>C.g[k]&&C.g[k].ev);
+ return keys.filter(k=>!C.g[k]||!C.g[k].off).sort((a,b)=>((C.g[a]||{}).s??1e4)-((C.g[b]||{}).s??1e4)||a.localeCompare(b));}
 function buildTags(ids){const box=document.getElementById('fTagSecs'); if(!box) return; const g={};
  ids.forEach(id=>(PRODS[id].tg||[]).forEach(t=>{const [k,v]=tagSplit(t); if(!v) return; (g[k]=g[k]||{})[v]=(g[k][v]||0)+1}));
- Object.keys(FLT.tag).forEach(k=>{ if(!g[k]) delete FLT.tag[k] });
+ const show=tagGroupsFor(g);
+ Object.keys(FLT.tag).forEach(k=>{ if(!g[k]||!show.includes(k)) delete FLT.tag[k] });
  const esc=t=>String(t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
- box.innerHTML=Object.keys(g).map(k=>{const vs=Object.keys(g[k]).sort((a,b)=>g[k][b]-g[k][a]||a.localeCompare(b)); if(vs.length<2) return '';
+ box.innerHTML=show.map(k=>{const vs=Object.keys(g[k]).sort((a,b)=>g[k][b]-g[k][a]||a.localeCompare(b)); if(vs.length<2) return '';
   return `<div class="fsec"><h4>${esc(k)}</h4>${vs.map(v=>`<label class="fopt"><input type="checkbox" data-f="tag" data-g="${esc(k)}" value="${esc(v)}"${FLT.tag[k]&&FLT.tag[k].has(v)?' checked':''} onchange="fltSet()"> ${esc(v)} <span class="fcnt">(${g[k][v]})</span></label>`).join('')}</div>`}).join('');}
 
 // ---- 127 Bundles: a seller's products at one price (coupons never apply) ----
@@ -4159,6 +4173,10 @@ function fillPDPv2(x,d,sku){
   if(ec) ec.innerHTML=ARCH.slice(0,12).map(a=>`<div class="ec" onclick="openCol('${a[1]}')">
     <div class="im"><img src="${IMGS[a[2]]||''}" alt=""></div><span>${a[0]}</span></div>`).join('');
 }
+// 175: a variant's colour is also a "Colour" filter value (so a Black filter shows the black variant's card and photo)
+function tagsOf(p){const t=Array.isArray(p.tags)?p.tags.slice():[], c=String(p.variant_colour||'').trim();
+  if(c&&!t.some(x=>/^colour\s*:/i.test(x)&&x.split(':').slice(1).join(':').trim().toLowerCase()===c.toLowerCase())) t.push('Colour: '+c.charAt(0).toUpperCase()+c.slice(1));
+  return t;}
 /* ===== outrr dynamic loader (Supabase) — fill url+anon to go dynamic; empty = embedded fallback ===== */
 /* Design & Build → LifeWall Flow CRM website_lead_submit(); Bulk & Trade → outrr submit_bulk_enquiry() (admin: Orders → Enquiries) */
 window.FLOW_LEADS = { url: "https://sxwumzkdyclhjqnfnxfk.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4d3VtemtkeWNsaGpxbmZueGZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MjI4NjEsImV4cCI6MjA4NDQ5ODg2MX0.RUQj6yMD-s2ZcDmJRgmHL6TZThQb26cLziv61a07pmg" };
@@ -4175,6 +4193,13 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       fetch(S.url + '/rest/v1/subcategories?active=eq.true&select=*&order=sort', {headers:H}).catch(()=>null),
       fetch(S.url + '/rest/v1/product_types?active=eq.true&select=slug,title&order=sort', {headers:H}).catch(()=>null)
     ]);
+    // 175: filter groups (master order, "on mixed search") + each category's own filter list — the site works without them
+    Promise.all([fetch(S.url + '/rest/v1/tag_groups?select=id,name,sort,everywhere,active&order=sort', {headers:H}), fetch(S.url + '/rest/v1/category_filters?select=collection_slug,group_id,sort&order=sort', {headers:H})])
+      .then(async ([a, b]) => { if(!a.ok || !b.ok) return; const gs = await a.json(), cf = await b.json(), byId = {}, C = { g:{}, cat:{} };
+        gs.forEach(x => { byId[x.id] = x.name; C.g[x.name] = { s:x.sort, ev:!!x.everywhere, off:x.active === false } });
+        cf.forEach(x => { if(byId[x.group_id]) (C.cat[x.collection_slug] = C.cat[x.collection_slug] || []).push(byId[x.group_id]) });
+        window.TAGCFG = C; if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && typeof buildChips === 'function') try{ buildChips(); renderPLP(); }catch(e){} })
+      .catch(()=>{});
     const TYT = {}; if(tr && tr.ok) (await tr.json()).forEach(x => { TYT[x.slug] = x.title });
     const subsDB = sr && sr.ok ? await sr.json() : [], SUBT = {};
     subsDB.forEach(x => { SUBT[x.slug] = x.title;
@@ -4194,7 +4219,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0, alt:p.image_alt||'', md:p.seo_description||'',
         vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, vop:Array.isArray(p.variant_options)?p.variant_options:null, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'', mto:!!p.made_to_order,
-        cz:p.kind==='mto'&&p.mto&&typeof p.mto==='object'?p.mto:null, tg:Array.isArray(p.tags)?p.tags:[] };   // 133 Made to Order: priced by the customer's size (mto.js)
+        cz:p.kind==='mto'&&p.mto&&typeof p.mto==='object'?p.mto:null, tg:tagsOf(p) };   // 133 Made to Order: priced by the customer's size (mto.js)
       if(PRODS[p.sku].cz){ const d=(PRODS[p.sku].cz.make_days||[]).filter(v=>v!=null); PRODS[p.sku].ship='Made to your size'+(d.length?' · '+(d.length>1&&d[0]!==d[1]?d[0]+'–'+d[1]:d[d.length-1])+' days':''); }
       if(p.image_url) IMGS[p.sku] = slimImg(p.image_url);
     });
