@@ -328,6 +328,7 @@
     '.wz-card.on{border:2px solid #C26445;background:#FBEDE7}.wz-card[disabled]{opacity:.45;cursor:not-allowed}.wz-card b{font-size:14px}.wz-card small{font-size:12px;color:#6A6258}.wz-pic{display:block;width:100%;height:70px;margin-bottom:4px}'+
     '.wz-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E2D6C4;border-radius:14px;padding:12px;margin-bottom:10px;cursor:pointer}.wz-row>span:first-child{flex:1;display:flex;flex-direction:column}.wz-row small{font-size:12px;color:#6A6258}.wz-pr{font-size:12.5px;color:#6A6258;white-space:nowrap}'+
     '.wz-sw{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:99px;background:#D9D4CB;position:relative;cursor:pointer;flex:none;margin:0;transition:background .15s}.wz-sw:checked{background:#C26445}.wz-sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .15s}.wz-sw:checked::after{left:23px}'+
+    '.ts-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:0 0 8px}.ts-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px;position:relative}.ts-n input{width:84px;height:38px;border:1px solid #D9CDBB;border-radius:10px;padding:0 26px 0 10px;font:600 14px Inter,sans-serif;box-sizing:border-box}.ts-n i{position:absolute;right:9px;bottom:11px;font-style:normal;font-size:12px;color:#8A8276}.ts-i{align-self:center;width:22px;font-size:13px}.ts-x{width:38px;height:38px;border-radius:10px;border:1px solid #E2D6C4;background:#fff;cursor:pointer}' +
     '.wz-pm{width:40px;height:40px;border-radius:50%;border:1px solid #C9BBA6;background:#fff;font-size:20px;cursor:pointer}.wz-tabs{display:flex;gap:8px;flex-wrap:wrap}.wz-tabs button,.wz-chip{border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:8px 14px;min-height:40px;font:inherit;font-size:13px;cursor:pointer}.wz-tabs button.on{border:2px solid #C26445;font-weight:700}'+
     '.wz-sw-col{width:46px;height:46px;border-radius:50%;border:1px solid #BBB;cursor:pointer}.wz-sw-col.on{outline:3px solid #C26445;outline-offset:2px}.wz-elev{background:#fff;border:1px solid #E2D6C4;border-radius:12px;padding:10px;margin-top:10px}'+
     '.wz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:10px}.wz-next{background:#2E2E2E;color:#fff;border:0;border-radius:12px;padding:13px 22px;font:inherit;font-weight:700;min-height:46px;cursor:pointer}.wz-prev{background:none;border:0;font:inherit;color:#4A4640;cursor:pointer;min-height:44px}'+
@@ -531,13 +532,13 @@
     var el = document.getElementById('cb3d'); if (!el || !S || !S.wz) return;
     var hd = S.pdp && document.querySelector('header'), box = el.parentNode; if (box && box.classList.contains('wz-3d')) box.style.top = (hd ? Math.max(0, Math.round(hd.getBoundingClientRect().height)) : 52) + 'px';   // stay under the store header
     if (C3.st === 2) { try { if (!C3.ev) { C3.ev = 1; window.Cabin3D.onEvent(on3d); }
-      window.Cabin3D.show(el, PRODS[S.id].cz.cabin, S.o.layout, S.view3, { sel: S.sel3 ? { bay: S.sel3 } : S.psel != null ? { pl: S.psel } : null, furn: S.furn || 'none', night: !!S.night }); } catch (er) { C3.st = -1; if (window.console) console.warn(er); } return; }
+      window.Cabin3D.show(el, PRODS[S.id].cz.cabin, S.o.layout, S.view3, { sel: S.sel3 ? { bay: S.sel3 } : S.psel != null ? { pl: S.psel } : null, furn: S.furn || 'none', night: !!S.night, site: S.studio ? tsOpts() : null }); } catch (er) { C3.st = -1; if (window.console) console.warn(er); } return; }
     if (C3.st !== 0) return;
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=4').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=4'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=5').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=5'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -590,7 +591,87 @@
     }).join('') + '</div>';
   }
   function wzTry(c, lay, f) { var l2 = cbClone(lay); f(l2); var q = cabin(c, l2); return q.ok ? q.total : null; }
+  // ---- 2026-11-18 terrace: show the cabin on a Delhi builder-floor terrace (looks only — never changes the price or the order)
+  var TS_PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['500', 50, 90]];
+  function tsNew(lay) { var t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, corner: false, par: 3, tanks: true, shafts: [] }; tsPlot(t, 30, 60, lay, true); return t; }
+  function tsPlot(t, pw, pd, lay, fresh) {   // a new plot size: mumty on a side wall in the middle of the depth, one shaft opposite, cabin near the front
+    var opw = t.pw, opd = t.pd; t.pw = Math.max(15, Math.min(120, Math.round(pw))); t.pd = Math.max(20, Math.min(150, Math.round(pd)));
+    if (!fresh && opw && opd) arr(t.shafts).forEach(function (h) { h.x = Math.round((h.x + h.w / 2) / opw * t.pw - h.w / 2); h.z = Math.round((h.z + h.d / 2) / opd * t.pd - h.d / 2); });   // shafts keep their place on the plot
+    var sm = t.pw <= 25, left = !t.mumty || (t.mumty.x + t.mumty.w / 2) < t.pw / 2;
+    if (fresh || !t.mumty) t.mumty = { w: sm ? 8 : 10, d: sm ? 16 : 18, x: 0, z: 0 };
+    var mu = t.mumty; mu.w = Math.min(mu.w, t.pw - 3); mu.d = Math.min(mu.d, t.pd - 3); mu.x = left ? 0.75 : t.pw - 0.75 - mu.w; mu.z = Math.round((t.pd - mu.d) / 2);
+    if (fresh) t.shafts = [{ w: 3, d: 4, x: left ? t.pw - 3.75 : 0.75, z: Math.round(t.pd / 2 - 2) }];
+    t.shafts.forEach(function (h) { h.x = Math.max(0.75, Math.min(t.pw - 0.75 - h.w, h.x)); h.z = Math.max(0.75, Math.min(t.pd - 0.75 - h.d, h.z)); });
+    tsCentre(t, lay);
+  }
+  function tsFoot(lay) {   // the cabin + its pergola projection
+    var pj = lay.proj ? arr(lay.proj.sides) : [], dep = 1.5, has = function (sd) { return pj.indexOf(sd) >= 0 ? dep : 0; };
+    return { L: num(lay.L), W: num(lay.W), e: { l: has('left'), r: has('right'), b: has('back'), f: has('front') } };
+  }
+  function tsCentre(t, lay) {   // the best free spot: near the front and the middle first, never on the mumty / a shaft
+    var F = tsFoot(lay), x0 = Math.max(0.75 + F.e.l, Math.round((t.pw - F.L) / 2 * 2) / 2), z0 = Math.max(0.75 + F.e.b, t.pd - 0.75 - F.W - F.e.f - 3), best = null;
+    for (var z = z0; z >= 0.75 + F.e.b; z -= 0.5) for (var dx = 0; dx <= t.pw; dx += 0.5) [x0 - dx, x0 + dx].forEach(function (x) {
+      if (best) return; t.cx = x; t.cz = z; if (!tsClash(t, lay)) best = [x, z]; });
+    t.cx = best ? best[0] : x0; t.cz = best ? best[1] : z0;
+  }
+  function tsClash(t, lay) {   // why it doesn't fit there, or ''
+    var F = tsFoot(lay), x0 = t.cx - F.e.l, x1 = t.cx + F.L + F.e.r, z0 = t.cz - F.e.b, z1 = t.cz + F.W + F.e.f;
+    if (F.L + F.e.l + F.e.r > t.pw - 1.5 || F.W + F.e.b + F.e.f > t.pd - 1.5) return 'The cabin is bigger than this terrace — make it smaller';
+    if (x0 < 0.75 || z0 < 0.75 || x1 > t.pw - 0.75 || z1 > t.pd - 0.75) return 'The cabin goes over the parapet — move it in';
+    var hit = function (r) { return x0 < r.x + r.w && x1 > r.x && z0 < r.z + r.d && z1 > r.z; };
+    if (t.mumty && hit(t.mumty)) return 'The cabin hits the mumty — move one of them';
+    if (arr(t.shafts).some(hit)) return 'The cabin sits on a shaft — move one of them';
+    return '';
+  }
+  function tsOpts() { var t = S.site; if (!t || t.kind !== 'terrace') return null; var o2 = JSON.parse(JSON.stringify(t)); o2.clash = !!tsClash(t, S.o.layout); return o2; }
+  function terraceUI(lay) {
+    var t = S.site || { kind: 'ground' }, on = t.kind === 'terrace', h = '';
+    var btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
+    var nIn = function (key, val, lbl, min, max) { return '<label class="ts-n"><span>' + lbl + '</span><input type="number" inputmode="decimal" min="' + min + '" max="' + max + '" step="0.5" data-tsin="' + key + '" value="' + val + '"><i>ft</i></label>'; };
+    var note = function (txt) { return ' <span style="font-weight:400;color:#6A6258">— ' + txt + '</span>'; };
+    h += '<div class="cbs-t"><h4 class="wz-h">Where will it go?</h4><p class="wz-sub">See it on a terrace like yours — close, not exact. This doesn\'t change the price.</p></div><div class="cbs-o">';
+    h += '<div class="wz-tabs">' + btn('data-ts="kind:ground"', !on, '🌳 Lawn / garden') + btn('data-ts="kind:terrace"', on, '🏙 Terrace') + '</div>';
+    if (on) {
+      var mu = t.mumty, mR = mu.x + mu.w / 2 >= t.pw / 2;
+      h += '<p class="wz-lbl">Plot size</p><div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], p[0] + ' gaj'); }).join('') + '</div>';
+      h += '<p class="wz-lbl">Exact terrace size' + note('type yours') + '</p><div class="ts-row">' + nIn('pw', t.pw, 'Width', 15, 120) + nIn('pd', t.pd, 'Depth', 20, 150) + '</div>';
+      h += '<div class="wz-tabs">' + btn('data-ts="corner"', t.corner, (t.corner ? '✓ ' : '') + 'Corner plot') + btn('data-ts="par:3"', t.par === 3, 'Parapet 3 ft') + btn('data-ts="par:4"', t.par === 4, 'Parapet 4 ft') + '</div>';
+      h += '<p class="wz-lbl">Mumty (stair room)' + note('drag it on the 3D to move') + '</p><div class="wz-tabs">' + btn('data-ts="mside:left"', !mR, 'Left side') + btn('data-ts="mside:right"', mR, 'Right side') + btn('data-ts="tanks"', t.tanks !== false, (t.tanks !== false ? '✓ ' : '') + 'Water tanks on top') + '</div>';
+      h += '<div class="ts-row">' + nIn('mw', mu.w, 'Width', 5, 30) + nIn('md', mu.d, 'Length', 5, 40) + nIn('mz', Math.round((t.pd - mu.z - mu.d) * 2) / 2, 'From front', 0.75, t.pd) + '</div>';
+      h += '<p class="wz-lbl">Shafts' + note('drag them on the 3D to move') + '</p>' + arr(t.shafts).map(function (sh, i) { return '<div class="ts-row"><b class="ts-i">' + (i + 1) + '</b>' + nIn('sw:' + i, sh.w, 'Width', 1, 15) + nIn('sd:' + i, sh.d, 'Length', 1, 20) + '<button type="button" class="ts-x" data-ts="sdel:' + i + '" aria-label="Remove shaft ' + (i + 1) + '">✕</button></div>'; }).join('') + '<button type="button" class="wz-back" style="margin-top:4px" data-ts="sadd">+ Add a shaft</button>';
+      h += '<p class="wz-lbl">Where the cabin sits</p><div class="ts-row">' + nIn('cx', t.cx, 'From left', 0, t.pw) + nIn('cf', Math.round((t.pd - t.cz - num(lay.W)) * 2) / 2, 'From front', 0, t.pd) + '<button type="button" class="wz-back" data-ts="centre">Centre it</button></div>';
+      var cl = tsClash(t, lay); h += cl ? '<div class="wz-note" style="background:#FDECEA;border-color:#F3B8B0;color:#9B2C22">⚠ ' + esc(cl) + '</div>' : '<div class="wz-note">✓ It fits here.</div>';
+    }
+    h += '<button type="button" class="wz-next" style="margin-top:12px" data-ts="close">← Back to the steps</button></div>';
+    return h;
+  }
+  function tsClick(t) {
+    var k = t.getAttribute('data-ts'); if (k == null) return false; var lay = S.o.layout, x = S.site, a = k.split(':');
+    if (a[0] === 'close') { S.siteEd = false; return true; }
+    if (a[0] === 'kind') { if (a[1] === 'terrace') { S.site = x && x.pw ? x : tsNew(lay); S.site.kind = 'terrace'; } else if (x) x.kind = 'ground'; S.v3 = S.view3 = '3d'; return true; }
+    if (!x) return true;
+    if (a[0] === 'plot') { var p = TS_PLOTS.filter(function (z) { return z[0] === a[1]; })[0]; x.plot = a[1]; tsPlot(x, p[1], p[2], lay); }
+    else if (a[0] === 'corner') x.corner = !x.corner;
+    else if (a[0] === 'par') x.par = +a[1];
+    else if (a[0] === 'tanks') x.tanks = x.tanks === false;
+    else if (a[0] === 'mside') x.mumty.x = a[1] === 'left' ? 0.75 : x.pw - 0.75 - x.mumty.w;
+    else if (a[0] === 'sadd') x.shafts.push({ w: 3, d: 4, x: Math.round(x.pw / 2), z: 1 });
+    else if (a[0] === 'sdel') x.shafts.splice(+a[1], 1);
+    else if (a[0] === 'centre') tsCentre(x, lay);
+    return true;
+  }
+  function tsInput(el) {   // the exact sizes typed in
+    var k = el.getAttribute('data-tsin'), x = S.site, lay = S.o.layout, v = parseFloat(el.value); if (!k || !x || !(v >= 0)) return false; var a = k.split(':');
+    if (a[0] === 'pw' || a[0] === 'pd') { x.plot = ''; tsPlot(x, a[0] === 'pw' ? v : x.pw, a[0] === 'pd' ? v : x.pd, lay); }
+    else if (a[0] === 'mw' || a[0] === 'md') { var mu = x.mumty, right = mu.x + mu.w / 2 >= x.pw / 2, mid = mu.z + mu.d / 2; mu[a[0] === 'mw' ? 'w' : 'd'] = Math.max(5, Math.min(a[0] === 'mw' ? x.pw - 3 : x.pd - 3, v)); if (right) mu.x = x.pw - 0.75 - mu.w; mu.z = Math.max(0.75, Math.min(x.pd - 0.75 - mu.d, Math.round((mid - mu.d / 2) * 2) / 2)); }
+    else if (a[0] === 'mz') x.mumty.z = Math.max(0.75, Math.min(x.pd - 0.75 - x.mumty.d, x.pd - v - x.mumty.d));
+    else if (a[0] === 'sw' || a[0] === 'sd') { var sh = x.shafts[+a[1]]; if (sh) { sh[a[0] === 'sw' ? 'w' : 'd'] = Math.max(1, Math.min(20, v)); sh.x = Math.max(0.75, Math.min(x.pw - 0.75 - sh.w, sh.x)); sh.z = Math.max(0.75, Math.min(x.pd - 0.75 - sh.d, sh.z)); } }
+    else if (a[0] === 'cx') x.cx = Math.max(0, Math.min(x.pw, v));
+    else if (a[0] === 'cf') x.cz = Math.max(0, x.pd - v - num(lay.W));
+    return true;
+  }
   function cabinUI(m, o) {
+    if (S.studio && S.siteEd) return terraceUI(o.layout);
     var c = m.cabin, lay = o.layout, w = S.wz, q0 = cabin(c, lay), st = w.step, TITLES = ['Glass & roof', 'How big?', 'Doors', 'Rooms inside', 'Outside', 'The look', 'Your cabin'];
     var SUBS = ['How much glass on the walls, and the roof — these set the look of your cabin', 'Pick a size — or set it exactly with − / +', 'Pick the door, the wall it goes on and its height', 'Switch on what you need — move things on the plan if you like', 'Pergola projection over the walls, and a rain gutter', 'Roof, frame colour and a few upgrades', 'Check it, then order — final drawings come to you for approval first'];
     var v3 = S.view3 = S.studio ? (S.v3 || (st === 3 && !w.adv ? 'cut' : '3d')) : S.v3 || (w.adv ? (w.aside || 'front') : wzAuto(st, w, lay));
@@ -804,6 +885,7 @@
     if (ev.t === 'none') { if (!S.sel3 && S.psel == null) return; S.sel3 = null; S.psel = null; }
     else if (ev.t === 'selbay') { S.sel3 = { side: ev.side, i: cbHead(lay.walls[ev.side], ev.i) }; S.psel = null; }
     else if (ev.t === 'selpl') { S.psel = ev.i; S.sel3 = null; }
+    else if (ev.t === 'movesite') { var x9 = S.site; if (!x9) return; var o9 = ev.k === 'mumty' ? x9.mumty : arr(x9.shafts)[ev.i]; if (!o9) return; o9.x = ev.x; o9.z = ev.z; }
     else if (ev.t === 'movepl') { var p = arr(lay.places)[ev.i]; if (!p) return; p.x = ev.x; p.y = ev.y; cbClamp(c, lay, p); S.psel = ev.i; S.sel3 = null; }
     draw();
   }
@@ -828,7 +910,7 @@
     if (S.studio) {
       var cS = PRODS[S.id].cz.cabin, vS = S.view3 === 'cut' ? 'cut' : '3d', flS = (FURN.filter(function (f) { return f[0] === (S.furn || 'none'); })[0] || FURN[4])[1], ok3 = C3.st !== -1;
       st.innerHTML = '<div class="cbs-v"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(cS, S.o.layout)) + '</div>' +
-        (C3.st === 2 ? '<div class="cb-ov"><button type="button" data-cbroof="1" aria-pressed="' + (vS === 'cut') + '">' + (vS === 'cut' ? '⌂ Roof on' : '⌂ Roof off') + '</button><button type="button" data-e3furn="1">🛋 ' + esc(flS) + '</button><button type="button" data-e3night="1" aria-pressed="' + !!S.night + '">' + (S.night ? '🌙 Evening' : '☀ Day') + '</button></div>' +
+        (C3.st === 2 ? '<div class="cb-ov"><button type="button" data-cbroof="1" aria-pressed="' + (vS === 'cut') + '">' + (vS === 'cut' ? '⌂ Roof on' : '⌂ Roof off') + '</button><button type="button" data-e3furn="1">🛋 ' + esc(flS) + '</button><button type="button" data-e3night="1" aria-pressed="' + !!S.night + '">' + (S.night ? '🌙 Evening' : '☀ Day') + '</button><button type="button" data-cbsite="1" aria-pressed="' + !!S.siteEd + '">' + (S.site && S.site.kind === 'terrace' ? '🏙 Terrace' : '🌳 Lawn') + '</button></div>' +
           '<div class="cbs-z"><button type="button" data-cbz="in" aria-label="Zoom in">+</button><button type="button" data-cbz="out" aria-label="Zoom out">−</button>' +
           '<button type="button" data-cbz="pan" class="' + (S.pan ? 'on' : '') + '" aria-pressed="' + !!S.pan + '" aria-label="Move mode: drag to move the model" title="Move: drag to slide the model">✋</button>' +
           '<button type="button" data-cbz="home" aria-label="Back to the start view" title="Centre the model">⌖</button>' +
@@ -853,7 +935,8 @@
     document.documentElement.style.setProperty('--cbtop', b + 'px');
   }
   function stageClick(e) {
-    var t = e.target.closest('[data-wzv],[data-gi],[data-e3k],[data-e3x],[data-e3p],[data-e3add],[data-e3furn],[data-e3night],[data-cbz],[data-cbroof]'); if (!t || !S || t.disabled) return;
+    var t = e.target.closest('[data-wzv],[data-gi],[data-e3k],[data-e3x],[data-e3p],[data-e3add],[data-e3furn],[data-e3night],[data-cbz],[data-cbroof],[data-cbsite]'); if (!t || !S || t.disabled) return;
+    if (t.hasAttribute('data-cbsite')) { S.siteEd = !S.siteEd; return draw(); }
     if (t.hasAttribute('data-cbz')) { var zk = t.getAttribute('data-cbz'); if (zk === 'pan') { S.pan = !S.pan; try { window.Cabin3D.panMode(S.pan); } catch (er) {} cbStage(); return mount3d(); } if (zk === 'home') { try { window.Cabin3D.home(); } catch (er) {} return; } if (zk === 'big') { S.big = !S.big; document.body.classList.toggle('cbs-big', S.big); cbStage(); mount3d(); setTimeout(function () { try { window.Cabin3D.resize(); } catch (er) {} }, 60); } else try { window.Cabin3D.zoom(zk === 'in' ? 0.8 : 1.25); } catch (er) {} return; }
     if (t.hasAttribute('data-cbroof')) { S.v3 = S.view3 = S.view3 === 'cut' ? '3d' : 'cut'; if (S.view3 !== 'cut') S.psel = null; cbStage(); return mount3d(); }
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, k;
@@ -1270,6 +1353,7 @@
   function onInput(e) { var k = e.target.getAttribute('data-k'); if (!k || !S) return; if (k === 'pin') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); S.o[k] = e.target.value; paint(); }
   function onChange(e) {
     var t = e.target, k = t.getAttribute('data-k'); if (!S) return;
+    if (t.hasAttribute('data-tsin')) { if (tsInput(t)) draw(); return; }
     var pk = t.getAttribute('data-pick');   // 159 picklists
     if (pk === 'n') { S.o.n = +t.value; return draw(); }
     if (pk === 'size') { S.o.size = t.value; return draw(); }
@@ -1290,7 +1374,8 @@
     if (t.hasAttribute('data-add')) { var n = t.getAttribute('data-add'); S.o.addons = S.o.addons.filter(function (a) { return a !== n; }); if (t.checked) S.o.addons.push(n); return paint(); }
   }
   function onClick(e) {
-    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit],[data-pl],[data-dragpl],[data-pact],[data-wzgo],[data-wzadv],[data-wzside],[data-wp],[data-wzpiece],[data-wzsize],[data-wzglass],[data-wzdoor],[data-wzdside],[data-wzwin],[data-cchk],[data-wzv],[data-cstep],[data-wztrk],[data-wzpj],[data-wzpd],[data-wzpt],[data-wzpu],[data-wzgut],[data-wztpl]'); if (!t || !S) return;
+    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit],[data-pl],[data-dragpl],[data-pact],[data-wzgo],[data-wzadv],[data-wzside],[data-wp],[data-wzpiece],[data-wzsize],[data-wzglass],[data-wzdoor],[data-wzdside],[data-wzwin],[data-cchk],[data-wzv],[data-cstep],[data-wztrk],[data-wzpj],[data-wzpd],[data-wzpt],[data-wzpu],[data-wzgut],[data-wztpl],[data-ts]'); if (!t || !S) return;
+    if (t.hasAttribute('data-ts')) { if (tsClick(t)) draw(); return; }
     var cz0 = (PRODS[S.id] || {}).cz;   // 156: cabin builder
     if (t.getAttribute && t.getAttribute('data-dragged')) { t.removeAttribute('data-dragged'); return; }
     if (cz0 && cz0.unit === 'cabin' && S.wz && wzClick(t)) return draw();   // 158

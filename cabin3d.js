@@ -51,7 +51,7 @@ function spanOf(c, k) { const b = bayOf(c, k); return b ? Math.max(Math.trunc(+b
 function build(c, lay, opts) {
   const g = new THREE.Group(), L = +lay.L, W = +lay.W, H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = +(c.bay || 4), FM = frameMat(lay), T = 0.25, DH = lay.full_doors ? H : 8;
   const tracks = Math.max(2, parseInt(lay.tracks || '2', 10) || 2);
-  site(g, L, W);
+  if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site, lay, c); else site(g, L, W);
   box(g, L + 0.6, 0.6, W + 0.6, L / 2, -0.3, W / 2, mat('deck')).userData.under = 1;
   box(g, L, 0.05, W, L / 2, 0.02, W / 2, mat('floor'), false).userData.under = 1;
   const walls = new THREE.Group(); walls.name = 'walls'; g.add(walls);
@@ -177,6 +177,47 @@ function site(g, L, W) {
   for (let z = 0; z <= W; z += 3.4 + rnd()) { shrub(-5.3, z); shrub(L + 5.3, z); }
 }
 
+// ---- 2026-11-18 a Delhi builder-floor terrace around it (close, not exact): slab + parapet, the mumty (stair room) with
+// water tanks, shafts, the building below and the neighbours. Plot coords: x across the plot width (0 = left), z front-to-back
+// (0 = back, pd = front / road). The cabin's back-left corner sits at (cx, cz). Mumty / shafts carry userData.st for dragging.
+function terrace(g, L, W, t, lay, c) {
+  const sg = new THREE.Group(); sg.name = 'site'; g.add(sg);
+  const pw = +t.pw || 30, pd = +t.pd || 60, ox = -(+t.cx || 0), oz = -(+t.cz || 0), Y = -0.6, par = +t.par || 3, PT = 0.75, BH = 50;
+  const P = (n, col) => M[n] || (M[n] = new THREE.MeshStandardMaterial({ color: col, roughness: 0.95 }));
+  const plaster = P('t_pl', 0xEAE5DC), tile = P('t_tile', 0xC4BDB1), side2 = P('t_side', 0xDCD3C4), dark = P('t_dark', 0x2F3437), road = P('t_road', 0x6E6C68), win = P('t_win', 0x55626B);
+  const at = (x, z) => [ox + x, oz + z];
+  // slab, parapet (not under the cabin's floor: that sits on the slab)
+  let [x0, z0] = at(pw / 2, pd / 2); box(sg, pw, 0.5, pd, x0, Y - 0.25, z0, tile).userData.under = 1;
+  [[pw / 2, PT / 2, pw, PT], [pw / 2, pd - PT / 2, pw, PT], [PT / 2, pd / 2, PT, pd], [pw - PT / 2, pd / 2, PT, pd]].forEach(([x, z, w, d]) => { const [a, b] = at(x, z); box(sg, w, par, d, a, Y + par / 2, b, plaster); box(sg, w + 0.1, 0.15, d + 0.1, a, Y + par + 0.07, b, side2); });
+  // the building below: 4 floors over stilts, window bands on the road side
+  [x0, z0] = at(pw / 2, pd / 2); box(sg, pw, BH, pd, x0, Y - 0.5 - BH / 2, z0, plaster, false).userData.under = 1;
+  for (let f = 0; f < 4; f++) { const yb = Y - 0.5 - 10 * f - 5.5; const [a, b] = at(pw / 2, pd + 0.05); box(sg, pw * 0.7, 4, 0.1, a, yb, b, win, false); const [a2, b2] = at(pw / 2, pd + 1.5); box(sg, pw, 0.4, 3, a2, yb - 2.6, b2, side2, false); }
+  // ground + road in front (and on the open side of a corner plot)
+  const gy = Y - 0.5 - BH; const gr = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), P('t_gnd', 0xA9A296)); gr.rotation.x = -Math.PI / 2; [x0, z0] = at(pw / 2, pd / 2); gr.position.set(x0, gy, z0); sg.add(gr);
+  [x0, z0] = at(pw / 2, pd + 15); box(sg, 400, 0.1, 24, x0, gy + 0.05, z0, road, false);
+  if (t.corner) { [x0, z0] = at(pw + 15, pd / 2); box(sg, 24, 0.1, 400, x0, gy + 0.06, z0, road, false); }
+  // neighbours: left, right (not on a corner plot), behind — different heights and shades, some with their own mumty
+  let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const nb = (x, z, w, d) => { const h = BH + (rnd() * 20 - 8), m = P('t_nb' + (seed % 3), [0xD9CBB5, 0xE6DDD0, 0xCFC2AE][seed % 3]); const [a, b] = at(x, z); box(sg, w, h, d, a, gy + h / 2, b, m, false); box(sg, w, 3, 0.6, a, gy + h + 1.5, b + d / 2 - 0.3, m, false);
+    if (rnd() > 0.4) box(sg, 9, 9, 16, a + (rnd() > 0.5 ? w / 2 - 5 : -w / 2 + 5), gy + h + 4.5, b, m, false); };
+  nb(-pw / 2 - 0.3, pd / 2, pw, pd); if (!t.corner) nb(pw * 1.5 + 0.3, pd / 2, pw, pd); nb(pw / 2, -pd / 2 - 0.3, pw, pd); nb(-pw / 2 - 0.3, -pd / 2 - 0.3, pw, pd); if (!t.corner) nb(pw * 1.5 + 0.3, -pd / 2 - 0.3, pw, pd);
+  [x0, z0] = at(pw / 2, pd + 30); nb(pw / 2, pd + 30 + pd / 2, pw * 3, pd);   // across the road
+  // the mumty (stair room + lift), water tanks on top
+  const mu = t.mumty; if (mu) { const mg = new THREE.Group(); mg.userData.st = { k: 'mumty' }; sg.add(mg); const [a, b] = at(+mu.x + mu.w / 2, +mu.z + mu.d / 2), mh = 9;
+    box(mg, mu.w, mh, mu.d, a, Y + mh / 2, b, plaster); box(mg, mu.w + 0.6, 0.35, mu.d + 0.6, a, Y + mh + 0.17, b, side2);
+    const toR = (+mu.x + mu.w / 2) < pw / 2; box(mg, 0.1, 7, 3.2, a + (toR ? mu.w / 2 + 0.05 : -mu.w / 2 - 0.05), Y + 3.5, b, P('t_door', 0x6B4A2F));   // its door faces the open terrace
+    if (t.tanks !== false) { const n = mu.d >= 12 ? 2 : 1; for (let j = 0; j < n; j++) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 4, 20), P('t_tank', 0x1F2224)); tk.position.set(a, Y + mh + 2.35, b + (n > 1 ? (j ? 3 : -3) : 0)); tk.castShadow = true; mg.add(tk); } } }
+  // shafts: low walls round an open duct
+  (t.shafts || []).forEach((sh, i) => { const hg = new THREE.Group(); hg.userData.st = { k: 'shaft', i }; sg.add(hg); const [a, b] = at(+sh.x + sh.w / 2, +sh.z + sh.d / 2), h = 3, th = 0.33;
+    box(hg, sh.w, h, th, a, Y + h / 2, b - sh.d / 2 + th / 2, plaster); box(hg, sh.w, h, th, a, Y + h / 2, b + sh.d / 2 - th / 2, plaster);
+    box(hg, th, h, sh.d, a - sh.w / 2 + th / 2, Y + h / 2, b, plaster); box(hg, th, h, sh.d, a + sh.w / 2 - th / 2, Y + h / 2, b, plaster);
+    box(hg, sh.w - 0.6, 0.05, sh.d - 0.6, a, Y + 0.3, b, dark, false); });
+  // a red outline round the cabin when it doesn't fit there
+  if (t.clash) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.8, 0.2, W + 0.8)), new THREE.LineBasicMaterial({ color: 0xE0352B })); ln.position.set(L / 2, Y + 0.15, W / 2); sg.add(ln);
+    const pl = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 0.06, W + 0.8), new THREE.MeshBasicMaterial({ color: 0xE0352B, transparent: true, opacity: 0.25, depthWrite: false })); pl.position.set(L / 2, Y + 0.1, W / 2); sg.add(pl); }
+  void lay; void c;
+}
+
 // ---- furniture (shown for ideas only): built from simple shapes; local origin = centre of its footprint, back towards -z
 function F() { return new THREE.Group(); }
 function legs(g, w, d, h, m, t = 0.16) { [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, t, h, t, a * (w / 2 - t), h / 2, b * (d / 2 - t), m)); }
@@ -285,7 +326,7 @@ function ensure(el) {
     loop();
     window.addEventListener('resize', () => R.el && size());
     const cv = renderer.domElement;
-    cv.addEventListener('pointerdown', pDown, true); cv.addEventListener('pointermove', pMove); cv.addEventListener('pointerup', pUp); cv.addEventListener('pointercancel', () => { if (R.drag) { R.drag.obj.position.set(0, 0, 0); R.drag = null; R.controls.enabled = R.ctlOn; } });
+    cv.addEventListener('pointerdown', pDown, true); cv.addEventListener('pointermove', pMove); cv.addEventListener('pointerup', pUp); cv.addEventListener('pointercancel', () => { if (R.sdrag) { R.sdrag.obj.position.set(0, 0, 0); R.sdrag = null; R.controls.enabled = R.ctlOn; } if (R.drag) { R.drag.obj.position.set(0, 0, 0); R.drag = null; R.controls.enabled = R.ctlOn; } });
   }
   if (R.el !== el) { R.el = el; el.innerHTML = ''; el.appendChild(R.renderer.domElement); }
   size();
@@ -297,19 +338,19 @@ function buttons() {   // ✋ move mode: one finger / left drag moves the model,
 }
 function keepNear() {   // the model can be moved, but never lost: the point it turns around stays near the cabin
   if (!R.group || R.active !== R.cam || !['3d', 'cut', '360'].includes(R.view)) return
-  const t = R.controls.target, m = Math.max(R.L, R.W) * 0.6 + 4, x = Math.min(R.L + m, Math.max(-m, t.x)), y = Math.min(R.H * 1.6, Math.max(-R.H * 0.8, t.y)), z = Math.min(R.W + m, Math.max(-m, t.z))
+  const t = R.controls.target, m = Math.max(R.L, R.W) * 0.6 + 4 + (R.ts ? Math.max(R.ts.pw, R.ts.pd) : 0), x = Math.min(R.L + m, Math.max(-m, t.x)), y = Math.min(R.H * 1.6, Math.max(-R.H * 0.8, t.y)), z = Math.min(R.W + m, Math.max(-m, t.z))
   if (x !== t.x || y !== t.y || z !== t.z) { const dx = x - t.x, dy = y - t.y, dz = z - t.z; t.set(x, y, z); R.cam.position.x += dx; R.cam.position.y += dy; R.cam.position.z += dz }
 }
 function under() {   // orbiting below the floor: the ground, deck and floor fade out so the ceiling / false ceiling is seen from under
   if (!R.group) return; const b = (R.active || R.cam) === R.cam && R.view !== 'inside' && R.cam.position.y < -0.2
   if (b === R.below) return; R.below = b
-  const st = R.group.getObjectByName('site'); if (st) st.visible = !b && !['top', 'front', 'right', 'back', 'left'].includes(R.view)
+  const st = R.group.getObjectByName('site'); if (st) st.visible = !b && !(['top', 'front', 'right', 'back', 'left'].includes(R.view) && !(R.ts && R.view === 'top'))
   R.group.traverse(o => { if (o.userData && o.userData.under) o.visible = !b })
 }
 function size() { const w = R.el.clientWidth || 360, h = R.el.clientHeight || 220; R.renderer.setSize(w, h, false); R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); fitOrtho(); }
 function fitOrtho() {
   if (!R.group) return; const a = (R.el.clientWidth || 360) / (R.el.clientHeight || 220), v = R.view, L = R.L, W = R.W, H = R.H, pad = 1.18;
-  let w, h; if (v === 'top') { w = L + 6; h = W + 6; } else if (v === 'front' || v === 'back') { w = L + 6; h = H + 4; } else { w = W + 6; h = H + 4; }
+  let w, h; if (v === 'top' && R.ts) { w = R.ts.pw + 4; h = R.ts.pd + 4; } else if (v === 'top') { w = L + 6; h = W + 6; } else if (v === 'front' || v === 'back') { w = L + 6; h = H + 4; } else { w = W + 6; h = H + 4; }
   if (w / h > a) h = w / a; else w = h * a;
   Object.assign(R.ortho, { left: -w / 2 * pad, right: w / 2 * pad, top: h / 2 * pad, bottom: -h / 2 * pad }); R.ortho.updateProjectionMatrix();
 }
@@ -317,7 +358,7 @@ const PERSP = ['3d', 'cut', 'inside', '360'];
 function visible(v) {   // what each view shows
   const g = R.group, by = (n) => g.getObjectByName(n), top = v === 'top', elev = ['front', 'right', 'back', 'left'].includes(v), open = v === 'cut' || top;
   by('roof').visible = !open; const ce = by('ceiling'); if (ce) ce.visible = !open; by('lights').visible = !open;
-  const pj = by('proj'); if (pj) pj.visible = !top; const fu = by('furn'); if (fu) fu.visible = PERSP.includes(v); const st = by('site'); if (st) st.visible = !top && !elev;
+  const pj = by('proj'); if (pj) pj.visible = !top; const fu = by('furn'); if (fu) fu.visible = PERSP.includes(v); const st = by('site'); if (st) st.visible = (!top || !!R.ts) && !elev;
   const n = by('night'); if (n) n.visible = R.night && !top;
   R.sun.castShadow = !top && !elev; R.below = undefined;
 }
@@ -325,7 +366,8 @@ function setView(v, keepCam) {
   R.view = v; const L = R.L, W = R.W, H = R.H, cx = L / 2, cz = W / 2, d = Math.max(L, W), C = R.controls;
   visible(v);
   C.maxPolarAngle = Math.PI * 0.49; C.minPolarAngle = 0; R.cam.fov = 40; C.enableZoom = true; C.rotateSpeed = 1; C.autoRotate = v === '360'; C.enabled = true; C.enableRotate = true; C.autoRotateSpeed = 1.1; C.enablePan = false;
-  if (v === 'top') { R.active = R.ortho; R.ortho.position.set(cx, 100, cz + 0.001); R.ortho.up.set(0, 0, -1); R.ortho.lookAt(cx, 0, cz); C.enabled = false; }
+  if (v === 'top') { const tx = R.ts ? R.ts.pw / 2 - R.ts.cx : cx, tz = R.ts ? R.ts.pd / 2 - R.ts.cz : cz;   // a terrace: the whole terrace from above
+    R.active = R.ortho; R.ortho.position.set(tx, 100, tz + 0.001); R.ortho.up.set(0, 0, -1); R.ortho.lookAt(tx, 0, tz); C.enabled = false; }
   else if (['front', 'back', 'right', 'left'].includes(v)) {
     R.active = R.ortho; R.ortho.up.set(0, 1, 0);
     const p = { front: [cx, H / 2, W + 100], back: [cx, H / 2, -100], right: [L + 100, H / 2, cz], left: [-100, H / 2, cz] }[v];
@@ -335,9 +377,9 @@ function setView(v, keepCam) {
     if (!keepCam) { const st = R.start || [cx, Math.max(1.5, W - 2.5), cx, cz]; R.cam.position.set(st[0], 5, st[1]); const dx = st[2] - st[0], dz = st[3] - st[1], n = Math.hypot(dx, dz) || 1; C.target.set(st[0] + dx / n * 0.4, 4.9, st[1] + dz / n * 0.4); }
     C.minPolarAngle = Math.PI * 0.3; C.maxPolarAngle = Math.PI * 0.7; C.minDistance = C.maxDistance = 0.4; C.enableZoom = false; C.rotateSpeed = -0.45; C.autoRotateSpeed = 0.6;
   } else {   // 3d / roof off / 360
-    R.active = R.cam; C.minDistance = 3; C.maxDistance = d * 4; C.maxPolarAngle = Math.PI * 0.93;   // go round and under: see the ceiling from below
+    R.active = R.cam; C.minDistance = 3; C.maxDistance = Math.max(d * 4, R.ts ? Math.max(R.ts.pw, R.ts.pd) * 2.4 : 0); C.maxPolarAngle = Math.PI * 0.93;   // go round and under: see the ceiling from below
     C.enablePan = true; C.screenSpacePanning = true; buttons();   // move the model: right-drag / two fingers, or the ✋ move mode
-    if (!keepCam) { const k = Math.max(1.25, 1.5 / R.cam.aspect), hi = v === 'cut' ? 1.7 : 1;
+    if (!keepCam) { const k = Math.max(1.25, 1.5 / R.cam.aspect) * (R.ts ? 1.35 : 1), hi = v === 'cut' ? 1.7 : 1;
       R.cam.position.set(cx + d * 0.95 * k, H * 0.4 + (H * 1.2 + d * 0.25) * k * hi, cz + d * 1.35 * k / (v === 'cut' ? 1.15 : 1)); C.target.set(cx, H * 0.3, cz); }
   }
   R.cam.updateProjectionMatrix(); fitOrtho(); C.update(); selBox();
@@ -358,6 +400,11 @@ function pickAt(e) {
 }
 function pDown(e) {
   if (!R.group || !HANDLER || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  if (R.ts && ['3d', 'cut', 'top'].includes(R.view)) {   // a terrace: grab the mumty or a shaft and move it
+    const sg = R.group.getObjectByName('site'), hit = sg && cast(e, [sg]).find(h => { let o = h.object; while (o && !o.userData.st) o = o.parent; return o; });
+    if (hit) { let o = hit.object; while (!o.userData.st) o = o.parent; const f = floorAt(e), st = o.userData.st, src = st.k === 'mumty' ? R.ts.mumty : (R.ts.shafts || [])[st.i];
+      if (f && src) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; R.sdrag = { obj: o, st, f0: f, x0: +src.x, z0: +src.z, w: +src.w, d: +src.d, moved: false }; R.controls.enabled = false; e.preventDefault(); return; } }
+  }
   const t = pickAt(e); R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: t }; R.ctlOn = R.controls.enabled;
   if (t && t.userData.pl != null) {   // grab a room / partition: the view holds still while it moves
     const f = floorAt(e), p = (R.lay.places || [])[t.userData.pl]; if (!f || !p) return;
@@ -365,11 +412,15 @@ function pDown(e) {
   }
 }
 function pMove(e) {
+  const sd = R.sdrag; if (sd) { const f = floorAt(e); if (!f) return; if (!sd.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; sd.moved = true;
+    const t = R.ts, PT = 0.75, x = Math.round(Math.max(PT, Math.min(t.pw - PT - sd.w, sd.x0 + f.x - sd.f0.x)) * 2) / 2, z = Math.round(Math.max(PT, Math.min(t.pd - PT - sd.d, sd.z0 + f.z - sd.f0.z)) * 2) / 2;
+    sd.nx = x; sd.nz = z; sd.obj.position.set(x - sd.x0, 0, z - sd.z0); return; }
   const d = R.drag; if (!d) return; const f = floorAt(e); if (!f) return;
   if (!d.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; d.moved = true;
   const s = snap(d.i, d.x0 + f.x - d.f0.x, d.y0 + f.z - d.f0.z); d.nx = s[0]; d.ny = s[1]; d.obj.position.set(s[0] - d.x0, 0, s[1] - d.y0); selBox();
 }
 function pUp(e) {
+  const sd = R.sdrag; if (sd) { R.sdrag = null; R.down = null; R.controls.enabled = R.ctlOn; if (sd.moved) HANDLER({ t: 'movesite', k: sd.st.k, i: sd.st.i, x: sd.nx, z: sd.nz }); return; }
   const d = R.drag, dn = R.down; R.drag = null; R.down = null;
   if (d) { R.controls.enabled = R.ctlOn; if (d.moved) { HANDLER({ t: 'movepl', i: d.i, x: d.nx, y: d.ny }); return; } }
   if (!dn || Math.hypot(e.clientX - dn.x, e.clientY - dn.y) > 6 || Date.now() - dn.t > 700) return;   // that was a turn of the view, not a tap
@@ -418,11 +469,12 @@ function startSpot(c, lay, L, W) {   // where "Inside" starts: 2½ ft in from th
 
 export function show(el, c, lay, view, opts) {
   opts = opts || {}; ensure(el);
-  const key = JSON.stringify(lay) + '|' + (opts.furn || 'none'), dimKey = [lay.L, lay.W, lay.height].join('x');
+  const ts = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
+  const key = JSON.stringify(lay) + '|' + (opts.furn || 'none') + '|' + JSON.stringify(ts), dimKey = [lay.L, lay.W, lay.height, ts ? 't' : 'g'].join('x');
   let reset = view !== R.view;
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
-    const b = build(c, lay, opts); R.group = b.g; R.L = b.L; R.W = b.W; R.H = b.H; R.scene.add(b.g); R.key = key; R.c = c; R.lay = lay; R.start = startSpot(c, lay, b.L, b.W);
+    R.ts = ts; const b = build(c, lay, opts); R.group = b.g; R.L = b.L; R.W = b.W; R.H = b.H; R.scene.add(b.g); R.key = key; R.c = c; R.lay = lay; R.start = startSpot(c, lay, b.L, b.W);
     R.sun.target.position.set(b.L / 2, 0, b.W / 2);
     if (dimKey !== R.dimKey) { R.dimKey = dimKey; reset = true; }
     if (!reset) { visible(R.view); }
