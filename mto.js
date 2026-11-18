@@ -1136,14 +1136,14 @@
       document.head.appendChild(st); }
     var ic = function (d) { return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
     var C = [
-      [ic('<path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/>'), 'Made in the factory', 'Cut, welded and drilled in the factory to your approved drawing — no welding or cutting at your home.'],
-      [ic('<path d="M4 7h16v4H4zM6 11v9M18 11v9M9 15h6"/>'), 'Factory finish', 'Zinc primer and powder coat, baked in an oven: an even colour with no brush marks and no painting at your site.'],
+      [ic('<path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M9 21v-6h6v6"/>'), 'Made in the factory', 'Cut, welded and drilled in the factory to your approved drawing, in frames sized to travel.'],
+      [ic('<path d="M4 7h16v4H4zM6 11v9M18 11v9M9 15h6"/>'), 'Factory finish', 'Zinc primer and powder coat, baked in an oven: an even colour with no brush marks.'],
       [ic('<path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/>'), 'Packed & numbered', 'Every part is pre-drilled, tagged and wrapped, packed with its bolts and base plates.'],
-      [ic('<path d="M14 7l3-3 3 3-3 3M17 4v7"/><path d="M4 20l8-8M9 13l2 2"/>'), 'Installed in 2 days', 'The parts bolt together at your home. Up to 12 × 10 ft is installed in 2 days by our trained team.']];
+      [ic('<path d="M14 7l3-3 3 3-3 3M17 4v7"/><path d="M4 20l8-8M9 13l2 2"/>'), 'Installed in 2 days', 'The factory frames bolt together at your home, with small touch-up welds only. Up to 12 × 10 ft is installed in 2 days.']];
     var days = daysTxt(m.make_days) || '15–25 days';
-    return '<section class="mf" id="mfTrust"><h2>Factory-made. Installed in 2 days.</h2><p class="mf-sub">Every pergola is made in a factory and bolted together at your home — not built on site</p><div class="tr-cards">' +
+    return '<section class="mf" id="mfTrust"><h2>Factory-made. Installed in 2 days.</h2><p class="mf-sub">Every pergola is made in the factory and bolted together at your home</p><div class="tr-cards">' +
       C.map(function (c, i) { return '<div class="tr-c"><img src="' + TRUST_IMG[i] + '" alt="" loading="lazy" onerror="this.remove()"><div><b>' + c[0] + esc(c[1]) + '</b><p>' + esc(c[2]) + '</p></div></div>'; }).join('') + '</div>' +
-      '<div class="tr-line" style="font-weight:600"><span><em>✓</em>3-year warranty on the steel frame</span><span><em>✓</em>Damage in delivery or fitting is ours to fix</span><span><em>✓</em>No welding or painting at your home</span></div>' +
+      '<div class="tr-line" style="font-weight:600"><span><em>✓</em>3-year warranty on the steel frame</span><span><em>✓</em>Damage in delivery or fitting is ours to fix</span><span><em>✓</em>Fixed on steel base plates with chemical anchors</span></div>' +
       '<div class="tr-line"><span><em>1</em>Site visit &amp; measure</span><span><em>2</em>Drawing for your approval</span><span><em>3</em>Made in the factory · ' + esc(days) + '</span><span><em>4</em>Installed in 2 days</span></div></section>';
   }
   function partsMini() { var ps = arr(mtoFull.parts); if (!ps.length) return '';
