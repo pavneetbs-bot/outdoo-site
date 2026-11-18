@@ -222,7 +222,7 @@
 
   // ------------------------------------------------------------ styles
   var css = '' +
-    '.pdp-mto .qtyrow,.pdp-mto .cashback,.pdp-mto .etamod,.pdp-mto .delvblock,.pdp-mto #vSec,.pdp-mto #setSec,.pdp-mto .acc.rts-only,.pdp-mto #pdHurry,.pdp-mto #pdSize,.pdp-mto .chips .chip.terra,.pdp-mto #pdDlv,.pdp-mto #pdMto,.pdp-mto #pdEtaLine,.pdp-mto-on .ctas button[onclick="addCart()"],.pdp-mto button[onclick="addCart()"]{display:none!important}' +
+    '.pdp-mto .qtyrow,.pdp-mto .cashback,.pdp-mto .etamod,.pdp-mto .delvblock,.pdp-mto #vSec,.pdp-mto #setSec,.pdp-mto .acc.rts-only,.pdp-mto #pdHurry,.pdp-mto #pdSize,.pdp-mto .chips .chip.terra,.pdp-mto #pdDlv,.pdp-mto #pdMto,.pdp-mto #pdEtaLine{display:none!important}' +
     '.mfrom{font-size:14px;font-weight:600;color:#6b665c;margin-right:2px}.mto-pcfg .mto-ph{font-size:15px;margin:0 0 4px}.mto-hint{font-size:12.5px;color:#6b665c;margin:0 0 10px}' +
     '.mto-pks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mto-pk{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#6b665c;font-weight:600}' +
     '.mto-pk select,.mto-pk input,.mto-note textarea{font:inherit;font-size:14px;font-weight:500;color:#2e2e2e;padding:9px 11px;border:1.5px solid var(--line,#E2D6C4);border-radius:10px;min-height:44px;box-sizing:border-box;width:100%;background:#fff}.mto-pk select:focus,.mto-pk input:focus{border-color:#C26445;outline:none}' +
@@ -852,6 +852,9 @@
       Object.keys(pre.groups || {}).forEach(function (k) { if (arr(m.groups).some(function (g) { return g.name === k && arr(g.options).some(function (y) { return y.name === pre.groups[k]; }); })) S.o.groups[k] = pre.groups[k]; });
     }
     if (m.unit === 'cabin' && m.cabin && m.cabin.layout) { S.o.layout = cbClone(m.cabin.layout); cbDefaults(m.cabin, S.o.layout); S.o.material = ''; S.sel = { side: 'front', i: 0 }; S.psel = null; S.wz = wzRead(m.cabin, S.o.layout); S.wz.step = 0; S.wz.adv = false; }   // 156, 157, 158
+    var ed = window.__mtoEdit;   // 190: "Edit design" from the cart — the saved choices come back; saving updates that cart line
+    if (ed && ed.id === id) { window.__mtoEdit = null; Object.keys(ed.o || {}).forEach(function (k) { if (ed.o[k] !== undefined) S.o[k] = k === 'layout' ? cbClone(ed.o[k]) : k === 'addons' ? arr(ed.o[k]).slice() : k === 'groups' ? Object.assign({}, ed.o[k]) : ed.o[k]; });
+      if (ed.pin) S.o.pin = ed.pin; S.editK = ed.k; if (S.o.layout && m.cabin) { cbDefaults(m.cabin, S.o.layout); S.wz = wzRead(m.cabin, S.o.layout); S.wz.step = 0; S.wz.adv = false; S.cbsInit = true; } }
     return S;
   }
   window.mtoOpenOverlay = function (id) {
@@ -875,9 +878,9 @@
     document.addEventListener('input', inCfg(onInput)); document.addEventListener('change', inCfg(onChange)); document.addEventListener('click', inCfg(onClick));
     var _bn = window.buyNow, _ac = window.addCart;
     window.buyNow = function () { if (S && S.pdp && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(); return _bn.apply(this, arguments); };
-    window.addCart = function (id) { if (S && S.pdp && (!id || id === S.id) && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(); return _ac.apply(this, arguments); };
+    window.addCart = function (id) { if (S && S.pdp && (!id || id === S.id) && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(true); return _ac.apply(this, arguments); };   // 190: into the cart
   }
-  function pdpOrder() { if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); var c = document.getElementById('mtoCfg'), q = priceR(S.id, PRODS[S.id].cz, S.o, PCT); if (!q.ok || PRODS[S.id].oo === false) { if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return toast(PRODS[S.id].oo === false ? 'Coming soon — orders open soon' : q.error); } order(); }
+  function pdpOrder(add) { if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); var c = document.getElementById('mtoCfg'), q = priceR(S.id, PRODS[S.id].cz, S.o, PCT); if (!q.ok || PRODS[S.id].oo === false) { if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return toast(PRODS[S.id].oo === false ? 'Coming soon — orders open soon' : q.error); } if (add) return addM(false); order(); }
   // 160: the cabin builder on the product page — the 3D model takes the photo's place, a sticky bar carries the price and Next
   var CBV = [['3d', '3D'], ['cut', 'Roof off'], ['360', '360°'], ['inside', 'Inside'], ['top', 'Top'], ['plan', 'Plan'], ['front', 'Sides'], ['photos', 'Photos']];
   var FURN = [['lounge', 'Lounge'], ['office', 'Office'], ['cafe', 'Café'], ['stay', 'Stay'], ['none', 'No furniture']];
@@ -978,7 +981,8 @@
     var ct = document.querySelector('.ctas'); if (!ct) return; var b = ct.querySelector('.cbbar'); if (!b) { b = document.createElement('div'); b.className = 'cbbar'; ct.appendChild(b); }
     var x = PRODS[S.id], last = S.wz.step >= 6 && !S.wz.adv, closed = x.oo === false, o = S.o, needPin = !(q.ok && q.install && q.install.available);
     var NX = ['Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Review'], hs = document.getElementById('cbsStep'); if (hs) hs.textContent = S.wz.adv ? 'Edit each wall' : 'Step ' + (S.wz.step + 1) + ' of 7';
-    b.innerHTML = (S.studio && (S.wz.step > 0 || S.wz.adv) ? '<button type="button" class="cbb" onclick="cbPrev()" aria-label="Back">←</button>' : '') + '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
+    b.innerHTML = (S.studio && (S.wz.step > 0 || S.wz.adv) ? '<button type="button" class="cbb" onclick="cbPrev()" aria-label="Back">←</button>' : '') +
+      (last && !closed && !needPin && q.ok ? '<button type="button" class="cbb" style="width:auto;padding:0 12px;font-size:13px;font-weight:600" onclick="mtoAddCart()">' + (S.editK ? 'Update cart' : '+ Cart') + '</button>' : '') + '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
       '<button type="button" class="cbn" onclick="cbNext()"' + (last && (closed || needPin || !q.ok) ? ' disabled' : '') + '>' + (!last ? (S.studio && !S.wz.adv ? 'Next: ' + NX[S.wz.step] + ' →' : 'Next →') : closed ? 'Coming soon' : needPin ? 'Enter your pincode' : 'Order · pay ' + rs(q.pay_now)) + '</button>';
     var pr = document.getElementById('pdPrice'); if (pr && q.ok && x.oo !== false && S.studio) pr.innerHTML = rs(q.total) + '<span class="mrplab">your design, incl. GST</span>';
   }
@@ -1202,6 +1206,7 @@
     document.querySelectorAll('button[onclick="buyNow()"]').forEach(function (b) { b.style.display = ''; var o = S.o, needPin = q && q.ok && q.delivery && q.delivery.fee == null, noInst = q && q.ok && o.install && q.install && !q.install.available, needOk = !o.drawing && !o.size_ok;
       if (!mtoOk() && x.cz.unit !== 'cabin') { b.disabled = false; b.textContent = 'Check price'; return; }   // 172
       b.disabled = closed; b.textContent = closed ? 'Coming soon' : !(q && q.ok) ? 'Choose your size' : needPin || noInst ? 'Enter your pincode' : needOk ? 'Confirm your size' : 'Order now · pay ' + rs(q.pay_now); });
+    document.querySelectorAll('button[onclick="addCart()"]').forEach(function (b) { b.style.display = closed ? 'none' : ''; b.disabled = closed; b.textContent = S.editK ? 'Update cart' : 'Add to cart'; });   // 190
   }
 
   // a colour with its own photo (pergola finishes): picking the colour shows that photo
@@ -1294,7 +1299,7 @@
     var x = PRODS[id], call = window._supaRpc;
     if (!x || !x.pid || !call) { RQ[key] = false; return; }
     call('mto_quote', { p_product: x.pid, p_opts: rqOpts(o) }).then(function (r) { RQ[key] = r || false; }, function () { RQ[key] = false; })
-      .then(function () { try { if (S && S.id === id) paint(); if (window.MTO_BUY && window.MTO_BUY.id === id) { siteDraw(); mtoCoPaint(); } } catch (e) {} });
+      .then(function () { try { if (S && S.id === id) paint(); mRepaint(id); } catch (e) {} });
   }
   function priceR(id, m, o, pct) {
     var q = price(m, o, pct); if (!q.ok || !siteOn(m, o)) return q;
@@ -1336,7 +1341,7 @@
         (q.install && (q.install.available || q.install.pending) ? instRows(q, 'rw') : '<div class="rw"><span>Installation + transport</span><span>' + (/^\d{6}$/.test(o.pin) ? 'Not available' : 'Enter your pincode') + '</span></div>') +
         '<div class="rw tt"><span>Total</span><span>' + rs(q.total) + '</span></div>' +
         '<div class="mto-pay"><div>Pay now (' + PCT + '%)<b>' + rs(q.pay_now) + '</b></div><div>Later (dispatch + delivery)<b>' + rs(q.before_dispatch) + '</b></div></div>' +
-        '<button class="mto-go" type="button" data-act="order"' + (closed || !q.install || !q.install.available ? ' disabled' : '') + '>' + (closed ? 'Orders open soon' : !(q.install && q.install.available) ? 'Enter your pincode' : 'Order now · pay ' + rs(q.pay_now)) + '</button>';
+        '<button class="mto-go" type="button" data-act="order"' + (closed || !q.install || !q.install.available ? ' disabled' : '') + '>' + (closed ? 'Orders open soon' : !(q.install && q.install.available) ? 'Enter your pincode' : 'Order now · pay ' + rs(q.pay_now)) + '</button>' + addBtn(closed || !q.install || !q.install.available);
       return;
     }
     el.innerHTML = '<div class="rw"><span>' + (m.unit === 'fixed' ? esc(q.size) + (q.rate || arr(m.materials).length > 1 ? ' + ' + esc(q.material) : '') : m.unit === 'seat' ? q.qty + '-seat bench' : q.panels ? q.panels.width + ' ft × ' + esc(o.h) + ' ft high, ' + esc(q.material) : q.qty + ' ' + UW(m.unit) + ' × ' + rs(q.rate)) + (q.min_charge_used ? ' (minimum)' : '') + '</span><span>' + rs(q.base) + '</span></div>' +
@@ -1347,10 +1352,13 @@
       '<div class="rw tt"><span>Total</span><span>' + rs(q.total) + '</span></div>' +
       '<div class="mto-pay"><div>Pay now (' + PCT + '%)<b>' + rs(q.pay_now) + '</b></div><div>Before dispatch' + (ins ? ' (rest + installation)' : '') + '<b>' + rs(q.before_dispatch) + '</b></div></div>' +
       (o.install && q.install && !q.install.available && /^\d{6}$/.test(o.pin) ? '<p class="mto-err" style="margin:10px 0 0">Installation isn’t available at ' + esc(o.pin) + ' yet: untick it to order without.</p>' : '') +
-      '<button class="mto-go" type="button" data-act="order"' + (needOk || closed || needPin || (o.install && q.install && !q.install.available) ? ' disabled' : '') + '>' + (closed ? 'Orders open soon' : needPin ? 'Enter your pincode' : needOk ? 'Confirm your size above' : 'Order now · pay ' + rs(q.pay_now)) + '</button>' +
+      '<button class="mto-go" type="button" data-act="order"' + (needOk || closed || needPin || (o.install && q.install && !q.install.available) ? ' disabled' : '') + '>' + (closed ? 'Orders open soon' : needPin ? 'Enter your pincode' : needOk ? 'Confirm your size above' : 'Order now · pay ' + rs(q.pay_now)) + '</button>' + addBtn(needOk || closed || needPin || (o.install && q.install && !q.install.available)) +
       '<p style="text-align:center;font-size:13px;color:#CFC8BD;margin:10px 0 0">Buying for a project or 5+ pieces? <a style="color:#F2B49C;cursor:pointer" data-act="bulk">Get a bulk quote</a></p>';
   }
 
+  function addBtn(off) {   // 190: keep shopping — the design goes into the cart with ready-to-ship items
+    return '<button class="mto-go mto-go2" type="button" data-act="addcart"' + (off ? ' disabled' : '') + ' style="margin-top:8px;background:transparent;border:1.5px solid currentColor">' + (S.editK ? 'Update cart' : 'Add to cart') + '</button>';
+  }
   function setDim(key, v) {   // 159: size from − / + or typed, kept inside the limits
     var cz = PRODS[S.id].cz, c = cz.cabin, lay = S.o.layout, lim = c[key] || {}, lo = num(lim.min) || 8, hi = num(lim.max) || (key === 'L' ? 40 : 20);
     lay[key] = Math.max(lo, Math.min(hi, Math.round(num(v) || lo)));
@@ -1407,54 +1415,168 @@
     if (a === 'close') { if (history.state && history.state.v === 'modal') return history.back(); return window.mtoClose(); }
     if (a === 'bulk') { window.mtoClose(); try { if (window.openBulk) return openBulk(S.id); } catch (er) {} return toast('Write to us on WhatsApp for a bulk quote'); }
     if (a === 'order') return order();
+    if (a === 'addcart') return addM(false);   // 190
   }
 
-  // ------------------------------------------------------------ checkout (its own: one design, 50% now)
-  window.MTO_BUY = null;
-  function order() {
+  // ------------------------------------------------------------ 190: Made to Order designs in the cart, with ready-to-ship items — one order, one payment
+  // Each design keeps its own size / options (MC, localStorage outrr_mcart). Site details (floor, lift, lifting) are asked once at checkout (SITE).
+  // Pay now = ready-to-ship items in full + PCT% of each design; the rest of the designs + installation before they are dispatched.
+  var MK = 'outrr_mcart', SK = 'outrr_msite', MC = [], SITE = {};
+  try { MC = JSON.parse(localStorage.getItem(MK) || '[]').filter(function (c) { return c && c.id && c.k && c.o; }); } catch (e) { MC = []; }
+  try { SITE = JSON.parse(localStorage.getItem(SK) || '{}') || {}; } catch (e) { SITE = {}; }
+  function mSave() { try { localStorage.setItem(MK, JSON.stringify(MC)); localStorage.setItem(SK, JSON.stringify(SITE)); } catch (e) {} }
+  function mLive() { return MC.filter(function (c) { return PRODS[c.id] && PRODS[c.id].cz; }); }
+  window.mtoCartLines = function () { return MC.slice(); };
+  function cfgOf(o) { return { n: o.n, l: o.l, w: o.w, h: o.h, size: o.size, material: o.material, colour: o.colour, addons: arr(o.addons).slice(), groups: Object.assign({}, o.groups || {}),
+    install: !!o.install, drawing: !!o.drawing, size_ok: !!o.size_ok, note: o.note, layout: o.layout ? cbClone(o.layout) : undefined }; }
+  function addM(go) {
     var x = PRODS[S.id], q = priceR(S.id, x.cz, S.o, PCT); if (!q.ok) return toast(q.error);
     if (x.oo === false) return toast('Orders for this maker open soon');
-    var o = S.o;
-    window.MTO_BUY = { id: S.id, o: { n: o.n, l: o.l, w: o.w, h: o.h, size: o.size, material: o.material, colour: o.colour, addons: o.addons.slice(), groups: Object.assign({}, o.groups || {}), install: !!o.install, drawing: !!o.drawing, size_ok: !!o.size_ok, note: o.note, layout: o.layout ? cbClone(o.layout) : undefined }, pin: o.pin };
-    window.mtoClose();
+    if (!S.o.drawing && !S.o.size_ok && x.cz.drawing !== 'always') return toast('Please confirm your size first');
+    var k = S.editK, i = -1; MC.forEach(function (c, j) { if (k && c.k === k) i = j; });
+    if (i < 0 && MC.length >= 5) return toast('Up to 5 Made to Order designs in one order');
+    var line = { k: i >= 0 ? k : 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), id: S.id, o: cfgOf(S.o), pin: S.o.pin };
+    if (i >= 0) MC[i] = line; else MC.push(line);
+    S.editK = null; mSave(); try { updBadge(); } catch (e) {}
+    try { if (window.otrack) otrack('add_to_cart', { sku: S.id, value: q.total }); } catch (e) {}
+    window.mtoClose(); try { if (S.studio) window.cbStudio(null); } catch (e) {}
+    if (go) return openCart();
+    toast(i >= 0 ? 'Cart updated ✓' : 'Added to cart ✓');
+    try { if (S.pdp) paint(); } catch (e) {}
+  }
+  function order() { addM(true); }
+  window.mtoAddCart = function () { if (!S) return; if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); addM(false); };
+  window.mtoCartRm = function (k) { MC = MC.filter(function (c) { return c.k !== k; }); mSave(); try { updBadge(); } catch (e) {} if (isOn('checkout')) { if (!MC.length && !CART.length) return openCart(); renderCheckout(); } else renderCart(); };
+  window.mtoCartEdit = function (k) { var c = MC.filter(function (z) { return z.k === k; })[0]; if (!c) return; window.__mtoEdit = { id: c.id, k: k, o: c.o, pin: c.pin };
+    if (PRODS[c.id].cz.unit === 'cabin') window.__cbsOpen = c.id; if (window.openProduct) window.openProduct(c.id); };
+  function isOn(v) { var e = document.getElementById(v); return !!e && e.style.display === 'block'; }
+  function coPin() { var e = document.getElementById('coPin'); return e ? e.value.trim() : ''; }
+  function mPin(c) { var p = isOn('checkout') ? coPin() : ''; return /^\d{6}$/.test(p) ? p : (c.pin || lastPin() || ''); }
+  function lineOpts(c) {
+    var x = PRODS[c.id], m = x.cz, o = {}, k; for (k in c.o) o[k] = c.o[k];
+    o.pin = mPin(c); o.zone = zoneOf(m.ships_from, o.pin); if (m.install && m.install.required) o.install = true;
+    o.floor = +SITE.floor || 0; o.lift_type = SITE.lift_type || 'none'; ['lift_w', 'lift_h', 'lift_d', 'lift_by'].forEach(function (f) { if (SITE[f]) o[f] = SITE[f]; });
+    o.lift = !!SITE.lift && o.floor > 0;
+    return o;
+  }
+  function mSum() {
+    var s = { lines: [], n: 0, ok: true, err: '', total: 0, now: 0, later: 0, inst: 0, pend: false, needPin: false };
+    mLive().forEach(function (c) { var x = PRODS[c.id], o = lineOpts(c), q = priceR(c.id, x.cz, o, PCT); s.lines.push({ c: c, x: x, o: o, q: q }); s.n++;
+      var bad = function (t) { s.ok = false; if (!s.err) s.err = t; };
+      if (!q.ok) return bad(short(x.n) + ': ' + q.error);
+      if (x.oo === false) bad(short(x.n) + ': orders open soon');
+      if (q.install && q.install.pending) s.pend = true;
+      if (q.delivery && q.delivery.fee == null) { s.needPin = true; bad('Enter your pincode'); }
+      if ((o.install || o.lift) && q.install && !q.install.available && !q.install.pending && /^\d{6}$/.test(o.pin)) bad((o.install ? 'Installation' : 'Lifting') + ' for ' + short(x.n) + ' isn’t available at ' + o.pin + '. Untick it or use another address.');
+      s.total += q.total; s.now += q.pay_now; s.later += q.before_dispatch; s.inst += q.install_fee || 0; });
+    return s;
+  }
+  function short(n) { return String(n || '').replace(/ — .*$/, ''); }
+  function specOf(x, o) {
+    return [x.cz.unit === 'cabin' && o.layout ? o.layout.L + ' × ' + o.layout.W + ' ft, your layout' : x.cz.unit === 'seat' ? o.n + ' seats' : x.cz.unit === 'fixed' ? o.size : [o.l, o.w].filter(Boolean).join(' × ') + ' ft' + (o.h ? ', ' + o.h + ' ft high' : ''), o.material, o.colour]
+      .concat(arr(o.addons)).concat(Object.keys(o.groups || {}).map(function (g) { return g + ': ' + o.groups[g]; })).filter(Boolean).join(' · ');
+  }
+  function mLineHTML(l) {
+    var x = l.x, q = l.q, o = l.c.o;
+    return '<div class="cline mline"><div class="im"><img src="' + esc(IMGS[x.img] || '') + '" alt=""></div><div class="inf"><div class="nm">' + esc(x.n) + ' <span class="mto-badge" style="font-size:9px;padding:3px 7px">Made to Order</span></div>' +
+      '<div class="vlab">' + esc(specOf(x, o)) + '</div><div class="vlab">' + (o.drawing ? 'Drawing to approve before production' : 'Made to the size you confirmed') + (o.install || (x.cz.install && x.cz.install.required) ? ' · with installation' : '') + '</div>' +
+      '<div class="pr">' + (q.ok ? rs(q.total) : '<span class="mto-err">' + esc(q.error) + '</span>') + '</div>' + (q.ok ? '<div class="vlab">Pay ' + rs(q.pay_now) + ' now · ' + rs(q.before_dispatch) + ' before dispatch</div>' : '') +
+      '<div class="row2"><span class="rm" onclick="mtoCartEdit(\'' + l.c.k + '\')">Edit design</span><span class="rm" onclick="mtoCartRm(\'' + l.c.k + '\')">Remove</span></div></div></div>';
+  }
+  function payLine(rts, s) {
+    return 'Pay <b>' + rs(rts + s.now) + '</b> now (' + (rts > 0 ? 'ready-to-ship items in full + ' : '') + PCT + '% of ' + (s.n > 1 ? 'each design' : 'the design') + '). The rest, <b>' + rs(s.later) + '</b>' + (s.inst ? ' with installation' : '') +
+      ', is paid before ' + (s.n > 1 ? 'the designs are' : 'it is') + ' dispatched: we email you the link.' + (rts > 0 ? ' Ready-to-ship items are dispatched straight away.' : '');
+  }
+  var amt = function (el) { return +String(el ? el.textContent : '').replace(/[^\d.]/g, '') || 0; };
+
+  // the badge counts the designs too
+  var _ub = window.updBadge;
+  window.updBadge = function () { _ub.apply(this, arguments); var n = CART.reduce(function (a, c) { return a + c.q; }, 0) + MC.length; ['cartn', 'cartn2'].forEach(function (id) { var e = document.getElementById(id); if (e) e.textContent = n; }); };
+  try { window.updBadge(); } catch (e) {}
+
+  // cart page: the designs on top, their price in the summary
+  var _rcart = window.renderCart;
+  window.renderCart = function () {
+    _rcart.apply(this, arguments);
+    var body = document.getElementById('cartBody'); if (!body || !mLive().length) return;
+    var s = mSum(), html = '<div class="mto-cart"><div class="cgrp">Made to Order <span>made for you · ' + PCT + '% now, the rest before dispatch</span></div>' + s.lines.map(mLineHTML).join('') + '</div>';
+    var cnt = document.getElementById('cartCnt'); if (cnt) cnt.textContent = (CART.reduce(function (a, c) { return a + c.q; }, 0) + s.n) + ' items';
+    var row = '<div class="r"><span>Made to Order (' + s.n + (s.n > 1 ? ' designs' : ' design') + ')</span><span>' + (s.ok || s.total ? rs(s.total) : '—') + '</span></div>';
+    if (!CART.length) {
+      body.innerHTML = '<div class="cartwrap"><div>' + html + '</div><div class="csum">' + row + '<div class="r tot"><span>Total</span><span>' + rs(s.total) + '</span></div>' +
+        '<div class="secline" style="margin-top:6px">' + payLine(0, s) + '</div><div class="cartcta"><button class="btn" onclick="openCheckout()">Proceed to Checkout</button></div></div></div>';
+      return;
+    }
+    var left = body.querySelector('.cartwrap > div'), pg = left && left.querySelector('.cprog'); if (pg) pg.insertAdjacentHTML('afterend', html); else if (left) left.insertAdjacentHTML('afterbegin', html);
+    var tot = body.querySelector('.csum .r.tot'); if (!tot) return; var rts = amt(tot.lastElementChild);
+    tot.insertAdjacentHTML('beforebegin', row); tot.lastElementChild.textContent = rs(rts + s.total);
+    tot.insertAdjacentHTML('afterend', '<div class="secline" style="margin-top:6px">' + payLine(rts, s) + '</div>');
+  };
+
+  // checkout: retail functions see only retail lines; the designs are added on top
+  var _ct = window.coTotals, _rc = window.renderCheckout, _po = window.placeOrder, _sp = window.coShipPaint, _ock = window.openCheckout, _csh = window.coSplitHTML, _cpl = window.coPayLabel, _nb = window.nearBlocked;
+  function retail(f) { var keep = CART; if (keep.some(function (c) { return c.mto; })) CART = keep.filter(function (c) { return !c.mto; }); try { return f(); } finally { CART = keep; } }
+  window.coTotals = function () {
+    var t = retail(function () { return _ct(); }); if (!mLive().length) return t;
+    var s = mSum(); t.m = s; t.rts = CART.length ? t.total : 0; t.total = t.rts + s.total; t.payNow = t.rts + s.now; t.items = (CART.length ? t.items : 0) + s.n; return t;
+  };
+  window.nearBlocked = function () { return retail(function () { return CART.length && _nb ? _nb() : false; }); };
+  window.coSplitHTML = function (t) { if (!t.m) return _csh(t); var s = t.m;
+    return '<div class="osum" style="margin-top:10px;padding:10px 12px;font-size:13px">' + (s.ok || !s.err ? payLine(t.rts, s) : '<div class="mto-warn">' + esc(s.err) + '</div>') + '</div>'; };
+  window.coPayLabel = function (t) { if (!t.m) return _cpl(t); var s = t.m; return s.ok ? 'Pay now · ' + rs(t.payNow) : s.needPin ? 'Enter your pincode' : 'Check your designs'; };
+  window.openCheckout = function () {
+    if (!mLive().length || CART.some(function (c) { return PRODS[c.id] && PRODS[c.id].pv; })) return _ock.apply(this, arguments);
     var go = function () { renderCheckout(); showView('checkout'); };
-    try { if (window.otrack) otrack('begin_checkout', { value: q.total, skus: [S.id] }); } catch (e) {}
+    try { if (window.otrack) otrack('begin_checkout', { value: coTotals().total, skus: CART.map(function (c) { return c.id; }).concat(MC.map(function (c) { return c.id; })) }); } catch (e) {}
     if (window.acRequire && !window.ASSIST && (window.OUTRR_SUPA || {}).url) return acRequire(go, 'Sign in to check out');   // 186
     go();
-  }
-  function coPin() { var e = document.getElementById('coPin'); return e ? e.value.trim() : ''; }
-  function buyQuote() { var b = window.MTO_BUY, x = b && PRODS[b.id]; if (!x) return null; var o = {}; for (var k in b.o) o[k] = b.o[k]; o.pin = coPin(); o.zone = zoneOf(x.cz.ships_from, o.pin); return priceR(b.id, x.cz, o, PCT); }
-
-  var _ct = window.coTotals, _rc = window.renderCheckout, _po = window.placeOrder, _sp = window.coShipPaint, _oc = window.openCart, _ock = window.openCheckout;
-  window.coTotals = function () {
-    if (!window.MTO_BUY) return _ct();
-    var q = buyQuote() || { ok: false };
-    return { sub: q.ok ? q.product : 0, mrp: q.ok ? q.product : 0, save: 0, coup: 0, code: null, ship: 0, loc: null, total: q.ok ? q.total : 0, items: 1, mq: q };
   };
-  var _csh = window.coSplitHTML, _cpl = window.coPayLabel;
-  window.coSplitHTML = function (t) { if (!window.MTO_BUY) return _csh(t); var q = t.mq || {}; if (!q.ok) return '<div class="mto-warn">' + esc(q.error || '') + '</div>';
-    return '<div class="osum" style="margin-top:10px;padding:10px 12px;font-size:13px">You pay <b>' + PCT + '% now (' + rs(q.pay_now) + ')</b>. The rest, ' + rs(q.before_dispatch) + (q.install_fee ? ' with the installation charge' : '') + ', is paid before dispatch: we email you the link when it is ready.' +
-      (window.MTO_BUY.o.install && q.install && !q.install.available && /^\d{6}$/.test(coPin()) ? '<div class="mto-warn">Installation isn’t available at ' + esc(coPin()) + '. Use the address where it is installed, or go back and untick installation.</div>' : '') + '</div>'; };
-  window.coPayLabel = function (t) { if (!window.MTO_BUY) return _cpl(t); var q = t.mq || {}; return q.ok ? 'Pay ' + PCT + '% now · ' + rs(q.pay_now) : 'Check the size'; };
   window.renderCheckout = function () {
-    if (!window.MTO_BUY) return _rc();
-    var b = window.MTO_BUY, x = PRODS[b.id], keep = CART;
-    CART = [{ id: b.id, q: 1 }];
-    try { _rc(); } finally { CART = keep; }
-    var pe = document.getElementById('coPin'); if (pe && !pe.value && /^\d{6}$/.test(b.pin || '')) pe.value = b.pin;   // the pincode typed on the design page
-    var o = b.o, spec = [x.cz.unit === 'cabin' ? o.layout.L + ' × ' + o.layout.W + ' ft, your layout' : x.cz.unit === 'seat' ? o.n + ' seats' : x.cz.unit === 'fixed' ? o.size : [o.l, o.w].filter(Boolean).join(' × ') + ' ft' + (o.h ? ', ' + o.h + ' ft high' : ''), o.material, o.colour].concat(o.addons).concat(Object.keys(o.groups || {}).map(function (g) { return g + ': ' + o.groups[g]; })).filter(Boolean).join(' · ');
-    var cl = document.querySelector('#coBody .coline');
-    if (cl) cl.innerHTML = '<div class="im"><img src="' + esc(IMGS[x.img] || '') + '" alt=""></div><div><b>' + esc(x.n) + '</b> <span class="mto-badge" style="font-size:9px;padding:3px 7px">Made to Order</span>' +
-      '<div class="co-mto">' + esc(spec) + '<br>' + (o.drawing ? 'Drawing to approve before production' : 'Made to the size you entered (you confirmed it)') + (o.install ? '<br>With installation' : '') + '</div></div><div class="q" id="coMtoAmt"></div>';
-    var dl = document.getElementById('coDlvTxt'); if (dl) dl.innerHTML = (hasDlv(x.cz) ? '<b>Delivery to your pincode</b>' : '<b>Delivery included</b>') + '<span>Made in ' + esc(daysTxt(x.cz.make_days) || 'a few weeks') + ', then dispatched with tracking</span>';
-    siteBox(dl && dl.closest('.cobox'));   // 185
-    var asm = dl && dl.closest('.cobox') && dl.closest('.cobox').querySelector('.secline'); if (asm) asm.textContent = o.install ? 'Installed by ' + (x.cz.install.by === 'brand' ? (x.br || 'the maker') : 'a verified outrr partner') + ' after delivery.' : 'Fixing is yours: a fixing guide comes with it.';
-    mtoCoPaint();
+    _rc.apply(this, arguments); var L = mLive(); if (!L.length) return;
+    var sum = document.querySelector('#coBody .osum'); if (!sum) return;
+    var pe = document.getElementById('coPin'); if (pe && !pe.value) { var p0 = (L.filter(function (c) { return /^\d{6}$/.test(c.pin || ''); })[0] || {}).pin; if (p0) pe.value = p0; }   // the pincode typed on the design page
+    sum.insertAdjacentHTML('beforebegin', L.map(function (c) { var x = PRODS[c.id];
+      return '<div class="coline mco"><div class="im"><img src="' + esc(IMGS[x.img] || '') + '" alt=""></div><div><b>' + esc(x.n) + '</b> <span class="mto-badge" style="font-size:9px;padding:3px 7px">Made to Order</span>' +
+        '<div class="co-mto">' + esc(specOf(x, c.o)) + '<br>' + (c.o.drawing ? 'Drawing to approve before production' : 'Made to the size you entered (you confirmed it)') + '</div></div><div class="q" data-mk="' + c.k + '"></div></div>'; }).join(''));
+    if (!CART.length) [].slice.call(sum.querySelectorAll('.r')).forEach(function (r) { if (!r.classList.contains('tot')) r.remove(); });
+    var tot = sum.querySelector('.r.tot'); if (tot) tot.insertAdjacentHTML('beforebegin', '<div id="coMtoR"></div>');
+    var dl = document.getElementById('coDlvTxt'), dbox = dl && dl.closest('.cobox');
+    if (dbox) { var days = L.map(function (c) { return daysTxt(PRODS[c.id].cz.make_days); }).filter(Boolean);
+      dbox.insertAdjacentHTML('beforeend', '<div class="secline" id="coMtoDlv">Made to Order: made in ' + esc(days[0] || 'a few weeks') + ', then dispatched with tracking' + (CART.length ? '; ready-to-ship items go out straight away.' : '.') + '</div>'); }
+    var asm = dbox && dbox.querySelector('.secline'); if (asm && !CART.length) asm.textContent = L.some(function (c) { return c.o.install || (PRODS[c.id].cz.install && PRODS[c.id].cz.install.required); }) ? 'Installed by a verified outrr partner after delivery (where you chose installation).' : 'Fixing is yours: a fixing guide comes with it.';
+    siteBox(dbox);
+    mCoPaint();
   };
-  // 185: checkout — site details for installation / lifting (wizard box above delivery). Mandatory ones come pre-ticked.
+  window.coShipPaint = function () { _sp.apply(this, arguments); if (mLive().length) mCoPaint(); };
+  function mCoPaint() {
+    var t = window.coTotals(), s = t.m; if (!s) return;
+    s.lines.forEach(function (l) { var e = document.querySelector('#coBody .q[data-mk="' + l.c.k + '"]'); if (e) e.textContent = l.q.ok ? rs(l.q.total) : ''; });
+    var box = document.getElementById('coMtoR');
+    if (box) box.innerHTML = s.lines.map(function (l) { var q = l.q, o = l.o, R = function (a, b) { return '<div class="r"><span>' + a + '</span><span>' + b + '</span></div>'; };
+      if (!q.ok) return R(esc(short(l.x.n)), '<span class="mto-err">' + esc(q.error) + '</span>');
+      var h = R(esc(short(l.x.n)) + (s.n > 1 ? ' (' + esc(specOf(l.x, l.c.o).split(' · ')[0]) + ')' : ' (design)'), rs(q.product)) + (q.delivery ? R('· Delivery', q.delivery.fee == null ? 'Enter pincode' : rs(q.delivery_fee)) : '');
+      if (o.install || o.lift) h += q.install && (q.install.available || q.install.pending || q.install.parts) ? instRows(q, 'r') : R(o.install ? '· Installation' : '· Lifting', /^\d{6}$/.test(o.pin) ? 'Not available here' : 'Enter pincode');
+      return h; }).join('');
+    var tot = document.getElementById('coTot'); if (tot) tot.textContent = s.ok || s.total ? rs(t.total) : '—';
+    var sp = document.getElementById('coSplit'); if (sp) sp.innerHTML = window.coSplitHTML(t);
+    var bt = document.getElementById('coPlace'); if (bt && !bt.disabled) bt.textContent = window.coPayLabel(t);
+  }
+  window.placeOrder = async function () {
+    var L = mLive(); if (!L.length) return _po();
+    var s = mSum();
+    if (/^\d{6}$/.test(coPin())) { if (s.pend) return toast('Working out the installation charge — try again in a moment'); if (!s.ok) return toast(s.err); }
+    var keep = CART;
+    CART = keep.filter(function (c) { return !c.mto; }).concat(s.lines.map(function (l) { var o = {}, k; for (k in l.o) if (k !== 'zone' && k !== 'pin') o[k] = l.o[k]; return { id: l.c.id, q: 1, mto: o }; }));
+    try { await _po(); } finally {
+      if (!CART.length) { MC = []; mSave(); try { updBadge(); } catch (e) {} }   // placed: retail + designs in one order
+      else CART = keep;
+    }
+  };
+
+  // 185: checkout — site details for installation / lifting, asked once for every design. Mandatory ones come pre-ticked.
   var FLOORS = ['Ground'].concat(Array.from({ length: 30 }, function (_, i) { return 'Floor ' + (i + 1); }));
   function siteBox(anchor) {
-    var b = window.MTO_BUY, x = b && PRODS[b.id], m = x && x.cz; if (!m || !anchor) return;
+    if (!anchor) return;
     if (!document.getElementById('mtoSiteCss')) { var st = document.createElement('style'); st.id = 'mtoSiteCss';
       st.textContent = '#mtoSite>div>div>label,#mtoSite>div>label.sl{display:block;font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#6A6258;margin:0 0 6px}' +
         '#mtoSite select,#mtoSite input[inputmode]{width:100%;padding:11px 12px;border:1px solid #DDD5C8;border-radius:10px;font:inherit;background:#fff}#mtoSite .mto-chk{margin-top:10px}';
@@ -1464,51 +1586,31 @@
     siteDraw();
   }
   function siteDraw() {
-    var b = window.MTO_BUY, x = PRODS[b.id], m = x.cz, o = b.o, box = document.getElementById('mtoSite'); if (!box) return;
-    var off = m.install && m.install.offered, req = off && m.install.required; if (req) o.install = true;
-    var q = buyQuote() || {}, lf = q.install && q.install.parts && q.install.parts.lifting, fl = +o.floor || 0;
-    var chk = function (k, on, dis, txt) { return '<label class="mto-chk"><input type="checkbox" data-s="' + k + '"' + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '><span>' + txt + '</span></label>'; };
-    box.innerHTML = '<h3>Site details</h3><div class="secline">For installation and getting it up to the floor. Mandatory items are already ticked.</div>' +
-      (off ? chk('install', o.install, req, req ? '<b>Installation included</b> (required for this design)' : '<b>Installation</b> by a verified outrr partner') : '') +
+    var box = document.getElementById('mtoSite'); if (!box) return;
+    var s = mSum(), fl = +SITE.floor || 0, anyInst = false, lf = null;
+    var chk = function (k, on, dis, txt, key) { return '<label class="mto-chk"><input type="checkbox" data-s="' + k + '"' + (key ? ' data-mk="' + key + '"' : '') + (on ? ' checked' : '') + (dis ? ' disabled' : '') + '><span>' + txt + '</span></label>'; };
+    var ins = s.lines.map(function (l) { var m = l.x.cz, off = m.install && m.install.offered, req = off && m.install.required; if (!off) return ''; if (l.o.install) anyInst = true;
+      var p = l.q.install && l.q.install.parts && l.q.install.parts.lifting; if (p && (p.options || []).length > 1 && !lf) lf = p;
+      var nm = s.n > 1 ? ' — ' + esc(short(l.x.n) + ' (' + specOf(l.x, l.c.o).split(' · ')[0] + ')') : '';
+      return chk('install', l.o.install, req, req ? '<b>Installation included' + nm + '</b> (required for this design)' : '<b>Installation' + nm + '</b> by a verified outrr partner', l.c.k); }).join('');
+    var allInst = s.lines.every(function (l) { return l.o.install; });
+    box.innerHTML = '<h3>Site details</h3><div class="secline">For installation and getting ' + (s.n > 1 ? 'the designs' : 'it') + ' up to the floor. Mandatory items are already ticked.</div>' + ins +
       '<div class="frow2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div><label>Where does it go?</label><select data-s="floor">' + FLOORS.map(function (f, i) { return '<option value="' + i + '"' + (i === fl ? ' selected' : '') + '>' + f + '</option>'; }).join('') + '</select></div>' +
-      (fl > 0 ? '<div><label>Lift in the building?</label><select data-s="lift_type">' + [['none', 'No lift'], ['small', 'Small (passenger)'], ['big', 'Big (service / stretcher)'], ['custom', 'I know its size']].map(function (t) { return '<option value="' + t[0] + '"' + ((o.lift_type || 'none') === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select></div>' : '<div></div>') + '</div>' +
-      (fl > 0 && o.lift_type === 'custom' ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">' + [['lift_w', 'Door width ft'], ['lift_h', 'Door height ft'], ['lift_d', 'Inside depth ft']].map(function (f) { return '<div><label>' + f[1] + '</label><input inputmode="decimal" data-s="' + f[0] + '" value="' + esc(o[f[0]] || '') + '"></div>'; }).join('') + '</div>' : '') +
-      (fl > 0 ? (o.install ? '<p class="mto-hint" style="margin:8px 0 0">Getting it up to floor ' + fl + ' is part of the installation.</p>' : chk('lift', o.lift, false, '<b>Get it up to floor ' + fl + '</b> (optional — else it is delivered on the ground floor)')) : '') +
-      (lf && (lf.options || []).length > 1 ? '<div style="margin-top:10px"><label class="sl">How it goes up' + (lf.required ? ' <span class="small">(long / heavy pieces' + (lf.floor > 3 ? ' or high floor' : '') + ': hydra or chain pulley needed)</span>' : '') + '</label><div style="display:flex;gap:14px;flex-wrap:wrap">' +
+      (fl > 0 ? '<div><label>Lift in the building?</label><select data-s="lift_type">' + [['none', 'No lift'], ['small', 'Small (passenger)'], ['big', 'Big (service / stretcher)'], ['custom', 'I know its size']].map(function (t) { return '<option value="' + t[0] + '"' + ((SITE.lift_type || 'none') === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select></div>' : '<div></div>') + '</div>' +
+      (fl > 0 && SITE.lift_type === 'custom' ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">' + [['lift_w', 'Door width ft'], ['lift_h', 'Door height ft'], ['lift_d', 'Inside depth ft']].map(function (f) { return '<div><label>' + f[1] + '</label><input inputmode="decimal" data-s="' + f[0] + '" value="' + esc(SITE[f[0]] || '') + '"></div>'; }).join('') + '</div>' : '') +
+      (fl > 0 ? (allInst ? '<p class="mto-hint" style="margin:8px 0 0">Getting it up to floor ' + fl + ' is part of the installation.</p>' : chk('lift', SITE.lift, false, '<b>Get ' + (anyInst ? 'the other designs' : s.n > 1 ? 'the designs' : 'it') + ' up to floor ' + fl + '</b> (optional — else delivered on the ground floor)')) : '') +
+      (lf ? '<div style="margin-top:10px"><label class="sl">How it goes up' + (lf.required ? ' <span class="small">(long / heavy pieces' + (lf.floor > 3 ? ' or high floor' : '') + ': hydra or chain pulley needed)</span>' : '') + '</label><div style="display:flex;gap:14px;flex-wrap:wrap">' +
         lf.options.map(function (k) { return '<label class="mto-chk" style="margin:0"><input type="radio" name="liftby" data-s="lift_by" value="' + k + '"' + (lf.method === k ? ' checked' : '') + '><span>' + { labour: 'By labour', hydra: 'Hydra', chain: 'Chain pulley' }[k] + '</span></label>'; }).join('') + '</div></div>' : '');
   }
   function siteSet(e) {
-    var t = e.target, k = t.getAttribute('data-s'); if (!k) return; var o = window.MTO_BUY.o;
-    if (k === 'install' || k === 'lift') o[k] = t.checked; else if (k === 'floor') { o.floor = +t.value; if (!o.floor) { o.lift = false; o.lift_type = 'none'; } } else o[k] = t.value;
-    if (e.type === 'change') siteDraw(); mtoCoPaint();
+    var t = e.target, k = t.getAttribute('data-s'); if (!k) return;
+    if (k === 'install') { var c = MC.filter(function (z) { return z.k === t.getAttribute('data-mk'); })[0]; if (c) c.o.install = t.checked; }
+    else if (k === 'lift') SITE.lift = t.checked;
+    else if (k === 'floor') { SITE.floor = +t.value; if (!SITE.floor) { SITE.lift = false; SITE.lift_type = 'none'; } }
+    else SITE[k] = t.value;
+    mSave(); if (e.type === 'change') siteDraw(); mCoPaint();
   }
-  function mtoCoPaint() {
-    var t = window.coTotals(), q = t.mq || {}, sum = document.querySelector('#coBody .osum');
-    if (sum) {
-      var rows = '<div class="r"><span>Design</span><span>' + (q.ok ? rs(q.product) : '—') + '</span></div>' +
-        (window.MTO_BUY.o.install || (window.MTO_BUY.o.lift && +window.MTO_BUY.o.floor > 0) ? (q.ok && q.install && (q.install.available || q.install.pending || q.install.parts) ? instRows(q, 'r') : '<div class="r"><span>Installation</span><span>' + (/^\d{6}$/.test(coPin()) ? 'Not available here' : 'Enter pincode') + '</span></div>') : '') +
-        '<div class="r"><span>Delivery</span>' + (!q.delivery ? '<span class="grn">Included</span>' : q.delivery.fee == null ? '<span>Enter pincode</span>' : '<span>' + rs(q.delivery_fee) + '</span>') + '</div><div class="r tot"><span>Total</span><span id="coTot">' + (q.ok ? rs(q.total) : '—') + '</span></div>';
-      sum.innerHTML = rows;
-    }
-    var amt = document.getElementById('coMtoAmt'); if (amt) amt.textContent = q.ok ? rs(q.product) : '';
-    var sp = document.getElementById('coSplit'); if (sp) sp.innerHTML = window.coSplitHTML(t);
-    var bt = document.getElementById('coPlace'); if (bt && !bt.disabled) bt.textContent = window.coPayLabel(t);
-  }
-  window.coShipPaint = function () { if (!window.MTO_BUY) return _sp(); mtoCoPaint(); };
-  var _nb = window.nearBlocked; window.nearBlocked = function () { return window.MTO_BUY ? false : (_nb ? _nb() : false); };
-  window.openCart = function () { window.MTO_BUY = null; return _oc.apply(this, arguments); };
-  window.openCheckout = function () { window.MTO_BUY = null; return _ock.apply(this, arguments); };
-  window.placeOrder = async function () {
-    if (!window.MTO_BUY) return _po();
-    var b = window.MTO_BUY, q = buyQuote();
-    if (q && q.ok && b.o.install && q.install && !q.install.available && /^\d{6}$/.test(coPin())) return toast('Installation isn’t available at this pincode');
-    var keep = CART, line = { id: b.id, q: 1, mto: b.o };
-    CART = [line];
-    try { await _po(); } finally {
-      if (!CART.length) { CART = keep; try { updBadge(); } catch (e) {} window.MTO_BUY = null; }   // placed: the retail cart comes back untouched
-      else CART = keep;
-    }
-  };
+  function mRepaint(id) { if (!mLive().some(function (c) { return c.id === id; })) return; if (isOn('checkout')) { siteDraw(); mCoPaint(); } else if (isOn('cart')) renderCart(); }
 
   // ------------------------------------------------------------ 172: Made to Order prices open after sign-in (email code + name, mobile, city).
   // The first price check makes the customer's CRM lead; every later price check / product view / login lands on it.
