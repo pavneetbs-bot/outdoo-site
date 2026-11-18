@@ -832,6 +832,7 @@ body{padding-bottom:78px}
 sec2,.sec2{display:block;padding:30px 0 6px}
 
 /* hero v2 */
+#obnHero:not([hidden]) ~ .hero2{display:none}
 .hero2{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/4.1;margin:14px 0 6px}
 .hero2 .im{position:absolute;inset:0}
 .hero2 .im img{width:100%;height:100%;object-fit:cover}
@@ -1146,6 +1147,11 @@ header{position:static!important}
 .ad-strip .ad-tx{flex:1;min-width:0}.ad-strip .ad-h{font-size:17px}.ad-strip .ad-h em{display:inline}.ad-strip p{font-size:12.5px;margin-top:4px;-webkit-line-clamp:1}
 .ad-strip .ad-arr{font-size:22px;color:var(--ac)}
 #pdp .adslot{margin:14px 0}
+.ad-hero{height:300px!important;cursor:default}
+.ad-hero .ad-h{font-size:38px!important;margin-top:8px}
+.ad-hero .ad-line{display:block;margin-top:10px;font-size:17px;font-weight:700;color:var(--ac)}
+.ad-hero p{-webkit-line-clamp:2!important}
+.ad-w .ad-ims img{object-position:center 60%}
 @media(max-width:760px){
   .adslot{margin:16px 0}
   .ad-w,.ad-w[data-slot=H2],.ad-w[data-slot=C1]{display:block;height:auto;aspect-ratio:16/7}
@@ -1155,7 +1161,8 @@ header{position:static!important}
   .ad-w[data-slot=H2]:before{background:linear-gradient(180deg,var(--bg) 0%,var(--bg) 26%,transparent 62%)}
   .ad-w .ad-tx,.ad-w[data-slot=H2] .ad-tx{position:relative;z-index:2;width:62%;height:100%;padding:14px 16px;justify-content:center}
   .ad-w[data-slot=H2] .ad-tx{width:100%;height:auto;padding:22px 20px}
-  .ad-w .ad-h,.ad-w[data-slot=C1] .ad-h{font-size:19px}.ad-w[data-slot=H2] .ad-h{font-size:30px}
+  .ad-w .ad-h,.ad-w[data-slot=C1] .ad-h{font-size:19px}
+  .ad-hero{height:auto!important;aspect-ratio:16/10!important}.ad-hero .ad-h{font-size:24px!important}.ad-hero .ad-line{font-size:13.5px;margin-top:5px}.ad-hero .ad-tx{width:70%!important}.ad-w[data-slot=H2] .ad-h{font-size:30px}
   .ad-w p{display:none}.ad-w[data-slot=H2] p{display:-webkit-box;font-size:13.5px}
   .ad-w .ad-btn{margin-top:8px;padding:7px 13px;font-size:12px}
   .adslot[data-slot=H3]{grid-template-columns:1fr;gap:12px}
@@ -1768,26 +1775,11 @@ header{position:static!important}
   <div class="mcircles" id="mcircles"></div>
 </div>
 
-<div class="obn-hero" id="obnHero" hidden><div class="obn-track">
-    <div class="obn ob-fest" data-from="" data-to="2026-11-10T00:00:00+05:30" data-act="" aria-label="The Festive Sale: flat ₹1,000 off on orders above ₹8,000 with code FESTIVE1000, till 9 November">
-      <span class="ob-spark" aria-hidden="true"></span>
-      <div class="ob-tx">
-        <span class="ob-eye">The Festive Sale · till 9 Nov</span>
-        <h2 class="ob-h">Light up Diwali.<b><small>Flat</small> ₹1,000 off</b></h2>
-        <p class="ob-p">On every order above ₹8,000: fire pits, BBQs and handwoven cane lights.</p>
-        <span class="ob-code">Use code <b>FESTIVE1000</b><button type="button" data-copy="FESTIVE1000">Copy</button></span>
-        <div class="ob-btns"><span class="ob-btn" data-go="col:fire-pits" role="link" tabindex="0">Shop fire pits →</span><span class="ob-btn ghost" data-go="col:lighting" role="link" tabindex="0">Shop cane lights</span></div>
-        <div class="ob-ends" data-ends="2026-11-10T00:00:00+05:30"></div>
-      </div>
-      <div class="ob-art" aria-hidden="true">
-        <span class="ob-fc a"><img src="img/banners/lt-lotus.jpg" alt="" fetchpriority="high"></span>
-        <span class="ob-fc b"><img src="img/banners/fp-flame.jpg" alt="" fetchpriority="high"></span>
-        <span class="ob-fc c"><img src="img/banners/lt-tiered.jpg" alt="" fetchpriority="high"></span>
-      </div>
-    </div>
+<div class="obn-hero" id="obnHero"><div class="obn-track">
+    
     <a class="obn ob-s" style="--bg:#1F2A24;--fg:#fff;--ac:#E9C46A" data-from="" data-to="" data-act="col:cabins" role="link" tabindex="0" aria-label="A glass room for winter sun. Design your glass house">
       <div class="ob-tx"><span class="ob-eye">Winter build season · Cabins &amp; Glass Houses</span><h2 class="ob-h">A glass room for<br><em>winter sun.</em></h2><p class="ob-p">Sit in the sun on cold mornings. Glass houses and garden cabins, designed to your size.</p><span class="ob-btn">Design yours →</span></div>
-      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-glasshouse.jpg" alt="" loading="lazy" class="w2"></div>
+      <div class="ob-ims" aria-hidden="true"><img src="img/banners/mto-glasshouse.jpg" alt="" fetchpriority="high" class="w2"></div>
     </a>
     <a class="obn ob-s" style="--bg:#262422;--fg:#fff;--ac:#F4C76B" data-from="" data-to="" data-act="col:bar-counters" role="link" tabindex="0" aria-label="Host the New Year outdoors. Bar counters and outdoor kitchens">
       <div class="ob-tx"><span class="ob-eye">New Year · Bar Counters &amp; Outdoor Kitchens</span><h2 class="ob-h">Host the New Year<br><em>outdoors.</em></h2><p class="ob-p">Bar counters, BBQ stations and pizza-oven counters, made to your length for terrace parties.</p><span class="ob-btn">Plan your bar →</span></div>
@@ -1821,28 +1813,11 @@ header{position:static!important}
       <div class="ob-tx"><span class="ob-eye">Handwoven by artisans · from ₹1,450</span><h2 class="ob-h">Cane &amp; wicker<br><em>lights.</em></h2><p class="ob-p">Pendants and lanterns that throw a warm, woven glow across balconies, verandas and pergolas.</p><span class="ob-btn">Shop the lights →</span></div>
       <div class="ob-ims" aria-hidden="true"><img src="img/banners/lt-globe.jpg" alt="" loading="lazy"><img src="img/banners/lt-petal.jpg" alt="" loading="lazy"></div>
     </a>
-    <a class="obn ob-peek" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="spaces" role="link" tabindex="0" aria-label="Take a sneak peek. Shop this Dussehra. Explore the store">
-      <div class="ob-tx">
-        <span class="ob-pill">India's first marketplace for outdoors</span>
-        <h2 class="ob-h">Take a sneak peek.<br><em>Shop this Dussehra.</em></h2>
-        <p class="ob-p">Furniture, decor, lights and planters for every balcony, terrace and lawn. Direct from the manufacturer.</p>
-        <span class="ob-btn">Explore the store →</span>
-      </div>
-      <div class="ob-art"><span class="ob-arc"></span>
-        <span class="ob-card l"><img src="img/banners/ph-garden-night.jpg" alt="Garden lounge chair with glowing lanterns" fetchpriority="high"></span>
-        <span class="ob-card r"><img src="img/banners/ph-terrace-sunset.jpg" alt="Rooftop lounge set at sunset" fetchpriority="high"></span>
-        <span class="ob-tag">Live 20.10 · outrr.in</span>
-      </div>
-    </a>
-    <div class="obn ob-cd" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="" aria-label="outrr opens on 20 October">
-      <img class="ob-bg" src="img/banners/ph-night.jpg" alt="" loading="lazy">
-      <div class="ob-tx">
-        <span class="ob-eye">outrr opens in</span>
-        <div class="ob-tiles"><span class="obn-cd" data-cd="d"><b>--</b><i>Days</i></span><span class="obn-cd" data-cd="h"><b>--</b><i>Hours</i></span><span class="obn-cd" data-cd="m"><b>--</b><i>Mins</i></span><span class="obn-cd" data-cd="s"><b>--</b><i>Secs</i></span></div>
-        <p class="ob-p">India's first outdoor marketplace opens this <b>Dussehra, 20 Oct</b>.</p>
-      </div>
-    </div>
+    
+    
   </div><div class="obn-dots" role="tablist" aria-label="Banners"></div></div>
+<script>/* today's slides only, before the first paint (no flash of old / first-day banners) */
+(function(){var n=Date.now(),h=document.getElementById('obnHero');h.querySelectorAll('.obn').forEach(function(a){var f=a.getAttribute('data-from'),t=a.getAttribute('data-to');if((f&&n<new Date(f).getTime())||(t&&n>=new Date(t).getTime()))a.remove();});if(!h.querySelector('.obn'))h.hidden=true;})();</script>
 
     <div class="hero2" onclick="goSpaces()">
     <div class="im"><img data-img="HERO" alt="Outdoor living"></div>
@@ -1912,15 +1887,7 @@ header{position:static!important}
       </div>
     </a></div>
 
-<div class="obn-sec"><a class="obn ob-kit" data-from="" data-to="2026-10-20T00:00:00+05:30" data-act="pkg" role="link" tabindex="0" aria-label="Pick a theme. Get the whole look. See room packages">
-      <div class="ob-ph"><img src="img/banners/ph-lounge.jpg" alt="Terrace lounge with planters" loading="lazy"></div>
-      <div class="ob-tx">
-        <span class="ob-eye">Room packages</span>
-        <h2 class="ob-h">Pick a theme.<br>Get the whole look.</h2>
-        <p class="ob-p">Ready-made sets for balconies, terraces and gardens, at bundle prices.</p>
-        <span class="ob-btn">See room packages →</span>
-      </div>
-    </a></div>
+
 
     <div class="sec2"><div class="adslot" data-slot="H2" hidden></div></div>
   <div class="sec2">
@@ -1940,18 +1907,10 @@ header{position:static!important}
   </div>
 
   <div class="sec2">
-    <a class="obn ob-lights" data-from="" data-to="2026-11-10T00:00:00+05:30" data-act="col:lighting" role="link" tabindex="0" aria-label="Light up your Diwali, the handwoven way. Shop cane and wicker lights">
-      <div class="ob-tx">
-        <span class="ob-eye">Dussehra to Diwali</span>
-        <h2 class="ob-h">Light up Diwali,<br><em>the handwoven way.</em></h2>
-        <p class="ob-p">Cane pendants and wicker lanterns for a warm festive glow. Flat ₹1,000 off above ₹8,000 with <b>FESTIVE1000</b>.</p>
-        <span class="ob-btn">Shop festive lights →</span>
-      </div>
-      <div class="ob-tri" aria-hidden="true"><span><img src="img/banners/lt-oval.jpg" alt="" loading="lazy"></span><span><img src="img/banners/lt-drum.jpg" alt="" loading="lazy"></span><span><img src="img/banners/lt-lotus.jpg" alt="" loading="lazy"></span></div>
-    </a>
+    
         <div class="bcard big" data-obn-alt onclick="openCol('lighting')" style="margin-bottom:0">
-      <div class="im"><img data-img="PARTY" alt="Diwali"></div>
-      <div class="tx"><h3>Light up this Diwali</h3></div><span class="sn">Festive lighting →</span></div>
+      <div class="im"><img data-img="PARTY" alt="Warm outdoor lights"></div>
+      <div class="tx"><h3>Warm light for winter evenings</h3></div><span class="sn">Shop outdoor lights →</span></div>
   </div>
 
   <div class="sec2">
@@ -2126,7 +2085,7 @@ header{position:static!important}
     <div><div class="fh">Popular Searches</div>
       <a href="/c/furniture/" onclick="event.preventDefault();openCol('furniture')">Terrace furniture online India</a>
       <a href="/c/furniture/" onclick="event.preventDefault();openCol('furniture')">Balcony furniture Delhi NCR</a>
-      <a href="/c/lighting/" onclick="event.preventDefault();openCol('lighting')">Diwali outdoor lights</a>
+      <a href="/c/lighting/" onclick="event.preventDefault();openCol('lighting')">Outdoor lights</a>
       <a href="/c/planters/" onclick="event.preventDefault();openCol('planters')">Vertical garden wall planters</a>
       <a href="/c/furnishings/" onclick="event.preventDefault();openCol('furnishings')">Waterproof outdoor rugs</a>
       <a href="/c/shade/" onclick="event.preventDefault();openCol('shade')">Cantilever garden umbrella</a>
@@ -2744,14 +2703,14 @@ const PRODS = {
 const COLS = {
  art: {t:'Art & Sculpture', tag:'Sculptures, wall art & landscape elements', off:'NEW COLLECTION', img:'ABUDDHA',
        offer:'Outdoor-grade composites · Made-to-order sizes & colours'},
- furniture:  {t:'Outdoor Furniture',      tag:'Lounges, dining, chairs & more',      off:'UP TO 40% OFF',      img:'BFURN',
-              offer:'Extra 5% off with OUTRR5 · Free assembly on lounge & dining sets'},
- shade:      {t:'Shade & Pergolas',       tag:'Umbrellas, gazebos & canopies',       off:'MONSOON READY',      img:'COURTYARD',
-              offer:'Extra 5% off with OUTRR5 · UV-proof fabrics on all shade products'},
+ furniture:  {t:'Outdoor Furniture',      tag:'Lounges, dining, chairs & more',      off:'MADE TO ORDER',      img:'BFURN',
+              offer:'Made in your frame & finish · Free design help on WhatsApp'},
+ shade:      {t:'Shade & Pergolas',       tag:'Umbrellas, gazebos & canopies',       off:'BUILD THIS WINTER',  img:'COURTYARD',
+              offer:'Made to your size · Free design help on WhatsApp'},
  lighting:   {t:'Outdoor Lighting',       tag:'String lights, lamps & lanterns',     off:'FROM ₹999',          img:'PARTY',
-              offer:'Buy 2 get 5% extra off on all lighting · Code OUTRR5 stacks'},
+              offer:'Extra 5% off with OUTRR5 · Delivered across India'},
  planters:   {t:'Planters & Garden',      tag:'Planters, vertical gardens & greens', off:'NEW COLLECTION',     img:'FOLIAGE',
-              offer:'Free jute plant covers with orders above ₹2,999'},
+              offer:'Made to your size · Delivered across India'},
  furnishings:{t:'Soft Furnishings',       tag:'Cushions, rugs, throws & covers',     off:'UP TO 30% OFF',      img:'CUSHION',
               offer:'All-weather fabrics · Extra 5% off with OUTRR5'}
 };
@@ -3646,7 +3605,7 @@ Object.assign(COLS, {
  'md-boho':{t:'Boho Weave',tag:'Rattan, cane, jute & handwoven textures',off:'SHOP BY MOOD',img:'CHAIR',
    offer:'Warm, textured, easy to live with',f:(x)=>/Weave|Woven|Braid|Cane|Rope|Wicker|Rug/i.test(x.n)},
  'md-festive':{t:'Festive Glow',tag:'Lanterns, chandeliers & string-light moments',off:'SHOP BY MOOD',img:'PARTY',
-   offer:'Diwali-ready outdoor lighting',f:(x)=>x.col==='lighting'},
+   offer:'Warm glow for winter evenings & parties',f:(x)=>x.col==='lighting'},
  'md-green':{t:'Green & Leafy',tag:'Planters, green walls & water features',off:'SHOP BY MOOD',img:'FOLIAGE',
    offer:'Bring the garden to your floor level',f:(x)=>x.col==='planters'||/Water|Fountain/i.test(x.n)},
  'md-mono':{t:'Modern Mono',tag:'Black, charcoal & stone-grey minimalism',off:'SHOP BY MOOD',img:'SOFTINT',
@@ -3699,9 +3658,10 @@ function catList(){
     const c=g[k]||(g[k]={k,t:COLS[k].t,n:0,mto:0,subs:{},ids:[],from:0}); c.n++; if(x.cz) c.mto++; c.ids.push(id);
     if(x.oo!==false&&x.p>0&&(!x.cz||(window.mtoOk&&mtoOk()))&&(!c.from||x.p<c.from)) c.from=x.p;
     const sb=subOf(id); if(sb&&sb!=='More'&&sb!=='All') c.subs[sb]=(c.subs[sb]||0)+1;});
-  const l=Object.values(g).map(c=>{const pin=CAT_PIC[c.k]; const top=(pin&&PRODS[pin]&&_pimg(pin)&&pin)||_byRank(c.ids).find(id=>_pimg(id));
+  const l=Object.values(g).map(c=>{const pin=CAT_PIC[c.k]; const PK=(window.OUTRR_PICS||{})[c.k], pk=PK&&PK[0], pkImg=pk?(pk.indexOf('p:')===0?_pimg(pk.slice(2)):'/img/banners/'+pk+'.jpg'):'';   // hand-picked (ads.js)
+    const top=(pin&&PRODS[pin]&&_pimg(pin)&&pin)||_byRank(c.ids).find(id=>_pimg(id));
     const ms=MENU.subs||{};
-    return {k:c.k,t:c.t,n:c.n,from:c.from,mto:c.mto>c.n/2,img:COLS[c.k].mimg||_pimg(top)||IMGS[COLS[c.k].img]||'',
+    return {k:c.k,t:c.t,n:c.n,from:c.from,mto:c.mto>c.n/2,img:COLS[c.k].mimg||pkImg||_pimg(top)||IMGS[COLS[c.k].img]||'',
       subs:Object.keys(c.subs).map(t=>({t,n:c.subs[t],so:(ms[c.k+'|'+t]||{}).sort})).sort((a,b)=>(a.so??1e4-a.n)-(b.so??1e4-b.n))};})
    .sort((a,b)=>{const i=CAT_ORDER.indexOf(a.k),j=CAT_ORDER.indexOf(b.k);return (i<0?99:i)-(j<0?99:j)||b.n-a.n;});
   _CATS={l,r:!!MENU.rank}; _CATS_N=ids.length; return l;
@@ -4323,7 +4283,7 @@ async function shareProduct(){
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=6"></script>
 <script src="/mto.js?v=21"></script>
-<script src="/ads.js?v=1" defer></script>
+<script src="/ads.js?v=2" defer></script>
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };
