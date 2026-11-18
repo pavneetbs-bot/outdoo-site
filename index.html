@@ -1185,6 +1185,9 @@ header{position:static!important}
 .wz-parts{margin:14px 0 6px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
 .wz-parts b{font-size:13.5px}.wz-parts ul{list-style:none;margin:8px 0 0;padding:0}
 .wz-parts li{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;padding:6px 0;border-top:1px solid #eee8de}.wz-parts li small{color:var(--muted);text-align:right}
+
+/* 177: desktop — details under the photos, and the shorter column stays in view while scrolling */
+@media(min-width:900px){#pdp .pdp-grid>div:first-child .pdp-det{margin-top:22px}}
 /* product page: full-width rows under the photo + details */
 .pdp-more,.pdp-tail{margin:6px 0 18px}.pdp-more .simrow{gap:16px}.pdp-tail .bulkstrip{margin-top:0!important}
 #pdp .pdp-tail .lwban{margin-top:14px}
@@ -2273,6 +2276,7 @@ header{position:static!important}
         <div><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="3"/><path d="M3 20 c0 -3.5 2.7 -5.5 6 -5.5 s6 2 6 5.5"/><path d="M16 8 l2 2 l4 -4"/></svg>Curated by the team behind 300+ outdoor projects</div>
         <div><svg viewBox="0 0 24 24"><path d="M4 12 a8 8 0 1 1 3 6.2"/><path d="M4 19 v-5 h5"/></svg>Damage at unboxing? Replaced free — no questions asked</div>
       </div>
+      <div class="pdp-det" id="pdDet">
       <div class="speccard">
         <h3>Product details</h3>
         <span class="curated"><b>outrr</b> Curated · picked by the team behind 300+ outdoor projects</span>
@@ -2310,6 +2314,7 @@ header{position:static!important}
           <li>Made-to-order items are not returnable once production starts</li>
           <li>Questions while assembling? Our team is on WhatsApp</li>
         </ul></div></div>
+      </div>
     </div>
   </div>
   <div class="pdp-more" id="pdMore">
@@ -4342,7 +4347,28 @@ async function shareProduct(){
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=6"></script>
 <script src="/mto.js?v=22"></script>
-<script src="/ads.js?v=5" defer></script>
+<script src="/ads.js?v=6" defer></script>
+<script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */
+(function(){
+  var mq=window.matchMedia('(min-width:900px)');
+  function place(){ var det=document.getElementById('pdDet'), g=document.querySelector('#pdp .pdp-grid'); if(!det||!g) return;
+    var left=g.children[0], right=g.querySelector('.pdp-info'); if(!left||!right) return;
+    if(mq.matches){ if(det.parentNode!==left) left.appendChild(det); }
+    else if(det.parentNode!==right){ var d=right.querySelector('.delvblock'); d?d.after(det):right.appendChild(det); }
+    stick(); }
+  function stick(){ var g=document.querySelector('#pdp .pdp-grid'); if(!g) return; var L=g.children[0], R=g.querySelector('.pdp-info');
+    [L,R].forEach(function(c){ c.style.position=''; c.style.top=''; });
+    if(!mq.matches||!L||!R) return;
+    var hl=L.offsetHeight, hr=R.offsetHeight, s=hl<hr?L:R, h=Math.min(hl,hr); if(Math.abs(hl-hr)<40) return;
+    var head=110, vh=window.innerHeight; s.style.position='sticky'; s.style.top=(h+head<=vh?head:Math.min(head,vh-h-16))+'px'; }
+  window.pdLayout=place;
+  (mq.addEventListener?mq.addEventListener('change',place):mq.addListener(place));
+  window.addEventListener('resize',function(){ clearTimeout(window._pdl); window._pdl=setTimeout(stick,150); });
+  document.addEventListener('DOMContentLoaded',function(){ var f=window.openProduct; if(typeof f==='function'&&!f._lay){ var g=function(){ var r=f.apply(this,arguments); setTimeout(place,0); setTimeout(stick,900); setTimeout(stick,2500); return r; }; g._lay=1; window.openProduct=g; }
+    if(window.ResizeObserver){ var ro=new ResizeObserver(function(){ clearTimeout(window._pdr); window._pdr=setTimeout(stick,120); }); var gg=document.querySelector('#pdp .pdp-grid'); if(gg) [].forEach.call(gg.children,function(c){ ro.observe(c); }); }
+    place(); });
+})();</script>
+
 <script>/* outrr tracking hooks: product views, cart, checkout (purchase is sent from placeOrder) */
 (function(){ if(!window.otrack) return;
   var price=function(id){ try{ return PRODS[id] ? PRODS[id].p : null }catch(e){ return null } };

@@ -104,7 +104,8 @@
     var all = ADS.filter(function(a){ return a.slots.indexOf(slot) >= 0 && live(a); });
     if(!col) return all;
     if(slot === 'C1') return [ownAd('C1', col) || auto(col)].filter(Boolean);
-    var rel = (RELATED[col] || []).map(function(r){ return ownAd(slot, r) || auto(r); }).filter(Boolean);
+    var later = function(r){ return ADS.some(function(a){ return a.cols[0] === r && a.from && Date.now() < t(a.from); }); };   // its season hasn't started: no banner yet
+    var rel = (RELATED[col] || []).filter(function(r){ return !later(r); }).map(function(r){ return ownAd(slot, r) || auto(r); }).filter(Boolean);
     var own = ownAd(slot, col), gen = all.filter(function(a){ return !a.cols.length && (!a.rts || RTS_COLS[col]); });
     return slot === 'P2' ? rel : rel.concat(own ? [own] : [], gen);   // a product page never advertises its own category
   }
