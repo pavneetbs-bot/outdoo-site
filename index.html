@@ -4367,7 +4367,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         ch:{pk:p.pack_fee, l:p.ship_local, s:p.ship_state, i:p.ship_india},   // 076 packaging + delivery (near.js)
         sb:SUBT[p.subcategory_slug] || (subsDB.some(x => x.category_slug === p.collection_slug) ? 'More' : ''), ty:TYT[p.type_slug] || '', sk:p.set_key||'', spc:p.set_piece||'', so:p.set_sort||0, alt:p.image_alt||'', md:p.seo_description||'',
         vg:p.variant_group?String(p.sku).split('-')[0]+'|'+p.variant_group:'', vs:p.variant_size||'', vc:p.variant_colour||'', vm:p.variant_material||'', von:p.variant_other_name||'', vo:p.variant_other||'', vmn:!!p.variant_main, vop:Array.isArray(p.variant_options)?p.variant_options:null, oo:p.orders_open!==false, ds:p.description||'', br:p.brand_name||'', mto:!!p.made_to_order,
-        cz:p.kind==='mto'&&p.mto&&typeof p.mto==='object'?p.mto:null, tg:tagsOf(p) };   // 133 Made to Order: priced by the customer's size (mto.js)
+        cz:p.kind==='mto'&&p.mto&&typeof p.mto==='object'?p.mto:null, tg:tagsOf(p), pid:p.id };   // 185 pid: Made to Order quotes from the server (mto_quote)   // 133 Made to Order: priced by the customer's size (mto.js)
       if(PRODS[p.sku].cz){ const d=(PRODS[p.sku].cz.make_days||[]).filter(v=>v!=null); PRODS[p.sku].ship='Made to your size'+(d.length?' · '+(d.length>1&&d[0]!==d[1]?d[0]+'–'+d[1]:d[d.length-1])+' days':''); }
       if(p.image_url) IMGS[p.sku] = slimImg(p.image_url);
     });
