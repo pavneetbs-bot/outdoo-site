@@ -4016,7 +4016,7 @@ function openCheckout(){
   const smp=CART.find(c=>PRODS[c.id]&&PRODS[c.id].pv);
   if(smp){toast('Sample products can\'t be ordered yet. Remove them to check out.');if(document.getElementById('cart').style.display!=='block')openCart();return;}
   const go=()=>{ renderCheckout(); showView('checkout'); };
-  if(window.acRequire && (window.OUTRR_SUPA||{}).url) return acRequire(go,'Sign in to check out');
+  if(window.acRequire && !window.ASSIST && (window.OUTRR_SUPA||{}).url) return acRequire(go,'Sign in to check out');   // 186: Sales mode orders for the customer
   go();
 }
 function renderCheckout(){
@@ -4097,8 +4097,9 @@ async function placeOrder(){
   const btn=document.getElementById('coPlace'); coBusy=true; if(btn){btn.disabled=true;btn.textContent='Placing your order…';}
   let res, err;
   try{
-    const r=await fetch(S.url+'/rest/v1/rpc/place_order',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(utok||S.anon),'Content-Type':'application/json'},
-      body:JSON.stringify({p:{items:CART.map(c=>c.mto?{sku:c.id,qty:1,mto:c.mto}:PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().coupon,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
+    const asst=window.ASSIST&&window.ASSIST.name;   // 186 Sales mode: the order is placed for the CRM lead; the customer pays by link
+    const r=await fetch(S.url+'/rest/v1/rpc/'+(asst?'sales_place_order':'place_order'),{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(asst?S.anon:(utok||S.anon)),'Content-Type':'application/json'},
+      body:JSON.stringify({...(asst?{p_token:window.ASSIST.token}:{}),p:{items:CART.map(c=>c.mto?{sku:c.id,qty:1,mto:c.mto}:PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().coupon,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
@@ -4107,6 +4108,7 @@ async function placeOrder(){
   const skus=CART.map(c=>c.id);
   CART=[]; updBadge();   // the order exists now: paying again later uses the order, not the cart
   window.__coLast={res,customer,utok,skus};
+  if(window.ASSIST&&window.ASSIST.name&&window.assistDone){ if(btn){btn.disabled=true;btn.textContent='Order placed';} return assistDone(res,customer); }
   if(btn){btn.disabled=true;btn.textContent='Opening secure payment…';}
   outrrPay(res.id,()=>coPaid(),why=>coUnpaid(why));
 }
@@ -4530,11 +4532,12 @@ async function shareProduct(){
   try{ await navigator.clipboard.writeText(url); toast('Link copied'); }catch(e){ toast(url); }
 }
 </script>
-<script src="/account.js?v=6"></script>
+<script src="/account.js?v=7"></script>
 <script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=8"></script>
-<script src="/mto.js?v=23"></script>
+<script src="/mto.js?v=24"></script>
+<script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=7" defer></script>
 <script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */
 (function(){

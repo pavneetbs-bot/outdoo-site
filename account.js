@@ -534,6 +534,8 @@
     const h = window.__initHash || location.hash; window.__initHash = ''
     const m = h.match(/^#review=([0-9a-f-]{36})/i); if (m) setTimeout(() => rvOpen(m[1]), 400)
     const t = h.match(/^#track=([A-Z0-9-]+)/i); if (t) setTimeout(() => acTrack(decodeURIComponent(t[1])), 400)
+    const f = h.match(/^#payfirst=([0-9a-f-]{36})/i)   // 186: payment link for an order placed by our sales team
+    if (f && window.outrrPay) setTimeout(() => outrrPay(f[1], () => { history.replaceState(null, '', location.pathname); alert('Thank you! Your payment is received and your order is confirmed.') }, w => alert(w)), 400)
     const b = h.match(/^#paybal=([0-9a-f-]{36})/i)   // 122: balance link from the email
     if (b && window.outrrPay) setTimeout(() => outrrPay(b[1], () => { history.replaceState(null, '', location.pathname); alert('Thank you! The balance is paid and your order will be dispatched.') }, w => alert(w), 'balance'), 400)
   }

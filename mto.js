@@ -1321,7 +1321,7 @@
     window.mtoClose();
     var go = function () { renderCheckout(); showView('checkout'); };
     try { if (window.otrack) otrack('begin_checkout', { value: q.total, skus: [S.id] }); } catch (e) {}
-    if (window.acRequire && (window.OUTRR_SUPA || {}).url) return acRequire(go, 'Sign in to check out');
+    if (window.acRequire && !window.ASSIST && (window.OUTRR_SUPA || {}).url) return acRequire(go, 'Sign in to check out');   // 186
     go();
   }
   function coPin() { var e = document.getElementById('coPin'); return e ? e.value.trim() : ''; }
@@ -1415,7 +1415,8 @@
   // ------------------------------------------------------------ 172: Made to Order prices open after sign-in (email code + name, mobile, city).
   // The first price check makes the customer's CRM lead; every later price check / product view / login lands on it.
   var OKK = 'outrr_mto_ok';
-  function mtoOk() { try { return !!(window.acToken && localStorage.getItem('outrr_session') && sessionStorage.getItem(OKK) === '1'); } catch (e) { return false; } }
+  function mtoOk() { if (window.ASSIST && window.ASSIST.name) return true;   // 186: Sales mode sees the prices
+    try { return !!(window.acToken && localStorage.getItem('outrr_session') && sessionStorage.getItem(OKK) === '1'); } catch (e) { return false; } }
   window.mtoOk = mtoOk;
   async function crm(kind, d) {
     try { var t = window.acToken && await window.acToken(); if (!t) return null; var A = window.OUTRR_SUPA || {}, vid = null; try { vid = localStorage.getItem('outrr_vid'); } catch (e) {}
