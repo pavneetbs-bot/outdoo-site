@@ -869,6 +869,18 @@ sec2,.sec2{display:block;padding:30px 0 6px}
 .bhalves{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px}
 
 /* package cards */
+/* 181: AI room sets (Settings → Homepage) */
+#room{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,93vw);max-height:88vh;overflow-y:auto;background:#fff;border-radius:18px;z-index:76;display:none;padding:22px 20px 18px}
+#room.open{display:block}
+#room .x{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px}
+#room h3{margin:0 40px 2px 0;font-size:19px}#room .inc{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+.rmi{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.rmi img{width:64px;height:64px;object-fit:cover;border-radius:10px;flex:none}.rmi .n{flex:1;font-size:13px;font-weight:600}.rmi .n small{display:block;font-weight:400;color:var(--muted);margin-top:2px}
+.rmtot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:12px;margin-top:4px;gap:10px;flex-wrap:wrap}
+.rmtot b{font-size:18px}.rmtot .btn{padding:11px 18px}
+.pkgrow .pkg .im.rmc{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:2px}
+.pkgrow .pkg .im.rmc img:first-child{grid-row:1/3}
+.pkgrow .pkg .im.rmc img{position:static;width:100%;height:100%;object-fit:cover;min-height:0}
 .pkgrow{display:flex;gap:13px;overflow-x:auto;padding:6px 0 14px;scrollbar-width:none}
 .pkgrow::-webkit-scrollbar{display:none}
 .pkg{flex:0 0 250px;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;
@@ -1888,7 +1900,7 @@ header{position:static!important}
       </div>
       <div class="ob-wgrid" aria-hidden="true"><span><img src="img/banners/fu-pergola.jpg" alt="" loading="lazy"></span><span><img src="img/banners/fu-chair.jpg" alt="" loading="lazy"></span><span><img src="img/banners/fu-lawn.jpg" alt="" loading="lazy"></span></div>
     </a></div>
-    <div class="sh"><h2>Winter-ready outdoor furniture</h2><p>All-weather rope, wicker and teak, made to stay outside.</p></div>
+    <div class="sh" id="hsSeason"><h2>Winter-ready outdoor furniture</h2><p>All-weather rope, wicker and teak, made to stay outside.</p></div>
     <div style="height:12px"></div>
     <div class="hstrip" id="stripWinter"></div>
     <span class="pillv" onclick="openCol('furniture')">View all outdoor furniture</span>
@@ -1932,7 +1944,7 @@ header{position:static!important}
 
     <div class="sec2"><div class="adslot" data-slot="H2" hidden></div></div>
   <div class="sec2">
-    <div class="sh"><h2>Complete rooms, one order</h2><p>Curated packages at bundle pricing — swap anything, we'll re-price it on WhatsApp.</p></div>
+    <div class="sh" id="hsRooms"><h2>Complete rooms, one order</h2><p>Curated packages at bundle pricing — swap anything, we'll re-price it on WhatsApp.</p></div>
     <div style="height:12px"></div>
     <div class="pkgrow" id="pkgRow"></div>
   </div>
@@ -1978,7 +1990,7 @@ header{position:static!important}
 
   <div class="sec2"><div class="adslot" data-slot="H3" hidden></div></div>
   <div class="sec2">
-    <div class="sh"><h2>Bestsellers</h2></div>
+    <div class="sh" id="hsBest"><h2>Bestsellers</h2><p hidden></p></div>
     <div style="height:14px"></div>
     <div class="otiles" id="tilesBest"></div>
   </div>
@@ -1987,8 +1999,8 @@ header{position:static!important}
   <div class="sec2">
     <div class="tband">
       <div class="ti"><b>300+</b><span>Outdoor projects delivered</span></div>
-      <div class="ti"><b>Made in India</b><span>Verified Indian makers</span></div>
-      <div class="ti"><b>200K+</b><span>Outdoor community</span></div>
+      <div class="ti"><b id="statMakers">Made in India</b><span>Verified Indian makers</span></div>
+      <div class="ti"><b>190K+</b><span>LifeWall community on Instagram</span></div>
       <div class="ti"><b id="statPieces">100+</b><span>Outdoor pieces</span></div>
     </div>
   </div>
@@ -2007,18 +2019,7 @@ header{position:static!important}
 
 
 
-    <div class="sec2">
-    <div class="sh"><h2>Real homes, real terraces</h2><p>Spaces designed by our team · tag <b>@outrr</b> to get featured</p></div>
-    <div style="height:14px"></div>
-    <div class="ugc">
-      <div class="u"><img data-img="TCASSIO" alt=""></div>
-      <div class="u"><img data-img="SOFA" alt=""></div>
-      <div class="u"><img data-img="STOOL" alt=""></div>
-      <div class="u"><img data-img="TGIULIAA" alt=""></div>
-      <div class="u"><img data-img="COURTYARD" alt=""></div>
-      <div class="u"><img data-img="PARTY" alt=""></div>
-    </div>
-  </div>
+
 
 
 
@@ -2026,7 +2027,7 @@ header{position:static!important}
   <div class="sec2">
     <div class="sh"><h2>Popular searches</h2></div>
     <div style="height:12px"></div>
-    <div class="tagcloud">
+    <div class="tagcloud" id="tagsPop">
       <span class="tag" onclick="openCol('furniture')">outdoor sofa set</span>
       <span class="tag" onclick="openCol('furniture')">hanging swing chair</span>
       <span class="tag" onclick="openCol('lighting')">outdoor lights</span>
@@ -2055,7 +2056,7 @@ header{position:static!important}
   </div>
 
   <div class="sec2">
-    <div class="seotext">
+    <div class="seotext" id="seoHome">
       <h3>Outdoor furniture &amp; decor online in India — outrr</h3>
       <p>outrr brings every outdoor possibility to your doorstep — luxury outdoor sofa sets, terrace dining, hanging swings, sun loungers, garden umbrellas, all-weather lamps, sculptural art, water features, planters and outdoor rugs. Curated by the team behind 300+ luxury outdoor projects at LifeWall, and made in India by verified outdoor makers.</p>
       <h3>Built for Indian weather</h3>
@@ -2346,7 +2347,8 @@ header{position:static!important}
 
 
 <!-- QUICK VIEW -->
-<div class="qvov" id="qvov" onclick="qvClose()"></div>
+<div class="qvov" id="qvov" onclick="qvClose();roomClose()"></div>
+<div id="room" role="dialog" aria-label="Room set"><span class="x" onclick="roomClose()">✕</span><div id="roomBody"></div></div>
 <div id="qv"><span class="x" onclick="qvClose()">✕</span>
   <div class="qgrid"><div class="qim"><img id="qvImg" alt=""></div>
   <div class="qbd">
@@ -3606,6 +3608,49 @@ function fillDealTabs(){
   if(v){v.textContent='View all '+DTABS[dtabOn][0]; v.setAttribute('onclick',`openCol('${DTABS[dtabOn][1]}')`);}
 }
 function pickDtab(i){dtabOn=i; fillDealTabs();}
+// ---- 181: AI homepage picks (admin Settings → Homepage). A section keeps its default when nothing is picked ----
+var ROOMS = [];
+function homeLoad(){ const S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon) return;
+  _supaRpc('home_public',{}).then(h=>{ if(h&&typeof h==='object') try{ homePaint(h); }catch(e){ console.warn('[outrr] home',e); } }).catch(()=>{}); }
+function _hesc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function homePaint(h){
+  const one=l=>(window.vOnePerGroup?vOnePerGroup(l):l);
+  const ids=s=>one(((h[s]&&h[s].skus)||[]).filter(i=>PRODS[i]&&IMGS[PRODS[i].img]));
+  const head=(el,s)=>{const d=document.getElementById(el); if(!d||!h[s]) return; if(h[s].title) d.querySelector('h2').textContent=h[s].title;
+    const pe=d.querySelector('p'); if(pe&&h[s].sub){ pe.textContent=h[s].sub; pe.hidden=false; } };
+  let l=ids('season'); if(l.length>=4){ fillStrip('stripWinter',l); head('hsSeason','season'); }
+  l=ids('trend'); if(l.length>=4) fillStrip('stripTrend',l);
+  l=ids('best'); if(l.length>=4){ fillTiles('tilesBest',l.slice(0,4)); head('hsBest','best'); }
+  l=ids('new'); if(l.length>=4) fillTiles('tilesNew',l.slice(0,4));
+  const sq=(h.searches||[]).filter(x=>x&&x.q).slice(0,10), tc=document.getElementById('tagsPop');
+  if(tc&&sq.length>=4) tc.innerHTML=sq.map(x=>`<span class="tag" data-q="${_hesc(x.q)}" onclick="homeSearch(this.dataset.q)">${_hesc(x.q)}</span>`).join('');
+  const seo=document.getElementById('seoHome');
+  if(seo&&Array.isArray(h.seo)&&h.seo.length) seo.innerHTML=h.seo.map(b=>`<h3>${_hesc(b.h)}</h3><p>${_hesc(b.p)}</p>`).join('');
+  if(h.stats){ const a=document.getElementById('statPieces'); if(a&&+h.stats.products) a.textContent=h.stats.products+'+';
+    const m=document.getElementById('statMakers'); if(m&&+h.stats.makers>1) m.textContent=h.stats.makers+'+'; }
+  if(Array.isArray(h.cats)&&h.cats.length&&typeof ARCH!=='undefined'&&ARCH.length){   // categories people look at most come first
+    const r=c=>{const i=h.cats.indexOf(c); return i<0?999:i;}; const s0=ARCH.map((a,i)=>[a,i]).sort((x,y)=>r(x[0][1])-r(y[0][1])||x[1]-y[1]).map(x=>x[0]);
+    ARCH.length=0; s0.forEach(a=>ARCH.push(a)); try{ fillArch(); }catch(e){} }
+  ROOMS=(h.rooms||[]).map(r=>({name:r.name,inc:r.inc||'',ids:(r.skus||[]).filter(i=>PRODS[i]&&IMGS[PRODS[i].img])})).filter(r=>r.ids.length>=2);
+  const pr=document.getElementById('pkgRow');
+  if(pr&&ROOMS.length){
+    pr.innerHTML=ROOMS.map((r,i)=>{const buy=r.ids.filter(id=>!soon(id)), sum=buy.reduce((a,id)=>a+PRODS[id].p,0);
+      return `<div class="pkg" onclick="roomOpen(${i})"><div class="im rmc">${r.ids.slice(0,3).map(id=>`<img src="${IMGS[PRODS[id].img]}" alt="">`).join('')}</div>
+      <div class="bd"><h3>${_hesc(r.name)}</h3><div class="inc">${_hesc(r.inc)}</div>
+      <div class="pr2"><small>${r.ids.length} pieces${buy.length<r.ids.length?' · some coming soon':''}</small>${buy.length?inr(sum):'Coming soon'}</div><div class="go2">View room</div></div></div>`;}).join('');
+    const sec=pr.closest('.sec2'); if(sec) sec.style.display='';
+    const hp=document.querySelector('#hsRooms p'); if(hp) hp.textContent='Pieces picked to go together — add the whole look in one tap, or open any piece.';
+  }
+}
+function homeSearch(q){const i=document.getElementById('q'); if(!i) return; i.value=q; doSearch();}
+function roomOpen(ix){const r=ROOMS[ix]; if(!r) return; const buy=r.ids.filter(id=>!soon(id)&&!PRODS[id].cz);
+  document.getElementById('roomBody').innerHTML=`<h3>${_hesc(r.name)}</h3><div class="inc">${_hesc(r.inc)}</div>`+
+    r.ids.map(id=>{const x=PRODS[id]; return `<div class="rmi" onclick="roomClose();openProduct('${id}')"><img src="${IMGS[x.img]}" alt=""><div class="n">${_hesc(x.n)}<small>${_hesc(x.ship||'')}</small></div><div>${soon(id)?soonH():inr(x.p)}</div></div>`;}).join('')+
+    `<div class="rmtot"><div><small style="color:var(--muted)">${buy.length} of ${r.ids.length} pieces · delivery included</small><br><b>${inr(buy.reduce((a,id)=>a+PRODS[id].p,0))}</b></div>`+
+    (buy.length?`<button class="btn" onclick="roomAdd(${ix})">Add ${buy.length===r.ids.length?'the room':buy.length+' pieces'} to cart</button>`:'')+`</div>`;
+  document.getElementById('room').classList.add('open'); document.getElementById('qvov').classList.add('open'); document.body.classList.add('flt-open');}
+function roomClose(){const r=document.getElementById('room'); if(!r||!r.classList.contains('open')) return; r.classList.remove('open'); document.getElementById('qvov').classList.remove('open'); document.body.classList.remove('flt-open');}
+function roomAdd(ix){const r=ROOMS[ix]; if(!r) return; roomClose(); r.ids.filter(id=>!soon(id)&&!PRODS[id].cz).forEach(id=>addCart(id));}
 function dealsLoad(){ const S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon){ dealDayPaint(); fillDealTabs(); return; }
   fetch(S.url+'/rest/v1/rpc/deals_public',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+S.anon,'Content-Type':'application/json'},body:'{}'})
     .then(r=>r.ok?r.json():[]).then(j=>{ DEALS={}; (Array.isArray(j)?j:[]).forEach(d=>{DEALS[d.sku]=d}); },()=>{})
@@ -4271,6 +4316,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       }catch(e){ console.warn(e) }
       try{ liveHome(); }catch(e){ console.warn(e) }
       try{ fillCatGrid(); _menuRank(); }catch(e){}
+      if(typeof homeLoad === 'function') homeLoad();   // 181: today's AI homepage picks
     }
     if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
       try{ renderPLP(lastCol); }catch(e){}
