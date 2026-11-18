@@ -325,7 +325,7 @@
     '.cbs-hd{height:var(--cbsh)!important}.cbs-tt{flex:0 0 auto!important;text-align:left!important;max-width:220px}.cbs-st{flex:1;min-width:0;display:flex;justify-content:center}.cbs-st .wz-stc{margin:0;padding:0}'+
     'body.cb-studio #cbStage{position:fixed!important;top:var(--cbsh)!important;left:0;right:0;height:var(--cbs3d);margin:0!important;padding:8px 12px!important;box-shadow:none!important;background:transparent!important;z-index:901;box-sizing:border-box;display:flex;flex-direction:column}'+
     '.cbs-v{position:relative;flex:1;min-height:0;width:100%;margin:0 auto}.cbs-v .wz-3dv{height:100%!important;border-radius:16px}.cbs-v .wz-3dv>svg{padding:24px}'+
-    '.cbs-z{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:2}.cbs-z button{border:0;background:rgba(255,255,255,.95);width:40px;height:40px;border-radius:10px;font-size:19px;font-weight:700;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.18)}.cbs-z button.on{background:#C26445;color:#fff}'+
+    '.cbs-z button[disabled]{opacity:.35;cursor:default}.cbs-z{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px;z-index:2}.cbs-z button{border:0;background:rgba(255,255,255,.95);width:40px;height:40px;border-radius:10px;font-size:19px;font-weight:700;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.18)}.cbs-z button.on{background:#C26445;color:#fff}'+
     '.cbs-hint{position:absolute;left:50%;transform:translateX(-50%);bottom:10px;margin:0;font-size:11.5px;color:#fff;background:rgba(46,46,46,.62);padding:4px 10px;border-radius:99px;pointer-events:none;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis}'+
     '.cbs-ed{position:absolute;left:10px;right:60px;bottom:10px;z-index:2;background:rgba(255,255,255,.93);border-radius:12px;padding:6px 8px;box-shadow:0 2px 10px rgba(0,0,0,.15)}.cbs-ed .cb-ed{margin:0}'+
     'body.cb-studio #mtoCfg{position:fixed!important;left:0;right:0;bottom:0;height:var(--cbsp);overflow:hidden;z-index:901;margin:0!important;border:0!important;border-top:1px solid #E7DDCF!important;border-radius:0!important;background:#fff!important;padding:14px 300px 14px 20px!important;box-sizing:border-box;display:flex;gap:22px}'+
@@ -437,12 +437,16 @@
   }
   function cbFreeOfDoors(c, lay, pl) {
     if (!(pl.key in CB_FOOT) || pl.key === 'pdoor' || pl.key === 'gdoorp') return;
-    var L = num(lay.L), W = num(lay.W), zs = cbDoorZones(c, lay), d = cbDims(c, pl);
+    var ROOM = { toilet: 1, wc: 1, pantry: 1 }, PART = { ppart: 1, gpart: 1, fpart: 1 }, isRoom = !!ROOM[pl.key];
+    var L = num(lay.L), W = num(lay.W), d = cbDims(c, pl), zs = isRoom ? cbDoorZones(c, lay) : [];
+    // 192: rooms don't sit on each other or on a partition; a partition doesn't cut through a room
+    arr(lay.places).forEach(function (o) { if (o === pl || !(isRoom ? ROOM[o.key] || PART[o.key] : ROOM[o.key])) return; var e = cbDims(c, o); zs.push([o.x, o.y, o.x + e[0], o.y + e[1]]); });
     var hit = function (x, y) { return zs.some(function (r) { return x < r[2] - 0.01 && x + d[0] > r[0] + 0.01 && y < r[3] - 0.01 && y + d[1] > r[1] + 0.01; }); };
     if (!hit(pl.x, pl.y)) return;
     var best = null; zs.forEach(function (r) { [[r[0] - d[0], pl.y], [r[2], pl.y], [pl.x, r[1] - d[1]], [pl.x, r[3]]].forEach(function (q) {
       var x = Math.round(Math.max(0, Math.min(q[0], L - d[0])) * 2) / 2, y = Math.round(Math.max(0, Math.min(q[1], W - d[1])) * 2) / 2;
       if (hit(x, y)) return; var m = Math.abs(x - pl.x) + Math.abs(y - pl.y); if (!best || m < best[2]) best = [x, y, m]; }); });
+    if (!best) for (var gx = 0; gx <= L - d[0]; gx += 0.5) for (var gy = 0; gy <= W - d[1]; gy += 0.5) { if (hit(gx, gy)) continue; var m2 = Math.abs(gx - pl.x) + Math.abs(gy - pl.y); if (!best || m2 < best[2]) best = [gx, gy, m2]; }   // anywhere free
     if (best) { pl.x = best[0]; pl.y = best[1]; }
   }
   function cbSync(c, lay) {   // quantities follow what is placed
@@ -610,8 +614,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=7').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=7'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=8').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=8'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -716,7 +720,7 @@
     for (var z = z0; z >= 0.75 + F.e.b && !best; z -= 0.5) for (var dx = 0; dx <= t.pw && !best; dx += 0.5) [x0 - dx, x0 + dx].forEach(function (x) { if (best) return; t.cx = x; t.cz = z; if (!tsClash(t, lay)) best = [x, z]; });
     t.cx = best ? best[0] : x0; t.cz = best ? best[1] : z0;
   }
-  function tsOpts() { var t = S.site; if (!t || t.kind !== 'terrace') return null; var o2 = JSON.parse(JSON.stringify(t)); o2.clash = !!tsClash(t, S.o.layout); o2.place = !!S.siteEd; return o2; }
+  function tsOpts() { var t = S.site; if (!t || t.kind !== 'terrace') return null; var o2 = JSON.parse(JSON.stringify(t)); o2.clash = !!tsClash(t, S.o.layout); o2.place = !!S.siteEd; o2.whole = !!S.whole; return o2; }
   function terraceUI(lay) {
     var t = S.site || { kind: 'ground' }, on = t.kind === 'terrace', h = '';
     var btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -1034,7 +1038,9 @@
     else if (ev.t === 'selbay') { S.sel3 = { side: ev.side, i: cbHead(lay.walls[ev.side], ev.i) }; S.psel = null; }
     else if (ev.t === 'selpl') { S.psel = ev.i; S.sel3 = null; }
     else if (ev.t === 'movesite') tsDrop(ev);
-    else if (ev.t === 'movecab') { if (!S.site) return; S.site.cx = ev.cx; S.site.cz = ev.cz; }
+    else if (ev.t === 'movecab') { if (!S.site) return; var k0 = [S.site.cx, S.site.cz]; S.site.cx = ev.cx; S.site.cz = ev.cz;   // 192: never over the parapet or on a block
+      if (tsClash(S.site, S.o.layout)) { var bst = null; for (var r9 = 0.5; r9 <= 12 && !bst; r9 += 0.5) for (var a9 = 0; a9 < 16 && !bst; a9++) { var cx9 = Math.round((ev.cx + r9 * Math.cos(a9 * Math.PI / 8)) * 2) / 2, cz9 = Math.round((ev.cz + r9 * Math.sin(a9 * Math.PI / 8)) * 2) / 2; S.site.cx = cx9; S.site.cz = cz9; if (!tsClash(S.site, S.o.layout)) bst = [cx9, cz9]; }
+        if (bst) { S.site.cx = bst[0]; S.site.cz = bst[1]; } else { S.site.cx = k0[0]; S.site.cz = k0[1]; S.tsMsg = 'It doesn\'t fit there — try a clear spot'; } } }
     else if (ev.t === 'movepl') { var p = arr(lay.places)[ev.i]; if (!p) return; p.x = ev.x; p.y = ev.y; cbClamp(c, lay, p); S.psel = ev.i; S.sel3 = null; }
     draw();
   }
@@ -1054,6 +1060,23 @@
     var hint = v === 'inside' ? 'Drag to look around · tap the floor to walk there' : v === 'cut' || v === 'top' ? 'Tap a wall panel or a room to change it · drag rooms and partitions to move them' : ['3d', 'front', 'right', 'back', 'left'].indexOf(v) >= 0 ? 'Tap any wall panel to change it — door, window, glass…' : '';
     return (hint && !S.sel3 && S.psel == null ? '<p class="cb-hint">' + hint + '</p>' : '') + (h ? '<div class="cb-ed">' + h + '</div>' : '');
   }
+  // 192: undo / redo in the studio — every change to the layout or the terrace is a step (60 kept)
+  function cbHist() {
+    if (!S || !S.studio || !S.o || !S.o.layout) return;
+    var k = JSON.stringify([S.o.layout, S.site || null]);
+    if (S.histId !== S.id) { S.histId = S.id; S.hist = []; S.hi = -1; }
+    if (S.hist[S.hi] === k) return;
+    S.hist = S.hist.slice(0, S.hi + 1); S.hist.push(k); if (S.hist.length > 60) S.hist.shift(); S.hi = S.hist.length - 1;
+  }
+  function cbUndo(dir) {
+    var j = S.hi + dir; if (!S.hist || j < 0 || j >= S.hist.length) return; S.hi = j;
+    var v = JSON.parse(S.hist[j]), c = PRODS[S.id].cz.cabin; S.o.layout = v[0]; S.site = v[1]; S.psel = null; S.sel3 = null; S.tsMsg = '';
+    S.wz = Object.assign({}, S.wz, wzRead(c, S.o.layout));
+  }
+  document.addEventListener('keydown', function (e) {
+    if (!S || !S.studio || !(e.ctrlKey || e.metaKey) || /input|textarea|select/i.test((e.target && e.target.tagName) || '')) return;
+    var k = String(e.key).toLowerCase(); if (k === 'z' || k === 'y') { e.preventDefault(); cbUndo(k === 'y' || e.shiftKey ? 1 : -1); draw(); }
+  });
   function cbStage() {
     var col = document.querySelector('#pdp .pdp-grid > div:first-child'); if (!col) return;
     var st = document.getElementById('cbStage'); if (!st) { st = document.createElement('div'); st.id = 'cbStage'; st.className = 'cb-stage'; col.insertBefore(st, col.firstChild); st.addEventListener('click', stageClick); }
@@ -1061,7 +1084,9 @@
       var cS = PRODS[S.id].cz.cabin, vS = S.view3 === 'cut' ? 'cut' : '3d', flS = (FURN.filter(function (f) { return f[0] === (S.furn || 'none'); })[0] || FURN[4])[1], ok3 = C3.st !== -1;
       st.innerHTML = '<div class="cbs-v"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(cS, S.o.layout)) + '</div>' +
         (C3.st === 2 ? '<div class="cb-ov"><button type="button" data-cbroof="1" aria-pressed="' + (vS === 'cut') + '">' + (vS === 'cut' ? '⌂ Roof on' : '⌂ Roof off') + '</button><button type="button" data-e3furn="1">🛋 ' + esc(flS) + '</button><button type="button" data-e3night="1" aria-pressed="' + !!S.night + '">' + (S.night ? '🌙 Evening' : '☀ Day') + '</button><button type="button" data-cbsite="1" aria-pressed="' + !!S.siteEd + '">' + (S.site && S.site.kind === 'terrace' ? '🏙 Terrace' : '🌳 Lawn') + '</button></div>' +
-          '<div class="cbs-z"><button type="button" data-cbz="in" aria-label="Zoom in">+</button><button type="button" data-cbz="out" aria-label="Zoom out">−</button>' +
+          '<div class="cbs-z"><button type="button" data-cbz="undo" aria-label="Undo" title="Undo (Ctrl+Z)"' + (S.hi > 0 ? '' : ' disabled') + '>↶</button><button type="button" data-cbz="redo" aria-label="Redo" title="Redo (Ctrl+Y)"' + (S.hist && S.hi < S.hist.length - 1 ? '' : ' disabled') + '>↷</button>' +
+          (S.site && S.site.kind === 'terrace' && !S.siteEd ? '<button type="button" data-cbz="whole" class="' + (S.whole ? 'on' : '') + '" aria-pressed="' + !!S.whole + '" aria-label="' + (S.whole ? 'Back to the cabin' : 'See the whole terrace') + '" title="' + (S.whole ? 'Back to the cabin' : 'Whole terrace') + '">' + (S.whole ? '◎' : '▦') + '</button>' : '') +
+          '<button type="button" data-cbz="in" aria-label="Zoom in">+</button><button type="button" data-cbz="out" aria-label="Zoom out">−</button>' +
           '<button type="button" data-cbz="pan" class="' + (S.pan ? 'on' : '') + '" aria-pressed="' + !!S.pan + '" aria-label="Move mode: drag to move the model" title="Move: drag to slide the model">✋</button>' +
           '<button type="button" data-cbz="home" aria-label="Back to the start view" title="Centre the model">⌖</button>' +
           '<button type="button" data-cbz="big" aria-label="' + (S.big ? 'Smaller view' : 'Bigger view') + '">' + (S.big ? '⤡' : '⤢') + '</button></div>' : '') +
@@ -1087,6 +1112,8 @@
   function stageClick(e) {
     var t = e.target.closest('[data-wzv],[data-gi],[data-e3k],[data-e3x],[data-e3p],[data-e3add],[data-e3furn],[data-e3night],[data-cbz],[data-cbroof],[data-cbsite]'); if (!t || !S || t.disabled) return;
     if (t.hasAttribute('data-cbsite')) { S.siteEd = true; S.sel3 = null; S.psel = null; return draw(); }
+    if (t.hasAttribute('data-cbz') && /^(undo|redo)$/.test(t.getAttribute('data-cbz'))) { cbUndo(t.getAttribute('data-cbz') === 'undo' ? -1 : 1); return draw(); }   // 192
+    if (t.getAttribute('data-cbz') === 'whole') { S.whole = !S.whole; cbStage(); return mount3d(); }
     if (t.hasAttribute('data-cbz')) { var zk = t.getAttribute('data-cbz'); if (zk === 'pan') { S.pan = !S.pan; try { window.Cabin3D.panMode(S.pan); } catch (er) {} cbStage(); return mount3d(); } if (zk === 'home') { try { window.Cabin3D.home(); } catch (er) {} return; } if (zk === 'big') { S.big = !S.big; document.body.classList.toggle('cbs-big', S.big); cbStage(); mount3d(); setTimeout(function () { try { window.Cabin3D.resize(); } catch (er) {} }, 60); } else try { window.Cabin3D.zoom(zk === 'in' ? 0.8 : 1.25); } catch (er) {} return; }
     if (t.hasAttribute('data-cbroof')) { S.v3 = S.view3 = S.view3 === 'cut' ? '3d' : 'cut'; if (S.view3 !== 'cut') S.psel = null; cbStage(); return mount3d(); }
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, k;
@@ -1340,7 +1367,7 @@
     var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), el = document.getElementById('mtoCfg'); if (!el) return;
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     var hOpts = arr(m.h && m.h.options), f = [];
-    if (u === 'cabin') { el.innerHTML = cabinUI(m, o); if (S.studio) cbsGroup(el); cbStage(); cbSheet(); paint(); return mount3d(); }
+    if (u === 'cabin') { cbHist(); el.innerHTML = cabinUI(m, o); if (S.studio) cbsGroup(el); cbStage(); cbSheet(); paint(); return mount3d(); }
     var np = !mtoOk();   // 172: before sign-in every variant shows (to see the finishes / colours / photos), only the prices wait
     if (u === 'seat') { var sv = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
     else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + (np ? '' : ' — ' + rs(fixedAt(m, mat, z)))]; })), o.size, 'Size'));

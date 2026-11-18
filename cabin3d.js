@@ -431,7 +431,7 @@ function under() {   // orbiting below the floor: the ground, deck and floor fad
 function size() { const w = R.el.clientWidth || 360, h = R.el.clientHeight || 220; R.renderer.setSize(w, h, false); R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); fitOrtho(); }
 function fitOrtho() {
   if (!R.group) return; const a = (R.el.clientWidth || 360) / (R.el.clientHeight || 220), v = R.view, L = R.L, W = R.W, H = R.H, pad = 1.18;
-  let w, h; if (v === 'top' && R.ts) { w = R.ts.pw + 4; h = R.ts.pd + 4; } else if (v === 'top') { w = L + 6; h = W + 6; } else if (v === 'front' || v === 'back') { w = L + 6; h = H + 4; } else { w = W + 6; h = H + 4; }
+  const wide = R.ts && (R.ts.place || R.ts.whole); let w, h; if (v === 'top' && wide) { w = R.ts.pw + 4; h = R.ts.pd + 4; } else if (v === 'top') { w = L + 6; h = W + 6; } else if (v === 'front' || v === 'back') { w = L + 6; h = H + 4; } else { w = W + 6; h = H + 4; }
   if (w / h > a) h = w / a; else w = h * a;
   Object.assign(R.ortho, { left: -w / 2 * pad, right: w / 2 * pad, top: h / 2 * pad, bottom: -h / 2 * pad }); R.ortho.updateProjectionMatrix();
 }
@@ -445,7 +445,7 @@ function visible(v) {   // what each view shows
   R.sun.castShadow = !top && !elev; R.below = undefined;
 }
 function topCam() {   // from above: a terrace is seen whole, road at the bottom; else the cabin
-  const tg = R.ts && plotOf();
+  const tg = R.ts && (R.ts.place || R.ts.whole) && plotOf();   // 192: the whole terrace only while placing / on 'Whole terrace'
   if (tg) { tg.updateWorldMatrix(true, false); const c0 = tg.localToWorld(new THREE.Vector3(R.ts.pw / 2, 0, R.ts.pd / 2)), up = tg.localToWorld(new THREE.Vector3(R.ts.pw / 2, 0, 0)).sub(c0).normalize();
     R.ortho.position.set(c0.x, 100, c0.z + 0.001); R.ortho.up.copy(up); R.ortho.lookAt(c0.x, 0, c0.z); }
   else { R.ortho.position.set(R.L / 2, 100, R.W / 2 + 0.001); R.ortho.up.set(0, 0, -1); R.ortho.lookAt(R.L / 2, 0, R.W / 2); }
@@ -466,7 +466,7 @@ function setView(v, keepCam) {
   } else {   // 3d / roof off / 360
     R.active = R.cam; C.minDistance = 3; C.maxDistance = Math.max(d * 4, R.ts ? Math.max(R.ts.pw, R.ts.pd) * 2.4 : 0); C.maxPolarAngle = Math.PI * 0.93;   // go round and under: see the ceiling from below
     C.enablePan = true; C.screenSpacePanning = true; buttons();   // move the model: right-drag / two fingers, or the ✋ move mode
-    if (!keepCam) { const k = Math.max(1.25, 1.5 / R.cam.aspect) * (R.ts ? 2.1 : 1), hi = v === 'cut' ? 1.7 : 1;
+    if (!keepCam) { const k = Math.max(1.25, 1.5 / R.cam.aspect) * (R.ts && (R.ts.place || R.ts.whole) ? 2.1 : 1), hi = v === 'cut' ? 1.7 : 1;
       R.cam.position.set(cx + d * 0.95 * k, H * 0.4 + (H * 1.2 + d * 0.25) * k * hi, cz + d * 1.35 * k / (v === 'cut' ? 1.15 : 1)); C.target.set(cx, H * 0.3, cz); }
   }
   R.cam.updateProjectionMatrix(); fitOrtho(); C.update(); selBox();
@@ -490,7 +490,7 @@ function pDown(e) {
   if (R.ts && ['3d', 'cut', 'top', '360'].includes(R.view)) {   // a terrace: grab a block (mumty, lift, shaft, room) — or, while placing, the whole cabin
     const tg = plotOf(), hits = cast(e, [R.group]), f = floorAt(e);
     const hb = hits.find(h => { let o = h.object; while (o && !o.userData.st) o = o.parent; return o; });
-    if (hb && f) { let o = hb.object; while (!o.userData.st) o = o.parent; const bk = (R.ts.blocks || [])[o.userData.st.i];
+    if (hb && f && R.ts.place) { let o = hb.object; while (!o.userData.st) o = o.parent;   // 192: frozen after the Where step const bk = (R.ts.blocks || [])[o.userData.st.i];
       if (bk) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; R.sdrag = { obj: o, i: o.userData.st.i, p0: toPlot(f), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, moved: false }; R.controls.enabled = false; e.preventDefault(); return; } }
     if (R.ts.place && f && hits.some(h => { let o = h.object; while (o && o.name !== 'site') o = o.parent; return !o; })) {   // the cabin itself: move it on the terrace
       tg.updateWorldMatrix(true, false); R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled;
@@ -572,7 +572,7 @@ function startSpot(c, lay, L, W) {   // where "Inside" starts: 2½ ft in from th
 export function show(el, c, lay, view, opts) {
   opts = opts || {}; ensure(el);
   const ts = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
-  const key = JSON.stringify(lay) + '|' + (opts.furn || 'none') + '|' + JSON.stringify(ts), dimKey = [lay.L, lay.W, lay.height, ts ? 't' : 'g'].join('x');
+  const key = JSON.stringify(lay) + '|' + (opts.furn || 'none') + '|' + JSON.stringify(ts), dimKey = [lay.L, lay.W, lay.height, ts ? 't' + (ts.place || ts.whole ? 'W' : 'c') : 'g'].join('x');
   let reset = view !== R.view;
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
