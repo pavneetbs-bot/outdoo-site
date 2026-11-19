@@ -206,6 +206,7 @@
       if (u === 'area' || u === 'length') { e = chk('l', l, 'Length'); if (e) return { ok: false, error: e }; }
       if (u === 'area' || u === 'face') { e = chk('w', w, m.panels ? 'Length' : 'Width'); if (e) return { ok: false, error: e }; }
       if (arr(m.h && m.h.options).length) { if (h == null || !m.h.options.some(function (x) { return num(x) === h; })) return { ok: false, error: 'Choose a height' }; }
+      else if (u === 'area' && m.hr) { if (h == null) h = num(m.ht); e = chk('hr', h, 'Height'); if (e) return { ok: false, error: e }; }   // 204
       else if (u === 'face') { e = chk('h', h, 'Height'); if (e) return { ok: false, error: e }; }
       qty = Math.round((u === 'area' ? l * w : u === 'face' ? w * h : l) * 100) / 100;
     }
@@ -217,6 +218,7 @@
     if (o.colour) { col = arr(mat.colours).filter(function (x) { return x.name === o.colour; })[0]; if (!col) return { ok: false, error: 'Choose a colour' }; rate += num(col.extra) || 0; }
     var own = u === 'fixed' && mat.prices ? num(mat.prices[sz.label]) : null;   // 147: this finish's own price for this size
     var base = u === 'fixed' ? (own != null ? own + rate - (num(mat.rate) || 0) : (num(sz.price) || 0) + rate) : (num(mat.base) || 0) + rnd(qty * rate + (pn ? pn.width * (num(mat.rate_rft) || 0) + pn.posts * h * (num(mat.rate_postft) || 0) + pn.posts * (num(mat.rate_post) || 0) : 0)), minUsed = false, minc = num(m.min_charge) || 0;
+    if (u === 'area' && m.hr && num(m.ht) > 0 && l > 0 && w > 0) { var hf = (l * w + 2 * (l + w) * h) / (l * w + 2 * (l + w) * num(m.ht)); base = rnd(base * hf); minc = rnd(minc * Math.min(1, hf)); }   // 204
     if (base < minc) { base = minc; minUsed = true; }
     var picked = arr(o.addons), addons = [];
     arr(m.addons).forEach(function (a) { if (picked.indexOf(a.name) >= 0) addons.push({ name: a.name, amount: rnd((num(a.price) || 0) * (a.charge === 'unit' ? qty : 1)) }); });
@@ -242,7 +244,7 @@
       } else delivery = { zone: null, fee: null };
     }
     var payNow = rnd(product * (payPct == null ? 50 : payPct) / 100);
-    return { pcs: pcs, panels: pn, delivery: delivery, delivery_fee: dlv, seats: u === 'seat' ? qty : null, ok: true, unit: u, qty: qty, rate: rate, base: base, min_charge_used: minUsed, material: mat.name, colour: col ? col.name : null, size: sz ? sz.label : null,
+    return { pcs: pcs, h: h, panels: pn, delivery: delivery, delivery_fee: dlv, seats: u === 'seat' ? qty : null, ok: true, unit: u, qty: qty, rate: rate, base: base, min_charge_used: minUsed, material: mat.name, colour: col ? col.name : null, size: sz ? sz.label : null,
       addons: addons, product: product, install: install, install_fee: instFee, total: product + instFee + dlv, pay_now: payNow, before_dispatch: product - payNow + instFee + dlv };
   }
   window.mtoPrice = price;
@@ -1696,7 +1698,7 @@
     lay[key] = Math.max(lo, Math.min(hi, Math.round(num(v) || lo)));
     if (S.wz && !S.wz.custom) wzBuild(c, lay, S.wz); else cbResize(c, lay); arr(lay.places).forEach(function (p) { cbClamp(c, lay, p); }); cbSync(c, lay); S.sel = { side: (S.sel || {}).side || 'front', i: 0 };
   }
-  function onInput(e) { var k = e.target.getAttribute('data-k'); if (!k || !S) return; if (k === 'pin') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); S.o[k] = e.target.value; paint(); }
+  function onInput(e) { var k = e.target.getAttribute('data-k'); if (!k || !S) return; if (k === 'pin') e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); S.o[k] = e.target.value; paint(); if (document.getElementById('cu3d')) cu3dDraw(); }   // 199b: the 3D follows the size as it is typed
   function onChange(e) {
     var t = e.target, k = t.getAttribute('data-k'); if (!S) return;
     if (t.hasAttribute('data-tsin')) { if (tsInput(t)) draw(); return; }
@@ -2569,7 +2571,7 @@
     var tl = document.querySelector('#pdp .taxline'); if (tl) { tl.style.display = ''; tl.textContent = 'Incl. GST · your exact price comes on the proposal after you customise'; } return true; };
   function sizeTxt(m, o) {
     var u = m.unit; if (u === 'cabin') return o.layout ? num(o.layout.L) + ' × ' + num(o.layout.W) + ' ft' : '';
-    if (u === 'area') return num(o.l) && num(o.w) ? (m.round ? o.l + ' ft across' : o.l + ' × ' + o.w + ' ft') + (num(o.pcs) > 1 ? ' · ' + o.pcs + ' pieces' : '') : '';
+    if (u === 'area') return num(o.l) && num(o.w) ? (m.round ? o.l + ' ft across' : o.l + ' × ' + o.w + ' ft') + (m.hr && num(o.h) ? ', ' + o.h + ' ft high' : '') + (num(o.pcs) > 1 ? ' · ' + o.pcs + ' pieces' : '') : '';
     if (u === 'face') return num(o.w) ? o.w + (num(o.h) ? ' × ' + o.h : '') + ' ft' + (num(o.h) ? '' : ' wide') : '';
     if (u === 'length') return num(o.l) ? o.l + ' running ft' + (num(o.h) ? ', ' + o.h + ' ft high' : '') : '';
     if (u === 'seat') return o.n ? o.n + ' seats' : ''; return o.size || '';
@@ -2581,6 +2583,7 @@
     else {
       if (u === 'area' || u === 'length') f.push('<label class="mto-pk"><span>' + (m.round ? 'Size across (ft)' : 'Length (ft)') + '</span><input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>');
       if ((u === 'area' && !m.round) || u === 'face') f.push('<label class="mto-pk"><span>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '</span><input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>');
+      if (u === 'area' && m.hr) f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.hr.min) + '–' + esc(m.hr.max) + '"></label>');   // 204
       if (hOpts.length) f.push(sel('data-k="h"', hOpts.map(function (h) { return [h, h + ' ft']; }), o.h, 'Height'));
       else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>');
     }
@@ -2608,6 +2611,7 @@
     var x = PRODS[S.id], m0 = x.cz, o0 = S.o; ov.setAttribute('aria-label', 'Customise ' + x.n);
     ['l', 'w', 'h'].forEach(function (k) { if (!num(o0[k]) && m0[k] && num(m0[k].min) && !(k === 'h' && arr(m0.h.options).length)) o0[k] = num(m0[k].min); });   // a size to start from: the price shows at once
     if (m0.unit === 'fixed' && !o0.size && arr(m0.sizes).length) o0.size = m0.sizes[0].label;
+    if (m0.hr && num(o0.h) == null && num(m0.ht)) o0.h = Math.round(num(m0.ht) * 4) / 4;   // 204: the design's own height to start
     arr(m0.groups).forEach(function (g) { if (g.name && !(o0.groups || {})[g.name] && arr(g.options)[0]) { o0.groups = Object.assign({}, o0.groups); o0.groups[g.name] = g.options[0].name; } });   // 199: first choice of each option group (e.g. No light)
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(short(x.n)) + ' · Customise</b><button type="button" data-cu="close" aria-label="Close">✕ Close</button></div>' +
       '<div class="pg3-bd"><div class="pg3-st cu-st"><img id="cuImg" alt="">' + (PCAT[x.col] ? '<div id="cu3d" class="cu3d"></div><div class="cu-vw"><button type="button" data-cuv="3d" class="on">3D</button><button type="button" data-cuv="photo">Photo</button></div>' : '') + '<div class="pg3-cap" id="cuCap"></div></div><div class="pg3-pn" id="cuPn"></div></div>' +
@@ -2646,7 +2650,7 @@
     var x = PRODS[S.id], m = x.cz, o = S.o, cat = PCAT[x.col]; if (!cat || !window.outrrPlan || !window.mtoSpaceAsk) return;
     var q = price(m, o, PCT); if (!q.ok) return toast(q.error || 'Choose your size');
     var n = num(o.pcs) || 1, cfg = JSON.parse(JSON.stringify(o)); delete cfg.pcs; delete cfg.pin; delete cfg.zone; delete cfg.install;
-    var it = { cat: cat, pick: S.id, cfgId: S.id, cfg: cfg, label: short(x.n), w: num(o.l), d: m.round ? num(o.l) : num(o.w), h: num(m.ht) || 3, rot: 0 }, items = [];
+    var it = { cat: cat, pick: S.id, cfgId: S.id, cfg: cfg, label: short(x.n), w: num(o.l), d: m.round ? num(o.l) : num(o.w), h: (m.hr && num(o.h)) || num(m.ht) || 3, rot: 0 }, items = [];
     for (var i = 0; i < n; i++) items.push(JSON.parse(JSON.stringify(it)));
     window.cuOpen(false); try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: 'space' }); } catch (e) {}
     window.mtoSpaceAsk(cat, async function (r) {
@@ -2662,12 +2666,12 @@
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o;
     if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=17').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
-    for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: num(m.ht) || 2 });
+    for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
     try { CU3.m.preview(el, its); } catch (e) { if (window.console) console.warn(e); }
   }
   window.mtoPropFromPlan = function (it, same) {   // the planner's "Proposal & add to cart" for one of these things: its page, set up as in the plan, then the proposal
     var id = it && it.cfgId; if (!id || !PRODS[id] || !PRODS[id].cz) return false; var m = PRODS[id].cz;
-    var o = Object.assign({}, it.cfg || {}); o.l = it.w; o.w = m.round ? it.w : it.d; if (m.pcs && same > 1) o.pcs = Math.min(num(m.pcs.max) || 1, same);
+    var o = Object.assign({}, it.cfg || {}); o.l = it.w; o.w = m.round ? it.w : it.d; if (m.hr && num(it.h)) o.h = Math.max(num(m.hr.min) || 1, Math.min(num(m.hr.max) || 4, num(it.h))); if (m.pcs && same > 1) o.pcs = Math.min(num(m.pcs.max) || 1, same);
     try { openProduct(id); } catch (e) { return false; }
     var k = 0; (function w() { if (!S || S.id !== id || !S.pdp) { if (k++ < 80) return setTimeout(w, 100); return; } S.o = Object.assign(S.o || {}, o); S.proj = 'same'; draw(); propGo(); })();
     return true;
