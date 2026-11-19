@@ -2195,7 +2195,7 @@ header{position:static!important}
       <div class="titlerow"><div class="h1" id="pdT"></div>
   <span class="sharebtn wlbtn" id="pdWish" onclick="acWishToggle()"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg><span class="wl-l">Save</span></span><span class="sharebtn" onclick="shareProduct()"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.4"/><circle cx="17" cy="6.5" r="2.4"/><circle cx="17" cy="17.5" r="2.4"/><line x1="8.2" y1="10.9" x2="14.8" y2="7.6"/><line x1="8.2" y1="13.1" x2="14.8" y2="16.4"/></svg>Share</span></div>
 <div class="matline" id="pdMat"></div>
-<div class="viewing"><svg viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4.5 12 4.5 s7 2 10 7.5 c-3 5.5 -7 7.5 -10 7.5 s-7 -2 -10 -7.5z"/><circle cx="12" cy="12" r="3"/></svg><span id="pdView">284</span>&nbsp;people viewing this</div>
+<div class="viewing" id="pdViewRow" hidden><svg viewBox="0 0 24 24"><path d="M2 12 C5 6.5 9 4.5 12 4.5 s7 2 10 7.5 c-3 5.5 -7 7.5 -10 7.5 s-7 -2 -10 -7.5z"/><circle cx="12" cy="12" r="3"/></svg><span id="pdView"></span></div>
       <div class="rate"><span class="st" id="pdR">4.6 ★</span><span id="pdC">212 ratings</span></div>
       <div class="skuline" id="pdSku">SKU OD-FUR-0114 · Outdoor Furniture</div>
       <div class="pricebig" id="pdPrice">₹86,999<span class="mrp">₹1,04,000</span><span class="off">16% off</span></div>
@@ -3068,7 +3068,7 @@ function openProduct(id){ window.PDID=id; try{ recentDraw(id); recentPush(id); }
   crumbSet('crumbPath',[['Home','/'],[c.t,'/c/'+x.col+'/',x.col],...(subOf(id)&&subOf(id)!=='More'&&subOf(id)!=='All'?[[subOf(id),'/c/'+x.col+'/',x.col,subOf(id)]]:[]),[x.n]]);
   // pepperfry-style extras
   qty=1; document.getElementById('pdQty').textContent='1'; setTimeout(()=>{try{tradeLn();}catch(e){}},0);
-  document.getElementById('pdView').textContent = 40 + (x.c % 260);
+  pdStats(id);   // 194: real counts only (distinct visitors), hidden below the limits
   document.getElementById('pdHurry').textContent = 'Hurry! Only ' + (2 + x.c % 6) + ' left';
   document.getElementById('pdCash').textContent = inr(Math.round(x.p*0.05/10)*10);
   try{const cb=document.querySelector('#pdp .cashback')||document.querySelector('.cashback'); if(cb) cb.style.display=soon(x)?'none':''; document.getElementById('pdHurry').style.display=soon(x)?'none':''; const tl=document.querySelector('.taxline'); if(tl) tl.style.display=soon(x)?'none':'';}catch(e){}
@@ -3672,6 +3672,20 @@ function fillDealTabs(){
   if(v){v.textContent='View all '+DTABS[dtabOn][0]; v.setAttribute('onclick',`openCol('${DTABS[dtabOn][1]}')`);}
 }
 function pickDtab(i){dtabOn=i; fillDealTabs();}
+// 194: real interest on the product page — never invented numbers. Views (7 d) ≥ 5, cart adds (7 d) ≥ 3, Made to Order price checks (30 d) ≥ 3
+var PDSTATS = {};
+function pdStats(id){
+  const row=document.getElementById('pdViewRow'), out=document.getElementById('pdView'); if(!row||!out) return; row.hidden=true;
+  const show=st=>{ if(!st||window.__pdCur!==id) return; const x=PRODS[id]||{}, l=[];
+    if(+st.views7>=5) l.push(st.views7+' people viewed this this week');
+    if(x.cz){ if(+st.checks30>=3) l.push(st.checks30+' checked the price this month'); }
+    else if(+st.carts7>=3) l.push('added to cart by '+st.carts7);
+    if(l.length){ out.textContent=l.join(' · '); row.hidden=false; } };
+  window.__pdCur=id;
+  if(PDSTATS[id]) return show(PDSTATS[id]);
+  const S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon||typeof _supaRpc!=='function') return;
+  _supaRpc('product_stats_public',{p_sku:id}).then(st=>{ PDSTATS[id]=st||{}; show(PDSTATS[id]); }).catch(()=>{});
+}
 // ---- Design it yourself: cabin + pergola mini configurators. Choices carry into the real studio / product page. ----
 var DZ = { c: { t: 0, s: 1 }, p: { d: 0, l: 12, w: 10, cov: 0, c: 0 } };
 var DZ_SIZES = [['Small', 10, 8], ['Medium', 12, 10], ['Large', 20, 10], ['Extra large', 20, 12]];   // = WZ_SIZES in mto.js
