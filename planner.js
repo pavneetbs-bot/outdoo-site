@@ -226,9 +226,10 @@ function priceAt(id, it) {   // one design at this item's size: its cheapest mat
     let q = null;   // (another cabin above: priced at the same size)
     try { q = window.mtoPrice(m, o); } catch (e) {} return q && q.ok ? { price: q.product, o } : null; }
   if (it.cfg && it.cfgId === id) {   // 193g: set up in the designer — its own finish / colour / roof / add-ons, at the plan's size
-    const o = Object.assign(oFor(m, it), JSON.parse(JSON.stringify(it.cfg)), { l: it.w, w: it.d }), n = 1; delete o._n; delete o.layout;
+    const base = oFor(m, it), n = base._n || 1, o = Object.assign({}, base, JSON.parse(JSON.stringify(it.cfg))); delete o._n; delete o.layout;
+    if (['area', 'length', 'face'].includes(m.unit)) ['l', 'w', 'h'].forEach(k => { if (base[k] != null) o[k] = base[k]; });   // the size stays the plan's
     const hg = (m.groups || []).find(g => /height/i.test(g.name || '')); if (hg && it.h) { const op = (hg.options || []).slice().sort((a, b) => Math.abs(parseFloat(a.name) - it.h) - Math.abs(parseFloat(b.name) - it.h))[0]; if (op) o.groups = Object.assign({}, o.groups, { [hg.name]: op.name }); }
-    let q = null; try { q = window.mtoPrice(m, o); } catch (e) {} if (q && q.ok) return { price: q.product, o, n, own: true };
+    let q = null; try { q = window.mtoPrice(m, o); } catch (e) {} if (q && q.ok) return { price: q.product * n, o, n, own: true };
   }
   const mats = (m.materials || []).length ? m.materials : [{ name: '' }];
   for (const mt of mats.slice(0, 8)) { const o = Object.assign(oFor(m, it), { material: mt.name, colour: ((mt.colours || [])[0] || {}).name || '', addons: (m.addons || []).filter(a => a.on).map(a => a.name) });
@@ -238,6 +239,42 @@ function priceAt(id, it) {   // one design at this item's size: its cheapest mat
 function choices(it) {   // the designs the customer can pick for this item, cheapest first
   const c = CAT[it.cat]; if (!c) return []; const P = PR();
   return designs(c).filter(id => P[id].oo !== false && (c.k !== 'cabin' || (P[id].cz || {}).cabin)).map(id => ({ id, q: priceAt(id, it) })).filter(x => x.q).sort((a, b) => a.q.price - b.q.price);
+}
+// 193h: a design's real size (fixed-size designs: from the size label, e.g. "60 × 60 × 85 cm", "450 cube", "3 ft"; benches: by seats)
+function labelDims(lbl) {
+  const s = String(lbl || ''), u = /cm/i.test(s) ? 1 / 30.48 : /mm/i.test(s) ? 1 / 304.8 : /\bin(ch)?\b|"/i.test(s) ? 1 / 12 : /ft|feet|'/i.test(s) ? 1 : 0;
+  const nums = (s.match(/\d+(\.\d+)?/g) || []).map(Number); if (!nums.length) return null;
+  const k = u || (nums[0] > 200 ? 1 / 304.8 : nums[0] > 20 ? 1 / 30.48 : 1), ft = v => Math.round(v * k * 2) / 2;
+  if (/cube/i.test(s)) return { w: ft(nums[0]), d: ft(nums[0]), h: ft(nums[0]) };
+  if (/[×x]/.test(s) && nums.length >= 2) return { w: ft(nums[0]), d: ft(nums[1]), h: nums[2] ? ft(nums[2]) : null };
+  if (/ft/i.test(s) && nums.length === 1) return { h: nums[0] };   // a sculpture's height
+  return null;
+}
+function realSize(it, id, o) {   // the model takes the picked design's own size (when the design gives one and it fits)
+  const p = PR()[id], m = p && p.cz; if (!m || it.cat === 'cabin' || it.cat === 'pergola') return; const keep = JSON.stringify(it), i = S.items.indexOf(it);
+  if (m.unit === 'fixed') { const lbl = (o && o.size) || ((m.sizes || [])[0] || {}).label, d = labelDims(lbl); if (!d) return;
+    if (d.w && d.d && d.w >= 0.5 && d.d >= 0.5) { it.w = Math.max(d.w, 1); it.d = Math.max(d.d, 1); } if (d.h) it.h = d.h; }
+  else if (m.unit === 'seat') { const n = num(o && o.n) || num(m.n && m.n.min) || 4; it.w = Math.max(3, Math.round(n * 1.8 * 2) / 2); }
+  else return;
+  if (!settle(it, i)) { Object.assign(it, JSON.parse(keep)); S.msg = 'Its real size doesn\'t fit there — move things to make room'; }
+}
+function custSheet() {   // customise one design: finish, colour, options, add-ons, size choice — priced live; "Use in my plan"
+  const C2 = S.cust, it = S.items[C2.i], p = PR()[C2.id], m = p.cz, o = C2.o, base = oFor(m, it), n = base._n || 1;
+  const chip = (attr, on, txt) => `<button type="button" ${attr} class="${on ? 'on' : ''}" aria-pressed="${!!on}">${txt}</button>`;
+  let q = null; try { const oo = Object.assign({}, o); if (['area', 'length', 'face'].includes(m.unit)) ['l', 'w', 'h'].forEach(k => { if (base[k] != null) oo[k] = base[k]; }); delete oo._n; q = window.mtoPrice(m, oo); } catch (e) {}
+  let h = `<div class="pl-ed"><div style="display:flex;gap:10px;align-items:center">${IMG(C2.id) ? `<img src="${esc(IMG(C2.id))}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px">` : ''}<h4 style="margin:0">${esc(String(p.n).replace(/ — .*$/, ''))}</h4></div>`;
+  if (m.unit === 'fixed' && (m.sizes || []).length > 1) h += '<p class="pl-h">Size</p><div class="pl-tabs">' + m.sizes.map(z => chip(`data-pl="cs:size:${esc(z.label)}"`, o.size === z.label, esc(z.label))).join('') + '</div>';
+  else if (m.unit === 'seat') h += `<p class="pl-h">Seats</p><div class="pl-pm"><button type="button" data-pl="cs:n:-1">−</button><b>${o.n}</b><button type="button" data-pl="cs:n:1">+</button></div>`;
+  else if (['area', 'length', 'face'].includes(m.unit)) h += `<p class="pl-sub" style="margin:8px 0 0">Size from your plan: ${it.w}${CAT[it.cat].size === 'wh' ? ' × ' + it.h : CAT[it.cat].size === 'wd' ? ' × ' + it.d : ''} ft${n > 1 ? ' — as ' + n + ' pieces' : ''} (change it in step 2)</p>`;
+  const mats = (m.materials || []).filter(z => z.name), mt = mats.find(z => z.name === o.material) || mats[0];
+  if (mats.length > 1) h += `<p class="pl-h">${esc((m.labels && m.labels.material) || 'Finish')}</p><div class="pl-tabs">` + mats.map(z => chip(`data-pl="cs:mat:${esc(z.name)}"`, z === mt, esc(z.name))).join('') + '</div>';
+  const cols = (mt && mt.colours) || [];
+  if (cols.length) h += `<p class="pl-h">${esc((m.labels && m.labels.colour) || 'Colour')} · ${esc(o.colour || '')}</p><div class="pl-tabs">` + cols.map(c => `<button type="button" data-pl="cs:col:${esc(c.name)}" class="pl-sw${c.name === o.colour ? ' on' : ''}" title="${esc(c.name)}" aria-label="${esc(c.name)}" style="background:${c.hex2 ? 'linear-gradient(135deg,' + c.hex + ' 50%,' + c.hex2 + ' 50%)' : c.hex || '#999'}"></button>`).join('') + '</div>';
+  (m.groups || []).filter(g => g.name && (g.options || []).length).forEach(g => { h += `<p class="pl-h">${esc(g.name)}</p><div class="pl-tabs">` + g.options.filter(z => z.name).map(z => chip(`data-pl="cs:grp:${esc(g.name)}::${esc(z.name)}"`, (o.groups || {})[g.name] === z.name, esc(z.name))).join('') + '</div>'; });
+  const adds = (m.addons || []).filter(a => a.name); if (adds.length) h += '<p class="pl-h">Add-ons</p><div class="pl-tabs">' + adds.map(a => chip(`data-pl="cs:add:${esc(a.name)}"`, (o.addons || []).includes(a.name), ((o.addons || []).includes(a.name) ? '✓ ' : '+ ') + esc(a.name))).join('') + '</div>';
+  h += `<p style="margin:14px 0 0;font-size:15px">${q && q.ok ? 'Price <b>' + rs(q.product * n) + '</b>' : esc((q && q.error) || 'Our team will price it')}</p>`;
+  h += '<div class="pl-act"><button type="button" data-pl="cs:cancel">Cancel</button><button type="button" data-pl="cs:use" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Use in my plan</button></div></div>';
+  return h;
 }
 function picked(it) { const ch = choices(it); return ch.find(x => x.id === it.pick) || (it.cat === 'cabin' && ch.find(x => x.id === it.sku)) || ch[0] || null; }
 const IMG = id => { try { const x = PR()[id]; return (typeof IMGS !== 'undefined' ? IMGS : window.IMGS || {})[x.img] || ''; } catch (e) { return ''; } };
@@ -337,6 +374,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-set{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}#plOv .pl-set button{flex:0 0 138px;border:1px solid #E2D6C4;background:#FFFCF8;border-radius:12px;padding:10px;text-align:left;font:inherit;cursor:pointer}#plOv .pl-set button:hover{border-color:#C26445}#plOv .pl-set i{font-style:normal;font-size:20px}#plOv .pl-set b{display:block;font-size:13px;margin:4px 0 2px}#plOv .pl-set small{font-size:11px;color:#7A7268;line-height:1.3;display:block}
 #plOv .pl-ask{display:grid;gap:8px;margin-top:8px}#plOv .pl-ask button{border:1px solid #E2D6C4;background:#fff;border-radius:12px;padding:12px;text-align:left;font:inherit;cursor:pointer}#plOv .pl-ask button:hover{border-color:#C26445}#plOv .pl-ask b{display:block;font-size:14px}#plOv .pl-ask small{color:#6A6258;font-size:12px}
 #plOv .pl-design{display:block;width:100%;text-align:left;border:1.5px solid #C26445;background:#fff;color:#8a3a1f;border-radius:12px;padding:10px 12px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;margin:8px 0}#plOv .pl-design small{display:block;font-weight:500;color:#6A6258;font-size:11.5px;margin-top:2px}
+#plOv .pl-cust{display:inline-block;margin:6px 8px 0 0;border:1px solid #C26445;background:#FFF8F2;color:#8a3a1f;border-radius:99px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}#plOv .pl-sw{width:30px;height:30px;border-radius:50%!important;padding:0!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #ccc;min-height:0!important}#plOv .pl-sw.on{box-shadow:0 0 0 2px #C26445}
 #plOv .pl-lock{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:12.5px;cursor:pointer}
 @media(max-width:760px){#plOv .pl-bd{flex-direction:column}#plOv .pl-3d{flex:none;height:46vh}#plOv .pl-side{width:auto;max-width:none;border-left:0;border-top:1px solid #E2D6C4;flex:1}#plOv .pl-st button{padding:6px 10px;font-size:12px}#plOv .pl-hd small{display:none}#plOv .pl-l{display:none}#plOv .pl-hd h2{font-size:14px}}`;
 
@@ -415,14 +453,15 @@ function stepPlace() {
 function stepPick() {
   if (!S.items.length) return '<h4>Pick designs</h4><p class="pl-sub">Add something to your space first.</p>';
   if (!priceOk()) return '<h4>Pick designs</h4><p class="pl-sub">Sign in to see the designs at your sizes and their prices.</p><button type="button" class="pl-lock" data-pl="unlock">🔒 Sign in to see prices</button>';
-  let h = '<h4>Pick designs</h4><p class="pl-sub">Each thing at the size you set — tap a design to choose it. Change the size in step 2.</p>';
+  if (S.cust && S.items[S.cust.i]) return custSheet();
+  let h = '<h4>Pick designs</h4><p class="pl-sub">Each thing at the size you set — tap a design to choose it, then Customise it. Change the size in step 2.</p>';
   S.items.forEach((it, i) => {
     const c = CAT[it.cat], ch = choices(it), pk = picked(it);
     h += `<div class="pl-pk"><div class="pl-pkh"><b>${c.e} ${esc(it.label || c.t)}</b><span>${pk ? rs(pk.q.price) : ''}</span></div>${pk && pk.q.n > 1 ? `<p class="pl-sub" style="margin:-4px 0 8px">${it.w} ft — goes as ${pk.q.n} pieces of ${pk.q.o.l || pk.q.o.w} ft</p>` : ''}`;
     if (!ch.length) { h += '<p class="pl-sub" style="margin:4px 0 0">No design open for orders at this size yet — our team will help.</p></div>'; return; }
     h += '<div class="pl-row2">' + ch.slice(0, 12).map(x => { const p = PR()[x.id], on = pk && pk.id === x.id, im = IMG(x.id);
       return `<button type="button" class="pl-ds${on ? ' on' : ''}" data-pl="pick:${i}:${esc(x.id)}" aria-pressed="${on}">${im ? `<img src="${esc(im)}" alt="" loading="lazy">` : '<i></i>'}<b>${esc(String(p.n).replace(/ — .*$/, ''))}</b><small>${rs(x.q.price)}</small></button>`; }).join('') + '</div>';
-    if (pk) h += `<a class="pl-see" href="/?p=${encodeURIComponent(pk.id)}" target="_blank" rel="noopener">See this design${c.k === 'cabin' || c.k === 'pergola' ? ' / make it yours' : ''} ↗</a>`;
+    if (pk) h += (c.k === 'cabin' || c.k === 'pergola' ? `<button type="button" class="pl-cust" data-pl="sel2:${i}">✎ Customise in the designer</button>` : `<button type="button" class="pl-cust" data-pl="cust:${i}">✎ Customise${it.cfg && it.cfgId === pk.id ? ' (your choices)' : ''}</button>`) + `<a class="pl-see" href="/?p=${encodeURIComponent(pk.id)}" target="_blank" rel="noopener">See this design ↗</a>`;
     h += '</div>';
   });
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
@@ -470,7 +509,7 @@ function onClick(e) {
     case 'zout': return S3.zoom(1.25);
     case 'home': return S3.home();
     case 'view': S.view = S.view === 'top' ? '3d' : 'top'; return draw(false);
-    case 'step': S.step = +a[1]; S.sel = null; S.ask = null; for (const k in PC) delete PC[k]; break;
+    case 'step': S.step = +a[1]; S.sel = null; S.ask = null; S.cust = null; for (const k in PC) delete PC[k]; break;
     case 'kind': if (t.kind !== a[1]) { t.kind = a[1]; if (a[1] === 'terrace' && !t.blocks.length) defBlocks(t); S.items = S.items.filter((x, i) => !(CAT[x.cat].lawn && a[1] === 'terrace') && settle(x, i)); } break;
     case 'plot': { const p = PLOTS.find(z => z[0] === a[1]); t.plot = a[1]; setPlot(p[1], p[2]); break; }
     case 'par': t.par = +a[1]; break;
@@ -500,8 +539,19 @@ function onClick(e) {
     case 'cz': if (it && !it.lock && it.cat === 'cabin') { const L = cabinLay(it); cabinSize(it, a[1] === 'L' ? num(L.L) + +a[2] : num(L.L), a[1] === 'W' ? num(L.W) + +a[2] : num(L.W)); } break;
     case 'csku': if (it) { const keep = JSON.stringify(it), L0 = it.layout; it.sku = a[1] + (a[2] ? ':' + a[2] : ''); if (L0 && window.mtoCabinSize) { const r = window.mtoCabinSize(it.sku, null, L0.L, L0.W); if (r && r.lay) { it.layout = r.lay; it.lsku = it.sku; } } cabinFoot(it); it.label = PR()[it.sku].n.replace(/ —.*$/, ''); if (!settle(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'That cabin doesn\'t fit here'; } } break;
     case 'unlock': return unlock();
-    case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cfgId && x.cfgId !== id) { delete x.cfg; delete x.cfgId; } if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
+    case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cfgId && x.cfgId !== id) { delete x.cfg; delete x.cfgId; } realSize(x, id, x.cfg); if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
     case 'cart': return toCart();
+    case 'sel2': S.step = 1; S.sel = +a[1]; break;
+    case 'cust': { const x = S.items[+a[1]], pk = x && picked(x); if (!pk) break; const m = PR()[pk.id].cz, o = JSON.parse(JSON.stringify(x.cfg && x.cfgId === pk.id ? x.cfg : pk.q.o)); delete o._n;
+      if (m.unit === 'fixed' && !o.size) o.size = ((m.sizes || [])[0] || {}).label; if (m.unit === 'seat' && !num(o.n)) o.n = num(m.n && m.n.min) || 4; S.cust = { i: +a[1], id: pk.id, o }; break; }
+    case 'cs': { const C2 = S.cust; if (!C2) break; const m = PR()[C2.id].cz, o = C2.o, v = a.slice(2).join(':');
+      if (a[1] === 'cancel') { S.cust = null; break; }
+      if (a[1] === 'use') { const x = S.items[C2.i]; if (x) { x.cfg = JSON.parse(JSON.stringify(o)); x.cfgId = C2.id; x.pick = C2.id; realSize(x, C2.id, o); } S.cust = null; break; }
+      if (a[1] === 'size') o.size = v; else if (a[1] === 'n') o.n = Math.max(num(m.n && m.n.min) || 1, Math.min(num(m.n && m.n.max) || 99, (num(o.n) || 0) + (+a[2])));
+      else if (a[1] === 'mat') { o.material = v; const mt = (m.materials || []).find(z => z.name === v); o.colour = ((mt && mt.colours) || [])[0] ? mt.colours[0].name : ''; }
+      else if (a[1] === 'col') o.colour = v; else if (a[1] === 'grp') { const [g, op] = v.split('::'); o.groups = Object.assign({}, o.groups, { [g]: op }); }
+      else if (a[1] === 'add') { o.addons = (o.addons || []).includes(v) ? o.addons.filter(z => z !== v) : (o.addons || []).concat(v); }
+      return draw(false); }
     case 'setup': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; let n = 0, miss = 0; const sel0 = S.sel;
       x.items.forEach(k => { if (!designs(CAT[k]).length) return; const before = S.items.length; addItem(k); if (S.items.length > before) n++; else miss++; });
       S.sel = null; S.msg = n ? (miss ? `Added ${n} — ${miss} didn't fit; make the space bigger or move things` : '') : 'No free room — make the space bigger or move things'; if (!n) S.sel = sel0; break; }
