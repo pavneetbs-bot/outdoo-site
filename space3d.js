@@ -62,7 +62,7 @@ function art() {
   x.strokeStyle = '#2E2E2E'; x.lineWidth = 6; x.beginPath(); for (let i = 0; i < 256; i += 16) x.lineTo(i, 64 + Math.sin(i / 18) * 30); x.stroke();
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return (M.c_art = new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }));
 }
-function generic(cat, w, d, h) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
+function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
   if (cat === 'sofa') {
     const sh = 1.4; box(g, w, sh, Math.min(d, 2.8), 0, sh / 2, -d / 2 + Math.min(d, 2.8) / 2, K.frame); box(g, w - 0.2, 0.5, Math.min(d, 2.8) - 0.3, 0, sh + 0.2, -d / 2 + Math.min(d, 2.8) / 2 + 0.1, K.cush);
@@ -108,7 +108,10 @@ function generic(cat, w, d, h) {   // centred on (0, 0), on the floor; w along x
     const H = h || 6; box(g, w, H, 0.3, 0, H / 2, -0.1, K.wood2);
     for (let x = -w / 2 + 0.5; x < w / 2; x += 0.9) for (let y = 0.6; y < H; y += 0.9) { const s = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 0), (x + y) % 2 > 1 ? K.leaf : K.leaf2); s.position.set(x, y, 0.2); g.add(s); }
   } else if (cat === 'graffiti') {
-    const H = h || 6; box(g, w, H, 0.3, 0, H / 2, 0, K.white); const a = new THREE.Mesh(new THREE.PlaneGeometry(w - 0.4, H - 0.4), art()); a.position.set(0, H / 2, 0.16); g.add(a);
+    const H = h || 6, op = (it && it.open) || [], pcs = [];   // painted pieces round any door (u from the left end)
+    let u = 0; op.slice().sort((a, b) => a.u0 - b.u0).forEach(o => { if (o.u0 > u) pcs.push([u, o.u0, 0, H]); if (H > o.h) pcs.push([o.u0, o.u1, o.h, H]); u = o.u1; }); if (u < w) pcs.push([u, w, 0, H]);
+    pcs.forEach(([a0, a1, y0, y1]) => { const pw = a1 - a0, ph = y1 - y0, cx = -w / 2 + (a0 + a1) / 2; if (pw < 0.05 || ph < 0.05) return; box(g, pw, ph, 0.3, cx, y0 + ph / 2, 0, K.white);
+      const a = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(0.1, pw - (pcs.length > 1 ? 0.1 : 0.4)), Math.max(0.1, ph - (pcs.length > 1 ? 0.1 : 0.4))), art()); a.position.set(cx, y0 + ph / 2, 0.16); g.add(a); });
   } else box(g, w, h || 2, d, 0, (h || 2) / 2, 0, K.stone);
   return g;
 }
@@ -124,7 +127,7 @@ function tag(text) {   // a small label above a placed thing
 function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w, d)
   if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { const b = cabinModel(P.cabinCfg(it), P.cabinLay(it)); const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }
   if (it.cat === 'pergola') { try { const b = pergolaModel(P.pergolaSku || 'MTO-PG-TW', { l: it.w, w: it.d, height: '8', colour: 'Black' }); return b.g; } catch (e) { /* fall back to a box */ } }
-  const g = generic(it.cat, it.w, it.d, it.h); g.position.set(it.w / 2, 0, it.d / 2); const h = new THREE.Group(); h.add(g); return h;
+  const g = generic(it.cat, it.w, it.d, it.h, it); g.position.set(it.w / 2, 0, it.d / 2); const h = new THREE.Group(); h.add(g); return h;
 }
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 
@@ -133,6 +136,15 @@ function build(P) {
   if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   (P.items || []).forEach((it, i) => {
+    if (it.segs) {   // a screen fixed on the parapet / round the tanks: pieces in plot coordinates
+      const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); R.holders[i] = hd;
+      it.segs.forEach((sg, k) => { const L = Math.hypot(sg.x1 - sg.x0, sg.z1 - sg.z0); if (L < 0.3) return; const p = new THREE.Group(); p.position.set((sg.x0 + sg.x1) / 2, sg.y, (sg.z0 + sg.z1) / 2); p.rotation.y = -Math.atan2(sg.z1 - sg.z0, sg.x1 - sg.x0); hd.add(p);
+        p.add(generic('privacy', L, 0.3, +it.h || 3));
+        const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
+        if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.2, (+it.h || 3) + 0.2, 0.6)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = (+it.h || 3) / 2; p.add(ln); }
+        if (!k && P.labels !== false) { const tg = tag(it.label || 'Privacy screen'); tg.position.y = (+it.h || 3) + 1.4; p.add(tg); } });
+      return;
+    }
     const [fw, fd] = foot(it), hd = new THREE.Group(); hd.userData.it = i; hd.position.set(+it.x + fw / 2, 0, +it.z + fd / 2); hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);
     const m = model(it, P), ex = it.cat === 'cabin' && it.ex ? it.ex : null; m.position.set(-it.w / 2 + (ex ? ex.l : 0), 0, -it.d / 2 + (ex ? ex.b : 0)); hd.add(m);   // a cabin's body sits inside its plinth / projections
     const hit = new THREE.Mesh(new THREE.BoxGeometry(Math.max(it.w, 0.8), Math.max(+it.h || 3, 2), Math.max(it.d, 0.8)), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = Math.max(+it.h || 3, 2) / 2; hit.userData.hit = i; hd.add(hit);
@@ -181,12 +193,12 @@ function pDown(e) {
   if (R.place) return;
   const hits = ray.intersectObjects(R.holders.filter(Boolean), true), h = hits.find(z => z.object.userData.hit != null) || hits[0];
   let i = null; if (h) { let o = h.object; while (o && o.userData.it == null) o = o.parent; if (o) i = o.userData.it; }
-  if (i != null && f) { const it = R.P.items[i]; R.drag = { kind: 'item', i, obj: R.holders[i], f0: f.clone(), x0: +it.x, z0: +it.z, moved: false, pos0: R.holders[i].position.clone() }; R.controls.enabled = false; e.preventDefault(); }
+  if (i != null && f) { const it = R.P.items[i]; R.drag = { kind: 'item', i, obj: R.holders[i], f0: f.clone(), x0: +it.x, z0: +it.z, moved: false, fixed: !!it.segs, pos0: R.holders[i].position.clone() }; R.controls.enabled = false; e.preventDefault(); }
   else R.tapEmpty = true;
 }
 function pMove(e) {
   const d = R && R.drag; if (!d) return; const f = floorAt(e); if (!f) return;
-  const dx = f.x - d.f0.x, dz = f.z - d.f0.z; if (!d.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; d.moved = true;
+  if (d.fixed) return; const dx = f.x - d.f0.x, dz = f.z - d.f0.z; if (!d.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; d.moved = true;
   d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2; d.obj.position.set(d.pos0.x + (d.nx - d.x0), d.pos0.y, d.pos0.z + (d.nz - d.z0));
 }
 function pUp(e) {
