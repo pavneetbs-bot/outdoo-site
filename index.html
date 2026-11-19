@@ -2962,6 +2962,7 @@ function pdThumbs(id){
   const x=PRODS[id]; if(!x) return; const cl=pdColList(id), list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
   if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg?v=2');
   if(/^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(id)) list.push('/img/trust/cb-assurance.jpg');   // cabins: factory-made, kit, 2–5 day assembly, 10-year warranty
+  if(x.cz&&!['furniture','vertical-gardens'].includes(x.col)&&!/^MTO-PL-\d/.test(id)) list.push(MTO_CTA);   // last photo of Made to Order designs: "Customise & order now" (tapping it opens the customiser)
   window.PDG={id,list,i:0};
   const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
   box.innerHTML = list.length>1 ? list.map((u,i)=>`<div class="th im${i?'':' on'}" onclick="pdGo(${i})"><img src="${bigImg(u,240)}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="lazy"></div>`).join('') : '';
@@ -2993,7 +2994,10 @@ function pdSwipe(el, next, prev, tap){ let x0=null,y0=0,t0=0,multi=false;
   if(tap) el.addEventListener('click',e=>{ if(e.target.closest('button')) return; tap(); }); }
 // full-screen viewer: swipe between photos, double-tap / tap the zoom button / pinch to zoom, drag to look around
 let LZ={s:1,x:0,y:0};
-function lbxOpen(){ let b=document.getElementById('lbx');
+const MTO_CTA='/img/trust/mto-cta.jpg';
+function mtoCtaGo(){ const b=document.querySelector('.pp-go')||[...document.querySelectorAll('button[onclick="buyNow()"]')].find(e=>e.offsetParent&&!e.disabled); if(b){ b.scrollIntoView&&b.scrollIntoView({block:'center'}); b.click(); return true; } return false; }
+function lbxOpen(){ const g0=window.PDG; if(g0&&g0.list[g0.i]===MTO_CTA&&mtoCtaGo()) return;   // the "Customise & order now" photo acts as the button
+  let b=document.getElementById('lbx');
   if(!b){ b=document.createElement('div'); b.id='lbx'; b.setAttribute('role','dialog'); b.setAttribute('aria-label','Photos');
     b.innerHTML='<button type="button" class="lx" aria-label="Close" onclick="lbxClose()">✕</button><div class="lstage"><img alt=""></div><button type="button" class="lp" aria-label="Previous photo" onclick="pdGo(PDG.i-1)">‹</button><button type="button" class="ln" aria-label="Next photo" onclick="pdGo(PDG.i+1)">›</button><div class="lbar"><span class="lc"></span><button type="button" class="lzb" onclick="lbxZoom()">Zoom</button></div>';
     document.body.appendChild(b); lbxWire(b.querySelector('.lstage')); }
