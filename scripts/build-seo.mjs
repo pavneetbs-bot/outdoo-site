@@ -35,9 +35,16 @@ const inr = n => '₹' + Math.round(+n || 0).toLocaleString('en-IN')
 const clip = (s, n) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length > n ? s.slice(0, n - 1).replace(/\s+\S*$/, '') + '…' : s
 
 // 076: packaging + the highest delivery charge the seller set (per piece, incl. GST) — what a buyer far away pays; 0 = free
-const shipOf = p => Math.round(((+p.pack_fee || 0) + Math.max(+p.ship_india || 0, +p.ship_state || 0, +p.ship_local || 0)) * 100) / 100
+// 178 / feed fix: prices on the site include packaging + delivery; without a place the store shows the lowest it can be
+// (near.js charge(): empty rate → the next wider one). SEO pages, JSON-LD and the Google / Meta feed use the same price.
+const nz = v => v == null || v === '' || isNaN(+v) ? null : +v
+const feeOf = p => { const l = nz(p.ship_local), s = nz(p.ship_state), i = nz(p.ship_india), pk = nz(p.pack_fee) || 0
+  const r = z => { const v = z === 'l' ? (l ?? s ?? i) : z === 's' ? (s ?? i) : i; return v == null ? 0 : v }
+  return [pk, l, s, i].some(v => v > 0) ? pk + Math.min(r('l'), r('s'), r('i')) : 0 }
+const delivered = p => { if (p.kind === 'mto') return p; const f = feeOf(p), p0 = +p.price || 0, m0 = +p.mrp || 0
+  return { ...p, price: Math.round(p0 + f), mrp: m0 > p0 ? Math.round(m0 + f) : m0 } }
 const products = (await getAll('products?status=eq.published&select=id,sku,name,seo_title,seo_description,seo_keywords,image_alt,price,mrp,ship_text,image_url,collection_slug,subcategory_slug,description,material,dims,tier,in_stock,updated_at,pack_fee,ship_local,ship_state,ship_india,orders_open,kind,mto,tags&order=name,sku'))
-  .filter(p => p.price > 0)
+  .filter(p => p.price > 0).map(delivered)
 // 135: listed but not on sale yet (seller not live / preview only) — "Coming soon": no price, no cart, not in the Google feed
 const soon = p => p.orders_open === false
 const SOON = '<span class="soon">Coming soon</span>'
@@ -243,7 +250,7 @@ for (const p of products) {
     offers: isMto(p) ? { '@type': 'AggregateOffer', url: SITE + url, priceCurrency: 'INR', lowPrice: (+p.price).toFixed(2), offerCount: 1, availability: 'https://schema.org/PreOrder' } : { '@type': 'Offer', url: SITE + url, priceCurrency: 'INR', price: (+p.price).toFixed(2), itemCondition: 'https://schema.org/NewCondition',
       availability: p.in_stock === false ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
       seller: { '@type': 'Organization', name: 'outrr' },
-      shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: shipOf(p), currency: 'INR' }, shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' } } },
+      shippingDetails: { '@type': 'OfferShippingDetails', shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'INR' }, shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'IN' } } },
   }]), {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: SITE + '/' },
@@ -339,14 +346,14 @@ const x = s => esc(s)
 write('feed/google.xml', `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel>
 <title>outrr</title><link>${SITE}/</link><description>outrr outdoor furniture, lighting and decor</description>
-${products.filter(p => !soon(p)).map(p => `<item>
+${products.filter(p => !soon(p) && !isMto(p)).map(p => `<item>
   <g:id>${x(p.sku)}</g:id><g:title>${x(clip(p.name, 150))}</g:title><g:description>${x(clip(describe(p), 4900))}</g:description>
   <g:link>${SITE}/p/${p.slug}/</g:link><g:image_link>${x(p.image_url)}</g:image_link>
   <g:availability>${p.in_stock === false ? 'out_of_stock' : 'in_stock'}</g:availability><g:condition>new</g:condition>
   ${p.mrp > p.price && !isMto(p) ? `<g:price>${(+p.mrp).toFixed(2)} INR</g:price><g:sale_price>${(+p.price).toFixed(2)} INR</g:sale_price>` : `<g:price>${(+p.price).toFixed(2)} INR</g:price>`}
   <g:brand>outrr</g:brand><g:identifier_exists>no</g:identifier_exists><g:product_type>${x(colOf[p.collection_slug]?.title || 'Outdoor')}</g:product_type>
-  <g:shipping><g:country>IN</g:country><g:price>${shipOf(p).toFixed(2)} INR</g:price></g:shipping>
+  <g:shipping><g:country>IN</g:country><g:price>0.00 INR</g:price></g:shipping>
 </item>`).join('\n')}
 </channel></rss>
 `)
-console.log(`SEO pages built: ${products.length} products, ${cols.length} categories, sitemap ${urls.length} URLs, Google feed ${products.filter(p => !soon(p)).length} items`)
+console.log(`SEO pages built: ${products.length} products, ${cols.length} categories, sitemap ${urls.length} URLs, Google feed ${products.filter(p => !soon(p) && !isMto(p)).length} items`)
