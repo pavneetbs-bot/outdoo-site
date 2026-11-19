@@ -2217,7 +2217,7 @@
   function logPrice(id, o, q) {   // one price check per product per configuration, after the customer stops changing it
     var key = id + '|' + JSON.stringify([o.l, o.w, o.h, o.n, o.size, o.material, o.colour, o.groups, o.addons, o.install]);
     if (sent[key]) return; clearTimeout(sentT);
-    sentT = setTimeout(function () { sent[key] = 1; crm('price_check', { sku: id, price: Math.round(q.total || 0), options: { l: o.l, w: o.w, h: o.h, n: o.n, size: o.size, finish: o.material, colour: o.colour, groups: o.groups, addons: o.addons, install: !!o.install, pin: o.pin } })
+    sentT = setTimeout(function () { sent[key] = 1; try { if (window.otrack) otrack('price_check', { sku: id, value: Math.round(q.total || 0) }); } catch (e) {} crm('price_check', { sku: id, price: Math.round(q.total || 0), options: { l: o.l, w: o.w, h: o.h, n: o.n, size: o.size, finish: o.material, colour: o.colour, groups: o.groups, addons: o.addons, install: !!o.install, pin: o.pin } })
       .then(function (r) { if (r && r.need_profile) { try { sessionStorage.removeItem(OKK); } catch (e) {} profileForm(id); } }); }, 2500);
   }
   // signed in earlier in this browser: check once whether the profile is complete, so prices open without asking again

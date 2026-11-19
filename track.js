@@ -58,7 +58,8 @@
       .catch(function () { loadTags({}) })
   }
 
-  var FB = { view_item: 'ViewContent', add_to_cart: 'AddToCart', begin_checkout: 'InitiateCheckout', purchase: 'Purchase' }
+  var FB = { view_item: 'ViewContent', add_to_cart: 'AddToCart', begin_checkout: 'InitiateCheckout', purchase: 'Purchase',
+    customise_start: 'CustomizeProduct', price_check: 'Lead' }   // ads: 3D designer opened / a signed-in customer saw a Made to Order price
   function toTags(kind, d) {
     if (!tags) { queue.push([kind, d]); return }
     var skus = d.skus || (d.sku ? [d.sku] : []), value = +d.value || 0
