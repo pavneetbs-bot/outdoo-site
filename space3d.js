@@ -134,7 +134,7 @@ function build(P) {
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   (P.items || []).forEach((it, i) => {
     const [fw, fd] = foot(it), hd = new THREE.Group(); hd.userData.it = i; hd.position.set(+it.x + fw / 2, 0, +it.z + fd / 2); hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);
-    const m = model(it, P); m.position.set(-it.w / 2, 0, -it.d / 2); hd.add(m);
+    const m = model(it, P), ex = it.cat === 'cabin' && it.ex ? it.ex : null; m.position.set(-it.w / 2 + (ex ? ex.l : 0), 0, -it.d / 2 + (ex ? ex.b : 0)); hd.add(m);   // a cabin's body sits inside its plinth / projections
     const hit = new THREE.Mesh(new THREE.BoxGeometry(Math.max(it.w, 0.8), Math.max(+it.h || 3, 2), Math.max(it.d, 0.8)), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = Math.max(+it.h || 3, 2) / 2; hit.userData.hit = i; hd.add(hit);
     if (P.labels !== false && it.cat !== 'cabin') { const tg = tag(it.label || it.cat); tg.position.y = (it.cat === 'pergola' ? 10 : Math.max(+it.h || 3, 3)) + 1.4; hd.add(tg); }
     if (P.sel === i) { const sz = [it.w + 0.6, Math.max(+it.h || 3, 1) + 0.4, it.d + 0.6], ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(...sz)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = sz[1] / 2; hd.add(ln);

@@ -1676,7 +1676,7 @@
     if (!S || !PRODS[S.id] || !window.outrrPlan) return; var x = PRODS[S.id], m = x.cz, seed = { item: null, site: null };
     if (m.unit === 'cabin') { var lay = S.o.layout || {}, t = S.site;
       seed.item = { cat: 'cabin', sku: S.id, pick: S.id, lsku: S.id, layout: cbClone(lay), label: short(x.n), w: (num(lay.L) || 12) + 1.2, d: (num(lay.W) || 10) + 1.2, h: 10, rot: 0 };
-      if (t && t.kind === 'terrace') { var F = tsFoot(t, lay); seed.site = JSON.parse(JSON.stringify(t)); seed.item.x = t.cx - F.e.l; seed.item.z = t.cz - F.e.b; seed.item.w = F.L + F.e.l + F.e.r; seed.item.d = F.W + F.e.b + F.e.f; }
+      if (t && t.kind === 'terrace') { var F = tsFoot(t, lay); seed.site = JSON.parse(JSON.stringify(t)); seed.item.bcx = t.cx + F.L / 2; seed.item.bcz = t.cz + F.W / 2; }   // the planner centres the cabin there
       else if (t && t.kind === 'ground') seed.site = { kind: 'ground' };
     } else seed.item = { cat: 'pergola', pick: S.id, label: short(x.n), w: num(S.o.l) || 12, d: num(S.o.w) || 10, h: 9, rot: 0 };
     try { window.mtoClose(); } catch (e) {} try { if (S.studio) window.cbStudio(null); } catch (e) {}

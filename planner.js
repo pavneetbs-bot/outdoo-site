@@ -4,7 +4,7 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=2';
+import * as S3 from './space3d.js?v=3';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['500', 50, 90]];
@@ -93,7 +93,17 @@ function snapWall(it) {   // a panel near the parapet or a block (within 3 ft): 
   if (sd === 'back' || sd === 'front') { it.rot = sd === 'back' ? 0 : 180; it.x = r2(cx - it.w / 2); it.z = blk ? (sd === 'front' ? at - it.d : at) : (sd === 'back' ? at : at - it.d); }
   else { it.rot = sd === 'left' ? 270 : 90; it.z = r2(cz - it.w / 2); it.x = blk ? (sd === 'right' ? at - it.d : at) : (sd === 'left' ? at : at - it.d); }
 }
-function settle(it, i, from) { const c = CAT[it.cat]; if (c && c.kind === 'edge') snapEdge(it); else if (c && c.kind === 'wall') snapWall(it); return placeFree(it, i, from); }
+function flush(it, i) {   // within 1.5 ft of the parapet, a block or another thing → slide up against it
+  const t = S.site, p = P0(), fl = CAT[it.cat].kind === 'floor', obs = (t.kind === 'terrace' ? t.blocks : []).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d }))
+    .concat(S.items.filter((o, j) => j !== i && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin')).map(rectI));
+  const r = rectI(it), ov = (a0, a1, b0, b1) => a0 < b1 - 0.01 && a1 > b0 + 0.01;
+  const gx = [[r.x - p, -1], [t.pw - p - (r.x + r.w), 1]], gz = [[r.z - p, -1], [t.pd - p - (r.z + r.d), 1]];
+  obs.forEach(o => { if (ov(r.z, r.z + r.d, o.z, o.z + o.d)) { if (o.x + o.w <= r.x + 0.01) gx.push([r.x - (o.x + o.w), -1]); if (o.x >= r.x + r.w - 0.01) gx.push([o.x - (r.x + r.w), 1]); }
+    if (ov(r.x, r.x + r.w, o.x, o.x + o.w)) { if (o.z + o.d <= r.z + 0.01) gz.push([r.z - (o.z + o.d), -1]); if (o.z >= r.z + r.d - 0.01) gz.push([o.z - (r.z + r.d), 1]); } });
+  for (const [g, ax] of [[gx, 'x'], [gz, 'z']]) { const m = g.filter(q => q[0] > 0.01 && q[0] <= 1.5).sort((a, b) => a[0] - b[0])[0]; if (!m) continue;
+    const keep = it[ax]; it[ax] = Math.round((it[ax] + m[0] * m[1]) * 100) / 100; if (clashes(it, i)) it[ax] = keep; }
+}
+function settle(it, i, from) { const c = CAT[it.cat]; if (c && c.kind === 'edge') snapEdge(it); else if (c && c.kind === 'wall') snapWall(it); const ok = placeFree(it, i, from); if (ok && c && c.kind !== 'edge' && c.kind !== 'wall') flush(it, i); return ok; }
 
 // ---------------------------------------------------------------- blocks on the roof (step 1)
 function addBlock(t, type, w, d, side, at) {
@@ -170,10 +180,15 @@ const priceOk = () => !!(window.mtoOk && window.mtoOk());
 // ---------------------------------------------------------------- adding / editing
 function cabinSkus() { return designs(CAT.cabin).filter(id => (PR()[id].cz || {}).cabin); }
 function cabinCfg(it) { return ((PR()[it.sku] || {}).cz || {}).cabin; }
+function cabinFoot(it) {   // the cabin's plot footprint = body + its plinth (0.3 ft) + pergola projections on the sides it has them; it.ex = per side (cabin's own frame)
+  const L = cabinLay(it), c = cabinCfg(it) || {}, dep = num(c.proj && c.proj.depth) || 1.5, pj = L.proj && Array.isArray(L.proj.sides) ? L.proj.sides : [];
+  const e = { l: 0.3, r: 0.3, b: 0.3, f: 0.3 }; pj.forEach(sd => { const k = { left: 'l', right: 'r', back: 'b', front: 'f' }[sd]; if (k) e[k] = Math.max(e[k], dep); });
+  it.ex = e; it.w = (num(L.L) || 12) + e.l + e.r; it.d = (num(L.W) || 10) + e.b + e.f;
+}
 function cabinLay(it) { const c = cabinCfg(it); return (it.layout && (!it.lsku || it.lsku === it.sku) ? it.layout : null) || (c && c.layout) || {}; }
 function newItem(k) {
   const c = CAT[k], t = S.site, it = { cat: k, rot: 0, w: c.w || 4, d: c.d || 4, h: c.h || 3, label: c.t };
-  if (k === 'cabin') { const sk = cabinSkus().find(s => /PORTA/.test(s)) || cabinSkus()[0]; if (!sk) return null; const L = cabinLay({ sku: sk }); it.sku = sk; it.w = (num(L.L) || 12) + 1.2; it.d = (num(L.W) || 10) + 1.2; it.h = 10; it.label = PR()[sk].n.replace(/ —.*$/, ''); }
+  if (k === 'cabin') { const sk = cabinSkus().find(s => /PORTA/.test(s)) || cabinSkus()[0]; if (!sk) return null; it.sku = sk; cabinFoot(it); it.h = 10; it.label = PR()[sk].n.replace(/ —.*$/, ''); }
   it.x = r2((t.pw - it.w) / 2); it.z = r2(t.pd * 0.55 - it.d / 2); return it;
 }
 function roomy(it, i) {   // a free spot away from what's already there (so a setup spreads out instead of piling up)
@@ -195,7 +210,7 @@ function addItem(k) {
 function cabinSize(it, L, W) {   // the cabin's own length × width (the studio's resize); its plot footprint follows
   if (!window.mtoCabinSize) return; const keep = JSON.stringify(it), i = S.items.indexOf(it), f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2;
   const r = window.mtoCabinSize(it.sku, cabinLay(it), L, W); if (!r || !r.lay) return;
-  it.layout = r.lay; it.lsku = it.sku; it.w = r.lay.L + 1.2; it.d = r.lay.W + 1.2; const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2);
+  it.layout = r.lay; it.lsku = it.sku; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2);
   if (!settle(it, i, [it.x, it.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'No room for it that size here'; }
 }
 function resizeItem(it, key, d, abs) {
@@ -206,7 +221,7 @@ function resizeItem(it, key, d, abs) {
 }
 
 // ---------------------------------------------------------------- UI
-const CSS = `#plOv{position:fixed;inset:0;z-index:9000;background:#F6F1EA;display:flex;flex-direction:column;font-family:Inter,Poppins,system-ui,sans-serif;color:#2E2E2E}
+const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;position:fixed;inset:0;z-index:9000;background:#F6F1EA;display:flex;flex-direction:column;font-family:Inter,Poppins,system-ui,sans-serif;color:#2E2E2E}
 #plOv .pl-hd{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #E2D6C4;background:#fff}#plOv .pl-hd h2{margin:0;font-size:16px}#plOv .pl-hd small{color:#7A7268}
 #plOv .pl-x{margin-left:auto;border:0;background:#F3ECE2;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer}
 #plOv .pl-st{display:flex;gap:6px}#plOv .pl-st button{border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer}#plOv .pl-st button.on{background:#C26445;color:#fff;border-color:#C26445;font-weight:700}
@@ -223,7 +238,7 @@ const CSS = `#plOv{position:fixed;inset:0;z-index:9000;background:#F6F1EA;displa
 #plOv .pl-pal button:hover{border-color:#C26445}#plOv .pl-pal i{font-style:normal;font-size:22px}#plOv .pl-pal b{display:block;font-size:13px}#plOv .pl-pal small{color:#7A7268;font-size:11.5px}
 #plOv .pl-it{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F0E8DC;font-size:13px;cursor:pointer}#plOv .pl-it span{flex:1}#plOv .pl-it em{font-style:normal;color:#6A6258}
 #plOv .pl-ed{border:2px solid #C26445;border-radius:14px;padding:12px;background:#FFF8F2}#plOv .pl-pm{display:flex;align-items:center;gap:6px;margin:6px 0}#plOv .pl-pm span{min-width:110px;font-size:13px}#plOv .pl-pm b{min-width:56px;text-align:center}
-#plOv .pl-sz{display:flex;align-items:center;gap:4px;font-size:12px;color:#6A6258}#plOv .pl-sz input{width:62px;height:34px;border:1px solid #C9BBA6;border-radius:8px;text-align:center;font:inherit;font-size:14px;font-weight:700}
+#plOv input{-webkit-user-select:text;user-select:text}#plOv .pl-sz{display:flex;align-items:center;gap:4px;font-size:12px;color:#6A6258}#plOv .pl-sz input{width:62px;height:34px;border:1px solid #C9BBA6;border-radius:8px;text-align:center;font:inherit;font-size:14px;font-weight:700}
 #plOv .pl-pm button{width:34px;height:34px;border-radius:50%;border:1px solid #C9BBA6;background:#fff;font-size:18px;cursor:pointer}
 #plOv .pl-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}#plOv .pl-act button{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer}
 #plOv .pl-msg{background:#FFF4E5;border:1px solid #F1D3A8;border-radius:10px;padding:8px 10px;font-size:12.5px;margin:8px 0}#plOv .pl-note{background:#EEF3E8;border:1px solid #D3DEC5;border-radius:10px;padding:8px 10px;font-size:12.5px;margin:8px 0}
@@ -364,9 +379,9 @@ function onClick(e) {
     case 'rot': if (it) { const keep = JSON.stringify(it), f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; it.rot = ((+it.rot || 0) + 90) % 360; const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); if (!settle(it, S.sel, [it.x, it.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'No room to turn it here'; } } break;
     case 'rs': if (it) resizeItem(it, a[1], +a[2]); break;
     case 'cz': if (it && it.cat === 'cabin') { const L = cabinLay(it); cabinSize(it, a[1] === 'L' ? num(L.L) + +a[2] : num(L.L), a[1] === 'W' ? num(L.W) + +a[2] : num(L.W)); } break;
-    case 'csku': if (it) { const keep = JSON.stringify(it), L0 = it.layout; it.sku = a[1] + (a[2] ? ':' + a[2] : ''); if (L0 && window.mtoCabinSize) { const r = window.mtoCabinSize(it.sku, null, L0.L, L0.W); if (r && r.lay) { it.layout = r.lay; it.lsku = it.sku; } } const L = cabinLay(it); it.w = (num(L.L) || 12) + 1.2; it.d = (num(L.W) || 10) + 1.2; it.label = PR()[it.sku].n.replace(/ —.*$/, ''); if (!settle(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'That cabin doesn\'t fit here'; } } break;
+    case 'csku': if (it) { const keep = JSON.stringify(it), L0 = it.layout; it.sku = a[1] + (a[2] ? ':' + a[2] : ''); if (L0 && window.mtoCabinSize) { const r = window.mtoCabinSize(it.sku, null, L0.L, L0.W); if (r && r.lay) { it.layout = r.lay; it.lsku = it.sku; } } cabinFoot(it); it.label = PR()[it.sku].n.replace(/ —.*$/, ''); if (!settle(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'That cabin doesn\'t fit here'; } } break;
     case 'unlock': return unlock();
-    case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; const L = cabinLay(x); x.w = (num(L.L) || 12) + 1.2; x.d = (num(L.W) || 10) + 1.2; x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
+    case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
     case 'cart': return toCart();
     case 'setup': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; let n = 0, miss = 0; const sel0 = S.sel;
       x.items.forEach(k => { if (!designs(CAT[k]).length) return; const before = S.items.length; addItem(k); if (S.items.length > before) n++; else miss++; });
@@ -443,6 +458,7 @@ function close() { if (EL) EL.style.display = 'none'; document.body.style.overfl
 
 export function open(seed) {
   for (const k in PC) delete PC[k]; shell(); if (!S) { S = load(); S.hist = []; S.hi = -1; }
+  S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
   let q = null; try { q = new URLSearchParams(location.search).get('plan'); } catch (e) {}
   if (q && q.length > 10 && !S.linkDone) { S.linkDone = true; fromLink(q); }
   if (seed && seed.item) {   // 193: from the cabin studio / pergola designer
@@ -450,6 +466,7 @@ export function open(seed) {
     else if (seed.site && seed.site.kind === 'ground' && S.site.kind !== 'ground') { S.site.kind = 'ground'; }
     const it = Object.assign({}, seed.item), same = S.items.findIndex(o => o.cat === it.cat && (o.pick === it.pick || o.sku === it.pick));
     if (same >= 0) S.items.splice(same, 1);
+    if (it.cat === 'cabin') { cabinFoot(it); if (it.bcx != null) { it.x = r2(it.bcx - it.w / 2); it.z = r2(it.bcz - it.d / 2); } delete it.bcx; delete it.bcz; }
     if (it.x == null) { it.x = r2((S.site.pw - it.w) / 2); it.z = r2(S.site.pd * 0.35 - it.d / 2); }
     S.items.unshift(it); if (!placeFree(it, 0)) { S.items.shift(); }
     S.items = S.items.filter((o, i) => i === 0 || settle(o, i));   // things already planned move off it
@@ -457,4 +474,4 @@ export function open(seed) {
   } EL.style.display = 'flex'; document.body.style.overflow = 'hidden';
   draw(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60);
 }
-window.outrrPlanState = () => S; window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
+window.outrrPlanState = () => S; window.outrrPlanMove = (i, x, z) => on3d({ t: 'move', i, x, z }); window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
