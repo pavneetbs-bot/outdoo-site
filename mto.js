@@ -368,6 +368,7 @@
     '.wz-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E2D6C4;border-radius:14px;padding:12px;margin-bottom:10px;cursor:pointer}.wz-row>span:first-child{flex:1;display:flex;flex-direction:column}.wz-row small{font-size:12px;color:#6A6258}.wz-pr{font-size:12.5px;color:#6A6258;white-space:nowrap}'+
     '.wz-sw{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:99px;background:#D9D4CB;position:relative;cursor:pointer;flex:none;margin:0;transition:background .15s}.wz-sw:checked{background:#C26445}.wz-sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .15s}.wz-sw:checked::after{left:23px}'+
     '.ts-h{margin:16px 0 8px;font-size:13px;font-weight:700;color:#2E2E2E}.ts-h span{font-weight:400;color:#7A7268;font-size:12px}.ts-lb{margin:0 0 6px;font-size:12px;color:#6A6258}.ts-big{margin:2px 0 4px!important}.ts-big button{padding:10px 16px!important;font-size:14px!important}.ts-sm button{padding:5px 10px!important;font-size:12px!important}.ts-add{margin-top:6px!important}.ts-add button{border-style:dashed!important}'+
+    '.ts-lk{border:1px solid #D9CDBB;background:#fff;border-radius:999px;padding:4px 10px;font:600 11.5px inherit;font-family:inherit;cursor:pointer;margin-right:6px;color:#4A4640}.ts-lk.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}' +
     '.ts-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:8px 0}.ts-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px;position:relative}.ts-n input{width:80px;height:38px;border:1px solid #D9CDBB;border-radius:10px;padding:0 24px 0 10px;font:600 14px Inter,sans-serif;box-sizing:border-box}.ts-n i{position:absolute;right:9px;bottom:11px;font-style:normal;font-size:12px;color:#8A8276}.ts-x{width:32px;height:32px;border-radius:8px;border:1px solid #E2D6C4;background:#fff;cursor:pointer;flex:none}.ts-c{height:38px;padding:0 12px;border-radius:10px;border:1px solid #2E2E2E;background:#fff;font-weight:600;font-size:12.5px;cursor:pointer}'+
     '.ts-blk{border:1px solid #E7DDCF;border-radius:12px;padding:10px 12px;margin:0 0 8px;background:#FFFCF8}.ts-bh{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px}.ts-bh b{font-size:13.5px}.ts-ck{display:flex;gap:6px;align-items:center;font-size:12.5px;color:#4A4640}'+
     '.wz-more{border:1px solid #E2D6C4;border-radius:12px;padding:8px;margin:6px 0;background:#FBF8F3}.wz-more .wz-tabs{margin:4px 0}.wz-x{margin-left:auto;color:#B3261E!important}' +
@@ -615,8 +616,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=16').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=16'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=17').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=17'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -754,7 +755,7 @@
         return '<div class="ts-blk"><div class="ts-bh"><b>' + ck[1] + '</b></div><div class="wz-tabs ts-sm">' + btn('data-ts="cut:' + ck[0] + ':"', !cOn, 'No cut') + btn('data-ts="cut:' + ck[0] + ':notch"', c.type === 'notch', '⌐ Straight') + btn('data-ts="cut:' + ck[0] + ':slant"', c.type === 'slant', '◸ Slant') + '</div>' +
           (cOn ? '<div class="ts-row">' + nIn('ca:' + ck[0], c.a, 'Across', 1, t.pw - 4) + nIn('cb:' + ck[0], c.b, 'Deep', 1, t.pd - 4) + '</div>' : '') + '</div>'; }).join('');
       h += sec('Already on the roof', 'drag them on the 3D too') + arr(t.blocks).map(function (b, i) {
-        return '<div class="ts-blk"><div class="ts-bh"><b>' + esc(TS_KIND[b.type][0]) + '</b><button type="button" class="ts-x" data-ts="del:' + i + '" aria-label="Remove">✕</button></div>' +
+        return '<div class="ts-blk"><div class="ts-bh"><b>' + esc(TS_KIND[b.type][0]) + '</b><button type="button" class="ts-lk' + (b.lock ? ' on' : '') + '" data-ts="lock:' + i + '" aria-pressed="' + !!b.lock + '">' + (b.lock ? '🔒 Locked' : '🔓 Lock') + '</button><button type="button" class="ts-x" data-ts="del:' + i + '" aria-label="Remove">✕</button></div>' +
           '<div class="wz-tabs ts-sm">' + TS_WALLS.map(function (wl) { return btn('data-ts="wall:' + i + ':' + wl[0] + '"', b.side === wl[0], wl[1]); }).join('') + '</div>' +
           '<div class="ts-row">' + nIn('w:' + i, b.w, 'Width', 1, 40) + nIn('d:' + i, b.d, 'Length', 1, 40) + nIn('l:' + i, Math.round(b.x * 2) / 2, 'From left', 0.75, t.pw) + nIn('f:' + i, Math.round((t.pd - b.z - b.d) * 2) / 2, 'From front', 0.75, t.pd) + (b.type !== 'ac' ? nIn('h:' + i, num(b.h) || TS_BH[b.type] || 9, 'Height', 2, 30) : '') + '</div>' +
           (b.type === 'mumty' ? '<label class="ts-ck"><input type="checkbox" data-ts="tanks"' + (t.tanks !== false ? ' checked' : '') + '> Water tanks on top</label>' : '') + '</div>';
@@ -795,6 +796,7 @@
     else if (a[0] === 'cut') { x.cuts = x.cuts || {}; if (!a[2]) delete x.cuts[a[1]]; else x.cuts[a[1]] = Object.assign({ a: Math.min(8, Math.round(x.pw / 4)), b: Math.min(8, Math.round(x.pd / 6)) }, x.cuts[a[1]] || {}, { type: a[2] }); x.blocks.forEach(function (bb, i) { tsFree(x, i); }); if (tsClash(x, lay)) tsCentre(x, lay); }
     else if (a[0] === 'high') { x.high = x.high || {}; x.high[a[1]] = !x.high[a[1]]; }
     else if (a[0] === 'tanks') x.tanks = x.tanks === false;
+    else if (a[0] === 'lock' && b) b.lock = !b.lock;
     else if (a[0] === 'del' && b) x.blocks.splice(+a[1], 1);
     else if (a[0] === 'wall' && b) { tsWall(x, b, a[2]); if (!tsFree(x, +a[1])) { b.x = keep.x; b.z = keep.z; b.side = keep.side; S.tsMsg = 'No free room on that wall'; } }
     else if (a[0] === 'add') { var D = { mumty: [10, 18], lift: [6, 6], shaft: [3, 4], room: [10, 12], ac: [3, 1.2] }[a[1]]; if (!tsAdd(x, a[1], a[1] === 'room' ? 'back' : 'right', D[0], D[1])) S.tsMsg = 'No free room for it — make the others smaller or move them'; }
@@ -810,13 +812,13 @@
     if (a[0] === 'cf') { x.cz = Math.max(0, x.pd - v - tsDims(x, lay)[1]); return true; }
     if (!b) return false; if (a[0] === 'h') { b.h = Math.max(2, Math.min(30, Math.round(v * 2) / 2)); return true; } var keep = JSON.stringify(b);
     if (a[0] === 'w') b.w = Math.max(1, Math.min(x.pw - 1.5, v)); else if (a[0] === 'd') b.d = Math.max(1, Math.min(x.pd - 1.5, v));
-    else if (a[0] === 'l') { b.x = v; b.side = 'free'; } else if (a[0] === 'f') { b.z = x.pd - v - b.d; b.side = 'free'; }
-    tsWall(x, b, b.side); if (!tsFree(x, +a[1])) { var o = JSON.parse(keep); Object.keys(o).forEach(function (kk) { b[kk] = o[kk]; }); S.tsMsg = 'That would sit on top of another one'; }
+    else if (a[0] === 'l') { b.x = v; if (b.side === 'left' || b.side === 'right') b.side = 'free'; } else if (a[0] === 'f') { b.z = x.pd - v - b.d; if (b.side === 'back' || b.side === 'front') b.side = 'free'; }   // along its wall it stays on the wall
+    tsWall(x, b, b.side); var i0 = +a[1]; if (x.blocks.some(function (o2, j) { return j !== i0 && tsHit(b, o2); }) || tsCut(x, b)) { var o = JSON.parse(keep); Object.keys(o).forEach(function (kk) { b[kk] = o[kk]; }); S.tsMsg = 'That would touch another one — move or shrink that first'; }
     return true;
   }
   function tsDrop(ev) {   // a block dragged in 3D: snaps to a wall within 1 ft; never on another block
-    var x = S.site, b = x && arr(x.blocks)[ev.i]; if (!b) return; var keep = { x: b.x, z: b.z, side: b.side }, P = 0.75; b.x = ev.x; b.z = ev.z;
-    b.side = b.x <= P + 1 ? 'left' : b.x + b.w >= x.pw - P - 1 ? 'right' : b.z <= P + 1 ? 'back' : b.z + b.d >= x.pd - P - 1 ? 'front' : 'free'; tsWall(x, b, b.side);
+    var x = S.site, b = x && arr(x.blocks)[ev.i]; if (!b || b.lock) return; var keep = { x: b.x, z: b.z, side: b.side }, P = 0.75; b.x = ev.x; b.z = ev.z;
+    if (keep.side && keep.side !== 'free') b.side = keep.side; else b.side = b.x <= P + 1 ? 'left' : b.x + b.w >= x.pw - P - 1 ? 'right' : b.z <= P + 1 ? 'back' : b.z + b.d >= x.pd - P - 1 ? 'front' : 'free'; tsWall(x, b, b.side);
     S.tsMsg = ''; if (x.blocks.some(function (o, j) { return j !== ev.i && tsHit(b, o); })) { b.x = keep.x; b.z = keep.z; b.side = keep.side; S.tsMsg = 'It can\'t go on top of another one — try a clear spot'; }
     else if (tsCut(x, b)) { b.x = keep.x; b.z = keep.z; b.side = keep.side; S.tsMsg = 'That corner is cut — it can\'t go there'; }
   }
@@ -1799,7 +1801,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=22').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=23').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2194,7 +2196,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: !!S.o.deck, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=8').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=9').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');

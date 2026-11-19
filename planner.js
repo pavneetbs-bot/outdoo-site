@@ -4,8 +4,8 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=13';
-import { cutHit } from './cabin3d.js?v=16';
+import * as S3 from './space3d.js?v=14';
+import { cutHit } from './cabin3d.js?v=17';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
@@ -132,10 +132,11 @@ function snapWall(it) {   // a panel near the parapet or a block (within 3 ft): 
   const faces = [['back', p, cz - p], ['front', t.pd - p, t.pd - p - cz], ['left', p, cx - p], ['right', t.pw - p, t.pw - p - cx]];
   (t.kind === 'terrace' ? t.blocks : []).forEach((b, bi) => { if (b.type === 'ac') return; if (cx > b.x && cx < b.x + b.w) { faces.push(['front', b.z, cz - b.z, 1, bi, 'zmin']); faces.push(['back', b.z + b.d, b.z + b.d - cz, 1, bi, 'zmax']); }
     if (cz > b.z && cz < b.z + b.d) { faces.push(['right', b.x, cx - b.x, 1, bi, 'xmin']); faces.push(['left', b.x + b.w, b.x + b.w - cx, 1, bi, 'xmax']); } });
-  const near = faces.filter(q => Math.abs(q[2]) <= 3).sort((a, b) => Math.abs(a[2]) - Math.abs(b[2]))[0]; if (!near) { it.on = null; return; }
+  const near = it.wside ? faces.find(q => q[0] === it.wside && !q[3]) : faces.filter(q => Math.abs(q[2]) <= 3).sort((a, b) => Math.abs(a[2]) - Math.abs(b[2]))[0]; if (!near) { it.on = null; return; }   // a chosen wall wins
   const [sd, at, , blk, bi, face] = near; it.on = blk ? { b: bi, face } : { side: sd };   // a parapet side: the panel's back to it; a block: its face
   if (sd === 'back' || sd === 'front') { it.rot = sd === 'back' ? 0 : 180; it.x = r2(cx - it.w / 2); it.z = blk ? (sd === 'front' ? at - it.d : at) : (sd === 'back' ? at : at - it.d); }
   else { it.rot = sd === 'left' ? 270 : 90; it.z = r2(cz - it.w / 2); it.x = blk ? (sd === 'right' ? at - it.d : at) : (sd === 'left' ? at : at - it.d); }
+  if (it.wside) { const f2 = foot(it); it.x = r2(Math.max(p, Math.min(t.pw - p - f2[0], it.x))); it.z = r2(Math.max(p, Math.min(t.pd - p - f2[1], it.z))); }   // kept on the plot along its wall
 }
 // 193c: a parapet side's free runs (cut corners trimmed; cabins, blocks and tall things standing against it left out)
 const SIDE_AX = { back: 'x', front: 'x', left: 'z', right: 'z' };
@@ -207,7 +208,13 @@ function flush(it, i) {   // within 1.5 ft of the parapet, a block or another th
   for (const [g, ax] of [[gx, 'x'], [gz, 'z']]) { const m = g.filter(q => q[0] > 0.01 && q[0] <= 1.5).sort((a, b) => a[0] - b[0])[0]; if (!m) continue;
     const keep = it[ax]; it[ax] = Math.round((it[ax] + m[0] * m[1]) * 100) / 100; if (clashes(it, i)) it[ax] = keep; }
 }
-function settle(it, i, from) { if (att(it)) { attach(it, i); return true; } const c = CAT[it.cat]; if (c && c.kind === 'edge') snapEdge(it); else if (c && c.kind === 'wall') { snapWall(it); fitWall(it, i); } const ok = placeFree(it, i, from); if (ok && c && c.kind !== 'edge' && c.kind !== 'wall') flush(it, i); return ok; }
+// a thing set against a wall stays on it: moved / resized only along that wall (it.wside = left | right | back | front)
+function pinW(it) { if (!it.wside || (CAT[it.cat] && CAT[it.cat].kind === 'wall')) return; const t = S.site, p = P0(), f = foot(it);
+  if (it.wside === 'left') it.x = p; else if (it.wside === 'right') it.x = r2(t.pw - p - f[0]); else if (it.wside === 'back') it.z = p; else if (it.wside === 'front') it.z = r2(t.pd - p - f[1]); }
+function undo1(it, keep) { Object.keys(it).forEach(k => delete it[k]); Object.assign(it, JSON.parse(keep)); }
+function onW(it) { if (!it.wside) return true; const t = S.site, p = P0(), f = foot(it), e = 0.3;   // positions are kept to ½ ft
+  return it.wside === 'left' ? Math.abs(it.x - p) < e : it.wside === 'right' ? Math.abs(it.x + f[0] - (t.pw - p)) < e : it.wside === 'back' ? Math.abs(it.z - p) < e : Math.abs(it.z + f[1] - (t.pd - p)) < e; }
+function settle(it, i, from) { if (att(it)) { attach(it, i); return true; } pinW(it); const c = CAT[it.cat]; if (c && c.kind === 'edge') snapEdge(it); else if (c && c.kind === 'wall') { snapWall(it); fitWall(it, i); } const ok = placeFree(it, i, from); if (ok && c && c.kind !== 'edge' && c.kind !== 'wall') flush(it, i); return ok; }
 
 // ---------------------------------------------------------------- blocks on the roof (step 1)
 function addBlock(t, type, w, d, side, at) {
@@ -447,7 +454,7 @@ function stepSite() {
     h += '<p class="pl-h">Corners cut? <small style="font-weight:400;color:#7A7268">front = road side</small></p>' + CUTS.map(([k, lbl]) => { const c = C[k] || {}, on = c.type === 'notch' || c.type === 'slant';
       return `<div class="pl-blk"><b>${lbl}</b><div class="pl-tabs" style="gap:5px">${btn(`data-pl="cut:${k}:"`, !on, 'No cut')}${btn(`data-pl="cut:${k}:notch"`, c.type === 'notch', '⌐ Straight')}${btn(`data-pl="cut:${k}:slant"`, c.type === 'slant', '◸ Slant')}</div>` +
         (on ? `<div class="pl-row" style="width:100%;margin:2px 0 0">${nIn('ca:' + k, c.a, 'Across (ft)', 1, t.pw - 4)}${nIn('cb:' + k, c.b, 'Deep (ft)', 1, t.pd - 4)}</div>` : '') + '</div>'; }).join('');
-    h += '<p class="pl-h">Already on the roof <small style="font-weight:400;color:#7A7268">drag them on the 3D</small></p>' + t.blocks.map((b, i) => `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${b.type !== 'ac' ? nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30) : ''}<button type="button" class="pl-xx" data-pl="bdel:${i}" aria-label="Remove">✕</button></div>`).join('');
+    h += '<p class="pl-h">Already on the roof <small style="font-weight:400;color:#7A7268">drag them on the 3D</small></p>' + t.blocks.map((b, i) => `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${b.type !== 'ac' ? nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30) : ''}<button type="button" class="pl-xx" data-pl="bdel:${i}" aria-label="Remove">✕</button><div class="pl-tabs" style="width:100%;gap:5px;margin:0">${[['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']].map(([k2, l2]) => btn(`data-pl="bside:${i}:${k2}"`, (b.side || 'free') === k2, l2)).join('')}${btn(`data-pl="block:${i}"`, !!b.lock, b.lock ? '🔒 Locked' : '🔓 Lock')}</div></div>`).join('');
     h += '<div class="pl-tabs">' + Object.keys(BLK).map(k => `<button type="button" data-pl="badd:${k}">+ ${esc(BLK[k][0].replace(/ \(.*\)/, '').replace('AC outdoor unit', 'AC unit'))}</button>`).join('') + '</div>';
   }
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
@@ -471,6 +478,7 @@ function stepPlace() {
     if ((sel.cat === 'cabin' || sel.cat === 'pergola') && window.mtoFromPlan) h += `<button type="button" class="pl-design" data-pl="design">✎ ${sel.cfg ? 'Change it' : 'Customise it'} in the ${sel.cat === 'cabin' ? 'cabin' : 'pergola'} designer<small>${sel.cat === 'cabin' ? 'walls, doors, rooms, finishes' : 'finish, colour, roof, layout, add-ons'} — on this terrace; "Save to my plan" brings it back</small></button>`;
     if (sel.cat === 'pergola' && !sel.lock) h += pm('h', 'Height', sel.h) + `<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="pdeck"${sel.deck ? ' checked' : ''}> Deck floor under it (as high as a porta cabin's)</label>` + (sel.att && sel.att.length ? '<p class="pl-sub" style="margin:2px 0 6px">Fixed to the wall on ' + sel.att.length + ' side' + (sel.att.length > 1 ? 's' : '') + ' — no posts there' + (sel.hAuto !== false && S.items.some(o => o.cat === 'cabin') ? '; height and deck matched to the cabin' : '') + '.</p>' : '');
     if (sel.cat === 'graffiti') h += `<label class="pl-ck" style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="gfit"${sel.fit !== false ? ' checked' : ''}> Fit the whole wall it's on${sel.open ? ' (door left open)' : ''}</label>`;
+    if (!att(sel) && c.kind !== 'edge' && !sel.lock) h += '<p class="pl-h" style="margin-top:6px">Against a wall? <small style="font-weight:400;color:#7A7268">it stays on it when moved</small></p><div class="pl-tabs">' + [['free', 'Free'], ['left', 'Left'], ['right', 'Right'], ['back', 'Back'], ['front', 'Front']].map(([k2, l2]) => btn(`data-pl="wside:${k2}"`, (sel.wside || 'free') === k2, l2)).join('') + '</div>';
     h += `<p style="margin:10px 0 0;font-size:14px">${fp && fp.price != null ? (lock ? '🔒 Price after sign-in' : 'From <b>' + rs(fp.price) + '</b>') : fp && fp.soon ? 'Coming soon' : 'Our team will price it'} <small style="color:#7A7268">· ${fp ? fp.n : 0} designs</small></p>`;
     h += '<div class="pl-act">' + (att(sel) ? '' : `<button type="button" data-pl="lock">${sel.lock ? '🔓 Unlock' : '🔒 Lock'}</button>`) + (!sel.lock && (c.kind === 'free' || c.kind === 'floor') && sel.mode !== 'ac' ? '<button type="button" data-pl="rot">↻ Turn</button>' : '') + (att(sel) || sel.lock ? '' : '<button type="button" data-pl="dup">⧉ Copy</button>') + (sel.lock ? '' : '<button type="button" data-pl="del">🗑 Remove</button>') + '<button type="button" data-pl="done" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Done</button></div></div>';
     if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
@@ -583,6 +591,9 @@ function act(a) {   // one button's action on S; true = draw again
     case 'rfront': t.road_front = t.road_front === false; break;
     case 'rback': t.road_back = !t.road_back; if (t.road_back && t.high) t.high.back = false; break;
     case 'bdel': t.blocks.splice(+a[1], 1); break;
+    case 'block': { const b = t.blocks[+a[1]]; if (b) b.lock = !b.lock; break; }
+    case 'bside': { const b = t.blocks[+a[1]]; if (!b) break; const keep = JSON.stringify(b); wallB(t, b, a[2]); b.side = a[2]; if (!freeB(t, +a[1])) { Object.assign(b, JSON.parse(keep)); S.msg = 'No free room on that wall'; } S.items = S.items.filter((x, j) => settle(x, j)); break; }
+    case 'wside': if (it && !att(it)) { const keep = JSON.stringify(it); it.wside = a[1] === 'free' ? undefined : a[1]; if (!settle(it, S.sel) || !onW(it)) { undo1(it, keep); S.msg = 'No room for it on that wall'; } } break;
     case 'badd': { const D = BLK[a[1]]; if (!addBlock(t, a[1], D[1], D[2], a[1] === 'room' ? 'back' : 'right')) S.msg = 'No free room for it — make the others smaller or move them'; S.items = S.items.filter((x, i) => settle(x, i)); break; }
     case 'add': ev('plan_add', { ref: a[1] }); if (a[1] === 'privacy') { S.ask = 'privacy'; S.sel = null; break; } if (a[1] === 'accover') { const n = coverAC(); S.msg = n ? '' : (S.site.blocks.some(b => b.type === 'ac') ? 'Every AC unit already has a cover' : 'Add your AC units in step 1 (Your space) first — the covers go over them'); if (n) S.sel = S.items.length - 1; break; } addItem(a[1]); break;
     case 'pmode': { S.ask = null; const m = a[1], t2 = S.site;
@@ -641,14 +652,17 @@ function onInput(e) {
   if (/^c[ab]:/.test(k)) { const [f, c] = k.split(':'), cu = t.cuts && t.cuts[c]; if (!cu) return; cu[f === 'ca' ? 'a' : 'b'] = Math.max(1, Math.min(f === 'ca' ? t.pw - 4 : t.pd - 4, Math.round(v * 2) / 2)); afterCut(); return draw(); }
   if (k === 'pw' || k === 'pd') { t.plot = ''; setPlot(k === 'pw' ? v : t.pw, k === 'pd' ? v : t.pd); }
   else { const [f, i] = k.split(':'), b = t.blocks[+i]; if (!b) return; if (f === 'bh') { b.h = Math.max(2, Math.min(30, Math.round(v * 2) / 2)); S.items.forEach((x, j) => attach(x, j)); return draw(); } const keep = JSON.stringify(b); if (f === 'bw') b.w = Math.max(1, Math.min(t.pw - 2, v)); else b.d = Math.max(1, Math.min(t.pd - 2, v)); wallB(t, b, b.side);
-    if (!freeB(t, +i)) { Object.assign(b, JSON.parse(keep)); S.msg = 'That would sit on top of another one'; } S.items = S.items.filter((x, j) => settle(x, j)); }
+    if (t.blocks.some((o, j) => j !== +i && hit(b, o)) || cutHit(t, b, PAR)) { Object.assign(b, JSON.parse(keep)); S.msg = 'That would touch another one — move or shrink that first'; } S.items = S.items.filter((x, j) => settle(x, j)); }
   draw();
 }
-function moveItem(i, x, z) { const it = S.items[i]; if (!it || it.lock || att(it)) return false; const keep = JSON.stringify(it); it.x = x; it.z = z; if (!settle(it, i, [x, z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It doesn\'t fit there'; } S.sel = i; return true; }
+function moveItem(i, x, z) { const it = S.items[i]; if (!it || it.lock || att(it)) return false; const keep = JSON.stringify(it); it.x = x; it.z = z; if (!settle(it, i, [x, z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It doesn\'t fit there'; }
+  else if (!onW(it)) { undo1(it, keep); S.msg = 'No room there on the ' + it.wside + ' wall — or pick "Free" to move it off the wall'; }
+  else if (CAT[it.cat] && CAT[it.cat].kind === 'wall' && !it.wside && it.on && it.on.side) it.wside = it.on.side;   // a panel put on a parapet stays on it
+  S.sel = i; return true; }
 function on3d(ev) {
   const t = S.site; S.msg = '';
-  if (ev.t === 'block') { const b = t.blocks[ev.i]; if (!b) return; const keep = { x: b.x, z: b.z, side: b.side }; b.x = ev.x; b.z = ev.z;
-    b.side = b.x <= PAR + 1 ? 'left' : b.x + b.w >= t.pw - PAR - 1 ? 'right' : b.z <= PAR + 1 ? 'back' : b.z + b.d >= t.pd - PAR - 1 ? 'front' : 'free'; wallB(t, b, b.side);
+  if (ev.t === 'block') { const b = t.blocks[ev.i]; if (!b || b.lock) return; const keep = { x: b.x, z: b.z, side: b.side }; b.x = ev.x; b.z = ev.z;
+    if (keep.side && keep.side !== 'free') b.side = keep.side; else b.side = b.x <= PAR + 1 ? 'left' : b.x + b.w >= t.pw - PAR - 1 ? 'right' : b.z <= PAR + 1 ? 'back' : b.z + b.d >= t.pd - PAR - 1 ? 'front' : 'free'; wallB(t, b, b.side);
     if (t.blocks.some((o, j) => j !== ev.i && hit(b, o))) { Object.assign(b, keep); S.msg = 'It can\'t go on top of another one'; } else if (cutHit(t, b, PAR)) { Object.assign(b, keep); S.msg = 'That corner is cut — it can\'t go there'; } }
   else if (ev.t === 'move') { if (!moveItem(ev.i, ev.x, ev.z)) return; }
   else if (ev.t === 'sel') S.sel = ev.i;

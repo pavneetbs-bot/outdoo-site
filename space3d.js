@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=16';
-import { pergolaModel } from './pergola3d.js?v=8';
+import { cabinModel, plotModel } from './cabin3d.js?v=17';
+import { pergolaModel } from './pergola3d.js?v=9';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -227,7 +227,7 @@ function pDown(e) {
   const ray = rayAt(e), f = floorAt(e); R.down = { x: e.clientX, y: e.clientY };
   if (R.place && R.plot) {   // step 1: a block on the roof
     const hits = ray.intersectObject(R.plot, true), h = hits.find(z => { let o = z.object; while (o && !o.userData.st) o = o.parent; return o; });
-    if (h && f) { let o = h.object; while (!o.userData.st) o = o.parent; const bk = (R.P.site.blocks || [])[o.userData.st.i]; if (bk) { R.drag = { kind: 'block', i: o.userData.st.i, obj: o, f0: f.clone(), x0: +bk.x, z0: +bk.z, moved: false, pos0: o.position.clone() }; R.controls.enabled = false; e.preventDefault(); } }
+    if (h && f) { let o = h.object; while (!o.userData.st) o = o.parent; const bk = (R.P.site.blocks || [])[o.userData.st.i]; if (bk) { R.drag = { kind: 'block', i: o.userData.st.i, obj: o, f0: f.clone(), x0: +bk.x, z0: +bk.z, moved: false, fixed: !!bk.lock, side: bk.side || 'free', pos0: o.position.clone() }; R.controls.enabled = false; e.preventDefault(); } }
     return;
   }
   if (R.place) return;
@@ -239,7 +239,8 @@ function pDown(e) {
 function pMove(e) {
   const d = R && R.drag; if (!d) return; const f = floorAt(e); if (!f) return;
   if (d.fixed) return; const dx = f.x - d.f0.x, dz = f.z - d.f0.z; if (!d.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; d.moved = true;
-  d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2; d.obj.position.set(d.pos0.x + (d.nx - d.x0), d.pos0.y, d.pos0.z + (d.nz - d.z0));
+  d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2;
+  if (d.side === 'left' || d.side === 'right') d.nx = d.x0; if (d.side === 'back' || d.side === 'front') d.nz = d.z0;   // on a wall: slides along it only d.obj.position.set(d.pos0.x + (d.nx - d.x0), d.pos0.y, d.pos0.z + (d.nz - d.z0));
 }
 function pUp(e) {
   if (!R) return; const d = R.drag; R.drag = null; R.controls.enabled = true;

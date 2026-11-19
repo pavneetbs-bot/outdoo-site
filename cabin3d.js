@@ -344,7 +344,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=13').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=14').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
@@ -545,7 +545,8 @@ function pDown(e) {
     const ih = !R.ts.place && f ? itemAt(hits) : null, ia = ih && (R.ts.around || [])[ih.userData.it];
     if (ih && ia) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; R.idrag = { obj: ih, i: ih.userData.it, p0: toPlot(f), pos0: ih.position.clone(), x0: +ia.x, z0: +ia.z, can: !ia.lock && !ia.segs && !ia.box, moved: false }; R.controls.enabled = false; e.preventDefault(); return; }
     if (hb && f && R.ts.place) { let o = hb.object; while (!o.userData.st) o = o.parent; const bk = (R.ts.blocks || [])[o.userData.st.i];   // 192: frozen after the Where step
-      if (bk) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; R.sdrag = { obj: o, i: o.userData.st.i, p0: toPlot(f), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, moved: false }; R.controls.enabled = false; e.preventDefault(); return; } }
+      if (bk && bk.lock) { e.preventDefault(); return; }   // locked: can't be moved by mistake
+      if (bk) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; R.sdrag = { obj: o, i: o.userData.st.i, p0: toPlot(f), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, side: bk.side || 'free', moved: false }; R.controls.enabled = false; e.preventDefault(); return; } }
     if (R.ts.whole && !R.ts.place && f && hits.some(h => { let o = h.object; while (o && o.name !== 'site') o = o.parent; return !o; })) {   // 193e: on 'Whole terrace' the cabin itself moves on the terrace
       tg.updateWorldMatrix(true, false); R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled;
       R.cdrag = { inv: tg.matrixWorld.clone().invert(), p0: f.clone().applyMatrix4(tg.matrixWorld.clone().invert()), pos0: tg.position.clone(), cx0: +R.ts.cx, cz0: +R.ts.cz, moved: false, shift: new THREE.Vector3() }; R.controls.enabled = false; e.preventDefault(); return; }
@@ -562,7 +563,8 @@ function pMove(e) {
     id.nx = Math.round((id.x0 + p.x - id.p0.x) * 2) / 2; id.nz = Math.round((id.z0 + p.z - id.p0.z) * 2) / 2; id.obj.position.set(id.pos0.x + id.nx - id.x0, id.pos0.y, id.pos0.z + id.nz - id.z0); return; }
   const sd = R.sdrag; if (sd) { const f = floorAt(e); if (!f) return; if (!sd.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; sd.moved = true;
     const t = R.ts, PT = 0.75, p = toPlot(f), x = Math.round(Math.max(PT, Math.min(t.pw - PT - sd.w, sd.x0 + p.x - sd.p0.x)) * 2) / 2, z = Math.round(Math.max(PT, Math.min(t.pd - PT - sd.d, sd.z0 + p.z - sd.p0.z)) * 2) / 2;
-    sd.nx = x; sd.nz = z; sd.obj.position.set(x - sd.x0, 0, z - sd.z0); return; }
+    sd.nx = sd.side === 'left' || sd.side === 'right' ? sd.x0 : x; sd.nz = sd.side === 'back' || sd.side === 'front' ? sd.z0 : z;   // on a wall: slides along it only
+    sd.obj.position.set(sd.nx - sd.x0, 0, sd.nz - sd.z0); return; }
   const cd = R.cdrag; if (cd) { const f = floorAt(e); if (!f) return; if (!cd.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; cd.moved = true;
     const p = f.clone().sub(cd.shift).applyMatrix4(cd.inv), t = R.ts,   // 193e: the camera slid with the terrace — take that out, or the cabin chases itself (flicker)
       [fw, fd] = tsFootDims(t, R.L, R.W);

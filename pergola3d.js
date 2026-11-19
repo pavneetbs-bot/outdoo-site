@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=16';   // 193f: the same terrace as the cabin studio and the planner
+import { plotModel } from './cabin3d.js?v=17';   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -222,7 +222,7 @@ export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
-  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=13').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=14').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
@@ -263,8 +263,8 @@ function ptr() {
   if (R.ptr) return; R.ptr = 1; const cv = R.renderer.domElement; cv.style.touchAction = 'none';
   cv.addEventListener('pointerdown', e => {
     const t = R.site; if (!t || !R.group || (e.pointerType === 'mouse' && e.button !== 0)) return; const hits = cast(e, [R.group]), f = floorAt(e); if (!f || !hits.length) return;
-    if (t.place) { const h = hits.find(x => { let o = x.object; while (o && !o.userData.st) o = o.parent; return o; }); if (!h) return; let o = h.object; while (!o.userData.st) o = o.parent; const bk = (t.blocks || [])[o.userData.st.i]; if (!bk) return;
-      R.drag = { kind: 'blk', obj: o, i: o.userData.st.i, f0: f.clone(), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, sx: e.clientX, sy: e.clientY, moved: false }; }
+    if (t.place) { const h = hits.find(x => { let o = x.object; while (o && !o.userData.st) o = o.parent; return o; }); if (!h) return; let o = h.object; while (!o.userData.st) o = o.parent; const bk = (t.blocks || [])[o.userData.st.i]; if (!bk || bk.lock) return;
+      R.drag = { kind: 'blk', obj: o, i: o.userData.st.i, f0: f.clone(), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, side: bk.side || 'free', sx: e.clientX, sy: e.clientY, moved: false }; }
     else { let ih = hits[0].object, hd = null; while (ih) { if (hd == null && ih.userData && ih.userData.it != null) hd = ih; if (ih.name === 'planitems') break; ih = ih.parent; }
       const ia = ih && hd && (t.around || [])[hd.userData.it];
       if (ia) { R.drag = { kind: 'it', obj: hd, i: hd.userData.it, f0: f.clone(), x0: +ia.x, z0: +ia.z, p0: hd.position.clone(), can: !ia.lock && !ia.segs && !ia.box, sx: e.clientX, sy: e.clientY, moved: false }; R.controls.enabled = false; e.preventDefault(); e.stopPropagation(); try { cv.setPointerCapture(e.pointerId); } catch (er) {} return; }
@@ -275,7 +275,7 @@ function ptr() {
   cv.addEventListener('pointermove', e => {
     const d = R.drag; if (!d) return; const f = floorAt(e); if (!f) return; if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 5) return; d.moved = true; const t = R.site, dx = f.x - d.f0.x, dz = f.z - d.f0.z;
     if (d.kind === 'it') { if (!d.can) return; d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2; d.obj.position.set(d.p0.x + d.nx - d.x0, d.p0.y, d.p0.z + d.nz - d.z0); }
-    else if (d.kind === 'blk') { d.nx = Math.round(Math.max(0.75, Math.min(t.pw - 0.75 - d.w, d.x0 + dx)) * 2) / 2; d.nz = Math.round(Math.max(0.75, Math.min(t.pd - 0.75 - d.d, d.z0 + dz)) * 2) / 2; d.obj.position.set(d.nx - d.x0, 0, d.nz - d.z0); }
+    else if (d.kind === 'blk') { d.nx = Math.round(Math.max(0.75, Math.min(t.pw - 0.75 - d.w, d.x0 + dx)) * 2) / 2; d.nz = Math.round(Math.max(0.75, Math.min(t.pd - 0.75 - d.d, d.z0 + dz)) * 2) / 2; if (d.side === 'left' || d.side === 'right') d.nx = d.x0; if (d.side === 'back' || d.side === 'front') d.nz = d.z0; d.obj.position.set(d.nx - d.x0, 0, d.nz - d.z0); }
     else { d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2; d.obj.position.set(d.p0.x + dx, 0, d.p0.z + dz); }
   });
   const up = () => { const d = R.drag; if (!d) return; R.drag = null; R.controls.enabled = true; if (d.kind === 'it' && HANDLER) return HANDLER(d.moved ? { t: 'moveitem', i: d.i, x: d.nx, z: d.nz } : { t: 'selitem', i: d.i }); if (!d.moved || !HANDLER) return;
