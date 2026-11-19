@@ -69,6 +69,7 @@ try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var 
   .mmenu .top img{height:26px}
   .mmenu .x{border:0;background:none;font-size:28px;line-height:1;padding:4px 8px;cursor:pointer;color:var(--char)}
 }
+.cod-test{border:1.5px dashed #C26445;border-radius:12px;padding:10px 12px;margin:12px 0 0;background:#FFF8F2;font-size:13.5px}.cod-test b{display:block;margin-bottom:6px}.cod-test label{display:flex;gap:8px;align-items:flex-start;margin:6px 0;cursor:pointer}.cod-test small{display:block;color:#7A7268;font-size:11.5px}
 </style>
 <title>outrr — Every Outdoor Possibility | Outdoor Furniture, Lighting & Decor Online</title>
 <meta name="description" content="India's destination for outdoor living — furniture, shade, planters, lighting & soft furnishings. Curated by the team behind 300+ luxury outdoor projects. A LifeWall Group company.">
@@ -4101,12 +4102,14 @@ function renderCheckout(){
         ${shipRow(t.ship,t.loc,'coShipR')}
         <div class="r tot"><span>Total payable</span><span id="coTot">${inr(t.total)}</span></div>
       </div>
+      <div id="coCod"></div>
       <div id="coSplit">${coSplitHTML(t)}</div>
       <button class="btn" id="coPlace" style="width:100%;margin-top:13px;padding:14px" onclick="placeOrder()">${coPayLabel(t)}</button>
       <div class="secline" style="text-align:center">Inclusive of all taxes · GST invoice from the seller · 100% secure payment by Razorpay</div>
     </div>
    </div></div>`;
   if(window.acCheckoutExtras) acCheckoutExtras();
+  coCodOn=false; coCodCheck();
   const pe=document.getElementById('coPin'); if(pe){ pe.addEventListener('input',coShipPaint); setTimeout(coShipPaint,0); }
 }
 function pickPay(el){document.querySelectorAll('.payopt').forEach(p=>{if(p.querySelector('input[name=pay]'))p.classList.remove('on')});
@@ -4115,6 +4118,19 @@ function coBad(id,ok){const f=document.getElementById(id).closest('.fld'); f.cla
 const CO_STATES=['Andaman and Nicobar Islands','Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chandigarh','Chhattisgarh','Dadra and Nagar Haveli and Daman and Diu','Delhi','Goa','Gujarat','Haryana','Himachal Pradesh','Jammu and Kashmir','Jharkhand','Karnataka','Kerala','Ladakh','Lakshadweep','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Puducherry','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal'];
 let coLast={}; try{coLast=JSON.parse(localStorage.getItem('outrr_addr')||'{}')}catch(e){}
 let coBusy=false;
+// 205: testing logins (company_settings.cod_test_emails) can place a cash-on-delivery test order
+let coCodOn=false;
+async function coCodCheck(){ const el=document.getElementById('coCod'); if(!el) return; el.innerHTML='';
+  if(window.ASSIST&&window.ASSIST.name) return;
+  try{ const S=window.OUTRR_SUPA||{}, tk=window.acToken?await acToken():null; if(!tk||!S.url) return;
+    const r=await fetch(S.url+'/rest/v1/rpc/cod_test_ok',{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+tk,'Content-Type':'application/json'},body:'{}'});
+    if(!r.ok||(await r.json())!==true) return;
+    el.innerHTML='<div class="cod-test"><b>Payment</b><label><input type="radio" name="copay" checked onchange="coCodSet(false)"> Pay online</label><label><input type="radio" name="copay" onchange="coCodSet(true)"> Cash on delivery <small>testing login only — a test order, sellers don\'t see it</small></label></div>';
+  }catch(e){} }
+function coCodSet(on){ coCodOn=on; const b=document.getElementById('coPlace'), sp=document.getElementById('coSplit'); if(sp) sp.style.display=on?'none':''; if(b&&!coBusy) b.textContent=on?'Place test order — cash on delivery':coPayLabel(coTotals()); }
+function coCodDone(){ const {res,customer}=window.__coLast||{}; if(!res) return;
+  document.getElementById('coS2').classList.add('on'); document.getElementById('coS3').classList.add('on');
+  document.getElementById('coBody').innerHTML=`<div class="cosucc"><div class="tick">✓</div><h2>Test order placed · cash on delivery</h2><p>Order <b>${res.order_no}</b> is in the admin marked as a test order. Sellers don't see it and get no email. Cancel it in the admin once you're done testing.</p><button class="btn" onclick="go('home')">Back to the store</button></div>`; }
 async function placeOrder(){
   if(coBusy) return;
   const v=id=>document.getElementById(id).value.trim();
@@ -4141,7 +4157,7 @@ async function placeOrder(){
   try{
     const asst=window.ASSIST&&window.ASSIST.name;   // 186 Sales mode: the order is placed for the CRM lead; the customer pays by link
     const r=await fetch(S.url+'/rest/v1/rpc/'+(asst?'sales_place_order':'place_order'),{method:'POST',headers:{apikey:S.anon,Authorization:'Bearer '+(asst?S.anon:(utok||S.anon)),'Content-Type':'application/json'},
-      body:JSON.stringify({...(asst?{p_token:window.ASSIST.token}:{}),p:{items:CART.map(c=>c.mto?{sku:c.id,qty:1,mto:c.mto}:PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().coupon,pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'}})});
+      body:JSON.stringify({...(asst?{p_token:window.ASSIST.token}:{}),p:{items:CART.map(c=>c.mto?{sku:c.id,qty:1,mto:c.mto}:PRODS[c.id]&&PRODS[c.id].bun?{bundle:PRODS[c.id].bun.id,qty:c.q}:{sku:c.id,qty:c.q}),customer,coupon:coTotals().coupon,...(coCodOn&&!asst?{payment_method:'cod',pay_plan:'full'}:{pay_plan:coSplitOn&&coSplitOk(coTotals())?'split':'full'})}})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok) err=j.message||'Could not place the order'; else res=j;
   }catch(e){err='Network problem. Check your connection and try again.';}
@@ -4151,6 +4167,7 @@ async function placeOrder(){
   CART=[]; updBadge();   // the order exists now: paying again later uses the order, not the cart
   window.__coLast={res,customer,utok,skus};
   if(window.ASSIST&&window.ASSIST.name&&window.assistDone){ if(btn){btn.disabled=true;btn.textContent='Order placed';} return assistDone(res,customer); }
+  if(res.payment_method==='cod'){ if(btn){btn.disabled=true;btn.textContent='Order placed';} return coCodDone(); }
   if(btn){btn.disabled=true;btn.textContent='Opening secure payment…';}
   outrrPay(res.id,()=>coPaid(),why=>coUnpaid(why));
 }
