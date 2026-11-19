@@ -160,11 +160,31 @@
     const T = (k, l) => `<button class="${tab === k ? 'on' : ''}" onclick="acTab('${k}')">${l}</button>`
     view(`<div class="pagetop"><span class="bk" onclick="showHome()">←</span><h2>My account</h2></div>
       <div class="ac-hello"><div><b>Hi${me.name ? ', ' + esc(me.name.split(' ')[0]) : ''}</b><span>${esc(me.email)}</span></div><a onclick="acSignOut()">Sign out</a></div>
-      <div class="ac-tabs">${T('orders', 'Orders')}${T('addresses', 'Addresses')}${T('profile', 'Profile & GST')}</div>
+      <div class="ac-tabs">${T('orders', 'Orders')}${T('plans', 'Saved plans')}${T('addresses', 'Addresses')}${T('profile', 'Profile & GST')}</div>
       <div id="acBody"></div>`)
-    tab === 'orders' ? drawOrders() : tab === 'addresses' ? drawAddresses() : drawProfile()
+    tab === 'orders' ? drawOrders() : tab === 'plans' ? drawPlans() : tab === 'addresses' ? drawAddresses() : drawProfile()
   }
   window.acTab = t => { tab = t; draw() }
+
+  // ---------------------------------------------------------------- 195: saved plans ("Plan your space")
+  const CATN = { cabin: 'Cabin', pergola: 'Pergola', sofa: 'Sofa set', swing: 'Swing', dining: 'Dining set', chair: 'Chairs', bench: 'Bench', table: 'Table', bar: 'Bar counter', planter: 'Planter', water: 'Water feature', sculpture: 'Sculpture', deck: 'Decking', railing: 'Railing', privacy: 'Privacy screen', feature: 'Feature wall', vgarden: 'Vertical garden', graffiti: 'Graffiti art', accover: 'AC cover', gate: 'Gate' }
+  async function drawPlans() {
+    const b = $('acBody'); if (!b) return; b.innerHTML = '<p class="mut">Loading your plans…</p>'
+    let list = []; try { list = await rpc('my_plans') || [] } catch (e) { b.innerHTML = `<p class="mut">${esc(e.message)}</p>`; return }
+    b.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 12px"><p class="mut sm" style="margin:0">Your terrace and lawn plans — they save themselves while you plan.</p>
+        <button class="btn" style="padding:9px 16px" onclick="window.outrrPlan&&outrrPlan()">＋ Plan your space</button></div>` +
+      (list.length ? list.map(p => `<div class="ac-order" style="padding:14px 16px">
+        <div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+          <div><b>${esc(p.name)}</b><div class="mut sm">${p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace'}${p.size ? ' · ' + esc(p.size) : ''} · ${p.item_count} thing${p.item_count === 1 ? '' : 's'}${p.est_total ? ' · about ' + rs(p.est_total) : ''}${p.city ? ' · ' + esc(p.city) : ''}${p.pincode ? ' ' + esc(p.pincode) : ''}</div>
+            <div class="mut sm">${(p.kinds || []).map(k => CATN[k] || k).join(', ')}</div>
+            <div class="mut sm">Saved ${d8(p.updated_at, true)}${p.carted_at ? ' · <b>in your cart ' + d8(p.carted_at, true) + '</b>' : ''}</div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPlanOpen('${p.id}')">Open</button>
+            <button class="btn ghost" style="padding:8px 12px" onclick="acPlanRename('${p.id}')">Rename</button><button class="btn ghost" style="padding:8px 12px" onclick="acPlanDel('${p.id}')">Delete</button></div>
+        </div></div>`).join('') : '<div class="ac-empty"><p>No plans yet.</p><p class="mut sm">Set up your terrace or lawn, place a cabin, a pergola, seating, planters… and see it in 3D with prices.</p></div>')
+  }
+  window.acPlanOpen = id => { if (window.outrrPlan) outrrPlan({ load: id }) }
+  window.acPlanRename = async id => { const nm = prompt('Name this plan'); if (!nm || !nm.trim()) return; try { await rpc('plan_rename', { p_id: id, p_name: nm.trim() }); drawPlans() } catch (e) { say(e.message) } }
+  window.acPlanDel = async id => { if (!confirm('Delete this plan?')) return; try { await rpc('plan_delete', { p_id: id }); drawPlans() } catch (e) { say(e.message) } }
 
   // ---------------------------------------------------------------- orders
   const STEPS = [['placed', 'Placed'], ['confirmed', 'Confirmed'], ['packed', 'Packed'], ['shipped', 'Shipped'], ['delivered', 'Delivered']]

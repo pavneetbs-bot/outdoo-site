@@ -56,7 +56,36 @@ let S = null, EL = null;
 function fresh() { const t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, par: 3, corner: '', high: {}, tanks: true, blocks: [] }; defBlocks(t); return { v: 1, step: 0, site: t, items: [], sel: null, view: '3d' }; }
 function defBlocks(t) { t.blocks = []; const sm = t.pw <= 25; addBlock(t, 'mumty', sm ? 8 : 10, sm ? 16 : 18, 'left'); const m = t.blocks[0]; if (m) addBlock(t, 'lift', 6, 6, 'left', [PAR, Math.max(PAR, m.z - 6)]); addBlock(t, 'shaft', 3, 4, 'right'); }
 function load() { try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && v.v === 1 && v.site) return Object.assign({ sel: null, view: '3d', step: 0 }, v); } catch (e) {} return fresh(); }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items })); } catch (e) {} }
+function save() { try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, pid: S.pid || null, pname: S.pname || '', source: S.source || '' })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
+// ---------------------------------------------------------------- 195: plans saved to the customer's account; sign-in asked 1 minute in
+const ev = (k, d) => { try { if (window.otrack) window.otrack(k, d || {}); } catch (e) {} };
+async function rpc(fn, args) {
+  const C = window.OUTRR_SUPA || {}, t = window.acToken ? await window.acToken() : null; if (!C.url || !t) throw new Error('Please sign in');
+  const r = await fetch(C.url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: C.anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) });
+  const j = await r.json().catch(() => null); if (!r.ok) throw new Error((j && j.message) || 'Could not save'); return j;
+}
+const signedIn = () => { try { return !!localStorage.getItem('outrr_session'); } catch (e) { return false; } };
+const pinNow = () => { try { return (JSON.parse(localStorage.getItem('outrr_addr') || '{}').pincode) || ''; } catch (e) { return ''; } };
+let cloudT = null, cloudBusy = false;
+function cloudSoon(extra) { if (!S || !signedIn() || !priceOk()) return; clearTimeout(cloudT); cloudT = setTimeout(() => cloudSave(extra), extra ? 0 : 3000); }
+async function cloudSave(extra) {
+  if (cloudBusy || !S) return; cloudBusy = true;
+  try {
+    const est = S.step === 2 ? exact().t : total().t, first = !S.pid;
+    const r = await rpc('plan_save', { p: Object.assign({ id: S.pid || null, name: S.pid ? undefined : S.pname || undefined, kind: S.site.kind === 'terrace' ? 'terrace' : 'lawn', site: S.site, items: S.items, step: S.step,
+      est: Math.round(est || 0), pincode: pinNow(), device: innerWidth < 760 ? 'mobile' : 'desktop', source: S.source || 'planner' }, extra || {}) });
+    if (r && r.id) { S.pid = r.id; S.pname = r.name; S.savedAt = Date.now(); S.dirty = false; save(); S.dirty = true; paintSaved(); if (first) ev('plan_save', {}); }
+  } catch (e) { S.saveErr = String(e.message || e); paintSaved(); } finally { cloudBusy = false; }
+}
+function paintSaved() { const el = document.getElementById('plSv'); if (!el || !S) return;
+  el.innerHTML = S.pid ? `<span title="Saved to your account">✓ ${esc(S.pname || 'Saved')}</span><button type="button" data-pl="rename" aria-label="Rename this plan">✎</button><button type="button" data-pl="newplan">＋ New plan</button>` : S.saveErr && signedIn() ? `<span style="color:#9B2C22">${esc(S.saveErr)}</span>` : ''; }
+function gateDue() {   // 1 minute after the planner opened: sign in (with name, mobile, city) to keep going — the plan is then kept in the account
+  if (priceOk() || S.gateOff) return false; let t0 = 0; try { t0 = +sessionStorage.getItem('outrr_plan_t0') || 0; if (!t0) { t0 = Date.now(); sessionStorage.setItem('outrr_plan_t0', t0); } } catch (e) {}
+  return Date.now() - t0 > 60000;
+}
+let gateT = null;
+function gateWatch() { clearInterval(gateT); gateT = setInterval(() => { if (!EL || EL.style.display === 'none') return; if (gateDue() && !S.gate) { S.gate = true; ev('plan_gate', {}); draw(false); } else if (S.gate && priceOk()) { S.gate = false; draw(false); cloudSoon({}); } }, 5000); }
+function gateCard() { return '<div class="pl-gate"><b>Keep your plan</b><p>Sign in to save this plan to your account — open it again on any device, and see prices. It takes 30 seconds (email code + your name, mobile and city).</p><button type="button" class="pl-go" data-pl="unlock">Sign in to continue →</button><small>Your plan so far is kept.</small></div>'; }
 function snap() { return JSON.stringify([S.site, S.items]); }
 function hist() { const k = snap(); if (S.hist[S.hi] === k) return; S.hist = S.hist.slice(0, S.hi + 1); S.hist.push(k); if (S.hist.length > 80) S.hist.shift(); S.hi = S.hist.length - 1; }
 function undo(d) { const j = S.hi + d; if (j < 0 || j >= S.hist.length) return; S.hi = j; const v = JSON.parse(S.hist[j]); S.site = v[0]; S.items = v[1]; S.sel = null; S.msg = ''; draw(true); }
@@ -346,7 +375,7 @@ function resizeItem(it, key, d, abs) {
 // ---------------------------------------------------------------- UI
 const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;position:fixed;inset:0;z-index:9000;background:#F6F1EA;display:flex;flex-direction:column;font-family:Inter,Poppins,system-ui,sans-serif;color:#2E2E2E}
 #plOv .pl-hd{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #E2D6C4;background:#fff}#plOv .pl-hd h2{margin:0;font-size:16px}#plOv .pl-hd small{color:#7A7268}
-#plOv .pl-x{margin-left:auto;border:0;background:#F3ECE2;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer}
+#plOv .pl-x{margin-left:8px;border:0;background:#F3ECE2;width:38px;height:38px;border-radius:50%;font-size:18px;cursor:pointer}
 #plOv .pl-st{display:flex;gap:6px}#plOv .pl-st button{border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer}#plOv .pl-st button.on{background:#C26445;color:#fff;border-color:#C26445;font-weight:700}
 #plOv .pl-bd{flex:1;display:flex;min-height:0}#plOv .pl-3d{flex:1;position:relative;min-width:0;background:#E9ECE4}#plOv #pl3d{position:absolute;inset:0}
 #plOv .pl-side{width:380px;max-width:42vw;background:#fff;border-left:1px solid #E2D6C4;display:flex;flex-direction:column;min-height:0}#plOv .pl-pn{flex:1;overflow:auto;padding:16px}
@@ -375,13 +404,16 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-ask{display:grid;gap:8px;margin-top:8px}#plOv .pl-ask button{border:1px solid #E2D6C4;background:#fff;border-radius:12px;padding:12px;text-align:left;font:inherit;cursor:pointer}#plOv .pl-ask button:hover{border-color:#C26445}#plOv .pl-ask b{display:block;font-size:14px}#plOv .pl-ask small{color:#6A6258;font-size:12px}
 #plOv .pl-design{display:block;width:100%;text-align:left;border:1.5px solid #C26445;background:#fff;color:#8a3a1f;border-radius:12px;padding:10px 12px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;margin:8px 0}#plOv .pl-design small{display:block;font-weight:500;color:#6A6258;font-size:11.5px;margin-top:2px}
 #plOv .pl-cust{display:inline-block;margin:6px 8px 0 0;border:1px solid #C26445;background:#FFF8F2;color:#8a3a1f;border-radius:99px;padding:6px 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}#plOv .pl-sw{width:30px;height:30px;border-radius:50%!important;padding:0!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #ccc;min-height:0!important}#plOv .pl-sw.on{box-shadow:0 0 0 2px #C26445}
+#plOv .pl-sv{display:flex;align-items:center;gap:6px;font-size:12px;color:#55634A;margin-left:auto;max-width:34vw;overflow:hidden;white-space:nowrap}#plOv .pl-sv span{overflow:hidden;text-overflow:ellipsis}#plOv .pl-sv button{border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:4px 9px;font:inherit;font-size:11.5px;cursor:pointer;white-space:nowrap}
+#plOv .pl-gate{border:2px solid #C26445;border-radius:16px;padding:18px;background:#FFF8F2}#plOv .pl-gate b{font-size:18px}#plOv .pl-gate p{font-size:13.5px;color:#4A4640;margin:8px 0 14px}#plOv .pl-gate small{display:block;margin-top:8px;color:#7A7268}#plOv .pl-gate .pl-go{margin:0;width:100%}
+#plOv.pl-locked .pl-3d{filter:blur(2px);pointer-events:none}#plOv.pl-locked .pl-ft{display:none}
 #plOv .pl-lock{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:12.5px;cursor:pointer}
-@media(max-width:760px){#plOv .pl-bd{flex-direction:column}#plOv .pl-3d{flex:none;height:46vh}#plOv .pl-side{width:auto;max-width:none;border-left:0;border-top:1px solid #E2D6C4;flex:1}#plOv .pl-st button{padding:6px 10px;font-size:12px}#plOv .pl-hd small{display:none}#plOv .pl-l{display:none}#plOv .pl-hd h2{font-size:14px}}`;
+@media(max-width:760px){#plOv .pl-sv{display:none}#plOv .pl-bd{flex-direction:column}#plOv .pl-3d{flex:none;height:46vh}#plOv .pl-side{width:auto;max-width:none;border-left:0;border-top:1px solid #E2D6C4;flex:1}#plOv .pl-st button{padding:6px 10px;font-size:12px}#plOv .pl-hd small{display:none}#plOv .pl-l{display:none}#plOv .pl-hd h2{font-size:14px}}`;
 
 function shell() {
   if (EL) return; const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
   EL = document.createElement('div'); EL.id = 'plOv'; EL.setAttribute('role', 'dialog'); EL.setAttribute('aria-label', 'Plan your space');
-  EL.innerHTML = '<div class="pl-hd"><div><h2>Plan your space</h2><small>Set up your terrace or lawn, then place what you\'d like on it</small></div><div class="pl-st" id="plSt"></div><button type="button" class="pl-x" data-pl="close" aria-label="Close">✕</button></div>' +
+  EL.innerHTML = '<div class="pl-hd"><div><h2>Plan your space</h2><small>Set up your terrace or lawn, then place what you\'d like on it</small></div><div class="pl-sv" id="plSv"></div><div class="pl-st" id="plSt"></div><button type="button" class="pl-x" data-pl="close" aria-label="Close">✕</button></div>' +
     '<div class="pl-bd"><div class="pl-3d"><div id="pl3d"></div><div class="pl-z" id="plZ"></div></div><div class="pl-side"><div class="pl-pn" id="plPn"></div><div class="pl-ft" id="plFt"></div></div></div>';
   document.body.appendChild(EL);
   EL.addEventListener('click', onClick); EL.addEventListener('change', onInput);
@@ -478,7 +510,7 @@ function toCart() {
   if (!window.mtoCartAddMany) { S.msg = 'Please try again in a moment'; return draw(false); }
   const r = window.mtoCartAddMany(lines);
   if (!r.added) { S.msg = 'Couldn\'t add these — ' + (r.skipped.join(', ') || 'please try again'); return draw(false); }
-  try { if (window.otrack) otrack('plan_to_cart', { n: r.added }); } catch (e) {}
+  ev('plan_to_cart', { value: Math.round(exact().t) }); cloudSave({ carted: 'true', cart_value: Math.round(exact().t) });
   close(); if (window.mtoOpenCart) window.mtoOpenCart();
   if (r.skipped.length && window.toast) setTimeout(() => window.toast('Not added: ' + r.skipped.join(', ')), 600);
 }
@@ -488,7 +520,9 @@ function draw(rec) {
   if (S.items) { S.items.forEach((it, i) => { if (att(it)) attach(it, i); }); S.items = S.items.filter(it => it.mode !== 'ac' || it.box); S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); }); if (S.sel != null && !S.items[S.sel]) S.sel = null; }
   if (rec !== false) hist(); save();
   document.getElementById('plSt').innerHTML = btn('data-pl="step:0"', S.step === 0, '1 · <span class="pl-l">Your </span>space') + btn('data-pl="step:1"', S.step === 1, '2 · Add<span class="pl-l"> things</span>') + btn('data-pl="step:2"', S.step === 2, '3 · Pick<span class="pl-l"> designs</span>');
-  document.getElementById('plPn').innerHTML = S.step === 0 ? stepSite() : S.step === 2 ? stepPick() : stepPlace();
+  if (gateDue() && !priceOk()) S.gate = true;
+  document.getElementById('plPn').innerHTML = S.gate && !priceOk() ? gateCard() : S.step === 0 ? stepSite() : S.step === 2 ? stepPick() : stepPlace();
+  EL.classList.toggle('pl-locked', !!(S.gate && !priceOk())); paintSaved();
   const T = total(), lock = !priceOk();
   const E = exact();
   document.getElementById('plFt').innerHTML = S.step === 0 ? '<button type="button" class="pl-go" data-pl="step:1">Next: add things →</button>'
@@ -509,7 +543,7 @@ function onClick(e) {
     case 'zout': return S3.zoom(1.25);
     case 'home': return S3.home();
     case 'view': S.view = S.view === 'top' ? '3d' : 'top'; return draw(false);
-    case 'step': S.step = +a[1]; S.sel = null; S.ask = null; S.cust = null; for (const k in PC) delete PC[k]; break;
+    case 'step': if (S.step !== +a[1]) ev('plan_step', { ref: a[1] }); S.step = +a[1]; S.sel = null; S.ask = null; S.cust = null; for (const k in PC) delete PC[k]; break;
     case 'kind': if (t.kind !== a[1]) { t.kind = a[1]; if (a[1] === 'terrace' && !t.blocks.length) defBlocks(t); S.items = S.items.filter((x, i) => !(CAT[x.cat].lawn && a[1] === 'terrace') && settle(x, i)); } break;
     case 'plot': { const p = PLOTS.find(z => z[0] === a[1]); t.plot = a[1]; setPlot(p[1], p[2]); break; }
     case 'par': t.par = +a[1]; break;
@@ -517,7 +551,7 @@ function onClick(e) {
     case 'corner': t.corner = a[1] || ''; break;
     case 'bdel': t.blocks.splice(+a[1], 1); break;
     case 'badd': { const D = BLK[a[1]]; if (!addBlock(t, a[1], D[1], D[2], a[1] === 'room' ? 'back' : 'right')) S.msg = 'No free room for it — make the others smaller or move them'; S.items = S.items.filter((x, i) => settle(x, i)); break; }
-    case 'add': if (a[1] === 'privacy') { S.ask = 'privacy'; S.sel = null; break; } if (a[1] === 'accover') { const n = coverAC(); S.msg = n ? '' : (S.site.blocks.some(b => b.type === 'ac') ? 'Every AC unit already has a cover' : 'Add your AC units in step 1 (Your space) first — the covers go over them'); if (n) S.sel = S.items.length - 1; break; } addItem(a[1]); break;
+    case 'add': ev('plan_add', { ref: a[1] }); if (a[1] === 'privacy') { S.ask = 'privacy'; S.sel = null; break; } if (a[1] === 'accover') { const n = coverAC(); S.msg = n ? '' : (S.site.blocks.some(b => b.type === 'ac') ? 'Every AC unit already has a cover' : 'Add your AC units in step 1 (Your space) first — the covers go over them'); if (n) S.sel = S.items.length - 1; break; } addItem(a[1]); break;
     case 'pmode': { S.ask = null; const m = a[1], t2 = S.site;
       if (S.sel != null && S.items[S.sel] && S.items[S.sel].cat === 'privacy') { const x = S.items[S.sel], keep = JSON.stringify(x); x.mode = m === 'part' ? undefined : m; if (m === 'par') { x.sides = x.sides || ['left', 'right', 'back']; x.h = 3; } else if (m === 'tank') x.h = 4.5; else { x.w = 8; x.d = 0.5; x.h = 6; x.x = r2((t2.pw - 8) / 2); x.z = r2(t2.pd / 2); }
         if (!settle(x, S.sel)) { Object.assign(x, JSON.parse(keep)); S.msg = 'No free room for it'; } break; }
@@ -525,8 +559,10 @@ function onClick(e) {
       const it2 = { cat: 'privacy', mode: m, label: m === 'par' ? 'Screen on the parapet' : 'Tank screen', sides: m === 'par' ? ['left', 'right', 'back'] : undefined, h: m === 'par' ? 3 : 4.5, w: 0, d: 0.3, x: 0, z: 0, rot: 0 };
       S.items.push(it2); attach(it2, S.items.length - 1); S.sel = S.items.length - 1; if (!it2.w) S.msg = m === 'tank' ? 'Add the mumty (with tanks) in step 1 first' : 'No free parapet on those sides — pick others'; break; }
     case 'askx': S.ask = null; break;
+    case 'rename': { const nm = prompt('Name this plan', S.pname || ''); if (nm && nm.trim() && S.pid) { S.pname = nm.trim().slice(0, 120); rpc('plan_rename', { p_id: S.pid, p_name: S.pname }).then(paintSaved).catch(() => {}); save(); } return paintSaved(); }
+    case 'newplan': if (!confirm('Start a new plan? This one stays saved in your account.')) return; { const v = S.view; S = fresh(); S.view = v; S.hist = []; S.hi = -1; S.pid = null; S.pname = ''; } break;
     case 'lock': if (it) it.lock = !it.lock; break;
-    case 'design': if (it) { save(); const ok = window.mtoFromPlan && window.mtoFromPlan(S.sel, JSON.parse(JSON.stringify(it)), JSON.parse(JSON.stringify(S.site))); if (ok) { close(); return; } S.msg = 'Couldn\'t open the designer — try again'; } break;
+    case 'design': if (it) { ev('plan_design', { ref: it.cat }); save(); const ok = window.mtoFromPlan && window.mtoFromPlan(S.sel, JSON.parse(JSON.stringify(it)), JSON.parse(JSON.stringify(S.site))); if (ok) { close(); return; } S.msg = 'Couldn\'t open the designer — try again'; } break;
     case 'pdeck': if (it) { it.deck = !it.deck; it.deckAuto = false; } break;
     case 'pside': if (it && it.mode === 'par') { const sd = a[1], ss = new Set(it.sides || []); ss.has(sd) ? ss.delete(sd) : ss.add(sd); it.sides = ['back', 'left', 'right', 'front'].filter(x => ss.has(x)); attach(it, S.sel); if (!it.w) S.msg = 'No free parapet on those sides'; } break;
     case 'gfit': if (it && it.cat === 'graffiti') { it.fit = it.fit === false; if (!settle(it, S.sel)) S.msg = 'It doesn\'t fit there'; } break;
@@ -546,13 +582,13 @@ function onClick(e) {
       if (m.unit === 'fixed' && !o.size) o.size = ((m.sizes || [])[0] || {}).label; if (m.unit === 'seat' && !num(o.n)) o.n = num(m.n && m.n.min) || 4; S.cust = { i: +a[1], id: pk.id, o }; break; }
     case 'cs': { const C2 = S.cust; if (!C2) break; const m = PR()[C2.id].cz, o = C2.o, v = a.slice(2).join(':');
       if (a[1] === 'cancel') { S.cust = null; break; }
-      if (a[1] === 'use') { const x = S.items[C2.i]; if (x) { x.cfg = JSON.parse(JSON.stringify(o)); x.cfgId = C2.id; x.pick = C2.id; realSize(x, C2.id, o); } S.cust = null; break; }
+      if (a[1] === 'use') { const x = S.items[C2.i]; ev('plan_custom', { ref: x && x.cat, sku: C2.id }); if (x) { x.cfg = JSON.parse(JSON.stringify(o)); x.cfgId = C2.id; x.pick = C2.id; realSize(x, C2.id, o); } S.cust = null; break; }
       if (a[1] === 'size') o.size = v; else if (a[1] === 'n') o.n = Math.max(num(m.n && m.n.min) || 1, Math.min(num(m.n && m.n.max) || 99, (num(o.n) || 0) + (+a[2])));
       else if (a[1] === 'mat') { o.material = v; const mt = (m.materials || []).find(z => z.name === v); o.colour = ((mt && mt.colours) || [])[0] ? mt.colours[0].name : ''; }
       else if (a[1] === 'col') o.colour = v; else if (a[1] === 'grp') { const [g, op] = v.split('::'); o.groups = Object.assign({}, o.groups, { [g]: op }); }
       else if (a[1] === 'add') { o.addons = (o.addons || []).includes(v) ? o.addons.filter(z => z !== v) : (o.addons || []).concat(v); }
       return draw(false); }
-    case 'setup': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; let n = 0, miss = 0; const sel0 = S.sel;
+    case 'setup': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; x.items.forEach(k => ev('plan_add', { ref: k })); let n = 0, miss = 0; const sel0 = S.sel;
       x.items.forEach(k => { if (!designs(CAT[k]).length) return; const before = S.items.length; addItem(k); if (S.items.length > before) n++; else miss++; });
       S.sel = null; S.msg = n ? (miss ? `Added ${n} — ${miss} didn't fit; make the space bigger or move things` : '') : 'No free room — make the space bigger or move things'; if (!n) S.sel = sel0; break; }
     case 'share': return share();
@@ -583,7 +619,8 @@ function on3d(ev) {
   draw();
 }
 function unlock() {
-  if (window.mtoUnlock) window.mtoUnlock(() => { Object.keys(PC).forEach(k => delete PC[k]); open(); draw(false); });
+  if (EL) EL.style.display = 'none'; document.body.style.overflow = '';   // the sign-in sheet opens under the planner otherwise
+  if (window.mtoUnlock) window.mtoUnlock(() => { Object.keys(PC).forEach(k => delete PC[k]); S.gate = false; open(); draw(false); cloudSoon({}); });
 }
 // ---------------------------------------------------------------- phase 3: share link, PDF, LifeWall for big projects
 const b64 = t => btoa(unescape(encodeURIComponent(t))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -627,6 +664,7 @@ function lifewall() {
 function close() { if (EL) EL.style.display = 'none'; document.body.style.overflow = ''; try { const u = new URL(location.href); if (u.searchParams.has('plan')) { u.searchParams.delete('plan'); history.replaceState(history.state, '', u.pathname + (u.search || '') + u.hash); } } catch (e) {} }
 
 export function open(seed) {
+  if (seed && seed.load) return openSaved(seed.load);
   for (const k in PC) delete PC[k]; shell(); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
   S.items.forEach(it => { if (it.cat === 'cabin' && it.bcx != null && cabinCfg(it)) { cabinFoot(it); it.x = r2(it.bcx - foot(it)[0] / 2); it.z = r2(it.bcz - foot(it)[1] / 2); delete it.bcx; delete it.bcz; } });   // 193g: back from the studio
   S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
@@ -641,8 +679,14 @@ export function open(seed) {
     if (it.x == null) { it.x = r2((S.site.pw - it.w) / 2); it.z = r2(S.site.pd * 0.35 - it.d / 2); }
     S.items.unshift(it); if (!placeFree(it, 0)) { S.items.shift(); }
     S.items = S.items.filter((o, i) => i === 0 || settle(o, i));   // things already planned move off it
-    S.step = 1; S.sel = 0; S.msg = '';
+    S.step = 1; S.sel = 0; S.msg = ''; if (!S.pid) S.source = seed.item.cat === 'cabin' ? 'cabin' : seed.item.cat === 'pergola' ? 'pergola' : 'planner';
   } EL.style.display = 'flex'; document.body.style.overflow = 'hidden';
-  draw(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60);
+  draw(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60); ev('plan_open', { ref: seed && seed.item ? seed.item.cat : '' }); gateWatch(); if (priceOk()) cloudSoon();
+}
+async function openSaved(id) {   // My account → Saved plans → Open
+  try { const v = await rpc('plan_get', { p_id: id }); if (!v) throw new Error('Plan not found');
+    localStorage.setItem(KEY, JSON.stringify({ v: 1, step: v.step || 1, site: v.site, items: v.items || [], pid: v.id, pname: v.name, source: v.source }));
+    return open({ reload: true });
+  } catch (e) { alert(e.message || 'Could not open the plan'); }
 }
 window.outrrPlanState = () => S; window.outrrPlanMove = (i, x, z) => on3d({ t: 'move', i, x, z }); window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
