@@ -1958,7 +1958,7 @@
       if (q.delivery && q.delivery.fee == null) { s.needPin = true; bad('Enter your pincode'); }
       if ((o.install || o.lift) && q.install && !q.install.available && !q.install.pending && /^\d{6}$/.test(o.pin)) bad((o.install ? 'Installation' : 'Lifting') + ' for ' + short(x.n) + ' isn’t available at ' + o.pin + '. Untick it or use another address.');
       s.total += q.total; s.now += q.pay_now; s.later += q.before_dispatch; s.inst += q.install_fee || 0; });
-    s.full = s.ok && fullPay(s.total); if (s.full) { s.now = s.total; s.later = 0; }   // 206
+    s.full = fullPay(s.total); if (s.full) { s.now = s.total; s.later = 0; }   // 206
     s.lines.forEach(function (l) { l.full = s.full; });
     return s;
   }
