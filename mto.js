@@ -336,9 +336,9 @@
     '.cbs-o .wz-cards{display:flex;gap:8px;overflow:visible;max-width:none}.cbs-o .wz-card{flex:0 0 128px;min-height:0;padding:7px}.cbs-o .wz-card .wz-pic{height:54px}.cbs-o .wz-card b{font-size:13px}.cbs-o .wz-card small{font-size:11px}'+
     '.cbs-o .wz-row{width:330px;box-sizing:border-box;margin:0 0 8px;padding:8px 12px}.cbs-o .wz-note{width:330px;box-sizing:border-box;margin:0 0 8px;font-size:12px;padding:8px 10px}.cbs-o .wz-tabs{margin:0 0 6px}.cbs-o .wz-tpl{max-width:560px}'+
     '.cbs-o .wz-sum{width:380px;margin:0}.cbs-o .wz-elev{width:420px}.cbs-o .wz-dims{display:none}'+
-    'body.cb-studio .ctas .cbbar{position:fixed;right:0;bottom:0;width:280px;height:var(--cbsp);z-index:902;background:#FBF7F1;border-left:1px solid #E7DDCF;padding:16px;box-sizing:border-box;display:grid;grid-template-columns:48px 1fr;grid-template-rows:1fr auto;gap:10px;align-items:end}'+
-    'body.cb-studio .ctas .cbbar .cbp{grid-column:1/-1;align-self:start}body.cb-studio .ctas .cbbar .cbp b{font-size:24px}body.cb-studio .ctas .cbbar .cbn{grid-column:2;min-height:50px}body.cb-studio .ctas .cbbar .cbn:first-child,body.cb-studio .ctas .cbbar .cbp+.cbn{grid-column:1/-1}'+
-    'body.cb-studio.cbs-big .ctas .cbbar{height:auto;width:auto;left:auto;top:auto;bottom:14px;right:14px;border-radius:14px;border:1px solid #E7DDCF;grid-template-rows:auto;grid-template-columns:auto auto auto;align-items:center}body.cb-studio.cbs-big .ctas .cbbar .cbp{grid-column:auto}body.cb-studio.cbs-big .ctas .cbbar .cbn{grid-column:auto}'+
+    'body.cb-studio .ctas .cbbar{position:fixed;right:0;bottom:0;width:280px;height:var(--cbsp);z-index:902;background:#FBF7F1;border-left:1px solid #E7DDCF;padding:16px;box-sizing:border-box;display:grid;grid-template-columns:auto auto 1fr;grid-template-rows:1fr auto;gap:10px;align-items:end}body.cb-studio .ctas .cbbar .cbb{grid-row:2}body.cb-studio .ctas .cbbar .cbb:first-child{grid-column:1}'+
+    'body.cb-studio .ctas .cbbar .cbp{grid-column:1/-1;grid-row:1;align-self:start}body.cb-studio .ctas .cbbar .cbp b{font-size:24px}body.cb-studio .ctas .cbbar .cbn{grid-column:3;grid-row:2;min-height:50px}body.cb-studio .ctas .cbbar .cbn:first-child,body.cb-studio .ctas .cbbar .cbp+.cbn{grid-column:1/-1}'+
+    'body.cb-studio.cbs-big .ctas .cbbar{height:auto;width:auto;left:auto;top:auto;bottom:14px;right:14px;border-radius:14px;border:1px solid #E7DDCF;grid-template-rows:auto;grid-template-columns:auto auto auto;align-items:center}body.cb-studio.cbs-big .ctas .cbbar .cbp{grid-column:auto}body.cb-studio.cbs-big .ctas .cbbar .cbn{grid-column:auto}body.cb-studio.cbs-big .ctas .cbbar .cbn,body.cb-studio.cbs-big .ctas .cbbar .cbp,body.cb-studio.cbs-big .ctas .cbbar .cbb{grid-row:auto}'+
     '.cbbar .cbb{flex:none;width:48px;min-height:48px;border:1.5px solid #2E2E2E;background:#fff;border-radius:12px;font-size:18px;cursor:pointer}'+
     '@media(max-width:899px){body.cb-studio{--cbsh:96px;--cbsp:auto;--cbs3d:52vh;--cbs3d:52dvh}.cbs-hd{flex-wrap:wrap;align-content:center;row-gap:6px;padding:6px 10px!important}.cbs-tt{flex:1!important;max-width:none;text-align:center!important}.cbs-st{order:3;flex:0 0 100%!important;justify-content:flex-start!important;overflow-x:auto}.cbs-x{width:36px;height:36px}'+
     'body.cb-studio #mtoCfg{top:calc(var(--cbsh) + var(--cbs3d));bottom:74px;height:auto;display:block;overflow:auto;padding:10px 14px 14px!important}.cbs-o{display:block;height:auto;overflow:visible}.cbs-o>*{max-width:none}.cbs-o .wz-cards{overflow-x:auto;padding-bottom:4px}.cbs-o .wz-row,.cbs-o .wz-note,.cbs-o .wz-sum,.cbs-o .wz-elev{width:auto}.cbs-t{margin-bottom:8px}'+
@@ -614,8 +614,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=10').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=10'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=12').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=12'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -734,7 +734,7 @@
     var btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
     var nIn = function (key, val, lbl, min, max) { return '<label class="ts-n"><span>' + lbl + '</span><input type="number" inputmode="decimal" min="' + min + '" max="' + max + '" step="0.5" data-tsin="' + key + '" value="' + val + '"><i>ft</i></label>'; };
     var sec = function (title, sub) { return '<p class="ts-h">' + title + (sub ? ' <span>' + sub + '</span>' : '') + '</p>'; };
-    h += '<div class="cbs-t"><h4 class="wz-h">Where will it go?</h4><p class="wz-sub">' + (on ? 'Set up your terrace, then place the cabin on it — close, not exact. Doesn\'t change the price.' : 'A lawn or a terrace? We\'ll show the cabin there.') + '</p></div><div class="cbs-o">';
+    h += '<div class="cbs-t"><h4 class="wz-h">Where will it go?</h4><p class="wz-sub">' + (on ? 'Set up your terrace — close, not exact. Your cabin comes on it next; move it any time with ▦ Whole terrace. Doesn\'t change the price.' : 'A lawn or a terrace? We\'ll show the cabin there.') + '</p></div><div class="cbs-o">';
     h += '<div class="wz-tabs ts-big">' + btn('data-ts="kind:ground"', !on, '🌳 Lawn / garden') + btn('data-ts="kind:terrace"', on, '🏙 Terrace') + '</div>';
     if (on) {
       h += sec('Plot') + '<div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], p[0] + ' gaj'); }).join('') + '</div>';
@@ -1106,7 +1106,7 @@
           '<button type="button" data-cbz="pan" class="' + (S.pan ? 'on' : '') + '" aria-pressed="' + !!S.pan + '" aria-label="Move mode: drag to move the model" title="Move: drag to slide the model">✋</button>' +
           '<button type="button" data-cbz="home" aria-label="Back to the start view" title="Centre the model">⌖</button>' +
           '<button type="button" data-cbz="big" aria-label="' + (S.big ? 'Smaller view' : 'Bigger view') + '">' + (S.big ? '⤡' : '⤢') + '</button></div>' : '') +
-        (ok3 ? (function (eb) { eb = eb.replace(/<p class="cb-hint">[\s\S]*?<\/p>/, ''); return eb ? '<div class="cbs-ed">' + eb + '</div>' : (C3.st === 2 ? '<p class="cbs-hint">' + (S.pan ? '✋ Drag to move the model · tap ✋ again to turn it' : S.siteEd && S.site && S.site.kind === 'terrace' ? 'Drag the cabin, mumty, lift room or shafts to move them · drag elsewhere to turn' : 'Drag to turn it 360° · two fingers / right-drag to move · pinch to zoom') + '</p>' : ''); })(cbEditBar(cS, S.o.layout, vS === 'cut' ? 'cut' : '360')) : '') + '</div>';
+        (ok3 ? (function (eb) { eb = eb.replace(/<p class="cb-hint">[\s\S]*?<\/p>/, ''); return eb ? '<div class="cbs-ed">' + eb + '</div>' : (C3.st === 2 ? '<p class="cbs-hint">' + (S.pan ? '✋ Drag to move the model · tap ✋ again to turn it' : S.whole && !S.siteEd && S.site && S.site.kind === 'terrace' ? 'Drag the cabin to move it on your terrace · drag elsewhere to turn' : S.siteEd && S.site && S.site.kind === 'terrace' ? 'Drag the mumty, lift room, shafts or AC units to move them · drag elsewhere to turn — your cabin comes next' : 'Drag to turn it 360° · two fingers / right-drag to move · pinch to zoom') + '</p>' : ''); })(cbEditBar(cS, S.o.layout, vS === 'cut' ? 'cut' : '360')) : '') + '</div>';
       return;
     }
     cbTop(); if (!cbStage.on) { cbStage.on = true; window.addEventListener('scroll', cbTop, { passive: true }); window.addEventListener('resize', cbTop); }
@@ -1159,7 +1159,7 @@
   window.cbOpenSheet = function () { var sh = document.getElementById('cbSheet'); if (sh) sh.classList.add('open'); };
   window.cbNext = function () {
     if (!S || !S.wz) return; var w = S.wz;
-    if (S.studio && S.siteEd) { S.siteEd = false; S.siteDone = true; S.v3 = null; } else if (w.adv) { w.adv = false; } else if (w.step < 6) { w.step++; w.max = Math.max(w.max || 0, w.step); S.v3 = null; S.psel = null; } else return pdpOrder();
+    if (S.studio && S.siteEd) { S.siteEd = false; S.siteDone = true; S.v3 = null; if (S.site && S.site.kind === 'terrace' && tsClash(S.site, S.o.layout)) tsCentre(S.site, S.o.layout); }   // 193e: the cabin appears now, on a free spot else if (w.adv) { w.adv = false; } else if (w.step < 6) { w.step++; w.max = Math.max(w.max || 0, w.step); S.v3 = null; S.psel = null; } else return pdpOrder();
     draw(); if (S.studio) { var cf0 = document.getElementById('mtoCfg'); if (cf0) cf0.scrollTop = 0; var sc0 = cf0 && cf0.querySelector('.wz-stc .on'); if (sc0 && sc0.scrollIntoView) sc0.scrollIntoView({ block: 'nearest', inline: 'center' }); return; } var cfg = document.getElementById('mtoCfg'), stg = document.getElementById('cbStage'), hd = document.querySelector('.stickytop') || document.querySelector('header');
     if (cfg) { var off = (window.innerWidth < 900 && stg ? stg.offsetHeight : 0) + (hd ? Math.max(0, hd.getBoundingClientRect().bottom) : 0) + 8; window.scrollTo({ top: cfg.getBoundingClientRect().top + window.scrollY - off, behavior: 'smooth' }); }
   };

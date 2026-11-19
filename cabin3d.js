@@ -229,6 +229,7 @@ function build(c, lay, opts) {
     const [px, pz] = sf.at(len + 0.1, off); box(g, 0.3, H + 0.4, 0.3, px, (H + 0.4) / 2, pz, mat('gutter'));
   }
   if (opts && opts.furn && opts.furn !== 'none') { const fg = new THREE.Group(); fg.name = 'furn'; g.add(fg); furnish(fg, c, lay, L, W, H, opts.furn); }
+  if (opts && opts.site && opts.site.kind === 'terrace' && opts.site.place) { const hide = new THREE.Group(); hide.name = 'cabhide'; hide.visible = false; g.children.slice().forEach(ch => { if (ch.name !== 'site') hide.add(ch); }); g.add(hide); }   // 193e: while the terrace is set up, the terrace alone — the cabin comes after Next
   return { g, L, W, H };
 }
 
@@ -530,9 +531,9 @@ function pDown(e) {
   if (R.ts && ['3d', 'cut', 'top', '360'].includes(R.view)) {   // a terrace: grab a block (mumty, lift, shaft, room) — or, while placing, the whole cabin
     const tg = plotOf(), hits = cast(e, [R.group]), f = floorAt(e);
     const hb = hits.find(h => { let o = h.object; while (o && !o.userData.st) o = o.parent; return o; });
-    if (hb && f && R.ts.place) { let o = hb.object; while (!o.userData.st) o = o.parent;   // 192: frozen after the Where step const bk = (R.ts.blocks || [])[o.userData.st.i];
+    if (hb && f && R.ts.place) { let o = hb.object; while (!o.userData.st) o = o.parent; const bk = (R.ts.blocks || [])[o.userData.st.i];   // 192: frozen after the Where step
       if (bk) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; R.sdrag = { obj: o, i: o.userData.st.i, p0: toPlot(f), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, moved: false }; R.controls.enabled = false; e.preventDefault(); return; } }
-    if (R.ts.place && f && hits.some(h => { let o = h.object; while (o && o.name !== 'site') o = o.parent; return !o; })) {   // the cabin itself: move it on the terrace
+    if (R.ts.whole && !R.ts.place && f && hits.some(h => { let o = h.object; while (o && o.name !== 'site') o = o.parent; return !o; })) {   // 193e: on 'Whole terrace' the cabin itself moves on the terrace
       tg.updateWorldMatrix(true, false); R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled;
       R.cdrag = { inv: tg.matrixWorld.clone().invert(), p0: f.clone().applyMatrix4(tg.matrixWorld.clone().invert()), pos0: tg.position.clone(), cx0: +R.ts.cx, cz0: +R.ts.cz, moved: false, shift: new THREE.Vector3() }; R.controls.enabled = false; e.preventDefault(); return; }
     if (R.ts.place) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; return; }   // placing: nothing in the cabin is picked
@@ -548,9 +549,10 @@ function pMove(e) {
     const t = R.ts, PT = 0.75, p = toPlot(f), x = Math.round(Math.max(PT, Math.min(t.pw - PT - sd.w, sd.x0 + p.x - sd.p0.x)) * 2) / 2, z = Math.round(Math.max(PT, Math.min(t.pd - PT - sd.d, sd.z0 + p.z - sd.p0.z)) * 2) / 2;
     sd.nx = x; sd.nz = z; sd.obj.position.set(x - sd.x0, 0, z - sd.z0); return; }
   const cd = R.cdrag; if (cd) { const f = floorAt(e); if (!f) return; if (!cd.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; cd.moved = true;
-    const p = f.clone().applyMatrix4(cd.inv), t = R.ts, [fw, fd] = tsFootDims(t, R.L, R.W);
-    const cx = Math.round(Math.max(-fw / 2, Math.min(t.pw - fw / 2, cd.cx0 + p.x - cd.p0.x)) * 2) / 2, cz = Math.round(Math.max(-fd / 2, Math.min(t.pd - fd / 2, cd.cz0 + p.z - cd.p0.z)) * 2) / 2;
-    const tg = plotOf(), sg = tg.parent; tg.position.set(cd.pos0.x - (cx - cd.cx0), 0, cd.pos0.z - (cz - cd.cz0)); cd.ncx = cx; cd.ncz = cz;
+    const p = f.clone().sub(cd.shift).applyMatrix4(cd.inv), t = R.ts,   // 193e: the camera slid with the terrace — take that out, or the cabin chases itself (flicker)
+      [fw, fd] = tsFootDims(t, R.L, R.W);
+    const cx = Math.max(-fw / 2, Math.min(t.pw - fw / 2, cd.cx0 + p.x - cd.p0.x)), cz = Math.max(-fd / 2, Math.min(t.pd - fd / 2, cd.cz0 + p.z - cd.p0.z));   // 193e: smooth while dragging, ½ ft on drop
+    const tg = plotOf(), sg = tg.parent; tg.position.set(cd.pos0.x - (cx - cd.cx0), 0, cd.pos0.z - (cz - cd.cz0)); cd.ncx = Math.round(cx * 2) / 2; cd.ncz = Math.round(cz * 2) / 2;
     // the terrace slides under the cabin; the camera slides with it, so on screen the cabin is what moves
     const want = new THREE.Vector3(-(cx - cd.cx0), 0, -(cz - cd.cz0)).applyAxisAngle(new THREE.Vector3(0, 1, 0), sg.rotation.y), dv = want.clone().sub(cd.shift); cd.shift.copy(want);
     if (R.active === R.ortho) R.ortho.position.add(dv); else { R.cam.position.add(dv); R.controls.target.add(dv); }
