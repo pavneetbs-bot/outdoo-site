@@ -673,7 +673,8 @@
   // A terrace: plot size, corner plot (road left / right), parapet, higher neighbour walls, what is already on the roof
   // (mumty, lift room, shafts, rooms — each on a wall or free, sized, dragged in 3D, never on top of each other), and the
   // cabin placed on it (drag it, turn its front). Plot coords: x from the left, z from the back (pd = front / road).
-  var TS_PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['500', 50, 90]];
+  var TS_PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
+  var AU = function () { try { return localStorage.getItem('outrr_area_unit') === 'm' ? 'm' : 'yd'; } catch (e) { return 'yd'; } }, plotLab = function (g) { return AU() === 'm' ? Math.round(+g * 0.836127) + ' sq m' : g + ' sq yd'; };   // plot size in sq yd (gaj) or sq m
   var TS_KIND = { mumty: ['Mumty (stair room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft', 'Shaft'], room: ['Room already built', 'Room'], ac: ['AC outdoor unit', 'AC unit'] };
   var TS_CUTS = [['bl', 'Back-left'], ['br', 'Back-right'], ['fl', 'Front-left'], ['fr', 'Front-right']];   // 193: corners cut (front = road side)
   var TS_WALLS = [['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']];
@@ -741,7 +742,7 @@
     h += '<div class="cbs-t"><h4 class="wz-h">Where will it go?</h4><p class="wz-sub">' + (on ? 'Set up your terrace — close, not exact. Your ' + tsWord() + ' comes on it next' + (tsWord() === 'cabin' ? '; move it any time with ▦ Whole terrace' : ' — then drag it where you want') + '. Doesn\'t change the price.' : 'A lawn or a terrace? We\'ll show the cabin there.') + '</p></div><div class="cbs-o">';
     h += '<div class="wz-tabs ts-big">' + btn('data-ts="kind:ground"', !on, '🌳 Lawn / garden') + btn('data-ts="kind:terrace"', on, '🏙 Terrace') + '</div>';
     if (on) {
-      h += sec('Plot') + '<div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], p[0] + ' gaj'); }).join('') + '</div>';
+      h += sec('Plot') + '<div class="wz-tabs" style="margin-bottom:6px">' + btn('data-ts="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-ts="unit:m"', AU() === 'm', 'sq m') + '</div><div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], plotLab(p[0])); }).join('') + '</div>';
       h += '<div class="ts-row">' + nIn('pw', t.pw, 'Width', 15, 120) + nIn('pd', t.pd, 'Depth', 20, 150) + '</div>';
       h += sec('Corner plot?', 'road on which side') + '<div class="wz-tabs">' + btn('data-ts="corner:"', !t.corner, 'No') + btn('data-ts="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-ts="corner:right"', t.corner === 'right', 'Road on the right') + '</div>';
       h += sec('Parapet') + '<div class="wz-tabs">' + btn('data-ts="par:3"', t.par === 3, '3 ft') + btn('data-ts="par:4"', t.par === 4, '4 ft') + '</div>';
@@ -783,6 +784,7 @@
     if (a[0] === 'view') { S.v3 = S.view3 = a[1]; return true; }
     if (!x) return true;
     var b = a[1] != null && /^\d+$/.test(a[1]) ? x.blocks[+a[1]] : null, keep = b ? { x: b.x, z: b.z, side: b.side } : null;
+    if (a[0] === 'unit') { try { localStorage.setItem('outrr_area_unit', a[1] === 'm' ? 'm' : 'yd'); } catch (e) {} return true; }
     if (a[0] === 'plot') { var p = TS_PLOTS.filter(function (z) { return z[0] === a[1]; })[0]; x.plot = a[1]; tsPlot(x, p[1], p[2], lay); }
     else if (a[0] === 'corner') { x.corner = a[1] || ''; if (x.high && x.corner) x.high[x.corner] = false; }
     else if (a[0] === 'par') x.par = +a[1];
@@ -1791,7 +1793,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=19').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=20').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {

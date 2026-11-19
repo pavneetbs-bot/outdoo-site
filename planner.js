@@ -8,7 +8,8 @@ import * as S3 from './space3d.js?v=11';
 import { cutHit } from './cabin3d.js?v=14';
 
 const KEY = 'outrr_plan', PAR = 0.75;
-const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['500', 50, 90]];
+const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
+const AU = () => { try { return localStorage.getItem('outrr_area_unit') === 'm' ? 'm' : 'yd'; } catch (e) { return 'yd'; } }, plotLab = g => AU() === 'm' ? Math.round(+g * 0.836127) + ' sq m' : g + ' sq yd';   // plot size in sq yd (gaj) or sq m
 const BLK = { mumty: ['Mumty (stair room)', 10, 18], lift: ['Lift room', 6, 6], shaft: ['Shaft', 3, 4], room: ['Room already built', 10, 12], ac: ['AC outdoor unit', 3, 1.2] };
 const CUTS = [['bl', 'Back-left'], ['br', 'Back-right'], ['fl', 'Front-left'], ['fr', 'Front-right']];   // front = the road side
 // kind: free (stands anywhere) | floor (decking: things stand on it) | edge (along the parapet / boundary) | wall (a panel; snaps to a wall when near)
@@ -435,7 +436,7 @@ function stepSite() {
   const t = S.site, terr = t.kind === 'terrace';
   let h = `<h4>Your space</h4><p class="pl-sub">${terr ? 'Close is enough — it only sets the scene. Drag the stair room, lift and shafts on the 3D.' : 'Your lawn or garden — its size.'}</p>`;
   h += '<div class="pl-tabs">' + btn('data-pl="kind:terrace"', terr, '🏙 Terrace') + btn('data-pl="kind:ground"', !terr, '🌳 Lawn / garden') + '</div>';
-  h += '<p class="pl-h">Plot</p><div class="pl-tabs">' + PLOTS.map(p => btn(`data-pl="plot:${p[0]}"`, t.plot === p[0], p[0] + ' gaj')).join('') + '</div>';
+  h += '<p class="pl-h">Plot</p><div class="pl-tabs" style="margin-bottom:6px">' + btn('data-pl="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-pl="unit:m"', AU() === 'm', 'sq m') + '</div><div class="pl-tabs">' + PLOTS.map(p => btn(`data-pl="plot:${p[0]}"`, t.plot === p[0], plotLab(p[0]))).join('') + '</div>';
   h += '<div class="pl-row">' + nIn('pw', t.pw, 'Width (ft)', 12, 150) + nIn('pd', t.pd, 'Depth (ft)', 12, 200) + '</div>';
   if (terr) {
     h += '<p class="pl-h">Parapet</p><div class="pl-tabs">' + btn('data-pl="par:3"', +t.par === 3, '3 ft') + btn('data-pl="par:4"', +t.par === 4, '4 ft') + '</div>';
@@ -572,6 +573,7 @@ function act(a) {   // one button's action on S; true = draw again
     case 'view': S.view = S.view === 'top' ? '3d' : 'top'; return draw(false);
     case 'step': if (S.step !== +a[1]) ev('plan_step', { ref: a[1] }); S.step = +a[1]; S.sel = null; S.ask = null; S.cust = null; for (const k in PC) delete PC[k]; break;
     case 'kind': if (t.kind !== a[1]) { t.kind = a[1]; if (a[1] === 'terrace' && !t.blocks.length) defBlocks(t); S.items = S.items.filter((x, i) => !(CAT[x.cat].lawn && a[1] === 'terrace') && settle(x, i)); } break;
+    case 'unit': try { localStorage.setItem('outrr_area_unit', a[1] === 'm' ? 'm' : 'yd'); } catch (e) {} break;
     case 'plot': { const p = PLOTS.find(z => z[0] === a[1]); t.plot = a[1]; setPlot(p[1], p[2]); break; }
     case 'par': t.par = +a[1]; break;
     case 'cut': { t.cuts = t.cuts || {}; if (!a[2]) delete t.cuts[a[1]]; else t.cuts[a[1]] = Object.assign({ a: Math.min(8, Math.round(t.pw / 4)), b: Math.min(8, Math.round(t.pd / 6)) }, t.cuts[a[1]] || {}, { type: a[2] }); afterCut(); break; }
@@ -672,7 +674,7 @@ function pdf() {
   const img = S3.snapshot(), rows = rowsNow(), ok = priceOk(), t = S.site, tot = rows.reduce((a, r) => a + (r.price || 0), 0);
   const w = window.open('', '_blank'); if (!w) { S.msg = 'Allow pop-ups to save the PDF'; return draw(false); }
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>My outdoor plan — outrr</title><style>body{font-family:Inter,system-ui,sans-serif;color:#2E2E2E;margin:28px}h1{font-size:22px;margin:0 0 4px}p{color:#6A6258;margin:0 0 14px;font-size:13px}img{width:100%;border-radius:12px;border:1px solid #E2D6C4}table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}td,th{padding:8px;border-bottom:1px solid #EEE6DA;text-align:left}td:last-child,th:last-child{text-align:right}tfoot td{font-weight:700;font-size:15px}.n{font-size:11.5px;color:#7A7268;margin-top:14px;word-break:break-all}@media print{body{margin:10mm}}</style></head><body>
-<h1>My outdoor plan</h1><p>${t.kind === 'terrace' ? 'Terrace' : 'Lawn / garden'} · ${t.pw} × ${t.pd} ft${t.plot ? ' (' + t.plot + ' gaj plot)' : ''} · made on outrr.in</p>${img ? `<img src="${img}" alt="3D view of the plan">` : ''}
+<h1>My outdoor plan</h1><p>${t.kind === 'terrace' ? 'Terrace' : 'Lawn / garden'} · ${t.pw} × ${t.pd} ft${t.plot ? ' (' + plotLab(t.plot) + ' plot)' : ''} · made on outrr.in</p>${img ? `<img src="${img}" alt="3D view of the plan">` : ''}
 <table><thead><tr><th>Thing</th><th>Size</th><th>Design</th><th>${ok ? 'Price' : ''}</th></tr></thead><tbody>${rows.map(r => `<tr><td>${r.e} ${esc(r.t)}</td><td>${esc(r.size)}</td><td>${esc(r.design || 'to pick')}</td><td>${ok && r.price != null ? (r.from ? 'from ' : '') + rs(r.price) : ''}</td></tr>`).join('')}</tbody>
 ${ok ? `<tfoot><tr><td colspan="3">Total${rows.some(r => r.from) ? ' (starting)' : ''}</td><td>${rs(tot)}</td></tr></tfoot>` : ''}</table>
 <p class="n">Prices incl. GST, before delivery and installation (worked out at checkout for your pincode). Open this plan again: ${esc(shareUrl())}</p><script>setTimeout(function(){print()},400)<\/script></body></html>`);
