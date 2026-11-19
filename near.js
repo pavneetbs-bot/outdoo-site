@@ -384,6 +384,7 @@ function pdPaint(id){
   var x = PRODS[id], el = document.getElementById('pdPrice'); if (!x || !el) return;
   var br = document.getElementById('pdBreak');
   if (!br) { br = document.createElement('div'); br.id = 'pdBreak'; br.className = 'dlv-br'; el.parentNode.insertBefore(br, el.nextSibling) }
+  if (window.mtoPdpPrice && window.mtoPdpPrice(id, el, br)) { var ch1 = document.getElementById('pdDlv'); if (ch1) ch1.textContent = ''; return }   // outrr designs: "Starts at ₹X / sq ft" — the full price is on the proposal
   if (x.oo === false) { el.innerHTML = '';   /* 175: Coming soon only on the buttons */ br.innerHTML = ''; var ch0 = document.getElementById('pdDlv'); if (ch0) ch0.textContent = ''; return }   // 135: not on sale yet — no price
   var off = x.m > x.p ? Math.round((1 - x.p / x.m) * 100) : 0;
   var mrp = off ? '<span class="mrplab">MRP</span><span class="mrp">' + inr(x.m) + '</span><span class="off">' + off + '% OFF</span>' : '';

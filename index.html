@@ -214,6 +214,7 @@ section{padding:20px 0 8px}
 .prods{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .pc{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;cursor:pointer;position:relative}
 .pc .im{aspect-ratio:1}
+.im-sw .im2{opacity:0;z-index:2;transition:opacity .35s}@media(hover:hover){.pc:hover .im-sw .im2,.sim:hover .im-sw .im2{opacity:1}}
 .bun-b{background:var(--terra,#C26445)!important}.bun-l{font-size:11.5px;color:#7a746c;margin:3px 0 4px;line-height:1.35}.bun-sv{font-size:12px;color:#3a7d44;font-weight:600;margin-top:2px}
 .bun-ov{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}.bun-ov.open{display:flex}
 .bun-box{background:#fff;border-radius:16px;max-width:980px;width:100%;max-height:92vh;overflow:auto;display:grid;grid-template-columns:1.1fr 1fr;position:relative}
@@ -2942,7 +2943,7 @@ function renderPLP(){ try{ plpCrumb(); }catch(e){}
     return `<div class="pc" onclick="openProduct('${id}')">
       ${off?`<span class="offb">${off}</span>`:''}
       <span class="heart" onclick="event.stopPropagation();this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></span>
-      <div class="im"><img src="${IMGS[x.img]}" alt=""></div>
+      ${cardIm(id)}
       <div class="bd"><div class="nm">${vName(id)}</div>
         <div class="rate"><span class="st">${x.r} ★</span>${x.c}</div>
         <div>${pgRate(x)?`<span class="pr">${pgRateH(x)}</span>`:soon(x)?soonH():`<span class="pr">${x.cz?(window.mtoOk&&!mtoOk()?`<span class="vfrom">Check price</span>`:`<span class="vfrom">From</span> ${inr(x.p)}`):vFrom(id)!=null?`<span class="vfrom">From</span> ${inr(vFrom(id))}`:inr(x.p)}</span>${!x.cz&&x.m>x.p&&vFrom(id)==null?`<span class="mrp">${inr(x.m)}</span>`:''}`}</div>
@@ -3037,7 +3038,7 @@ function sArrows(row, wrap){ if(!row||row.dataset.arr) return; row.dataset.arr=1
 function homeRecent(){ const sec=document.getElementById('homeRecentSec'), row=document.getElementById('homeRecent'); if(!sec||!row) return;
   let r=[]; try{ r=JSON.parse(localStorage.getItem('outrr_rv')||'[]'); }catch(e){}
   r=r.filter(k=>PRODS[k]&&IMGS[PRODS[k].img]).slice(0,16); sec.hidden=!r.length; if(!r.length) return;
-  row.innerHTML=r.map(i=>{const y=PRODS[i]; return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt="${_esc(y.n)}" loading="lazy"></div>
+  row.innerHTML=r.map(i=>{const y=PRODS[i]; return `<div class="sim" onclick="openProduct('${i}')">${cardIm(i,_esc(y.n))}
     <div class="bd"><div class="nm">${_esc(y.n)}</div><div class="pr">${soon(y)?soonH():y.cz&&window.mtoOk&&!mtoOk()?'Check price':(y.cz?'From ':'')+inr(y.p)}</div></div></div>`;}).join('');
   sArrows(row); row._arrUpd&&setTimeout(row._arrUpd,60); }
 window.addEventListener('outrr-catalog',()=>{ try{ homeRecent(); }catch(e){} });
@@ -3046,7 +3047,7 @@ function recentPush(id){ try{ let r=JSON.parse(localStorage.getItem('outrr_rv')|
 function recentDraw(id){ const sec=document.getElementById('pdRecent'), row=document.getElementById('recentRow'); if(!sec||!row) return;
   let r=[]; try{ r=JSON.parse(localStorage.getItem('outrr_rv')||'[]'); }catch(e){}
   r=r.filter(k=>k!==id&&PRODS[k]&&IMGS[PRODS[k].img]).slice(0,8); sec.hidden=!r.length;
-  row.innerHTML=r.map(i=>{const y=PRODS[i]; return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt="${_esc(y.n)}" loading="lazy"></div>
+  row.innerHTML=r.map(i=>{const y=PRODS[i]; return `<div class="sim" onclick="openProduct('${i}')">${cardIm(i,_esc(y.n))}
     <div class="bd"><div class="nm">${_esc(y.n)}</div><div class="pr">${soon(y)?soonH():y.cz&&window.mtoOk&&!mtoOk()?'Check price':(y.cz?'From ':'')+inr(y.p)}</div></div></div>`;}).join('');
   sArrows(row); row._arrUpd&&setTimeout(row._arrUpd,60); }
 function openProduct(id){ window.PDID=id; try{ recentDraw(id); recentPush(id); }catch(e){}
@@ -3080,7 +3081,7 @@ function openProduct(id){ window.PDID=id; try{ recentDraw(id); recentPush(id); }
   fillPDPv2(x, d, document.getElementById('pdSku').textContent.split(' · ')[0].replace('SKU ',''));
   const sims = Object.keys(PRODS).filter(i=>PRODS[i].col===x.col && PRODS[i]!==x).slice(0,6);
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
-    return `<div class="sim" onclick="openProduct('${i}')"><div class="im"><img src="${IMGS[y.img]}" alt=""></div>
+    return `<div class="sim" onclick="openProduct('${i}')">${cardIm(i)}
       <div class="bd"><div class="nm">${y.n}</div><div class="pr">${pgRate(y)?pgRateH(y):soon(y)?soonH():inr(y.p)}</div>${tbHTML(i)}</div></div>`;}).join('');
   try{vRender(id);}catch(e){console.warn(e)}
   try{tradeLn();}catch(e){}
@@ -3301,6 +3302,13 @@ function soon(id){const x=typeof id==='object'?id:PRODS[id]; return !!x&&x.oo===
 // pergolas (outrr designs): priced per sq ft — the card shows the starting rate and opens the 3D customiser
 // 198: every outrr make + install design (not furniture / sculptures / cabins): its starting rate — per sq ft / running ft, or the smallest size
 function pgRate(x){if(!x||!x.cz||!/^MTO-/.test(x.img||'')||/^MTO-PL-/.test(x.img||'')||['furniture','sculptures'].includes(x.col)||x.cz.unit==='cabin')return 0; const u=x.cz.unit; if(u==='fixed') return +x.p||0; const r=(x.cz.materials||[]).map(m=>+m.rate||0).filter(Boolean); return r.length?Math.min(...r):0;}
+// Made to Order cards: a random photo of the design (day / night / other scenes, not drawings) and a second one on hover
+const _picK={};
+function mtoPics(id){const x=PRODS[id]; if(!x||!x.cz) return null; const all=[...new Set([IMGS[x.img]].concat((window.GAL&&GAL[id])||[]).filter(Boolean))];
+  const bad=u=>/measure|exploded|draw|_iso|plan[_.]|factory|trust|banner/i.test(u), ai=all.filter(u=>/\/ai\//.test(u)&&!bad(u)), L=ai.length>=2?ai:all.filter(u=>!bad(u)&&!/\/mto\//.test(u));
+  if(L.length<2) return null; if(_picK[id]==null) _picK[id]=Math.floor(Math.random()*L.length); const a=_picK[id]%L.length; return [L[a],L[(a+1)%L.length]];}
+function cardIm(id,alt){const p=mtoPics(id); if(!p) return `<div class="im"><img src="${IMGS[PRODS[id].img]}" alt="${alt||''}"></div>`;
+  return `<div class="im im-sw"><img src="${p[0]}" alt="${alt||''}"><img class="im2" src="${p[1]}" alt="" loading="lazy"></div>`;}
 function pgRateH(x){const u=x.cz.unit; return `<span class="vfrom">From</span> ${inr(pgRate(x))}${u==='fixed'?'':`<span class="vfrom"> / ${u==='length'?'running ft':'sq ft'}</span>`}`;}
 function pgCard(id,how){openProduct(id); setTimeout(()=>{try{ if(how==='3d'||(window.mtoOk&&mtoOk())) window.mtoCustomise&&mtoCustomise(); else mtoUnlock(id); }catch(e){}},400);}
 function soonH(){return '<span class="soonb">Coming soon</span>';}
@@ -4566,8 +4574,8 @@ async function shareProduct(){
 <script src="/account.js?v=9"></script>
 <script src="/track.js?v=3"></script>
 <script src="/store.js?v=7"></script>
-<script src="/near.js?v=8"></script>
-<script src="/mto.js?v=49"></script>
+<script src="/near.js?v=9"></script>
+<script src="/mto.js?v=50"></script>
 <script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){var go=function(sd){return import('/planner.js?v=20').then(function(m){m.open(sd&&(sd.item||sd.reload||sd.load||sd.sload||sd.fresh)?sd:null);});};var q=new URLSearchParams(location.search).get('plan')||'';if(!seed&&window.mtoSpaceAsk&&q.length<10&&!(window.ASSIST&&window.ASSIST.name)){window.mtoSpaceAsk('planner',function(r){go(r.plan?(r.plan.local?null:{load:r.plan.id}):{fresh:true,kind:r.kind});});return Promise.resolve();}return go(seed);};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
 <script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=8" defer></script>

@@ -1380,7 +1380,8 @@
     var c0 = arr((arr(m.materials)[0] || {}).colours)[0]; if (c0 && !S.o.colour) S.o.colour = c0.name;
     setTimeout(function () { try { colGal(); } catch (e) {} }, 0);   // 187
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), lo = mats.length ? Math.min.apply(null, mats.map(function (y) { return +y.rate || 0; })) : 0;
-    var pr = document.getElementById('pdPrice'); if (pr && x.oo !== false) pr.innerHTML = '<span class="mfrom">From</span> ' + rs(x.p) + (u !== 'fixed' && u !== 'cabin' && u !== 'seat' && lo ? '<span class="mrplab">' + rs(lo) + ' / ' + uw + '</span>' : '');
+    var pr = document.getElementById('pdPrice'); if (pr && isProp(id)) window.mtoPdpPrice(id, pr, document.getElementById('pdBreak'));
+    else var pr = document.getElementById('pdPrice'); if (pr && x.oo !== false) pr.innerHTML = '<span class="mfrom">From</span> ' + rs(x.p) + (u !== 'fixed' && u !== 'cabin' && u !== 'seat' && lo ? '<span class="mrplab">' + rs(lo) + ' / ' + uw + '</span>' : '');
     var tl = document.querySelector('#pdp .taxline'); if (tl) { tl.style.display = ''; tl.textContent = 'Inclusive of GST · priced for your size and options below'; }
     var sk = document.getElementById('pdSku'); if (sk) sk.textContent = 'SKU ' + id + ' · ' + ((window.COLS_T && COLS_T(x.col)) || '') + ' · Made to Order';
     var own = /^MTO-/.test(id), instOn = m.install && (m.install.offered || m.install.required);
@@ -2131,7 +2132,7 @@
     document.head.appendChild(st);
   }
   function p3Btn() { if (!isPg(S && S.id)) return ''; p3Css();   // its styles were added only when the 3D opened, so the button showed tiny and unstyled
-    return '<button type="button" class="pg3-btn" data-act="pg3"><span style="font-size:22px">✦</span><span>Customise &amp; check price<small>Size, finish, roof and add-ons on a live 3D model — then your proposal with price and drawings</small></span></button>'; }
+    return '<button type="button" class="pp-go" data-act="pg3">Customise &amp; check price</button>'; }
   function p3Where() {   // 193f: lawn / terrace (the studio's terrace setup), where it stands, a deck and furniture to see it with
     var t = S.site, on = t && t.kind === 'terrace', h = '';
     if (S.pgW) return '<div class="pg3-where">' + terraceUI(pgLay(), true) + '<button type="button" class="pg3-go" data-p3="wdone">Done — put the pergola on it →</button></div>';
@@ -2451,16 +2452,25 @@
   // product page = title, description + tags, one "Customise & check price" button with the starting rate; customiser (photo + options) → proposal.
   var CU = { open: false };
   function cuBtn() { p3Css(); propCss(); var x = PRODS[S.id], cab = x.cz.unit === 'cabin';
-    return '<button type="button" class="pg3-btn" data-act="' + (cab ? 'cab' : 'cu') + '"><span style="font-size:22px">✦</span><span>Customise &amp; check price<small>' + (cab ? 'Size, doors, rooms and finishes in 3D' : 'Size, finish, colour and options') + ' — then your proposal with price and drawings</small></span></button>'; }
+    return '<button type="button" class="pp-go" data-act="' + (cab ? 'cab' : 'cu') + '">Customise &amp; check price</button>'; }
   function unitWord(m) { return m.unit === 'length' ? 'running ft' : m.unit === 'area' || m.unit === 'face' ? 'sq ft' : ''; }
   function propInfo(x, m, btn) {   // the card: the starting rate (public), the Customise button, what happens next
     propCss(); var mats = arr(m.materials).filter(function (y) { return y.name; }), uw = unitWord(m), line = '';
     if (uw) { var lo = Math.min.apply(null, mats.map(function (y) { return +y.rate || Infinity; })); if (isFinite(lo) && lo > 0) line = '<div class="pg-rate"><span>Starts at</span><b>' + rs(lo) + ' <small>/ ' + uw + '</small></b><em>incl. GST · ' + esc((mats.filter(function (y) { return +y.rate === lo; })[0] || {}).name || '') + '</em></div>'; }
     else if (m.unit === 'fixed') { var best = Infinity; arr(m.sizes).forEach(function (z) { mats.slice(0, 6).forEach(function (mt) { var v = fixedAt(m, mt, z); if (+v > 0 && v < best) best = v; }); }); if (isFinite(best)) line = '<div class="pg-rate"><span>Starts at</span><b>' + rs(best) + '</b><em>incl. GST · ' + esc((arr(m.sizes)[0] || {}).label || 'smallest size') + '</em></div>'; }
     var cab = m.unit === 'cabin', inst = m.install && m.install.offered;
-    return (line || '<div class="pg-rate"><span>Made to your size</span></div>') + (btn || '') + '<ol class="pg-next"><li><b>Customise' + (cab || isPg(S.id) ? ' in 3D' : '') + '</b> — ' + (cab ? 'size, doors, rooms, roof and finishes' : isPg(S.id) ? 'size, finish, colour, roof, height, layout and add-ons' : 'size, finish, colour and options') + '</li><li><b>Get your proposal</b> — price, drawings with sizes, specifications</li><li><b>Add to cart</b> — pay ' + PCT + '% now, the rest before dispatch' + (inst ? (m.install.required ? ' · installed by outrr' : ' · installed by outrr or by you') : '') + '</li></ol>' +
-      (S.prop0 ? '<button type="button" class="pg-again" onclick="mtoProposal(true)">See your proposal →</button>' : '');
+    return '<ol class="pg-next"><li><b>Customise' + (cab || isPg(S.id) ? ' in 3D' : '') + '</b> — ' + (cab ? 'size, doors, rooms, roof and finishes' : isPg(S.id) ? 'size, finish, colour, roof, height, layout and add-ons' : 'size, finish, colour and options') + '</li><li><b>Get your proposal</b> — price, drawings with sizes, specifications</li><li><b>Add to cart</b> — pay ' + PCT + '% now, the rest before dispatch' + (inst ? (m.install.required ? ' · installed by outrr' : ' · installed by outrr or by you') : '') + '</li></ol>' +
+      (btn || '') + (S.prop0 ? '<button type="button" class="pg-again" onclick="mtoProposal(true)">See your proposal →</button>' : '');
   }
+  window.mtoRateHTML = function (id) {   // the price line of an outrr design: "Starts at ₹X / sq ft" (never a made-up total)
+    var x = PRODS[id]; if (!x || !x.cz || !isProp(id)) return null; var m = x.cz, uw = unitWord(m), mats = arr(m.materials).filter(function (y) { return y.name; }), v = 0;
+    if (m.unit === 'cabin') v = +x.p || 0;
+    else if (uw) { var r = mats.map(function (y) { return +y.rate || 0; }).filter(Boolean); v = r.length ? Math.min.apply(null, r) : 0; }
+    else { var best = Infinity; arr(m.sizes).forEach(function (z) { mats.slice(0, 6).forEach(function (mt) { var a = fixedAt(m, mt, z); if (+a > 0 && a < best) best = a; }); }); v = isFinite(best) ? best : +x.p || 0; }
+    return v ? '<span class="mfrom">Starts at</span> ' + rs(v) + (uw && m.unit !== 'cabin' ? '<span class="mrplab">/ ' + uw + '</span>' : '') : '';
+  };
+  window.mtoPdpPrice = function (id, el, br) { var h = window.mtoRateHTML(id); if (h == null) return false; el.innerHTML = h; if (br) br.innerHTML = '';
+    var tl = document.querySelector('#pdp .taxline'); if (tl) { tl.style.display = ''; tl.textContent = 'Incl. GST · your exact price comes on the proposal after you customise'; } return true; };
   function sizeTxt(m, o) {
     var u = m.unit; if (u === 'cabin') return o.layout ? num(o.layout.L) + ' × ' + num(o.layout.W) + ' ft' : '';
     if (u === 'area') return num(o.l) && num(o.w) ? o.l + ' × ' + o.w + ' ft' : '';
@@ -2666,8 +2676,7 @@
     try { draw(); } catch (e) {}
   }
   function cabCard(x, m) {   // cabins: the same card (the studio keeps its own panel)
-    return '<div class="pg-rate"><span>Starts at</span><b>' + rs(x.p) + '</b><em>incl. GST · smallest size, one door — delivered and assembled</em></div>' + cuBtn() +
-      '<ol class="pg-next"><li><b>Customise in 3D</b> — size, doors, rooms, roof and finishes</li><li><b>Get your proposal</b> — price, plan and views with sizes, specifications</li><li><b>Add to cart</b> — pay ' + PCT + '% now, the rest before dispatch · installed by outrr</li></ol>';
+    return '<ol class="pg-next"><li><b>Customise in 3D</b> — size, doors, rooms, roof and finishes</li><li><b>Get your proposal</b> — price, plan and views with sizes, specifications</li><li><b>Add to cart</b> — pay ' + PCT + '% now, the rest before dispatch · installed by outrr</li></ol>' + cuBtn();
   }
   var ppObs = null;
   function ppStick(on) {   // the card sticks at the side (desktop); once it scrolls away with the column, the floating button comes back
@@ -2685,7 +2694,7 @@
     '.sp-list i,.sp-kinds i{font-style:normal;font-size:26px;flex:none}.sp-list b{display:block;font-size:15px}.sp-list small,.sp-kinds small{display:block;font-size:12.5px;color:#7A7268;margin-top:2px}.sp-new{border-style:dashed!important}' +
     '.sp-kinds{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sp-kinds button{flex-direction:column;align-items:flex-start;padding:22px 18px;min-height:170px}.sp-kinds i{font-size:40px}.sp-kinds b{font-size:18px;margin-top:6px}' +
     '.sp-back{border:0;background:none;color:#8a3a1f;font:700 13px inherit;font-family:inherit;cursor:pointer;padding:0;margin:0 0 14px}' +
-    '.pp-card .pg-rate{margin:0 0 12px}.pp-card .pg3-btn{margin:0 0 12px}' +
+    '.pp-go{display:block;width:100%;margin:14px 0 0;padding:15px 16px;border:0;border-radius:12px;background:var(--terra,#C26445);color:#fff;font:700 15.5px inherit;font-family:inherit;cursor:pointer;letter-spacing:.01em}.pp-go:hover{filter:brightness(.95)}.pp-card .pg-next{margin:0}' +
     '@media(min-width:900px){body.pdp-prop .pdp-grid{align-items:stretch}#pdp .pp-card{position:sticky;top:var(--pptop,170px);z-index:4;box-shadow:0 6px 24px rgba(46,46,46,.08)}body.pdp-prop:not(.pp-float) .ctas{display:none!important}}' +
     '@media(max-width:600px){.sp-kinds{grid-template-columns:1fr}.sp-kinds button{min-height:0}.sp-bd{padding:24px 14px}.sp-bd h2{font-size:22px}}';
     document.head.appendChild(st); } catch (e) {} })();
