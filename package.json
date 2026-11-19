@@ -5,5 +5,8 @@
   "scripts": {
     "update": "bash scripts/update.sh",
     "seo": "node scripts/build-pages.mjs && node scripts/build-seo.mjs"
+  },
+  "dependencies": {
+    "esbuild": "0.24.0"
   }
 }

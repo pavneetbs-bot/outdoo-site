@@ -357,3 +357,5 @@ ${products.filter(p => !soon(p) && !isMto(p)).map(p => `<item>
 </channel></rss>
 `)
 console.log(`SEO pages built: ${products.length} products, ${cols.length} categories, sitemap ${urls.length} URLs, Google feed ${products.filter(p => !soon(p) && !isMto(p)).length} items`)
+// 195: minify the studio / planner code in the deployed copy (Cloudflare Pages builds only)
+await import('./minify.mjs')

@@ -169,6 +169,7 @@ const PAGES = {
 <p>See <a href="/shipping/">Shipping & Delivery</a> and <a href="/returns/">Returns, Refunds & Cancellations</a>.</p>
 <h2>Use of the site</h2>
 <p>Don't misuse the site, copy its content or images, or try to break its security. The ${CO.brand} name, logo and site content belong to us or our licensors.</p>
+<p>The site's software — including the 3D designers (cabins, pergolas), the Plan your space planner, their models, layouts, pricing logic and code — is ours and is protected by copyright. You may use it only to plan and buy from ${CO.brand}. Copying, scraping, recording for reuse, reverse-engineering, or building a similar tool from it is not allowed.</p>
 <h2>Liability</h2>
 <p>Outdoor products should be assembled and used as shown in their guides. To the extent the law allows, our liability for an order is limited to the amount paid for it.</p>
 <h2>Governing law</h2>
