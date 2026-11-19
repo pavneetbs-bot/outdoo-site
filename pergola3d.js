@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=15';   // 193f: the same terrace as the cabin studio and the planner
+import { plotModel } from './cabin3d.js?v=16';   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -12,31 +12,31 @@ const MM = v => v / 304.8;   // mm → ft
 const D = {
   'MTO-PG-AF': { leg: 'aframe', flush: true, over: 0, bover: 0, raf: [40, 120], gap: 200 },
   'MTO-PG-AL': { roof: 'louvre', over: 150 },
-  'MTO-PG-BR': { leg: 'branch', post: 125 },
+  'MTO-PG-BR': { leg: 'branch', post: 125, flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 },
   'MTO-PG-CA': { roof: 'barrel' },
-  'MTO-PG-EG': { roof: 'grid', post: 125, raf: [50, 200], gap: 600 },
-  'MTO-PG-FP': { leg: 'gate' },
-  'MTO-PG-FR': { roof: 'float' },
+  'MTO-PG-EG': { roof: 'grid', post: 125, flush: true, over: 0, bover: 0, raf: [40, 150], gap: 400 },
+  'MTO-PG-FP': { leg: 'gate', flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 },
+  'MTO-PG-FR': { roof: 'float', raf: [40, 100], gap: 120 },
   'MTO-PG-GB': { roof: 'gable' },
   'MTO-PG-HP': { roof: 'hip', post: 125 },
   'MTO-PG-IP': { post: 125, inset: 600, over: 600 },
-  'MTO-PG-KB': { leg: 'knee', post: 125, over: 450 },
-  'MTO-PG-LD': { leg: 'ladder', post: 80 },
-  'MTO-PG-LP': { leg: 'lean' },
-  'MTO-PG-OV': { over: 300, bover: 300 },
+  'MTO-PG-KB': { leg: 'knee', post: 125, over: 450, raf: [40, 120], gap: 150 },
+  'MTO-PG-LD': { leg: 'ladder', post: 80, raf: [40, 120], gap: 130 },
+  'MTO-PG-LP': { leg: 'lean', flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 },
+  'MTO-PG-OV': { over: 300, bover: 300, raf: [40, 120], gap: 150 },
   'MTO-PG-PA': { post: 200, beam: [200, 200], over: 0, bover: 0, raf: [40, 150], gap: 150, flush: true },
-  'MTO-PG-PB': { leg: 'pillar' },
-  'MTO-PG-PF': { leg: 'portal', post: 150 },
+  'MTO-PG-PB': { leg: 'pillar', raf: [40, 120], gap: 150 },
+  'MTO-PG-PF': { leg: 'portal', post: 150, flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 },
   'MTO-PG-RH': { groups: 3, gap: 120, raf: [40, 120] },
   'MTO-PG-SO': { leg: 'sidetwin', flush: true, over: 0, bover: 0, beam: [100, 250], raf: [40, 100], gap: 150 },   // box frame, close slats inside it; the right end on twin posts with a double end beam
-  'MTO-PG-TP': { leg: 'mast' },
-  'MTO-PG-TT': { roof: 'tiers' },
-  'MTO-PG-TW': { leg: 'twin', post: 90 },
-  'MTO-PG-WC': { post: 200, beam: [100, 300], raf: [50, 150], gap: 220, over: 150, clad: true },
+  'MTO-PG-TP': { leg: 'mast', flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 },
+  'MTO-PG-TT': { roof: 'tiers', raf: [40, 120], gap: 150 },
+  'MTO-PG-TW': { leg: 'twin', post: 90, raf: [50, 150], gap: 280 },
+  'MTO-PG-WC': { post: 200, beam: [100, 300], flush: true, over: 0, bover: 0, raf: [40, 100], gap: 150, clad: true },
   'MTO-PG-WV': { roof: 'wave' },
   'MTO-PG-XG': { roof: 'xgable', post: 125 },
 };
-const FIN = { black: 0x2a2a2a, grey: 0x7b7e82, white: 0xf1f1ec, brown: 0x5b3c2a, wood: 0xa26a42 };
+const FIN = { black: 0x2a2a2a, grey: 0x7b7e82, white: 0xf1f1ec, brown: 0x5b3c2a, wood: 0x5e3a22 };
 const M = {};
 function mat(key, o) { if (M[key]) return M[key]; return (M[key] = o.phys ? new THREE.MeshPhysicalMaterial(o.phys) : new THREE.MeshStandardMaterial(o)); }
 function finish(o) {   // frame + roof members from the chosen finish ("Black + Wood" = black frame, wood rafters; "Wooden" = all wood)
@@ -48,7 +48,7 @@ function finish(o) {   // frame + roof members from the chosen finish ("Black + 
 }
 const S = () => ({
   ground: mat('ground', { color: 0xdcd6c8, roughness: 1 }), grass: mat('grass', { color: 0x93ab70, roughness: 1 }), deck: mat('deck', { color: 0xbcae98, roughness: 0.9 }),
-  stone: mat('stone', { color: 0xb9ad99, roughness: 0.95 }), wall: mat('wall', { color: 0xe9e4da, roughness: 0.9 }),
+  stone: mat('stone', { color: 0x9c968c, roughness: 0.95 }), wall: mat('wall', { color: 0xe9e4da, roughness: 0.9 }),
   poly: mat('poly', { phys: { color: 0xe7c48f, roughness: 0.35, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false } }),
   glass: mat('glass', { phys: { color: 0xbfdce6, roughness: 0.05, transparent: true, opacity: 0.32, side: THREE.DoubleSide, depthWrite: false } }),
   led: mat('led', { color: 0x3a3a3a, emissive: 0xffd99a, emissiveIntensity: 0 }),
@@ -80,14 +80,15 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
   // ---- posts / legs
   for (const x of cols) for (const z of rows) {
     if (!edge(x, z)) continue;
-    if (leg === 'lean') { const k = Math.tan(6 * Math.PI / 180) * top, dx = x < L / 2 ? 1 : x > L / 2 ? -1 : 0, dz = z < W / 2 ? 1 : -1; rod(g, [x + dx * k, 0, z + dz * k], [x, top, z], P, P, F.frame); continue; }
-    if (leg === 'aframe') { if (x !== cols[0] && x !== cols[cols.length - 1]) continue; const dx = x < L / 2 ? -1 : 1; rod(g, [x + dx * 1.8, 0, z], [x, top, z], P, P, F.frame); continue; }   // each corner leg splays out along the length: the front and back faces read as an A
+    if (leg === 'lean') { const k = Math.tan(10 * Math.PI / 180) * top, dx = x < L / 2 ? 1 : x > L / 2 ? -1 : 0, dz = z < W / 2 ? 1 : -1; rod(g, [x - dx * k, 0, z - dz * k], [x, top, z], P, P, F.frame); continue; }   // feet splay out
+    if (leg === 'aframe') { if (z !== rows[0] && z !== rows[rows.length - 1]) continue; const dz = z < W / 2 ? -1 : 1; rod(g, [x, 0, z + dz * 1.8], [x, top, z], P, P, F.frame); continue; }   // each leg splays out to the front / back: the side faces read as an A
     if (leg === 'ladder') { const s = MM(220) / 2; [-s, s].forEach(d => post(x + d, z)); for (let k = 1; k <= 4; k++) box(g, 2 * s, MM(40), MM(40), x, top * k / 5, z, F.frame); continue; }
     if (leg === 'twin') { const s = MM(130); [-s, s].forEach(d => post(x + d, z)); continue; }   // two posts side by side with a gap, along the front / back face
     if (leg === 'branch') continue;
     if (leg === 'pillar') { box(g, 1.6, 3, 1.6, x, 1.5, z, X.stone); box(g, P, top - 3, P, x, 3 + (top - 3) / 2, z, F.frame); continue; }
     if (leg === 'mast') { post(x, z, top + BH + RH + 2.3); box(g, P + 0.15, 0.12, P + 0.15, x, top + BH + RH + 2.36, z, F.frame); continue; }
     if (leg === 'portal' && (x === cols[0] || x === cols[cols.length - 1])) { post(x, z, top + BH + RH + 1.5); continue; }
+    if (leg === 'gate' && x === cols[cols.length - 1]) { post(x, z, top + BH + 2.5, MM(150)); continue; }
     if (r.clad) { box(g, P, top, P, x, top / 2, z, mat('fwood', { color: FIN.wood, roughness: 0.65, metalness: 0 })).userData.post = 1; continue; }   // wood-clad posts (the frame finish stays on the beams)
     post(x, z, r.roof === 'float' ? top - 0.8 : top);
     if (leg === 'knee') { const b = 2; rod(g, [x, top - b, z], [x + (x < L / 2 ? b : -b), top, z], MM(60), MM(60), F.frame); rod(g, [x, top - b, z], [x, top, z + (z < W / 2 ? b : -b)], MM(60), MM(60), F.frame); }
@@ -95,10 +96,9 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
   }
   if (leg === 'branch') [L * 0.27, L * 0.73].forEach(x => { const z = W / 2, y0 = top - 3.2; post(x, z, y0);
     [[x - 2.6, z], [x + 2.6, z], [x, rows[0]], [x, rows[rows.length - 1]]].forEach(([a, b]) => rod(g, [x, y0, z], [a, top, b], P * 0.8, P * 0.8, F.frame)); });
-  if (leg === 'aframe') rows.forEach(z => box(g, cols[cols.length - 1] - cols[0] + 2 * 1.8 * (1 - 2.6 / top), MM(60), MM(60), L / 2, 2.6, z, F.frame));   // tie bar
+  if (leg === 'aframe') cols.forEach(x => box(g, MM(60), MM(60), rows[rows.length - 1] - rows[0] + 2 * 1.8 * (1 - 2.6 / top), x, 2.6, W / 2, F.frame));   // tie bar on each side
   if (leg === 'portal') [cols[0], cols[cols.length - 1]].forEach(x => box(g, P, P, W - 2 * inset, x, top + BH + RH + 1.5 - P / 2, W / 2, F.frame));
-  if (leg === 'gate') { const z = W + 2.6, hh = top + BH + RH + 3, s = MM(200); [L * 0.2, L * 0.8].forEach(x => box(g, s, hh, s, x, hh / 2, z, F.frame)); box(g, L * 0.6 + s, s, s, L / 2, hh - s / 2, z, F.frame);
-    [L * 0.2, L * 0.8].forEach(x => box(g, MM(80), MM(120), 2.6, x, top + BH / 2, W + 1.3, F.frame)); }
+  if (leg === 'gate') { const s = MM(150), x = cols[cols.length - 1]; box(g, s, s, rows[rows.length - 1] - rows[0] + s, x, top + BH + 2.5 - s / 2, W / 2, F.frame); }
   if (r.roof === 'float') for (const x of cols) for (const z of rows) box(g, MM(50), 0.8, MM(50), x, top - 0.4, z, F.frame);
   // ---- main beams along the length (front / back), a ledger on the wall
   const y0 = top, eL = -bover + inset, eR = L + bover - inset;
@@ -127,9 +127,9 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
   const louv = (x, y, z0, z1) => { const s = new THREE.Mesh(new THREE.BoxGeometry(MM(180), MM(10), z1 - z0), F.roof); s.position.set(x, y + MM(90), (z0 + z1) / 2); s.rotation.z = Math.PI / 4; s.castShadow = true; g.add(s); return false; };
   const roof = r.roof || 'flat';
   if (roof === 'tiers') {   // front half low, back half 450 higher
-    const zm = W / 2, up = MM(450);
+    const zm = W / 2, up = MM(600);
     beamAt(rows[rows.length - 1]); beamAt(zm, y0); beamAt(zm, y0 + up + BH); beamAt(rows[0], y0 + up + BH);
-    for (const x of cols) { post(x, zm, y0 + up + BH); box(g, P, up + BH, P, x, y0 + BH + (up + BH) / 2, rows[0], F.frame); }
+    for (const x of cols) { post(x, zm, y0 + up + BH); box(g, P, up + BH, P, x, y0 + (up + BH) / 2, rows[0], F.frame); }
     led(rows[rows.length - 1]); led(rows[0], y0 + up + BH);
     rafters(() => ry, zm - 0.6, R1); rafters(() => ry + up + BH, R0, zm + 0.6); cover(ry + RH, zm, R1); cover(ry + up + BH + RH, R0, zm);
   } else if (roof === 'gable' || roof === 'xgable' || roof === 'hip') {
@@ -160,13 +160,17 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
   } else if (roof === 'louvre') {
     rows.forEach(z => { beamAt(z); led(z); }); cols.forEach(x => box(g, BW, BH, W - 2 * inset, x, y0 + BH / 2, W / 2, F.frame));
     for (let x = eL + 0.35; x < eR; x += 0.62) { const s2 = new THREE.Mesh(new THREE.BoxGeometry(MM(230), MM(14), R1 - R0), F.roof); s2.position.set(x, ry + MM(60), (R0 + R1) / 2); s2.rotation.z = 0.62; s2.castShadow = true; g.add(s2); }
+  } else if (roof === 'grid' && r.flush) {   // an egg-crate grid set inside a box frame, flush
+    rows.forEach(z => { beamAt(z); led(z); }); [eL, eR].forEach(x => box(g, BW, BH, W - 2 * inset, x, y0 + BH / 2, W / 2, F.frame));
+    const yy = y0 + (BH - RH) / 2, z0 = rows[0], z1 = rows[rows.length - 1]; rafters(() => yy, z0, z1);
+    for (let z = z0 + gap; z < z1 - 0.1; z += gap + RW) box(g, eR - eL, RH, RW, L / 2, yy + RH / 2, z, F.roof); cover(y0 + BH, z0, z1);
   } else if (roof === 'grid') {
     rows.forEach(z => { beamAt(z); led(z); }); rafters(() => ry); for (let z = R0; z <= R1 + 0.01; z += gap + RW) box(g, eR - eL, RH, RW, L / 2, ry + RH / 2, z, F.roof); cover(ry + RH);
   } else if (roof === 'float') {
     const fy = top + 0.8 - BH; [R0, R1].forEach(z => box(g, eR - eL, BH, BW, L / 2, fy + BH / 2, z, F.frame)); [eL, eR].forEach(x => box(g, BW, BH, R1 - R0, x, fy + BH / 2, W / 2, F.frame));
     rows.forEach(z => led(z, fy)); rafters(() => fy + BH - RH, R0, R1); cover(fy + BH);
   } else {   // flat (most designs)
-    rows.forEach(z => { beamAt(z); led(z); });
+    rows.forEach(z => { if (leg === 'twin' && !wall) [-1, 1].forEach(sg => beamAt(z + sg * (P / 2 + BW / 2))); else beamAt(z); led(z); });
     if (r.flush) { [eL, eR].forEach(x => box(g, BW, BH, W - 2 * inset, x, y0 + BH / 2, W / 2, F.frame)); rafters(() => y0 + (BH - RH) / 2, rows[0], rows[rows.length - 1]); cover(y0 + BH, rows[0], rows[rows.length - 1]); }
     else { rafters(() => ry); if (r.clad) [R0, R1].forEach(z => box(g, eR - eL, MM(300), MM(40), L / 2, ry + MM(150), z, F.roof)); cover(ry + RH); }
   }
@@ -218,7 +222,7 @@ export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
-  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=12').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=13').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';

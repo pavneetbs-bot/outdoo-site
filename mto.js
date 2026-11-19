@@ -615,8 +615,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=15').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=15'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=16').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=16'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1799,7 +1799,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=21').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=22').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2194,7 +2194,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: !!S.o.deck, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=7').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=8').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -2256,12 +2256,7 @@
   // The proposal = one page after "Done": final design (3D) + reference photo, plan and elevations with sizes, one spec list, the price,
   // what goes into it, technical specs, things around it, payment terms, how it's made, questions, then delivery + installation and Add to cart.
   // Each proposal is saved to the customer's account (My account → Proposals) and emailed (customer_proposals, 197).
-  var PG_D = { 'MTO-PG-AF': { leg: 'aframe', over: 0, bover: 0, raf: [40, 120], gap: 200 }, 'MTO-PG-AL': { roof: 'louvre', over: 150 }, 'MTO-PG-BR': { leg: 'branch', post: 125 },
-    'MTO-PG-CA': { roof: 'barrel' }, 'MTO-PG-EG': { roof: 'grid', post: 125, raf: [50, 200], gap: 600 }, 'MTO-PG-FP': { leg: 'gate' }, 'MTO-PG-FR': { roof: 'float' }, 'MTO-PG-GB': { roof: 'gable' },
-    'MTO-PG-HP': { roof: 'hip', post: 125 }, 'MTO-PG-IP': { post: 125, inset: 600, over: 600 }, 'MTO-PG-KB': { leg: 'knee', post: 125, over: 450 }, 'MTO-PG-LD': { leg: 'ladder', post: 80 },
-    'MTO-PG-LP': { leg: 'lean' }, 'MTO-PG-OV': { over: 300, bover: 300 }, 'MTO-PG-PA': { post: 200, beam: [200, 200], over: 0, bover: 0, raf: [40, 150], gap: 150 }, 'MTO-PG-PB': { leg: 'pillar' },
-    'MTO-PG-PF': { leg: 'portal', post: 150 }, 'MTO-PG-RH': { gap: 120, raf: [40, 120] }, 'MTO-PG-SO': { leg: 'sidetwin', over: 0, bover: 0, beam: [100, 250], raf: [40, 100], gap: 150 }, 'MTO-PG-TP': { leg: 'mast' }, 'MTO-PG-TT': { roof: 'tiers' },
-    'MTO-PG-TW': { leg: 'twin', post: 90 }, 'MTO-PG-WC': { post: 200, beam: [100, 300], raf: [50, 150], gap: 220, over: 150 }, 'MTO-PG-WV': { roof: 'wave' }, 'MTO-PG-XG': { roof: 'xgable', post: 125 } };
+  var PG_D = { 'MTO-PG-AF': { leg: 'aframe', flush: true, over: 0, bover: 0, raf: [40, 120], gap: 200 }, 'MTO-PG-AL': { roof: 'louvre', over: 150 }, 'MTO-PG-BR': { leg: 'branch', post: 125, flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 }, 'MTO-PG-CA': { roof: 'barrel' }, 'MTO-PG-EG': { roof: 'grid', post: 125, flush: true, over: 0, bover: 0, raf: [40, 150], gap: 400 }, 'MTO-PG-FP': { leg: 'gate', flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 }, 'MTO-PG-FR': { roof: 'float', raf: [40, 100], gap: 120 }, 'MTO-PG-GB': { roof: 'gable' }, 'MTO-PG-HP': { roof: 'hip', post: 125 }, 'MTO-PG-IP': { post: 125, inset: 600, over: 600 }, 'MTO-PG-KB': { leg: 'knee', post: 125, over: 450, raf: [40, 120], gap: 150 }, 'MTO-PG-LD': { leg: 'ladder', post: 80, raf: [40, 120], gap: 130 }, 'MTO-PG-LP': { leg: 'lean', flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 }, 'MTO-PG-OV': { over: 300, bover: 300, raf: [40, 120], gap: 150 }, 'MTO-PG-PA': { post: 200, beam: [200, 200], over: 0, bover: 0, raf: [40, 150], gap: 150, flush: true }, 'MTO-PG-PB': { leg: 'pillar', raf: [40, 120], gap: 150 }, 'MTO-PG-PF': { leg: 'portal', post: 150, flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 }, 'MTO-PG-RH': { groups: 3, gap: 120, raf: [40, 120] }, 'MTO-PG-SO': { leg: 'sidetwin', flush: true, over: 0, bover: 0, beam: [100, 250], raf: [40, 100], gap: 150 }, 'MTO-PG-TP': { leg: 'mast', flush: true, over: 0, bover: 0, raf: [40, 100], gap: 120 }, 'MTO-PG-TT': { roof: 'tiers', raf: [40, 120], gap: 150 }, 'MTO-PG-TW': { leg: 'twin', post: 90, raf: [50, 150], gap: 280 }, 'MTO-PG-WC': { post: 200, beam: [100, 300], flush: true, over: 0, bover: 0, raf: [40, 100], gap: 150, clad: true }, 'MTO-PG-WV': { roof: 'wave' }, 'MTO-PG-XG': { roof: 'xgable', post: 125 } };
   function pgSpec(id, q) {   // = pergola3d.js build(): posts, beams, rafters at this size (for the drawings and the numbers)
     var r = PG_D[id] || {}, ft = function (v) { return v / 304.8; }, L = +q.l || 12, W = +q.w || 10, H = parseFloat(q.height) || 8;
     var post = r.post || 100, beam = r.beam || [100, 200], raf = r.raf || [50, 150], gap = r.gap || 450, P = ft(post), inset = ft(r.inset || 0);
