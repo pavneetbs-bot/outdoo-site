@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=13';
-import { pergolaModel } from './pergola3d.js?v=5';
+import { cabinModel, plotModel } from './cabin3d.js?v=14';
+import { pergolaModel } from './pergola3d.js?v=6';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -154,15 +154,20 @@ function build(P) {
   const g = new THREE.Group(), t = P.site || {}, terr = t.kind === 'terrace';
   if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
-  (P.items || []).forEach((it, i) => {
+  drawItems(items, R.holders, P);
+  return g;
+}
+
+function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (also drawn by the cabin / pergola designers)
+  (P.items || []).forEach((it, i) => { if (!it) return;
     if (it.box) {   // 193d: an AC cover sitting over its unit
-      const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); R.holders[i] = hd; const bx = it.box, gm = generic('accover', bx.w, bx.d, bx.h); gm.position.set(bx.x + bx.w / 2, 0, bx.z + bx.d / 2); hd.add(gm);
+      const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); H[i] = hd; const bx = it.box, gm = generic('accover', bx.w, bx.d, bx.h); gm.position.set(bx.x + bx.w / 2, 0, bx.z + bx.d / 2); hd.add(gm);
       const hb = new THREE.Mesh(new THREE.BoxGeometry(bx.w, bx.h, bx.d), new THREE.MeshBasicMaterial({ visible: false })); hb.position.set(bx.x + bx.w / 2, bx.h / 2, bx.z + bx.d / 2); hb.userData.hit = i; hd.add(hb);
       if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(bx.w + 0.3, bx.h + 0.2, bx.d + 0.3)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.set(bx.x + bx.w / 2, bx.h / 2, bx.z + bx.d / 2); hd.add(ln); }
       return;
     }
     if (it.segs) {   // a screen fixed on the parapet / round the tanks: pieces in plot coordinates
-      const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); R.holders[i] = hd;
+      const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); H[i] = hd;
       it.segs.forEach((sg, k) => { const L = Math.hypot(sg.x1 - sg.x0, sg.z1 - sg.z0); if (L < 0.3) return; const p = new THREE.Group(); p.position.set((sg.x0 + sg.x1) / 2, sg.y, (sg.z0 + sg.z1) / 2); p.rotation.y = -Math.atan2(sg.z1 - sg.z0, sg.x1 - sg.x0); hd.add(p);
         p.add(generic('privacy', L, 0.3, +it.h || 3));
         const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
@@ -183,11 +188,15 @@ function build(P) {
       const top = (+it.h || 8) + (it.deck ? 0.6 : 0), fm = mat('c_ledger', 0x2E2E2E, { metalness: 0.4, roughness: 0.5 });
       it.att.forEach(z => { const b = box(items, z.w, 0.6, z.d, z.x + z.w / 2, top - 0.3, z.z + z.d / 2, fm); b.userData.it = i; });
     }
-    R.holders[i] = hd;
+    H[i] = hd;
   });
-  return g;
 }
-
+// 193j: for the designers — the plan's things in plot coordinates (floor at y 0), not interactive except their hit boxes (userData.hit = index)
+export function itemsGroup(list, P) {
+  const PR = () => (typeof PRODS !== 'undefined' ? PRODS : window.PRODS) || {}, g = new THREE.Group(); g.name = 'planitems'; const H = [];
+  const P2 = Object.assign({ cabinCfg: it => ((PR()[it.sku] || {}).cz || {}).cabin, cabinLay: it => { const c = ((PR()[it.sku] || {}).cz || {}).cabin; return (it.layout && (!it.lsku || it.lsku === it.sku) ? it.layout : null) || (c && c.layout) || {}; } }, P || {}, { items: list });
+  drawItems(g, H, P2); return { g, holders: H };
+}
 function camHome(t, view) {
   const pw = +t.pw || 30, pd = +t.pd || 60, d = Math.max(pw, pd), C = R.controls; C.target.set(pw / 2, 0, pd / 2);
   if (view === 'top') { R.cam.position.set(pw / 2, d * 1.3 + 8, pd / 2 + 0.01); C.enableRotate = false; }

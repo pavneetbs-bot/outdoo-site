@@ -278,6 +278,7 @@ function terrace(g, L, W, t) {
   const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); sg.position.set(L / 2, 0, W / 2); sg.rotation.y = -(+t.rot || 0) * Math.PI / 180;
   const tg = new THREE.Group(); tg.name = 'plot'; sg.add(tg); const [fw, fd] = tsFootDims(t, L, W); tg.position.set(-(+t.cx + fw / 2), 0, -(+t.cz + fd / 2));
   drawPlot(tg, t);
+  if (Array.isArray(t.around) && t.around.some(Boolean)) aroundOn(tg, t, -0.6);   // 193j: the plan's other things on the terrace
   // red when the cabin doesn't fit there; terracotta outline while it is being placed
   if (t.clash || t.place) { const Y = -0.6, col = t.clash ? 0xE0352B : 0xC26445, ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.8, 0.2, W + 0.8)), new THREE.LineBasicMaterial({ color: col })); ln.position.set(L / 2, Y + 0.15, W / 2); g.add(ln);
     const pl = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 0.06, W + 0.8), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, depthWrite: false })); pl.position.set(L / 2, Y + 0.1, W / 2); g.add(pl); }
@@ -337,6 +338,13 @@ function drawPlot(tg, t) {
     if (bk.type === 'mumty' && t.tanks !== false) { const n = Math.max(bk.w, bk.d) >= 12 ? 2 : 1, along = bk.d >= bk.w; for (let j = 0; j < n; j++) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 4, 20), P('t_tank', 0x1F2224)); const o = n > 1 ? (j ? 3 : -3) : 0; tk.position.set(x + (along ? 0 : o), Y + h + 2.35, z + (along ? o : 0)); tk.castShadow = true; bg.add(tk); } }
   });
 }
+// 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
+let AROUND = null, AROUND_LOADING = false;
+function aroundOn(tg, t, y) {
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=11').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
+}
+function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
 function plotOf() { return R.group && R.group.getObjectByName('plot'); }
 function toPlot(p) { const tg = plotOf(); return tg ? tg.worldToLocal(p.clone()) : p; }
 
@@ -531,6 +539,8 @@ function pDown(e) {
   if (R.ts && ['3d', 'cut', 'top', '360'].includes(R.view)) {   // a terrace: grab a block (mumty, lift, shaft, room) — or, while placing, the whole cabin
     const tg = plotOf(), hits = cast(e, [R.group]), f = floorAt(e);
     const hb = hits.find(h => { let o = h.object; while (o && !o.userData.st) o = o.parent; return o; });
+    const ih = !R.ts.place && f ? itemAt(hits) : null, ia = ih && (R.ts.around || [])[ih.userData.it];
+    if (ih && ia) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; R.idrag = { obj: ih, i: ih.userData.it, p0: toPlot(f), pos0: ih.position.clone(), x0: +ia.x, z0: +ia.z, can: !ia.lock && !ia.segs && !ia.box, moved: false }; R.controls.enabled = false; e.preventDefault(); return; }
     if (hb && f && R.ts.place) { let o = hb.object; while (!o.userData.st) o = o.parent; const bk = (R.ts.blocks || [])[o.userData.st.i];   // 192: frozen after the Where step
       if (bk) { R.down = { x: e.clientX, y: e.clientY, t: Date.now(), tag: null }; R.ctlOn = R.controls.enabled; R.sdrag = { obj: o, i: o.userData.st.i, p0: toPlot(f), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, moved: false }; R.controls.enabled = false; e.preventDefault(); return; } }
     if (R.ts.whole && !R.ts.place && f && hits.some(h => { let o = h.object; while (o && o.name !== 'site') o = o.parent; return !o; })) {   // 193e: on 'Whole terrace' the cabin itself moves on the terrace
@@ -545,6 +555,8 @@ function pDown(e) {
   }
 }
 function pMove(e) {
+  const id = R.idrag; if (id) { const f = floorAt(e); if (!f || !id.can) return; if (!id.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; id.moved = true; const p = toPlot(f);
+    id.nx = Math.round((id.x0 + p.x - id.p0.x) * 2) / 2; id.nz = Math.round((id.z0 + p.z - id.p0.z) * 2) / 2; id.obj.position.set(id.pos0.x + id.nx - id.x0, id.pos0.y, id.pos0.z + id.nz - id.z0); return; }
   const sd = R.sdrag; if (sd) { const f = floorAt(e); if (!f) return; if (!sd.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; sd.moved = true;
     const t = R.ts, PT = 0.75, p = toPlot(f), x = Math.round(Math.max(PT, Math.min(t.pw - PT - sd.w, sd.x0 + p.x - sd.p0.x)) * 2) / 2, z = Math.round(Math.max(PT, Math.min(t.pd - PT - sd.d, sd.z0 + p.z - sd.p0.z)) * 2) / 2;
     sd.nx = x; sd.nz = z; sd.obj.position.set(x - sd.x0, 0, z - sd.z0); return; }
@@ -562,6 +574,7 @@ function pMove(e) {
   const s = snap(d.i, d.x0 + f.x - d.f0.x, d.y0 + f.z - d.f0.z); d.nx = s[0]; d.ny = s[1]; d.obj.position.set(s[0] - d.x0, 0, s[1] - d.y0); selBox();
 }
 function pUp(e) {
+  const id = R.idrag; if (id) { R.idrag = null; R.down = null; R.controls.enabled = R.ctlOn; HANDLER(id.moved ? { t: 'moveitem', i: id.i, x: id.nx, z: id.nz } : { t: 'selitem', i: id.i }); return; }
   const sd = R.sdrag; if (sd) { R.sdrag = null; R.down = null; R.controls.enabled = R.ctlOn; if (sd.moved) HANDLER({ t: 'movesite', i: sd.i, x: sd.nx, z: sd.nz }); return; }
   const cd = R.cdrag; if (cd) { R.cdrag = null; R.down = null; R.controls.enabled = R.ctlOn; if (cd.moved) HANDLER({ t: 'movecab', cx: cd.ncx, cz: cd.ncz }); return; }
   if (R.ts && R.ts.place) { R.down = null; return; }
@@ -612,7 +625,7 @@ function startSpot(c, lay, L, W) {   // where "Inside" starts: 2½ ft in from th
 }
 
 export function show(el, c, lay, view, opts) {
-  opts = opts || {}; ensure(el);
+  opts = opts || {}; ensure(el); R.last = [el, c, lay, view, opts];
   const ts = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const key = JSON.stringify(lay) + '|' + (opts.furn || 'none') + '|' + JSON.stringify(ts), dimKey = [lay.L, lay.W, lay.height, ts ? 't' + (ts.place || ts.whole ? 'W' : 'c') : 'g'].join('x');
   let reset = view !== R.view;

@@ -615,8 +615,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=13').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=13'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=14').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=14'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -724,6 +724,7 @@
     if (r.x < 0.75 || r.z < 0.75 || r.x + r.w > t.pw - 0.75 || r.z + r.d > t.pd - 0.75) return 'The ' + tsWord() + ' goes over the parapet — drag it in';
     if (tsCut(t, r)) return 'The ' + tsWord() + ' reaches into a cut corner — drag it in';
     var b = arr(t.blocks).filter(function (o) { return tsHit(r, o); })[0];
+    if (!b && S && S.pl && S.plFor === S.id && t === S.site) { var ai = arRects().filter(function (o) { return tsHit(r, o); })[0]; if (ai) return 'The ' + tsWord() + ' sits on the ' + String(ai.label).toLowerCase() + ' — drag one of them'; }
     return b ? 'The ' + tsWord() + ' sits on the ' + TS_KIND[b.type][1].toLowerCase() + ' — drag one of them' : '';
   }
   function tsCentre(t, lay) {   // the best free spot: near the front and the middle first
@@ -731,7 +732,7 @@
     for (var z = z0; z >= 0.75 + F.e.b && !best; z -= 0.5) for (var dx = 0; dx <= t.pw && !best; dx += 0.5) [x0 - dx, x0 + dx].forEach(function (x) { if (best) return; t.cx = x; t.cz = z; if (!tsClash(t, lay)) best = [x, z]; });
     t.cx = best ? best[0] : x0; t.cz = best ? best[1] : z0;
   }
-  function tsOpts() { var t = S.site; if (!t || t.kind !== 'terrace') return null; keepSite(); var o2 = JSON.parse(JSON.stringify(t)); o2.clash = !!tsClash(t, tsLay()); o2.place = isPg(S.id) ? !!S.pgW : !!S.siteEd; o2.whole = !!S.whole; return o2; }
+  function tsOpts() { var t = S.site; if (!t || t.kind !== 'terrace') return null; keepSite(); if (!AR.st) arLoad(); var o2 = JSON.parse(JSON.stringify(t)); o2.clash = !!tsClash(t, tsLay()); o2.place = isPg(S.id) ? !!S.pgW : !!S.siteEd; o2.whole = !!S.whole; var ar = arAround(); if (ar) { o2.around = ar.list; o2.asel = ar.sel; } return o2; }
   function terraceUI(lay, noPlace) {
     var t = S.site || { kind: 'ground' }, on = t.kind === 'terrace', h = '';
     var btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -823,7 +824,7 @@
     var chips = '<div class="wz-stc" role="tablist" aria-label="Steps">' + (off ? '<button type="button" role="tab" data-ts="open" class="' + (sE ? 'on' : 'dn') + '" aria-selected="' + sE + '">' + (sE ? '' : '✓ ') + '1 · Where</button>' : '') + SHORT.map(function (t, i) { var mx = Math.max(w.max || 0, st), cur = i === st && !w.adv && !sE; return '<button type="button" role="tab" data-wzgo="' + i + '" class="' + (cur ? 'on' : i <= mx && !(sE && !S.siteDone) ? 'dn' : '') + '" aria-selected="' + cur + '"' + (i > mx || (sE && !S.siteDone && i > 0) ? ' disabled' : '') + '>' + ((i < st || (i <= mx && i !== st)) && !(sE && !S.siteDone) ? '✓ ' : '') + (i + 1 + off) + ' · ' + t + '</button>'; }).join('') + '</div>';
     if (S.studio) { var hc = document.getElementById('cbsSteps'); if (hc) { hc.innerHTML = chips; var on = hc.querySelector('.on'), sc = hc.querySelector('.wz-stc'); [hc, sc].forEach(function (b) { if (b && on && b.scrollWidth > b.clientWidth) b.scrollLeft = Math.max(0, on.offsetLeft - b.clientWidth / 2 + on.offsetWidth / 2); }); } }
     if (S.studio && S.siteEd) return terraceUI(lay, true);   // step 1: where it goes (the terrace only — 193e)
-    if (S.studio && S.whole && S.site && S.site.kind === 'terrace') h += '<div class="cbs-t ts-place">' + placeBox(lay) + '</div>';   // 193f: ▦ Whole terrace = where the cabin stands
+    if (S.studio && S.whole && S.site && S.site.kind === 'terrace') h += '<div class="cbs-t ts-place">' + placeBox(lay) + arUI() + '</div>';   // 193f: ▦ Whole terrace = where the cabin stands
     h += S.studio ? '' : S.pdp ? chips
       : '<div class="wz-steps">' + TITLES.map(function (t, i) { return '<button type="button" data-wzgo="' + i + '" class="' + (i <= st ? 'on' : '') + '" aria-label="Step ' + (i + 1) + ': ' + t + '"></button>'; }).join('') + '</div>';
     h += (S.studio ? '<div class="cbs-t">' : '') +
@@ -922,6 +923,7 @@
       var pj2 = lay.proj && arr(lay.proj.sides).length ? 'Pergola projection (' + arr(lay.proj.sides).join(', ') + ') · ' + [lay.proj.design, lay.proj.top, lay.proj.under].filter(Boolean).join(' · ') : '';
       h += '<ul class="wz-sum"><li><b>' + fi(lay.L) + ' × ' + fi(lay.W) + '</b> · ' + (num(lay.L) * num(lay.W)) + ' sq ft</li><li>' + esc(gname) + ' · ' + esc(dname) + ' (' + esc(w.side) + ')' + (lay.full_doors === true ? ' · full-height doors' : ' · 8 ft doors') + (SIDES.some(function (sd) { return lay.walls[sd].indexOf('slide') >= 0; }) && lay.tracks ? ' · ' + esc(lay.tracks) : '') + '</li><li>' + esc(ins.join(' · ') || 'open inside') + '</li>' + (pj2 ? '<li>' + esc(pj2) + '</li>' : '') + (SIDES.indexOf(lay.gutter) >= 0 ? '<li>Rain gutter, slope to the ' + esc(lay.gutter) + '</li>' : '') + '<li>' + esc([lay.roof, lay.frame, lay.height].filter(Boolean).join(' · ')) + ' · LED lights included</li></ul>';
       h += '<div class="wz-note"><b>Before we make it:</b> final drawings of your cabin are sent to you for approval. Making starts only after you approve them.</div>';
+      if (S.studio && S.site && S.site.kind === 'terrace') h += '<button type="button" class="plan-card" data-ar="open"><span>🛋️</span><span><b>Add things around it — here</b><small>Seating, planters, a pergola, a bar… on your terrace with this cabin, in this 3D</small></span><i>→</i></button>';   // 193j
       if (S.fromPlan == null) h += '<button type="button" class="plan-card" onclick="mtoPlanFrom()"><span>🗺️</span><span><b>Add more around it</b><small>Put a pergola, seating, planters, a bar… on your ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'lawn') + ' with this cabin — see it all in 3D</small></span><i>→</i></button>';   // 193f
       if (S.pdp) h += pdpTail(PRODS[S.id], m, o);
       h += partsMini();
@@ -1070,6 +1072,7 @@
     else if (ev.t === 'selpl') { S.psel = ev.i; S.sel3 = null; }
     else if (ev.t === 'movesite') tsDrop(ev);
     else if (ev.t === 'movecab') tsMoveTo(ev, S.o.layout);
+    else if (ev.t === 'selitem' || ev.t === 'moveitem') return arEv(ev);
     else if (ev.t === 'movepl') { var p = arr(lay.places)[ev.i]; if (!p) return; p.x = ev.x; p.y = ev.y; cbClamp(c, lay, p); S.psel = ev.i; S.sel3 = null; }
     draw();
   }
@@ -1730,6 +1733,7 @@
   }
   window.mtoPlanFrom = function () {
     if (!S || !PRODS[S.id] || !window.outrrPlan) return; var t = S.site, seed = { item: planItem(), site: t && t.kind === 'terrace' ? siteOut(t) : t && t.kind === 'ground' ? { kind: 'ground' } : null };
+    if (S.pl && S.plFor === S.id && arOthers(S.pl).length && t && t.kind === 'terrace') { var p0 = arSync(); try { localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: 1, site: p0.site, items: arOthers(p0), pid: null, pname: '', source: isPg(S.id) ? 'pergola' : 'cabin' })); } catch (e) {} seed.site = p0.site; seed.reload = true; S.pl = null; }   // 193j: the things already put around it go along
     try { window.mtoClose(); } catch (e) {} try { if (S.studio) window.cbStudio(null); } catch (e) {} try { window.pg3Open(false); } catch (e) {}
     window.outrrPlan(seed);
   };
@@ -1756,6 +1760,71 @@
     S.fromPlan = null; try { if (S.studio) window.cbStudio(null); } catch (e) {} try { window.pg3Open(false); } catch (e) {} try { window.mtoClose(); } catch (e) {}
     window.outrrPlan({ reload: true });
   };
+  // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
+  var AR = { m: null, st: 0 };
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=17').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
+  function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
+  function arPlan() {
+    if (S.pl && S.plFor === S.id) return S.pl; var p = null;
+    if (S.fromPlan != null) { try { p = JSON.parse(localStorage.getItem('outrr_plan') || 'null'); } catch (e) {} if (p && Array.isArray(p.items)) { p.items.forEach(function (o) { if (o) delete o._me; }); if (p.items[S.fromPlan]) p.items[S.fromPlan]._me = true; } }
+    if (!p || !Array.isArray(p.items)) p = { v: 1, step: 1, items: [] };
+    S.pl = p; S.plFor = S.id; p.sel = null; return p;
+  }
+  function arOthers(p) { return arr(p && p.items).filter(function (o) { return o && !o._me; }); }
+  function arSync() {   // the design (where it stands now) and the terrace into the plan; things on it move off
+    var p = arPlan(); if (!AR.m || !arOn()) return p;
+    arr(S.site.blocks).forEach(function (b) { if (!b.id) b.id = 'b' + Math.random().toString(36).slice(2, 8); });
+    p.site = siteOut(S.site); var me = planItem(), i = -1; me._me = true; p.items.forEach(function (o, j) { if (o && o._me) i = j; });
+    var sel = p.sel != null ? p.items[p.sel] : null; AR.m.put(p, i, me); p.sel = sel ? p.items.indexOf(sel) : null; if (p.sel < 0) p.sel = null;
+    arKeep(p); return p;
+  }
+  function arKeep(p) {   // opened from the planner: the plan is kept as it changes ("Save to my plan" puts the design back in its place)
+    var k = -1; p.items.forEach(function (o, j) { if (o && o._me) k = j; }); if (S.fromPlan != null && k >= 0) S.fromPlan = k;
+    if (S.fromPlan != null) try { localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: p.step || 1, site: p.site, items: p.items, pid: p.pid || null, pname: p.pname || '', source: p.source || '' })); } catch (e) {}
+  }
+  function arAround() { if (!arOn() || (S.fromPlan == null && !(S.pl && S.plFor === S.id))) return null; if (!AR.m) { arLoad(); return null; } arPlan(); if (!arOthers(S.pl).length) return null; var p = arSync(); return { list: p.items.map(function (o) { return o && !o._me ? o : null; }), sel: p.sel }; }
+  function arRects() { return arOthers(S.pl && S.plFor === S.id ? S.pl : null).filter(function (o) { return !o.segs && !o.box && o.mode == null && o.cat !== 'deck'; }).map(function (o) { var f = (+o.rot || 0) % 180 ? [o.d, o.w] : [o.w, o.d]; return { x: +o.x, z: +o.z, w: f[0], d: f[1], label: o.label || o.cat }; }); }
+  function arDo(fn) { if (!AR.m) return; var p = arSync(); fn(p); arKeep(p); S.arMsg = p.msg || ''; if (!isPg(S.id)) S.whole = true; draw(); arRe(); }
+  function arEv(ev) {   // taps / drags on the things in the 3D
+    if (!AR.m || !S.pl) return; if (ev.t === 'selitem') return arDo(function (p) { p.sel = p.sel === ev.i ? null : ev.i; p.ask = null; });
+    if (ev.t === 'moveitem') return arDo(function (p) { AR.m.move(p, ev.i, ev.x, ev.z); });
+  }
+  function arClick(k) {
+    if (!S) return; if (k === 'open') { if (!isPg(S.id)) { S.whole = true; S.arOpen = true; draw(); var pn = document.querySelector('.cbs-pn,.cbs-o'); if (pn && pn.scrollIntoView) pn.scrollIntoView({ block: 'start' }); } return; }
+    if (k === 'plan') return S.fromPlan != null ? window.mtoBackToPlan() : window.mtoPlanFrom();
+    if (k === 'close') { S.arOpen = false; if (S.pl) S.pl.sel = null; return draw(); }
+    if (!AR.m) return arLoad(); arDo(function (p) { AR.m.act(p, k); });
+  }
+  function arInput(el) { var k = el.getAttribute('data-arin'), v = parseFloat(el.value); if (!k || !(v > 0) || !AR.m || !S || !S.pl) return; arDo(function (p) { if (p.sel != null) AR.m.size(p, p.sel, k, v); }); }
+  document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-ar]'); if (b && !b.disabled) { e.preventDefault(); arClick(b.getAttribute('data-ar')); } });
+  document.addEventListener('change', function (e) { if (e.target.getAttribute && e.target.hasAttribute('data-arin')) arInput(e.target); });
+  function arUI() {   // the panel: what can go around it, the things placed, the picked one's size / turn / lock / remove
+    if (!S || !S.site || S.site.kind !== 'terrace') return '<p class="ts-h">Around it</p><button type="button" class="ar-more" data-ar="plan">🗺️ Plan seating, planters, a bar… around it on your lawn →</button>';
+    if (!AR.m) { arLoad(); return '<p class="ts-h">Around it</p><p class="ar-note">' + (AR.st < 0 ? 'Couldn\'t load — try again' : 'Loading…') + '</p>'; }
+    var p = arPlan(), skip = isPg(S.id) ? 'pergola' : 'cabin', cats = AR.m.cats(skip), h = '<div class="ar"><p class="ts-h">Around it <span>tap to add · drag on the 3D</span></p>';
+    h += '<div class="ar-pal">' + cats.map(function (c) { return '<button type="button" data-ar="add:' + c.k + '"><i>' + c.e + '</i>' + esc(c.t) + '</button>'; }).join('') + '</div>';
+    if (p.ask === 'privacy') h += '<div class="ar-ed"><b>Privacy screen — where?</b><div class="ar-row"><button type="button" data-ar="pmode:par">On the parapet</button><button type="button" data-ar="pmode:part">A partition</button><button type="button" data-ar="pmode:tank">Round the tanks</button><button type="button" data-ar="askx">✕</button></div></div>';
+    var list = []; p.items.forEach(function (o, j) { if (o && !o._me) list.push([o, j]); });
+    if (list.length) h += '<div class="ar-list">' + list.map(function (x) { var c = AR.m.cat(x[0].cat) || {}; return '<button type="button" data-ar="sel:' + x[1] + '" class="' + (p.sel === x[1] ? 'on' : '') + '">' + (c.e || '•') + ' ' + esc(x[0].label || c.t || x[0].cat) + (x[0].lock ? ' 🔒' : '') + '</button>'; }).join('') + '</div>';
+    var it = p.sel != null ? p.items[p.sel] : null;
+    if (it && !it._me) { var c = AR.m.cat(it.cat) || {}, sz = c.size || 'fixed', att = it.mode === 'par' || it.mode === 'tank' || it.mode === 'ac';
+      var row = function (key, lbl, v) { return '<div class="ar-pm"><span>' + lbl + '</span><button type="button" data-ar="rs:' + key + ':-1"' + (it.lock ? ' disabled' : '') + ' aria-label="Smaller">−</button><input type="number" inputmode="decimal" step="0.5" data-arin="' + key + '" value="' + v + '"' + (it.lock ? ' disabled' : '') + '><button type="button" data-ar="rs:' + key + ':1"' + (it.lock ? ' disabled' : '') + ' aria-label="Bigger">+</button><i>ft</i></div>'; };
+      h += '<div class="ar-ed"><b>' + (c.e || '') + ' ' + esc(it.label || c.t || it.cat) + '</b>';
+      if (!att && /w/.test(sz)) h += row('w', 'Length', it.w); if (!att && sz === 'wd') h += row('d', 'Width', it.d); if (sz === 'wh' || it.cat === 'pergola' || it.mode === 'par' || it.mode === 'tank') h += row('h', 'Height', it.h);
+      if (sz === 'fixed' && !att) h += '<p class="ar-note">' + it.w + ' × ' + it.d + ' ft — its real size comes with the design you pick</p>';
+      h += '<div class="ar-row">' + (att ? '' : '<button type="button" data-ar="rot"' + (it.lock ? ' disabled' : '') + '>↻ Turn</button>') + '<button type="button" data-ar="lock">' + (it.lock ? '🔓 Unlock' : '🔒 Lock') + '</button><button type="button" data-ar="del">✕ Remove</button><button type="button" data-ar="done">Done</button></div></div>'; }
+    if (S.arMsg) h += '<div class="wz-note" style="background:#FFF4E5;border-color:#F1D3A8">' + esc(S.arMsg) + '</div>';
+    if (list.length) { var f = null; try { f = AR.m.from(p); } catch (e) {}
+      h += '<button type="button" class="ar-more" data-ar="plan">' + list.length + ' thing' + (list.length > 1 ? 's' : '') + ' around it' + (f && f.n ? ' · from ' + rs(f.t) : '') + ' — <b>choose designs &amp; add to cart →</b></button>'; }
+    return h + '</div>';
+  }
+  var AR_CSS = '.ar{margin:14px 0 0}.ar .ts-h span{font-weight:500;color:#8a857c}.ar-pal{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.ar-pal button{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:7px 6px;font:600 11.5px inherit;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:#2E2E2E}.ar-pal button:hover{border-color:#C26445}.ar-pal i{font-style:normal;font-size:18px}' +
+    '.ar-list{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}.ar-list button{border:1px solid #ddd;background:#fff;border-radius:999px;padding:6px 11px;font:600 12px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.ar-list button.on{border-color:#C26445;background:#fbefe9;color:#8a3a1f}' +
+    '.ar-ed{border:2px solid #C26445;border-radius:12px;padding:10px;background:#FFF8F2;margin:10px 0 0}.ar-ed>b{font-size:13.5px}.ar-pm{display:flex;align-items:center;gap:6px;margin:6px 0;font-size:12.5px}.ar-pm span{min-width:56px}.ar-pm button{width:32px;height:32px;border-radius:50%;border:1px solid #ccc;background:#fff;font-size:16px;cursor:pointer}.ar-pm input{width:64px;height:32px;border:1px solid #C9BBA6;border-radius:8px;text-align:center;font:inherit;font-weight:700}.ar-pm i{font-style:normal;color:#8a857c}' +
+    '.ar-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.ar-row button{border:1px solid #ddd;background:#fff;border-radius:999px;padding:6px 11px;font:600 12px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.ar-row button:disabled{opacity:.45}.ar-note{font-size:12px;color:#7A7268;margin:6px 0}' +
+    '.ar-more{display:block;width:100%;margin:10px 0 0;padding:10px 12px;border:1.5px solid #C26445;border-radius:12px;background:#FFF8F2;color:#2E2E2E;font:500 12.5px inherit;font-family:inherit;text-align:left;cursor:pointer}.ar-more b{color:#8a3a1f}';
+  (function () { try { var st = document.createElement('style'); st.textContent = AR_CSS; document.head.appendChild(st); } catch (e) {} })();
   // 193i: the planner's estimate of delivery + installation for one design at a pincode (installation when the design offers it)
   window.mtoEstimate = function (id, o0, pin) {
     var x = PRODS[id]; if (!x || !x.cz || !/^\d{6}$/.test(pin || '')) return Promise.resolve(null); var m = x.cz, o = Object.assign({}, o0, { pin: pin });
@@ -1999,7 +2068,7 @@
       if (tsClash(t, L)) return; if (o.groups[lg.name] !== wallOpt.name) { o.groups[lg.name] = wallOpt.name; S.pgAuto = true; S.tsMsg = 'Fixed to the ' + TS_KIND[b.type][1].toLowerCase() + ' wall — no posts on that side ("' + wallOpt.name.split(' (')[0] + '", price updated)'; } }
     else if (S.pgAuto && o.groups[lg.name] === wallOpt.name) { o.groups[lg.name] = freeOpt.name; S.pgAuto = false; S.tsMsg = 'Free-standing again'; }
   }
-  function pgEv(ev) { if (!S || !isPg(S.id)) return; if (ev.t === 'movesite') tsDrop(ev); else if (ev.t === 'movecab') { tsMoveTo(ev, pgLay()); pgAutoWall(); } keepSite(); draw(); p3Draw(); }
+  function pgEv(ev) { if (!S || !isPg(S.id)) return; if (ev.t === 'selitem' || ev.t === 'moveitem') return arEv(ev); if (ev.t === 'movesite') tsDrop(ev); else if (ev.t === 'movecab') { tsMoveTo(ev, pgLay()); pgAutoWall(); } keepSite(); draw(); p3Draw(); }
   function cheapO(m, l, w) {   // the cheapest way to have design m at l × w (decking under a pergola)
     var o = { l: l, w: w, pin: lastPin(), addons: arr(m.addons).filter(function (a) { return a.on; }).map(function (a) { return a.name; }), groups: {}, drawing: m.drawing !== 'no', size_ok: true, note: '' };
     arr(m.groups).forEach(function (g) { var op = arr(g.options).slice().sort(function (a, b) { return ((num(a.fixed) || 0) + (num(a.rate) || 0)) - ((num(b.fixed) || 0) + (num(b.rate) || 0)); })[0]; if (op) o.groups[g.name] = op.name; });
@@ -2037,6 +2106,7 @@
     h += '<div class="lb">Where</div><div class="pg3-ch">' + '<button type="button" data-ts="kind:ground" class="' + (!on ? 'on' : '') + '">🌳 Lawn / garden</button><button type="button" data-ts="kind:terrace" class="' + (on ? 'on' : '') + '">🏙 Terrace</button>' + (on ? '<button type="button" data-p3="wopen">✎ Set up the terrace</button>' : '') + '</div>';
     if (on) h += '<div class="pg3-where">' + placeBox(pgLay()) + (S.tsMsg ? '<div class="wz-note">' + esc(S.tsMsg) + '</div>' : '') + '</div>';
     var fu = S.o.furn || '';
+    if (on) return h + '<div class="lb">Under it</div><div class="pg3-ch"><button type="button" data-p3x="deck" class="' + (S.o.deck ? 'on' : '') + '">' + (S.o.deck ? '✓ ' : '+ ') + 'Deck floor under it</button></div>' + (S.o.deck && mtoOk() ? (function (dl) { return '<p class="pg3-note">' + (dl ? 'Goes in your cart as <b>' + esc(short(PRODS[dl.id].n)) + '</b>, ' + q2(pgOpts()) + ' — ' + rs(dl.price) : 'Our team will price the deck') + '</p>'; })(deckLine()) : '') + arUI();   // 193j
     h += '<div class="lb">Around it <span style="text-transform:none;font-weight:500;letter-spacing:0">— to see how it looks</span></div><div class="pg3-ch"><button type="button" data-p3x="deck" class="' + (S.o.deck ? 'on' : '') + '">' + (S.o.deck ? '✓ ' : '+ ') + 'Deck floor under it</button></div>';
     if (S.o.deck && mtoOk()) { var dl = deckLine(); h += '<p class="pg3-note">' + (dl ? 'Goes in your cart as <b>' + esc(short(PRODS[dl.id].n)) + '</b>, ' + q2(pgOpts()) + ' — ' + rs(dl.price) : 'Our team will price the deck') + '</p>'; }
     h += '<div class="pg3-ch" style="margin-top:6px">' + [['', 'No furniture'], ['lounge', 'Sofa set'], ['dining', 'Dining set'], ['swing', 'Swing']].map(function (f) { return '<button type="button" data-p3f="' + f[0] + '" class="' + (fu === f[0] ? 'on' : '') + '">' + f[1] + '</button>'; }).join('') + '</div>';
@@ -2064,10 +2134,10 @@
     var cap = document.getElementById('pg3Cap'); if (cap) cap.textContent = q.l + ' × ' + q.w + ' ft · ' + q.height + ' clear · ' + (q.colour || '') + (q.cover && !/^open/i.test(q.cover) ? ' · ' + String(q.cover).split(' (')[0] : '') + (q.layout && !/free/i.test(q.layout) ? ' · ' + String(q.layout).split(' (')[0] : '');
     var nb = document.getElementById('pg3Night'); if (nb) nb.textContent = P3.night ? '☀ Day' : '☾ Night';
     if (P3.st === 2) { try { if (!P3.ev && window.Pergola3D.onEvent) { P3.ev = 1; window.Pergola3D.onEvent(pgEv); }
-      window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: !!S.o.deck, furn: S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
+      window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: !!S.o.deck, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=5').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=6').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');

@@ -4,8 +4,8 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=10';
-import { cutHit } from './cabin3d.js?v=13';
+import * as S3 from './space3d.js?v=11';
+import { cutHit } from './cabin3d.js?v=14';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['500', 50, 90]];
@@ -50,13 +50,13 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const rs = n => '₹' + Math.round(n).toLocaleString('en-IN');
 const lakh = v => v >= 100000 ? '₹' + (v / 100000).toFixed(v >= 1000000 ? 1 : 2).replace(/\.?0+$/, '') + ' lakh' : rs(v);
 const r2 = v => Math.round(v * 2) / 2;
-let S = null, EL = null;
+let S = null, EL = null, QUIET = false;
 
 // ---------------------------------------------------------------- state, saving, undo / redo
 function fresh() { const t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, par: 3, corner: '', high: {}, tanks: true, blocks: [] }; defBlocks(t); return { v: 1, step: 0, site: t, items: [], sel: null, view: '3d' }; }
 function defBlocks(t) { t.blocks = []; const sm = t.pw <= 25; addBlock(t, 'mumty', sm ? 8 : 10, sm ? 16 : 18, 'left'); const m = t.blocks[0]; if (m) addBlock(t, 'lift', 6, 6, 'left', [PAR, Math.max(PAR, m.z - 6)]); addBlock(t, 'shaft', 3, 4, 'right'); }
 function load() { try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && v.v === 1 && v.site) return Object.assign({ sel: null, view: '3d', step: 0 }, v); } catch (e) {} return fresh(); }
-function save() { try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, pid: S.pid || null, pname: S.pname || '', source: S.source || '' })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
+function save() { if (QUIET) return; try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, pid: S.pid || null, pname: S.pname || '', source: S.source || '' })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
 // ---------------------------------------------------------------- 195: plans saved to the customer's account; sign-in asked 1 minute in
 const ev = (k, d) => { try { if (window.otrack) window.otrack(k, d || {}); } catch (e) {} };
 async function rpc(fn, args) {
@@ -540,6 +540,7 @@ function toCart() {
 function total() { let t = 0, n = 0; S.items.forEach(it => { const fp = fromPrice(it); if (fp && fp.price != null) { t += fp.price; n++; } }); return { t, n }; }
 
 function draw(rec) {
+  if (QUIET) return;
   if (S.items) { S.items.forEach((it, i) => { if (att(it)) attach(it, i); }); S.items = S.items.filter(it => it.mode !== 'ac' || it.box); S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); }); if (S.sel != null && !S.items[S.sel]) S.sel = null; }
   if (rec !== false) hist(); save();
   document.getElementById('plSt').innerHTML = btn('data-pl="step:0"', S.step === 0, '1 · <span class="pl-l">Your </span>space') + btn('data-pl="step:1"', S.step === 1, '2 · Add<span class="pl-l"> things</span>') + btn('data-pl="step:2"', S.step === 2, '3 · Pick<span class="pl-l"> designs</span>');
@@ -557,7 +558,10 @@ function draw(rec) {
 }
 
 function onClick(e) {
-  const b = e.target.closest('[data-pl]'); if (!b || b.disabled) return; const a = b.getAttribute('data-pl').split(':'), t = S.site, it = S.sel != null ? S.items[S.sel] : null; S.msg = '';
+  const b = e.target.closest('[data-pl]'); if (!b || b.disabled) return; if (act(b.getAttribute('data-pl').split(':')) === true) draw();
+}
+function act(a) {   // one button's action on S; true = draw again
+  const t = S.site, it = S.sel != null ? S.items[S.sel] : null; S.msg = '';
   switch (a[0]) {
     case 'close': return close();
     case 'undo': return undo(-1);
@@ -620,7 +624,7 @@ function onClick(e) {
     case 'lw': return lifewall();
     default: return;
   }
-  draw();
+  return true;
 }
 function onInput(e) {
   const k = e.target.getAttribute && e.target.getAttribute('data-plin'); if (!k) return; const v = parseFloat(e.target.value), t = S.site; if (!(v > 0)) return; S.msg = '';
@@ -634,12 +638,13 @@ function onInput(e) {
     if (!freeB(t, +i)) { Object.assign(b, JSON.parse(keep)); S.msg = 'That would sit on top of another one'; } S.items = S.items.filter((x, j) => settle(x, j)); }
   draw();
 }
+function moveItem(i, x, z) { const it = S.items[i]; if (!it || it.lock || att(it)) return false; const keep = JSON.stringify(it); it.x = x; it.z = z; if (!settle(it, i, [x, z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It doesn\'t fit there'; } S.sel = i; return true; }
 function on3d(ev) {
   const t = S.site; S.msg = '';
   if (ev.t === 'block') { const b = t.blocks[ev.i]; if (!b) return; const keep = { x: b.x, z: b.z, side: b.side }; b.x = ev.x; b.z = ev.z;
     b.side = b.x <= PAR + 1 ? 'left' : b.x + b.w >= t.pw - PAR - 1 ? 'right' : b.z <= PAR + 1 ? 'back' : b.z + b.d >= t.pd - PAR - 1 ? 'front' : 'free'; wallB(t, b, b.side);
     if (t.blocks.some((o, j) => j !== ev.i && hit(b, o))) { Object.assign(b, keep); S.msg = 'It can\'t go on top of another one'; } else if (cutHit(t, b, PAR)) { Object.assign(b, keep); S.msg = 'That corner is cut — it can\'t go there'; } }
-  else if (ev.t === 'move') { const it = S.items[ev.i]; if (!it || it.lock || att(it)) return; const keep = JSON.stringify(it); it.x = ev.x; it.z = ev.z; if (!settle(it, ev.i, [ev.x, ev.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It doesn\'t fit there'; } S.sel = ev.i; }
+  else if (ev.t === 'move') { if (!moveItem(ev.i, ev.x, ev.z)) return; }
   else if (ev.t === 'sel') S.sel = ev.i;
   draw();
 }
@@ -716,3 +721,21 @@ async function openSaved(id, sales) {   // My account → Saved plans → Open; 
   } catch (e) { alert(e.message || 'Could not open the plan'); }
 }
 window.outrrPlanState = () => S; window.outrrPlanMove = (i, x, z) => on3d({ t: 'move', i, x, z }); window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
+// 193j: the cabin studio / pergola designer add things around their design with the planner's own rules, on a plan object { site, items, sel }
+function withPlan(plan, fn) {
+  const keep = S; S = { v: 1, step: 1, site: plan.site, items: plan.items || [], sel: plan.sel != null ? plan.sel : null, ask: plan.ask || null, msg: '', view: '3d', hist: [], hi: -1 }; QUIET = true;
+  try { const r = fn(); plan.site = S.site; plan.items = S.items; plan.sel = S.sel; plan.ask = S.ask; plan.msg = S.msg || ''; return r; } finally { QUIET = false; S = keep; }
+}
+export const api = {
+  cats(skip) { return CATS.filter(c => c.k !== skip && !c.lawn && (designs(c).length || c.always)).map(c => ({ k: c.k, t: c.t, e: c.e, size: c.size, kind: c.kind, hr: c.hr })); },
+  cat(k) { const c = CAT[k]; return c ? { k: c.k, t: c.t, e: c.e, size: c.size, kind: c.kind, hr: c.hr, min: c.min, max: c.max } : null; },
+  act(plan, cmd) { return withPlan(plan, () => act(String(cmd).split(':'))); },
+  move(plan, i, x, z) { return withPlan(plan, () => moveItem(i, x, z)); },
+  size(plan, i, key, v) { return withPlan(plan, () => { const it = S.items[i]; S.sel = i; if (!it || it.lock) return; if (it.cat === 'pergola' && key === 'h') it.hAuto = false; if (it.cat === 'graffiti' && key === 'w') it.fit = false; resizeItem(it, key, 0, v); }); },
+  put(plan, i, item) {   // the designer's own cabin / pergola at index i (−1: first time, put in front); things on it move off
+    return withPlan(plan, () => { const it = JSON.parse(JSON.stringify(item));
+      if (it.cat === 'cabin') { cabinFoot(it); if (it.bcx != null) { it.x = r2(it.bcx - foot(it)[0] / 2); it.z = r2(it.bcz - foot(it)[1] / 2); } delete it.bcx; delete it.bcz; }
+      if (i < 0 || i >= S.items.length) { S.items.unshift(it); i = 0; } else { it.lock = S.items[i] && S.items[i].lock; S.items[i] = it; }
+      S.items = S.items.filter((o, j) => j === i || settle(o, j)); return S.items.indexOf(it); }); },
+  from(plan) { return withPlan(plan, () => { if (!priceOk()) return null; let t = 0, n = 0; S.items.forEach(it => { if (it._me) return; const q = fromPrice(it); if (q && q.price) { t += q.price; n++; } }); return { t, n }; }); },
+};

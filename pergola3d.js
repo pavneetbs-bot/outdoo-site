@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=13';   // 193f: the same terrace as the cabin studio and the planner
+import { plotModel } from './cabin3d.js?v=14';   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -202,7 +202,7 @@ function setNight(on) {
   R.hemi.intensity = on ? 0.12 : 0.7; R.sun.intensity = on ? 0.08 : 1.9; mat('led', {}).emissiveIntensity = on ? 2.4 : 0; mat('led', {}).color.set(on ? 0xfff3d0 : 0x3a3a3a);
 }
 // 193f: on a terrace (opts.site: the studio's terrace — cx / cz = the pergola's corner, rot = where its front faces), with an optional deck and furniture to see it
-let FURN = null, FURN_LOADING = false;
+let FURN = null, FURN_LOADING = false, ITEMS = null;
 function extras(g, L, W, opts) {   // deck under it (as high as a porta cabin's) + a furniture set, both just to see it; returns the pergola's lift
   const y0 = opts.deck ? 0.6 : 0;
   if (opts.deck) { const n = Math.max(1, Math.round(W / 0.5)); for (let k = 0; k < n; k++) box(g, L, 0.6, W / n - 0.03, L / 2, 0.3, W * (k + 0.5) / n, mat(k % 2 ? 'dk1' : 'dk2', { color: k % 2 ? 0x8B6A4A : 0x7A5C40, roughness: 0.85 })); }
@@ -216,7 +216,8 @@ function frame(cx, cz, d, h) { R.controls.target.set(cx, h, cz); R.cam.position.
 export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
-  if (opts.furn && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=10').then(m => { FURN = m.generic; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
+  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=11').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
@@ -230,6 +231,7 @@ export function show(el, sku, o, opts) {
       const y0 = extras(root, L, W, opts); b.g.position.y = y0; root.add(b.g); }
     else {
       root = new THREE.Group(); const plot = plotModel(t); plot.position.y = 0.6; root.add(plot);   // slab surface at y 0
+      if (wantAr && ITEMS) { try { root.add(ITEMS(t.around, { sel: t.asel != null ? t.asel : null }).g); } catch (e) { if (window.console) console.warn(e); } }
       if (!t.place) { b = build(sku, o, true); const [fw, fd] = dims(t, b.L, b.W), hold = new THREE.Group(); hold.userData.pg = 1;
         hold.position.set(+t.cx + fw / 2, 0, +t.cz + fd / 2); hold.rotation.y = (+t.rot || 0) * Math.PI / 180; root.add(hold);
         const inner = new THREE.Group(); inner.position.set(-b.L / 2, 0, -b.W / 2); hold.add(inner); const y0 = extras(inner, b.L, b.W, opts); b.g.position.y = y0; inner.add(b.g);
@@ -258,16 +260,20 @@ function ptr() {
     const t = R.site; if (!t || !R.group || (e.pointerType === 'mouse' && e.button !== 0)) return; const hits = cast(e, [R.group]), f = floorAt(e); if (!f || !hits.length) return;
     if (t.place) { const h = hits.find(x => { let o = x.object; while (o && !o.userData.st) o = o.parent; return o; }); if (!h) return; let o = h.object; while (!o.userData.st) o = o.parent; const bk = (t.blocks || [])[o.userData.st.i]; if (!bk) return;
       R.drag = { kind: 'blk', obj: o, i: o.userData.st.i, f0: f.clone(), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, sx: e.clientX, sy: e.clientY, moved: false }; }
-    else { const h = hits.find(x => x.object.userData.pghit); if (!h) return; let o = h.object; while (o && !o.userData.pg) o = o.parent;
+    else { let ih = hits[0].object, hd = null; while (ih) { if (hd == null && ih.userData && ih.userData.it != null) hd = ih; if (ih.name === 'planitems') break; ih = ih.parent; }
+      const ia = ih && hd && (t.around || [])[hd.userData.it];
+      if (ia) { R.drag = { kind: 'it', obj: hd, i: hd.userData.it, f0: f.clone(), x0: +ia.x, z0: +ia.z, p0: hd.position.clone(), can: !ia.lock && !ia.segs && !ia.box, sx: e.clientX, sy: e.clientY, moved: false }; R.controls.enabled = false; e.preventDefault(); e.stopPropagation(); try { cv.setPointerCapture(e.pointerId); } catch (er) {} return; }
+      const h = hits.find(x => x.object.userData.pghit); if (!h) return; let o = h.object; while (o && !o.userData.pg) o = o.parent;
       R.drag = { kind: 'pg', obj: o, f0: f.clone(), x0: +t.cx, z0: +t.cz, p0: o.position.clone(), sx: e.clientX, sy: e.clientY, moved: false }; }
     R.controls.enabled = false; e.preventDefault(); e.stopPropagation(); try { cv.setPointerCapture(e.pointerId); } catch (er) {}
   }, true);
   cv.addEventListener('pointermove', e => {
     const d = R.drag; if (!d) return; const f = floorAt(e); if (!f) return; if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 5) return; d.moved = true; const t = R.site, dx = f.x - d.f0.x, dz = f.z - d.f0.z;
-    if (d.kind === 'blk') { d.nx = Math.round(Math.max(0.75, Math.min(t.pw - 0.75 - d.w, d.x0 + dx)) * 2) / 2; d.nz = Math.round(Math.max(0.75, Math.min(t.pd - 0.75 - d.d, d.z0 + dz)) * 2) / 2; d.obj.position.set(d.nx - d.x0, 0, d.nz - d.z0); }
+    if (d.kind === 'it') { if (!d.can) return; d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2; d.obj.position.set(d.p0.x + d.nx - d.x0, d.p0.y, d.p0.z + d.nz - d.z0); }
+    else if (d.kind === 'blk') { d.nx = Math.round(Math.max(0.75, Math.min(t.pw - 0.75 - d.w, d.x0 + dx)) * 2) / 2; d.nz = Math.round(Math.max(0.75, Math.min(t.pd - 0.75 - d.d, d.z0 + dz)) * 2) / 2; d.obj.position.set(d.nx - d.x0, 0, d.nz - d.z0); }
     else { d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2; d.obj.position.set(d.p0.x + dx, 0, d.p0.z + dz); }
   });
-  const up = () => { const d = R.drag; if (!d) return; R.drag = null; R.controls.enabled = true; if (!d.moved || !HANDLER) return;
+  const up = () => { const d = R.drag; if (!d) return; R.drag = null; R.controls.enabled = true; if (d.kind === 'it' && HANDLER) return HANDLER(d.moved ? { t: 'moveitem', i: d.i, x: d.nx, z: d.nz } : { t: 'selitem', i: d.i }); if (!d.moved || !HANDLER) return;
     if (d.kind === 'blk') HANDLER({ t: 'movesite', i: d.i, x: d.nx, z: d.nz }); else HANDLER({ t: 'movecab', cx: d.nx, cz: d.nz }); };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 }
