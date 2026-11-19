@@ -1662,6 +1662,15 @@
     });
     mSave(); try { updBadge(); } catch (e) {} return r;
   };
+  // 193: "Plan your space" sets a cabin's length × width — same as resizing in the studio (walls re-laid, rooms kept inside)
+  window.mtoCabinSize = function (id, lay, L, W) {
+    var x = PRODS[id], c = x && x.cz && x.cz.cabin; if (!c) return null;
+    var dv = function (v, d) { v = num(v); return v == null ? d : v; }, lim = { Lmin: dv(c.L && c.L.min, 8), Lmax: dv(c.L && c.L.max, 40), Wmin: dv(c.W && c.W.min, 8), Wmax: dv(c.W && c.W.max, 20) };
+    var l = cbClone(lay && lay.walls ? lay : c.layout || {}); if (!l.walls) return Object.assign({ lay: null }, lim);
+    l.L = Math.round(Math.max(lim.Lmin, Math.min(lim.Lmax, num(L) || num(l.L) || lim.Lmin))); l.W = Math.round(Math.max(lim.Wmin, Math.min(lim.Wmax, num(W) || num(l.W) || lim.Wmin)));
+    cbResize(c, l); arr(l.places).forEach(function (p) { cbClamp(c, l, p); }); cbSync(c, l);
+    return Object.assign({ lay: l }, lim);
+  };
   // 193: from a cabin studio / pergola designer into "Plan your space" with this design (and the studio's terrace) already on it
   window.mtoPlanFrom = function () {
     if (!S || !PRODS[S.id] || !window.outrrPlan) return; var x = PRODS[S.id], m = x.cz, seed = { item: null, site: null };

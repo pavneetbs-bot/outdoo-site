@@ -139,7 +139,11 @@ function oFor(m, it) {   // the item's size in the words of that design's price 
 const PC = {};
 function priceAt(id, it) {   // one design at this item's size: its cheapest material → { price, o } (o goes to the cart as is)
   const p = PR()[id]; if (!p || !p.cz || !window.mtoPrice) return null; const m = p.cz; let best = null;
-  if (m.unit === 'cabin') { const o = it.layout && (it.lsku || it.sku) === id ? { layout: JSON.parse(JSON.stringify(it.layout)) } : {}; let q = null; try { q = window.mtoPrice(m, o); } catch (e) {} return q && q.ok ? { price: q.product, o } : null; }
+  if (m.unit === 'cabin') { let o = {};
+    if (it.layout && (it.lsku || it.sku) === id) o = { layout: JSON.parse(JSON.stringify(it.layout)) };
+    else if (it.layout && window.mtoCabinSize) { const r = window.mtoCabinSize(id, null, it.layout.L, it.layout.W); if (r && r.lay) o = { layout: r.lay }; }
+    let q = null;   // (another cabin above: priced at the same size)
+    try { q = window.mtoPrice(m, o); } catch (e) {} return q && q.ok ? { price: q.product, o } : null; }
   const mats = (m.materials || []).length ? m.materials : [{ name: '' }];
   for (const mt of mats.slice(0, 8)) { const o = Object.assign(oFor(m, it), { material: mt.name, colour: ((mt.colours || [])[0] || {}).name || '', addons: (m.addons || []).filter(a => a.on).map(a => a.name) });
     let q = null; try { q = window.mtoPrice(m, o); } catch (e) {} if (q && q.ok && (!best || q.product < best.price)) best = { price: q.product, o }; }
@@ -156,7 +160,7 @@ function fromPrice(it) {   // cheapest orderable design of the category at this 
   const ids = designs(c), P = PR(); let best = null, open = 0;
   for (const id of ids) {
     const p = P[id], m = p.cz; if (p.oo === false) continue; open++;
-    if (c.k === 'cabin') { if (it.sku && id !== it.sku) continue; const q = window.mtoPrice && window.mtoPrice(m, {}); if (q && q.ok && (best == null || q.product < best)) best = q.product; continue; }
+    if (c.k === 'cabin') { if (it.sku && id !== it.sku) continue; const q = priceAt(id, it); if (q && (best == null || q.price < best)) best = q.price; continue; }
     for (const mt of (m.materials || []).slice(0, 6)) { let q = null; try { q = window.mtoPrice(m, Object.assign(oFor(m, it), { material: mt.name })); } catch (e) {} if (q && q.ok && (best == null || q.product < best)) best = q.product; }
   }
   return (PC[k] = { price: best, n: ids.length, soon: !open });
@@ -188,7 +192,14 @@ function addItem(k) {
   if (!settle(it, i)) { S.items.pop(); S.msg = 'No free room for it — make the space bigger or move things'; return; }
   S.sel = i; S.msg = '';
 }
-function resizeItem(it, key, d) {
+function cabinSize(it, L, W) {   // the cabin's own length × width (the studio's resize); its plot footprint follows
+  if (!window.mtoCabinSize) return; const keep = JSON.stringify(it), i = S.items.indexOf(it), f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2;
+  const r = window.mtoCabinSize(it.sku, cabinLay(it), L, W); if (!r || !r.lay) return;
+  it.layout = r.lay; it.lsku = it.sku; it.w = r.lay.L + 1.2; it.d = r.lay.W + 1.2; const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2);
+  if (!settle(it, i, [it.x, it.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'No room for it that size here'; }
+}
+function resizeItem(it, key, d, abs) {
+  if (abs != null) { const cur = key === 'w' ? it.w : key === 'd' ? it.d : it.h; d = abs - cur; }
   const c = CAT[it.cat], lo = c.min || [1, 1], hi = c.max || [80, 80], keep = JSON.stringify(it), i = S.items.indexOf(it);
   if (key === 'w') it.w = Math.max(lo[0], Math.min(hi[0], r2(it.w + d))); else if (key === 'd') it.d = Math.max(lo[1], Math.min(hi[1], r2(it.d + d))); else if (key === 'h') { const hr = c.hr || [2, 12]; it.h = Math.max(hr[0], Math.min(hr[1], r2(it.h + d))); }
   if (!settle(it, i)) { Object.assign(it, JSON.parse(keep)); S.msg = 'No room for it that size here'; }
@@ -212,6 +223,7 @@ const CSS = `#plOv{position:fixed;inset:0;z-index:9000;background:#F6F1EA;displa
 #plOv .pl-pal button:hover{border-color:#C26445}#plOv .pl-pal i{font-style:normal;font-size:22px}#plOv .pl-pal b{display:block;font-size:13px}#plOv .pl-pal small{color:#7A7268;font-size:11.5px}
 #plOv .pl-it{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F0E8DC;font-size:13px;cursor:pointer}#plOv .pl-it span{flex:1}#plOv .pl-it em{font-style:normal;color:#6A6258}
 #plOv .pl-ed{border:2px solid #C26445;border-radius:14px;padding:12px;background:#FFF8F2}#plOv .pl-pm{display:flex;align-items:center;gap:6px;margin:6px 0}#plOv .pl-pm span{min-width:110px;font-size:13px}#plOv .pl-pm b{min-width:56px;text-align:center}
+#plOv .pl-sz{display:flex;align-items:center;gap:4px;font-size:12px;color:#6A6258}#plOv .pl-sz input{width:62px;height:34px;border:1px solid #C9BBA6;border-radius:8px;text-align:center;font:inherit;font-size:14px;font-weight:700}
 #plOv .pl-pm button{width:34px;height:34px;border-radius:50%;border:1px solid #C9BBA6;background:#fff;font-size:18px;cursor:pointer}
 #plOv .pl-act{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}#plOv .pl-act button{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:13px;cursor:pointer}
 #plOv .pl-msg{background:#FFF4E5;border:1px solid #F1D3A8;border-radius:10px;padding:8px 10px;font-size:12.5px;margin:8px 0}#plOv .pl-note{background:#EEF3E8;border:1px solid #D3DEC5;border-radius:10px;padding:8px 10px;font-size:12.5px;margin:8px 0}
@@ -257,9 +269,9 @@ function stepPlace() {
   const lock = !priceOk(); let h = '';
   const sel = S.sel != null ? S.items[S.sel] : null;
   if (sel) {
-    const c = CAT[sel.cat], fp = fromPrice(sel), pm = (k, lbl, v) => `<div class="pl-pm"><span>${lbl}</span><button type="button" data-pl="rs:${k}:-1" aria-label="Smaller">−</button><b>${v} ft</b><button type="button" data-pl="rs:${k}:1" aria-label="Bigger">+</button></div>`;
+    const c = CAT[sel.cat], fp = fromPrice(sel), pm = (k, lbl, v, ns) => `<div class="pl-pm"><span>${lbl}</span><button type="button" data-pl="${ns || 'rs'}:${k}:-1" aria-label="${lbl} smaller">−</button><label class="pl-sz"><input type="number" inputmode="decimal" step="${ns ? 1 : 0.5}" data-plin="${ns || 'rs'}:${k}" value="${v}" aria-label="${lbl} in feet"> ft</label><button type="button" data-pl="${ns || 'rs'}:${k}:1" aria-label="${lbl} bigger">+</button></div>`;
     h += `<div class="pl-ed"><h4>${esc(c.e)} ${esc(sel.label || c.t)}</h4>`;
-    if (sel.cat === 'cabin') { const sk = cabinSkus(); h += '<div class="pl-tabs">' + sk.map(s => btn(`data-pl="csku:${s}"`, s === sel.sku, esc(PR()[s].n.replace(/ —.*$/, '').replace(/ \(.*$/, '')))).join('') + '</div><p class="pl-sub" style="margin-top:8px">Its own size, walls, rooms and finishes are set in its designer (next phase: right from here).</p>'; }
+    if (sel.cat === 'cabin') { const sk = cabinSkus(); h += '<div class="pl-tabs">' + sk.map(s => btn(`data-pl="csku:${s}"`, s === sel.sku, esc(PR()[s].n.replace(/ —.*$/, '').replace(/ \(.*$/, '')))).join('') + '</div>'; const L = cabinLay(sel); if (L && L.walls && window.mtoCabinSize) { const lim = window.mtoCabinSize(sel.sku, L, L.L, L.W) || {}; h += pm('L', 'Length', num(L.L), 'cz') + pm('W', 'Width', num(L.W), 'cz') + `<p class="pl-sub" style="margin:2px 0 0">${lim.Lmin}–${lim.Lmax} × ${lim.Wmin}–${lim.Wmax} ft. Walls, doors, rooms and finishes: in its designer.</p>`; } }
     else if (c.size === 'fixed') h += `<p class="pl-sub">One standard size here — you'll pick the exact design at the end.</p>`;
     if (c.size === 'wd') h += pm('w', 'Length', sel.w) + pm('d', 'Width', sel.d);
     if (c.size === 'w') h += pm('w', 'Length', sel.w);
@@ -351,7 +363,8 @@ function onClick(e) {
     case 'dup': if (it) { const c2 = JSON.parse(JSON.stringify(it)); c2.x += 1; c2.z += 1; S.items.push(c2); if (!settle(c2, S.items.length - 1, [it.x + it.w, it.z])) { S.items.pop(); S.msg = 'No free room for a copy'; } else S.sel = S.items.length - 1; } break;
     case 'rot': if (it) { const keep = JSON.stringify(it), f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; it.rot = ((+it.rot || 0) + 90) % 360; const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); if (!settle(it, S.sel, [it.x, it.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'No room to turn it here'; } } break;
     case 'rs': if (it) resizeItem(it, a[1], +a[2]); break;
-    case 'csku': if (it) { const keep = JSON.stringify(it); it.sku = a[1] + (a[2] ? ':' + a[2] : ''); const L = cabinLay(it); it.w = (num(L.L) || 12) + 1.2; it.d = (num(L.W) || 10) + 1.2; it.label = PR()[it.sku].n.replace(/ —.*$/, ''); if (!settle(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'That cabin doesn\'t fit here'; } } break;
+    case 'cz': if (it && it.cat === 'cabin') { const L = cabinLay(it); cabinSize(it, a[1] === 'L' ? num(L.L) + +a[2] : num(L.L), a[1] === 'W' ? num(L.W) + +a[2] : num(L.W)); } break;
+    case 'csku': if (it) { const keep = JSON.stringify(it), L0 = it.layout; it.sku = a[1] + (a[2] ? ':' + a[2] : ''); if (L0 && window.mtoCabinSize) { const r = window.mtoCabinSize(it.sku, null, L0.L, L0.W); if (r && r.lay) { it.layout = r.lay; it.lsku = it.sku; } } const L = cabinLay(it); it.w = (num(L.L) || 12) + 1.2; it.d = (num(L.W) || 10) + 1.2; it.label = PR()[it.sku].n.replace(/ —.*$/, ''); if (!settle(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'That cabin doesn\'t fit here'; } } break;
     case 'unlock': return unlock();
     case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; const L = cabinLay(x); x.w = (num(L.L) || 12) + 1.2; x.d = (num(L.W) || 10) + 1.2; x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
     case 'cart': return toCart();
@@ -367,6 +380,9 @@ function onClick(e) {
 }
 function onInput(e) {
   const k = e.target.getAttribute && e.target.getAttribute('data-plin'); if (!k) return; const v = parseFloat(e.target.value), t = S.site; if (!(v > 0)) return; S.msg = '';
+  if (/^(rs|cz):/.test(k)) { const it = S.sel != null ? S.items[S.sel] : null, f = k.split(':')[1]; if (!it) return;
+    if (k[0] === 'r') resizeItem(it, f, 0, v); else { const L = cabinLay(it); cabinSize(it, f === 'L' ? v : num(L.L), f === 'W' ? v : num(L.W)); }
+    return draw(); }
   if (k === 'pw' || k === 'pd') { t.plot = ''; setPlot(k === 'pw' ? v : t.pw, k === 'pd' ? v : t.pd); }
   else { const [f, i] = k.split(':'), b = t.blocks[+i]; if (!b) return; const keep = JSON.stringify(b); if (f === 'bw') b.w = Math.max(1, Math.min(t.pw - 2, v)); else b.d = Math.max(1, Math.min(t.pd - 2, v)); wallB(t, b, b.side);
     if (!freeB(t, +i)) { Object.assign(b, JSON.parse(keep)); S.msg = 'That would sit on top of another one'; } S.items = S.items.filter((x, j) => settle(x, j)); }
