@@ -6,7 +6,7 @@ import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel } from './cabin3d.js?v=10';
-import { pergolaModel } from './pergola3d.js?v=2';
+import { pergolaModel } from './pergola3d.js?v=3';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -62,14 +62,27 @@ function art() {
   x.strokeStyle = '#2E2E2E'; x.lineWidth = 6; x.beginPath(); for (let i = 0; i < 256; i += 16) x.lineTo(i, 64 + Math.sin(i / 18) * 30); x.stroke();
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return (M.c_art = new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }));
 }
+function rodA(g, a, b, m) { const v = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), L = v.length(), r = new THREE.Mesh(new THREE.BoxGeometry(0.2, L, 0.2), m); r.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); r.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.normalize()); r.castShadow = true; g.add(r); return r; }
 function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
-  if (cat === 'sofa') {
-    const sh = 1.4; box(g, w, sh, Math.min(d, 2.8), 0, sh / 2, -d / 2 + Math.min(d, 2.8) / 2, K.frame); box(g, w - 0.2, 0.5, Math.min(d, 2.8) - 0.3, 0, sh + 0.2, -d / 2 + Math.min(d, 2.8) / 2 + 0.1, K.cush);
-    box(g, w, 1.6, 0.5, 0, sh + 0.8, -d / 2 + 0.25, K.cush);
-    if (d > 4.5) { const sd = Math.min(2.8, w * 0.4); box(g, sd, sh, d - 2.8, -w / 2 + sd / 2, sh / 2, -d / 2 + 2.8 + (d - 2.8) / 2, K.frame); box(g, sd - 0.3, 0.5, d - 2.8, -w / 2 + sd / 2, sh + 0.2, -d / 2 + 2.8 + (d - 2.8) / 2, K.cush);
-      box(g, Math.min(3, w * 0.35), 1.2, Math.min(2, d * 0.3), w * 0.12, 0.6, d / 2 - Math.min(2, d * 0.3) / 2 - 0.3, K.wood); }
-    [-w / 3, 0, w / 3].forEach(x => box(g, 1.1, 1.1, 0.35, x, sh + 1, -d / 2 + 0.75, K.cush2));
+  if (cat === 'sofa') {   // 193d: a 3-seater along the back, a 2-seater on the right, a coffee table in front
+    const seat = (len, x, z, ry) => { const u = new THREE.Group(); u.position.set(x, 0, z); u.rotation.y = ry; g.add(u); const D = 2.7, sh = 1.4;
+      box(u, len, sh, D, 0, sh / 2, 0, K.frame); box(u, len - 0.9, 0.45, D - 0.4, 0, sh + 0.2, 0.15, K.cush); box(u, len - 0.5, 1.5, 0.45, 0, sh + 0.75, -D / 2 + 0.25, K.cush);
+      [-1, 1].forEach(a => box(u, 0.45, 0.9, D, a * (len / 2 - 0.22), sh + 0.45, 0, K.frame)); const n = Math.max(2, Math.round(len / 2)); for (let k = 0; k < n; k++) box(u, 1.0, 1.0, 0.3, -len / 2 + 0.7 + (len - 1.4) * (k + 0.5) / n, sh + 0.95, -D / 2 + 0.65, k % 2 ? K.cush : K.cush2); };
+    const L3 = Math.min(6.5, w - 3), L2 = Math.min(4.6, d - 3.2);
+    seat(L3, -w / 2 + L3 / 2, -d / 2 + 1.35, 0);
+    if (L2 >= 3) seat(L2, w / 2 - 1.35, -d / 2 + 2.9 + L2 / 2, -Math.PI / 2);
+    const tw = Math.min(3.2, L3 * 0.55), td = 1.8; box(g, tw, 0.12, td, -w / 2 + L3 / 2, 1.3, -d / 2 + 2.7 + 0.9 + td / 2, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.14, 1.25, 0.14, -w / 2 + L3 / 2 + a * (tw / 2 - 0.2), 0.62, -d / 2 + 3.6 + td / 2 + b * (td / 2 - 0.2), K.frame));
+  } else if (cat === 'swing') {   // a hanging bench swing on an A-frame
+    const H = h || 7, sw = Math.min(w - 1.6, 4.5), m = K.frame;
+    [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { rodA(g, [x, 0, -d / 2 + 0.2], [x, H, 0], m); rodA(g, [x, 0, d / 2 - 0.2], [x, H, 0], m); });
+    box(g, w - 0.4, 0.25, 0.25, 0, H, 0, m);
+    const sy = 1.6; box(g, sw, 0.15, 1.7, 0, sy, 0, K.wood); box(g, sw, 1.4, 0.15, 0, sy + 0.7, -0.8, K.wood); box(g, sw - 0.3, 0.3, 1.4, 0, sy + 0.22, 0.05, K.cush);
+    [-1, 1].forEach(a => [-0.7, 0.6].forEach(z => box(g, 0.05, H - sy, 0.05, a * (sw / 2 - 0.1), sy + (H - sy) / 2, z * 0.4, K.dark)));
+  } else if (cat === 'accover') {   // a jali / louver box over an AC outdoor unit
+    const H = h || 2.9, m = K.wood2; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, H, 0.15, a * (w / 2 - 0.08), H / 2, b * (d / 2 - 0.08), m));
+    box(g, w, 0.12, d, 0, H - 0.06, 0, m);
+    for (let y = 0.35; y < H - 0.2; y += 0.28) { box(g, w - 0.2, 0.08, 0.06, 0, y, d / 2 - 0.05, m); box(g, w - 0.2, 0.08, 0.06, 0, y, -d / 2 + 0.05, m); box(g, 0.06, 0.08, d - 0.2, -w / 2 + 0.05, y, 0, m); box(g, 0.06, 0.08, d - 0.2, w / 2 - 0.05, y, 0, m); }
   } else if (cat === 'dining') {
     const tw = Math.max(2.5, w - 2.6), td = Math.max(2.5, d - 2.6); box(g, tw, 0.15, td, 0, 2.5, 0, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.2, 2.45, 0.2, a * (tw / 2 - 0.3), 1.22, b * (td / 2 - 0.3), K.frame));
     const ch = (x, z, ry) => { const c = new THREE.Group(); c.position.set(x, 0, z); c.rotation.y = ry; g.add(c); box(c, 1.5, 0.15, 1.5, 0, 1.5, 0, K.cush); box(c, 1.5, 1.6, 0.15, 0, 2.3, -0.7, K.frame); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(c, 0.12, 1.5, 0.12, a * 0.65, 0.75, b * 0.65, K.frame)); };
@@ -126,7 +139,9 @@ function tag(text) {   // a small label above a placed thing
 
 function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w, d)
   if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { const b = cabinModel(P.cabinCfg(it), P.cabinLay(it)); const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }
-  if (it.cat === 'pergola') { try { const b = pergolaModel(P.pergolaSku || 'MTO-PG-TW', { l: it.w, w: it.d, height: '8', colour: 'Black' }); return b.g; } catch (e) { /* fall back to a box */ } }
+  if (it.cat === 'pergola') { try { const b = pergolaModel(P.pergolaSku || 'MTO-PG-TW', { l: it.w, w: it.d, height: String(+it.h || 8), colour: 'Black' }), h = new THREE.Group(), y0 = it.deck ? 0.6 : 0;   // 193d: on a deck as high as a porta cabin's
+    b.g.position.y = y0; h.add(b.g); if (it.deck) { const dk = mat('c_pdeck', 0x8B6A4A); const n = Math.max(1, Math.round(it.d / 0.5)); for (let k = 0; k < n; k++) box(h, it.w, 0.6, it.d / n - 0.03, it.w / 2, 0.3, it.d * (k + 0.5) / n, k % 2 ? dk : mat('c_pdeck2', 0x7A5C40)); }
+    h.userData.pg = { top: (+it.h || 8) + y0 }; return h; } catch (e) { /* fall back to a box */ } }
   const g = generic(it.cat, it.w, it.d, it.h, it); g.position.set(it.w / 2, 0, it.d / 2); const h = new THREE.Group(); h.add(g); return h;
 }
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
@@ -136,6 +151,12 @@ function build(P) {
   if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   (P.items || []).forEach((it, i) => {
+    if (it.box) {   // 193d: an AC cover sitting over its unit
+      const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); R.holders[i] = hd; const bx = it.box, gm = generic('accover', bx.w, bx.d, bx.h); gm.position.set(bx.x + bx.w / 2, 0, bx.z + bx.d / 2); hd.add(gm);
+      const hb = new THREE.Mesh(new THREE.BoxGeometry(bx.w, bx.h, bx.d), new THREE.MeshBasicMaterial({ visible: false })); hb.position.set(bx.x + bx.w / 2, bx.h / 2, bx.z + bx.d / 2); hb.userData.hit = i; hd.add(hb);
+      if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(bx.w + 0.3, bx.h + 0.2, bx.d + 0.3)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.set(bx.x + bx.w / 2, bx.h / 2, bx.z + bx.d / 2); hd.add(ln); }
+      return;
+    }
     if (it.segs) {   // a screen fixed on the parapet / round the tanks: pieces in plot coordinates
       const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); R.holders[i] = hd;
       it.segs.forEach((sg, k) => { const L = Math.hypot(sg.x1 - sg.x0, sg.z1 - sg.z0); if (L < 0.3) return; const p = new THREE.Group(); p.position.set((sg.x0 + sg.x1) / 2, sg.y, (sg.z0 + sg.z1) / 2); p.rotation.y = -Math.atan2(sg.z1 - sg.z0, sg.x1 - sg.x0); hd.add(p);
@@ -152,6 +173,12 @@ function build(P) {
     if (P.sel === i) { const sz = [it.w + 0.6, Math.max(+it.h || 3, 1) + 0.4, it.d + 0.6], ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(...sz)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = sz[1] / 2; hd.add(ln);
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(it.w + 0.6, it.d + 0.6), new THREE.MeshBasicMaterial({ color: 0xC26445, transparent: true, opacity: 0.18, depthWrite: false })); pl.rotation.x = -Math.PI / 2; pl.position.y = 0.04; hd.add(pl); }
     if (P.bad === i) { const pl = new THREE.Mesh(new THREE.PlaneGeometry(it.w + 0.4, it.d + 0.4), new THREE.MeshBasicMaterial({ color: 0xE0352B, transparent: true, opacity: 0.3, depthWrite: false })); pl.rotation.x = -Math.PI / 2; pl.position.y = 0.05; hd.add(pl); }
+    if (it.cat === 'pergola' && Array.isArray(it.att) && it.att.length) {   // 193d: fixed to a wall on those sides — those posts go, a ledger beam closes the gap
+      hd.updateMatrixWorld(true); const gone = [], v = new THREE.Vector3(), inZ = (q, z) => q.x >= z.x - 0.05 && q.x <= z.x + z.w + 0.05 && q.z >= z.z - 0.05 && q.z <= z.z + z.d + 0.05;
+      hd.traverse(o => { if (o.isMesh && (o.userData.post || o.userData.plate)) { o.getWorldPosition(v); if (it.att.some(z => inZ(v, z))) gone.push(o); } }); gone.forEach(o => o.parent.remove(o));
+      const top = (+it.h || 8) + (it.deck ? 0.6 : 0), fm = mat('c_ledger', 0x2E2E2E, { metalness: 0.4, roughness: 0.5 });
+      it.att.forEach(z => { const b = box(items, z.w, 0.6, z.d, z.x + z.w / 2, top - 0.3, z.z + z.d / 2, fm); b.userData.it = i; });
+    }
     R.holders[i] = hd;
   });
   return g;
@@ -193,7 +220,7 @@ function pDown(e) {
   if (R.place) return;
   const hits = ray.intersectObjects(R.holders.filter(Boolean), true), h = hits.find(z => z.object.userData.hit != null) || hits[0];
   let i = null; if (h) { let o = h.object; while (o && o.userData.it == null) o = o.parent; if (o) i = o.userData.it; }
-  if (i != null && f) { const it = R.P.items[i]; R.drag = { kind: 'item', i, obj: R.holders[i], f0: f.clone(), x0: +it.x, z0: +it.z, moved: false, fixed: !!it.segs, pos0: R.holders[i].position.clone() }; R.controls.enabled = false; e.preventDefault(); }
+  if (i != null && f) { const it = R.P.items[i]; R.drag = { kind: 'item', i, obj: R.holders[i], f0: f.clone(), x0: +it.x, z0: +it.z, moved: false, fixed: !!(it.segs || it.box || it.lock), pos0: R.holders[i].position.clone() }; R.controls.enabled = false; e.preventDefault(); }
   else R.tapEmpty = true;
 }
 function pMove(e) {

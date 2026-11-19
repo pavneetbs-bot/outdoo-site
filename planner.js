@@ -4,7 +4,7 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=5';
+import * as S3 from './space3d.js?v=6';
 import { cutHit } from './cabin3d.js?v=10';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -15,8 +15,9 @@ const CUTS = [['bl', 'Back-left'], ['br', 'Back-right'], ['fl', 'Front-left'], [
 // fit: how the size maps to the price engine — l / w / h are taken from the item's length, depth and height
 const CATS = [
   { k: 'cabin', t: 'Cabin', e: '🏠', col: 'cabins', kind: 'free' },
-  { k: 'pergola', t: 'Pergola', e: '⛱️', col: 'shade', sb: /pergola/i, kind: 'free', w: 12, d: 10, h: 9, min: [6, 6], max: [40, 30], size: 'wd' },
-  { k: 'sofa', t: 'Sofa', e: '🛋️', col: 'furniture', sb: /sofa/i, kind: 'free', w: 8, d: 6, h: 3, size: 'fixed' },
+  { k: 'pergola', t: 'Pergola', e: '⛱️', col: 'shade', sb: /pergola/i, kind: 'free', w: 12, d: 10, h: 8, min: [6, 6], max: [40, 30], hr: [7, 12], size: 'wd' },
+  { k: 'sofa', t: 'Sofa set', e: '🛋️', col: 'furniture', sb: /sofa/i, kind: 'free', w: 10, d: 8, h: 3, size: 'fixed' },
+  { k: 'swing', t: 'Swing', e: '🪢', col: 'furniture', sb: /swing|jhool|jhul/i, kind: 'free', w: 6, d: 4.5, h: 7, size: 'fixed', always: true },
   { k: 'dining', t: 'Dining set', e: '🍽️', col: 'furniture', sb: /dining/i, kind: 'free', w: 7, d: 6, h: 3.2, size: 'fixed' },
   { k: 'chair', t: 'Chairs', e: '🪑', col: 'furniture', sb: /chair/i, kind: 'free', w: 2.5, d: 2.5, h: 3, size: 'fixed' },
   { k: 'bench', t: 'Bench', e: '🪵', col: 'furniture', sb: /bench/i, kind: 'free', w: 5, d: 2, h: 1.6, size: 'fixed' },
@@ -31,6 +32,7 @@ const CATS = [
   { k: 'feature', t: 'Feature wall', e: '🧱', col: 'feature-walls', kind: 'wall', w: 10, d: 0.6, h: 8, min: [3, 0.6], max: [40, 0.6], hr: [3, 12], size: 'wh' },
   { k: 'vgarden', t: 'Vertical garden', e: '🌿', col: 'vertical-gardens', kind: 'wall', w: 6, d: 0.6, h: 6, min: [2, 0.6], max: [40, 0.6], hr: [2, 12], size: 'wh' },
   { k: 'graffiti', t: 'Graffiti art', e: '🎨', col: 'graffiti', kind: 'wall', w: 10, d: 0.3, h: 6, min: [3, 0.3], max: [60, 0.3], hr: [3, 12], size: 'wh' },
+  { k: 'accover', t: 'AC cover', e: '❄️', col: 'ac-covers', sb: /floor|terrace/i, kind: 'free', w: 3.6, d: 1.8, h: 2.9, size: 'fixed' },
   { k: 'gate', t: 'Gate', e: '🚪', col: 'gates', kind: 'edge', w: 10, d: 0.4, h: 6, min: [3, 0.4], max: [30, 0.4], hr: [4, 10], size: 'wh', lawn: true },
 ];
 // 193 phase 3: ready-made setups — added to what's already there, each thing at the nearest free spot
@@ -65,7 +67,7 @@ const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 const rectI = it => { const f = foot(it); return { x: +it.x, z: +it.z, w: f[0], d: f[1] }; };
 const hit = (a, b) => a.x < b.x + b.w - 0.01 && a.x + a.w > b.x + 0.01 && a.z < b.z + b.d - 0.01 && a.z + a.d > b.z + 0.01;
 function inside(r) { const t = S.site, p = P0(); return r.x >= p - 0.01 && r.z >= p - 0.01 && r.x + r.w <= t.pw - p + 0.01 && r.z + r.d <= t.pd - p + 0.01 && !(t.kind === 'terrace' && cutHit(t, r, PAR)); }
-const att = it => !!(it && (it.mode === 'par' || it.mode === 'tank'));   // 193c: screens fixed on the parapet / on the mumty — no floor footprint
+const att = it => !!(it && (it.mode === 'par' || it.mode === 'tank' || it.mode === 'ac'));   // 193c: screens fixed on the parapet / on the mumty — no floor footprint
 function clashes(it, i) {   // what it would sit on
   if (att(it)) return '';
   const r = rectI(it), fl = CAT[it.cat] && CAT[it.cat].kind === 'floor';
@@ -121,8 +123,27 @@ function mumtyTanks() { const t = S.site; if (t.kind !== 'terrace' || t.tanks ==
 function attach(it, i) {   // lay a parapet / tank screen out again (things around it may have moved)
   if (it.mode === 'par') { const segs = []; (it.sides || []).forEach(sd => parRuns(sd, i, SCREEN_STOP).forEach(([u0, u1]) => { const a = parLine(sd, u0), b = parLine(sd, u1); segs.push({ x0: a[0], z0: a[1], x1: b[0], z1: b[1], y: parTop(), side: sd }); })); it.segs = segs; }
   else if (it.mode === 'tank') { const m = mumtyTanks(); it.segs = m ? m.pts.map((a, k) => { const b = m.pts[(k + 1) % 4]; return { x0: a[0], z0: a[1], x1: b[0], z1: b[1], y: m.y }; }) : []; }
+  else if (it.mode === 'ac') { const b = (S.site.kind === 'terrace' ? S.site.blocks : []).find(x => x.id === it.bid); delete it.segs;
+    it.box = b ? { x: b.x - 0.3, z: b.z - 0.3, w: b.w + 0.6, d: b.d + 0.6, h: 2.9 } : null; if (b) { it.x = it.box.x; it.z = it.box.z; it.w = it.box.w; it.d = it.box.d; it.h = 2.9; } return; }
   else { delete it.segs; return; }
   it.w = Math.round(it.segs.reduce((a, g) => a + Math.hypot(g.x1 - g.x0, g.z1 - g.z0), 0) * 2) / 2; it.d = 0.3; it.x = 0; it.z = 0; it.rot = 0;
+}
+function coverAC() {   // one cover over each AC unit that has none yet
+  const t = S.site; if (t.kind !== 'terrace') return 0; t.blocks.forEach(b => { if (!b.id) b.id = 'b' + Math.random().toString(36).slice(2, 8); });
+  let n = 0; t.blocks.filter(b => b.type === 'ac' && !S.items.some(o => o.mode === 'ac' && o.bid === b.id)).forEach(b => { const it = { cat: 'accover', mode: 'ac', bid: b.id, label: 'AC cover', rot: 0 }; S.items.push(it); attach(it, S.items.length - 1); n++; });
+  return n;
+}
+function cabinH(it) { const L = cabinLay(it); return /^10/.test(String(L.height || '')) ? 10 : 8.5; }
+function pergolaAttach(it, i) {   // a pergola against a cabin / mumty / room: those posts go (zones), and next to a cabin it takes the cabin's height + deck
+  const t = S.site, r = rectI(it), zones = []; let cab = null;
+  const obs = S.items.filter((o, j) => j !== i && o.cat === 'cabin').map(o => [rectI(o), o]).concat((t.kind === 'terrace' ? t.blocks : []).filter(b => ['mumty', 'room', 'lift'].includes(b.type)).map(b => [b, null]));
+  obs.forEach(([o, cb]) => { const oz = [Math.max(r.z, o.z), Math.min(r.z + r.d, o.z + o.d)], ox = [Math.max(r.x, o.x), Math.min(r.x + r.w, o.x + o.x * 0 + o.w)];
+    const gR = o.x - (r.x + r.w), gL = r.x - (o.x + o.w), gF = o.z - (r.z + r.d), gB = r.z - (o.z + o.d), ok = g => g > -0.05 && g <= 0.8; let hitz = null;
+    if (oz[1] - oz[0] >= 1) { if (ok(gR)) hitz = { x: r.x + r.w - 0.8, z: oz[0], w: 0.8 + Math.max(0, gR), d: oz[1] - oz[0] }; else if (ok(gL)) hitz = { x: o.x + o.w, z: oz[0], w: 0.8 + Math.max(0, gL), d: oz[1] - oz[0] }; }
+    if (!hitz && ox[1] - ox[0] >= 1) { if (ok(gF)) hitz = { x: ox[0], z: r.z + r.d - 0.8, w: ox[1] - ox[0], d: 0.8 + Math.max(0, gF) }; else if (ok(gB)) hitz = { x: ox[0], z: o.z + o.d, w: ox[1] - ox[0], d: 0.8 + Math.max(0, gB) }; }
+    if (hitz) { zones.push(hitz); if (cb && !cab) cab = cb; } });
+  it.att = zones;
+  if (cab) { if (it.hAuto !== false) it.h = cabinH(cab); if (it.deckAuto !== false) it.deck = true; }
 }
 function fitWall(it, i) {   // graffiti takes the whole wall it is on: a free parapet run, or a block's face (its door left open)
   if (it.cat !== 'graffiti' || it.fit === false || !it.on) { if (it.cat === 'graffiti') { delete it.open; delete it.pw; } return; }
@@ -152,7 +173,7 @@ function settle(it, i, from) { if (att(it)) { attach(it, i); return true; } cons
 
 // ---------------------------------------------------------------- blocks on the roof (step 1)
 function addBlock(t, type, w, d, side, at) {
-  const b = { type, side: side || 'free', w, d, x: at ? at[0] : (t.pw - w) / 2, z: at ? at[1] : (t.pd - d) / 2 }; wallB(t, b, b.side); t.blocks.push(b);
+  const b = { id: 'b' + Math.random().toString(36).slice(2, 8), type, side: side || 'free', w, d, x: at ? at[0] : (t.pw - w) / 2, z: at ? at[1] : (t.pd - d) / 2 }; wallB(t, b, b.side); t.blocks.push(b);
   if (!freeB(t, t.blocks.length - 1)) { t.blocks.pop(); return false; } return true;
 }
 function wallB(t, b, side) { if (side === 'left') b.x = PAR; else if (side === 'right') b.x = t.pw - PAR - b.w; else if (side === 'back') b.z = PAR; else if (side === 'front') b.z = t.pd - PAR - b.d; b.x = Math.max(PAR, Math.min(t.pw - PAR - b.w, b.x)); b.z = Math.max(PAR, Math.min(t.pd - PAR - b.d, b.z)); }
@@ -350,17 +371,19 @@ function stepPlace() {
   if (sel) {
     const c = CAT[sel.cat], fp = fromPrice(sel), pm = (k, lbl, v, ns) => `<div class="pl-pm"><span>${lbl}</span><button type="button" data-pl="${ns || 'rs'}:${k}:-1" aria-label="${lbl} smaller">−</button><label class="pl-sz"><input type="number" inputmode="decimal" step="${ns ? 1 : 0.5}" data-plin="${ns || 'rs'}:${k}" value="${v}" aria-label="${lbl} in feet"> ft</label><button type="button" data-pl="${ns || 'rs'}:${k}:1" aria-label="${lbl} bigger">+</button></div>`;
     h += `<div class="pl-ed"><h4>${esc(c.e)} ${esc(sel.label || c.t)}</h4>`;
-    if (sel.cat === 'cabin') { const sk = cabinSkus(); h += '<div class="pl-tabs">' + sk.map(s => btn(`data-pl="csku:${s}"`, s === sel.sku, esc(PR()[s].n.replace(/ —.*$/, '').replace(/ \(.*$/, '')))).join('') + '</div>'; const L = cabinLay(sel); if (L && L.walls && window.mtoCabinSize) { const lim = window.mtoCabinSize(sel.sku, L, L.L, L.W) || {}; h += pm('L', 'Length', num(L.L), 'cz') + pm('W', 'Width', num(L.W), 'cz') + `<p class="pl-sub" style="margin:2px 0 0">${lim.Lmin}–${lim.Lmax} × ${lim.Wmin}–${lim.Wmax} ft. Walls, doors, rooms and finishes: in its designer.</p>`; } }
+    if (sel.cat === 'cabin') { const sk = cabinSkus(); h += '<div class="pl-tabs">' + sk.map(s => btn(`data-pl="csku:${s}"`, s === sel.sku, esc(PR()[s].n.replace(/ —.*$/, '').replace(/ \(.*$/, '')))).join('') + '</div>'; const L = cabinLay(sel); if (!sel.lock && L && L.walls && window.mtoCabinSize) { const lim = window.mtoCabinSize(sel.sku, L, L.L, L.W) || {}; h += pm('L', 'Length', num(L.L), 'cz') + pm('W', 'Width', num(L.W), 'cz') + `<p class="pl-sub" style="margin:2px 0 0">${lim.Lmin}–${lim.Lmax} × ${lim.Wmin}–${lim.Wmax} ft. Walls, doors, rooms and finishes: in its designer.</p>`; } }
     else if (c.size === 'fixed') h += `<p class="pl-sub">One standard size here — you'll pick the exact design at the end.</p>`;
-    if (c.size === 'wd') h += pm('w', 'Length', sel.w) + pm('d', 'Width', sel.d);
-    if (c.size === 'w') h += pm('w', 'Length', sel.w);
+    if (sel.lock) h += '<p class="pl-note" style="margin:6px 0">🔒 Locked — its size and place can\'t change by mistake.</p>';
+    else if (c.size === 'wd') h += pm('w', 'Length', sel.w) + pm('d', 'Width', sel.d);
+    if (!sel.lock && c.size === 'w') h += pm('w', 'Length', sel.w);
     if (sel.cat === 'privacy') h += '<p class="pl-h" style="margin-top:4px">Where does it go?</p><div class="pl-tabs">' + btn('data-pl="pmode:par"', sel.mode === 'par', S.site.kind === 'terrace' ? 'On the parapet' : 'On the boundary wall') + btn('data-pl="pmode:part"', !att(sel), 'As a partition') + (mumtyTanks() ? btn('data-pl="pmode:tank"', sel.mode === 'tank', 'Hide the water tanks') : '') + '</div>';
     if (sel.mode === 'par') h += '<p class="pl-h">On which parapets?</p><div class="pl-tabs">' + [['back', 'Back'], ['left', 'Left'], ['right', 'Right'], ['front', 'Front (road)']].map(([k2, l2]) => btn(`data-pl="pside:${k2}"`, (sel.sides || []).includes(k2), l2)).join('') + `</div><p class="pl-sub" style="margin:6px 0 0">${sel.w} ft in all — left open where a cabin, the mumty, a feature wall, a big partition or a fountain stands against it.</p>` + pm('h', 'Height above parapet', sel.h);
     else if (sel.mode === 'tank') h += `<p class="pl-sub" style="margin:6px 0 0">Round the tanks on the mumty roof — ${sel.w} ft.</p>` + pm('h', 'Height', sel.h);
-    else if (c.size === 'wh') h += pm('w', 'Length', sel.w) + pm('h', 'Height', sel.h);
+    else if (!sel.lock && c.size === 'wh') h += pm('w', 'Length', sel.w) + pm('h', 'Height', sel.h);
+    if (sel.cat === 'pergola' && !sel.lock) h += pm('h', 'Height', sel.h) + `<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="pdeck"${sel.deck ? ' checked' : ''}> Deck floor under it (as high as a porta cabin's)</label>` + (sel.att && sel.att.length ? '<p class="pl-sub" style="margin:2px 0 6px">Fixed to the wall on ' + sel.att.length + ' side' + (sel.att.length > 1 ? 's' : '') + ' — no posts there' + (sel.hAuto !== false && S.items.some(o => o.cat === 'cabin') ? '; height and deck matched to the cabin' : '') + '.</p>' : '');
     if (sel.cat === 'graffiti') h += `<label class="pl-ck" style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="gfit"${sel.fit !== false ? ' checked' : ''}> Fit the whole wall it's on${sel.open ? ' (door left open)' : ''}</label>`;
     h += `<p style="margin:10px 0 0;font-size:14px">${fp && fp.price != null ? (lock ? '🔒 Price after sign-in' : 'From <b>' + rs(fp.price) + '</b>') : fp && fp.soon ? 'Coming soon' : 'Our team will price it'} <small style="color:#7A7268">· ${fp ? fp.n : 0} designs</small></p>`;
-    h += '<div class="pl-act">' + (c.kind === 'free' || c.kind === 'floor' ? '<button type="button" data-pl="rot">↻ Turn</button>' : '') + (att(sel) ? '' : '<button type="button" data-pl="dup">⧉ Copy</button>') + '<button type="button" data-pl="del">🗑 Remove</button><button type="button" data-pl="done" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Done</button></div></div>';
+    h += '<div class="pl-act">' + (att(sel) ? '' : `<button type="button" data-pl="lock">${sel.lock ? '🔓 Unlock' : '🔒 Lock'}</button>`) + (!sel.lock && (c.kind === 'free' || c.kind === 'floor') && sel.mode !== 'ac' ? '<button type="button" data-pl="rot">↻ Turn</button>' : '') + (att(sel) || sel.lock ? '' : '<button type="button" data-pl="dup">⧉ Copy</button>') + (sel.lock ? '' : '<button type="button" data-pl="del">🗑 Remove</button>') + '<button type="button" data-pl="done" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Done</button></div></div>';
     if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
     return h;
   }
@@ -374,7 +397,7 @@ function stepPlace() {
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   const sets = SETUPS.filter(x => !x.lawn || S.site.kind !== 'terrace');
   h += '<p class="pl-h">Start from a setup</p><div class="pl-set">' + sets.map(x => `<button type="button" data-pl="setup:${x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div><p class="pl-h">Or add one by one</p>';
-  h += '<div class="pl-pal">' + CATS.filter(c => (!c.lawn || S.site.kind !== 'terrace') && designs(c).length).map(c => {
+  h += '<div class="pl-pal">' + CATS.filter(c => (!c.lawn || S.site.kind !== 'terrace') && (designs(c).length || c.always) && (c.k !== 'accover' || S.site.kind === 'terrace')).map(c => {
     const fp = fromPrice(Object.assign({ cat: c.k, w: c.w || 4, d: c.d || 4, h: c.h || 3 }, c.k === 'cabin' ? { sku: (cabinSkus().find(s => /PORTA/.test(s)) || cabinSkus()[0]) } : {}));
     return `<button type="button" data-pl="add:${c.k}"><i>${c.e}</i><span><b>${esc(c.t)}</b><small>${fp.price != null ? (lock ? fp.n + ' designs' : 'from ' + lakh(fp.price)) : fp.soon ? 'Coming soon' : fp.n + ' designs'}</small></span></button>`; }).join('') + '</div>';
   if (lwOk()) h = lwCard() + h;
@@ -415,7 +438,7 @@ function toCart() {
 function total() { let t = 0, n = 0; S.items.forEach(it => { const fp = fromPrice(it); if (fp && fp.price != null) { t += fp.price; n++; } }); return { t, n }; }
 
 function draw(rec) {
-  if (S.items) S.items.forEach((it, i) => { if (att(it)) attach(it, i); });
+  if (S.items) { S.items.forEach((it, i) => { if (att(it)) attach(it, i); }); S.items = S.items.filter(it => it.mode !== 'ac' || it.box); S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); }); if (S.sel != null && !S.items[S.sel]) S.sel = null; }
   if (rec !== false) hist(); save();
   document.getElementById('plSt').innerHTML = btn('data-pl="step:0"', S.step === 0, '1 · <span class="pl-l">Your </span>space') + btn('data-pl="step:1"', S.step === 1, '2 · Add<span class="pl-l"> things</span>') + btn('data-pl="step:2"', S.step === 2, '3 · Pick<span class="pl-l"> designs</span>');
   document.getElementById('plPn').innerHTML = S.step === 0 ? stepSite() : S.step === 2 ? stepPick() : stepPlace();
@@ -447,7 +470,7 @@ function onClick(e) {
     case 'corner': t.corner = a[1] || ''; break;
     case 'bdel': t.blocks.splice(+a[1], 1); break;
     case 'badd': { const D = BLK[a[1]]; if (!addBlock(t, a[1], D[1], D[2], a[1] === 'room' ? 'back' : 'right')) S.msg = 'No free room for it — make the others smaller or move them'; S.items = S.items.filter((x, i) => settle(x, i)); break; }
-    case 'add': if (a[1] === 'privacy') { S.ask = 'privacy'; S.sel = null; break; } addItem(a[1]); break;
+    case 'add': if (a[1] === 'privacy') { S.ask = 'privacy'; S.sel = null; break; } if (a[1] === 'accover') { const n = coverAC(); S.msg = n ? '' : (S.site.blocks.some(b => b.type === 'ac') ? 'Every AC unit already has a cover' : 'Add your AC units in step 1 (Your space) first — the covers go over them'); if (n) S.sel = S.items.length - 1; break; } addItem(a[1]); break;
     case 'pmode': { S.ask = null; const m = a[1], t2 = S.site;
       if (S.sel != null && S.items[S.sel] && S.items[S.sel].cat === 'privacy') { const x = S.items[S.sel], keep = JSON.stringify(x); x.mode = m === 'part' ? undefined : m; if (m === 'par') { x.sides = x.sides || ['left', 'right', 'back']; x.h = 3; } else if (m === 'tank') x.h = 4.5; else { x.w = 8; x.d = 0.5; x.h = 6; x.x = r2((t2.pw - 8) / 2); x.z = r2(t2.pd / 2); }
         if (!settle(x, S.sel)) { Object.assign(x, JSON.parse(keep)); S.msg = 'No free room for it'; } break; }
@@ -455,15 +478,17 @@ function onClick(e) {
       const it2 = { cat: 'privacy', mode: m, label: m === 'par' ? 'Screen on the parapet' : 'Tank screen', sides: m === 'par' ? ['left', 'right', 'back'] : undefined, h: m === 'par' ? 3 : 4.5, w: 0, d: 0.3, x: 0, z: 0, rot: 0 };
       S.items.push(it2); attach(it2, S.items.length - 1); S.sel = S.items.length - 1; if (!it2.w) S.msg = m === 'tank' ? 'Add the mumty (with tanks) in step 1 first' : 'No free parapet on those sides — pick others'; break; }
     case 'askx': S.ask = null; break;
+    case 'lock': if (it) it.lock = !it.lock; break;
+    case 'pdeck': if (it) { it.deck = !it.deck; it.deckAuto = false; } break;
     case 'pside': if (it && it.mode === 'par') { const sd = a[1], ss = new Set(it.sides || []); ss.has(sd) ? ss.delete(sd) : ss.add(sd); it.sides = ['back', 'left', 'right', 'front'].filter(x => ss.has(x)); attach(it, S.sel); if (!it.w) S.msg = 'No free parapet on those sides'; } break;
     case 'gfit': if (it && it.cat === 'graffiti') { it.fit = it.fit === false; if (!settle(it, S.sel)) S.msg = 'It doesn\'t fit there'; } break;
     case 'sel': S.sel = +a[1]; S.ask = null; break;
     case 'done': S.sel = null; break;
     case 'del': if (it) { S.items.splice(S.sel, 1); S.sel = null; } break;
     case 'dup': if (it) { const c2 = JSON.parse(JSON.stringify(it)); c2.x += 1; c2.z += 1; S.items.push(c2); if (!settle(c2, S.items.length - 1, [it.x + it.w, it.z])) { S.items.pop(); S.msg = 'No free room for a copy'; } else S.sel = S.items.length - 1; } break;
-    case 'rot': if (it) { const keep = JSON.stringify(it), f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; it.rot = ((+it.rot || 0) + 90) % 360; const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); if (!settle(it, S.sel, [it.x, it.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'No room to turn it here'; } } break;
-    case 'rs': if (it) { if (it.cat === 'graffiti' && a[1] === 'w') it.fit = false; resizeItem(it, a[1], +a[2]); } break;
-    case 'cz': if (it && it.cat === 'cabin') { const L = cabinLay(it); cabinSize(it, a[1] === 'L' ? num(L.L) + +a[2] : num(L.L), a[1] === 'W' ? num(L.W) + +a[2] : num(L.W)); } break;
+    case 'rot': if (it && !it.lock) { const keep = JSON.stringify(it), f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; it.rot = ((+it.rot || 0) + 90) % 360; const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); if (!settle(it, S.sel, [it.x, it.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'No room to turn it here'; } } break;
+    case 'rs': if (it && !it.lock) { if (it.cat === 'pergola' && a[1] === 'h') it.hAuto = false; if (it.cat === 'graffiti' && a[1] === 'w') it.fit = false; resizeItem(it, a[1], +a[2]); } break;
+    case 'cz': if (it && !it.lock && it.cat === 'cabin') { const L = cabinLay(it); cabinSize(it, a[1] === 'L' ? num(L.L) + +a[2] : num(L.L), a[1] === 'W' ? num(L.W) + +a[2] : num(L.W)); } break;
     case 'csku': if (it) { const keep = JSON.stringify(it), L0 = it.layout; it.sku = a[1] + (a[2] ? ':' + a[2] : ''); if (L0 && window.mtoCabinSize) { const r = window.mtoCabinSize(it.sku, null, L0.L, L0.W); if (r && r.lay) { it.layout = r.lay; it.lsku = it.sku; } } cabinFoot(it); it.label = PR()[it.sku].n.replace(/ —.*$/, ''); if (!settle(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'That cabin doesn\'t fit here'; } } break;
     case 'unlock': return unlock();
     case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
@@ -480,7 +505,7 @@ function onClick(e) {
 }
 function onInput(e) {
   const k = e.target.getAttribute && e.target.getAttribute('data-plin'); if (!k) return; const v = parseFloat(e.target.value), t = S.site; if (!(v > 0)) return; S.msg = '';
-  if (/^(rs|cz):/.test(k)) { const it = S.sel != null ? S.items[S.sel] : null, f = k.split(':')[1]; if (!it) return;
+  if (/^(rs|cz):/.test(k)) { const it = S.sel != null ? S.items[S.sel] : null, f = k.split(':')[1]; if (!it || it.lock) return; if (it.cat === 'pergola' && f === 'h') it.hAuto = false;
     if (k[0] === 'r') { if (it.cat === 'graffiti' && f === 'w') it.fit = false; resizeItem(it, f, 0, v); } else { const L = cabinLay(it); cabinSize(it, f === 'L' ? v : num(L.L), f === 'W' ? v : num(L.W)); }
     return draw(); }
   if (/^c[ab]:/.test(k)) { const [f, c] = k.split(':'), cu = t.cuts && t.cuts[c]; if (!cu) return; cu[f === 'ca' ? 'a' : 'b'] = Math.max(1, Math.min(f === 'ca' ? t.pw - 4 : t.pd - 4, Math.round(v * 2) / 2)); afterCut(); return draw(); }
@@ -494,7 +519,7 @@ function on3d(ev) {
   if (ev.t === 'block') { const b = t.blocks[ev.i]; if (!b) return; const keep = { x: b.x, z: b.z, side: b.side }; b.x = ev.x; b.z = ev.z;
     b.side = b.x <= PAR + 1 ? 'left' : b.x + b.w >= t.pw - PAR - 1 ? 'right' : b.z <= PAR + 1 ? 'back' : b.z + b.d >= t.pd - PAR - 1 ? 'front' : 'free'; wallB(t, b, b.side);
     if (t.blocks.some((o, j) => j !== ev.i && hit(b, o))) { Object.assign(b, keep); S.msg = 'It can\'t go on top of another one'; } else if (cutHit(t, b, PAR)) { Object.assign(b, keep); S.msg = 'That corner is cut — it can\'t go there'; } }
-  else if (ev.t === 'move') { const it = S.items[ev.i]; if (!it) return; const keep = JSON.stringify(it); it.x = ev.x; it.z = ev.z; if (!settle(it, ev.i, [ev.x, ev.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It doesn\'t fit there'; } S.sel = ev.i; }
+  else if (ev.t === 'move') { const it = S.items[ev.i]; if (!it || it.lock || att(it)) return; const keep = JSON.stringify(it); it.x = ev.x; it.z = ev.z; if (!settle(it, ev.i, [ev.x, ev.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It doesn\'t fit there'; } S.sel = ev.i; }
   else if (ev.t === 'sel') S.sel = ev.i;
   draw();
 }

@@ -69,12 +69,16 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
   // ground, a terrace floor, a back wall when wall-mounted
   if (!bare) { box(g, L + 16, 0.1, W + 16, L / 2, -0.05, W / 2, X.ground); box(g, L + 4, 0.12, W + 4, L / 2, 0.01, W / 2, X.deck); }
   if (wall && !bare) box(g, L + 4, H + 3, 0.6, L / 2, (H + 3) / 2, -0.3 - P / 2, X.wall);
-  const top = H, rows = wall ? [W - inset - P / 2] : [inset + P / 2, W - inset - P / 2];
-  const cols = [inset + P / 2, L - inset - P / 2]; if (dbl || L > 18) cols.splice(1, 0, L / 2);
-  const post = (x, z, h = top, s = P) => box(g, s, h, s, x, h / 2, z, F.frame);
+  // 193d: posts no more than 14 ft apart — a long side gets posts in between so the main frame doesn't sag
+  const SPAN = 14, spread = (a, b, minN) => { const n = Math.max(minN, Math.ceil((b - a) / SPAN - 0.001)); return Array.from({ length: n + 1 }, (_, k) => a + (b - a) * k / n); };
+  const top = H, rows = wall ? [W - inset - P / 2] : spread(inset + P / 2, W - inset - P / 2, 1);
+  const cols = spread(inset + P / 2, L - inset - P / 2, dbl ? 2 : 1);
+  const edge = (x, z) => x === cols[0] || x === cols[cols.length - 1] || z === rows[0] || z === rows[rows.length - 1] || W > 20;   // inner posts only on a deep pergola
+  const post = (x, z, h = top, s = P) => { const m = box(g, s, h, s, x, h / 2, z, F.frame); m.userData.post = 1; return m; };
   const leg = r.leg || 'straight';
   // ---- posts / legs
   for (const x of cols) for (const z of rows) {
+    if (!edge(x, z)) continue;
     if (leg === 'lean') { const k = Math.tan(10 * Math.PI / 180) * top, dx = x < L / 2 ? 1 : x > L / 2 ? -1 : 0, dz = z < W / 2 ? 1 : -1; rod(g, [x + dx * k, 0, z + dz * k], [x, top, z], P, P, F.frame); continue; }
     if (leg === 'aframe') { if (x !== cols[0] && x !== cols[cols.length - 1]) continue; const dz = z < W / 2 ? -1 : 1; rod(g, [x, 0, z + dz * 1.6], [x, top, z], P, P, F.frame); continue; }   // each end: two legs splayed out like an A
     if (leg === 'ladder') { const s = MM(220) / 2; [-s, s].forEach(d => post(x + d, z)); for (let k = 1; k <= 4; k++) box(g, 2 * s, MM(40), MM(40), x, top * k / 5, z, F.frame); continue; }
@@ -166,7 +170,7 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
     for (let z = W; z < W + ex; z += gap + RW) box(g, Math.min(6, L * 0.4), RH, RW, L - Math.min(6, L * 0.4) / 2, ry + RH / 2, z, F.roof); box(g, P, top, P, L - Math.min(6, L * 0.4), top / 2, W + ex, F.frame); }
   // base plates
   g.children.filter(m => m.isMesh && m.material === F.frame && m.rotation.x === 0 && m.rotation.z === 0 && Math.abs(m.position.y - m.geometry.parameters.height / 2) < 0.01 && m.geometry.parameters.height >= top - 1)
-    .forEach(m => box(g, m.geometry.parameters.width + 0.25, 0.04, m.geometry.parameters.depth + 0.25, m.position.x, 0.14, m.position.z, F.frame));
+    .forEach(m => { box(g, m.geometry.parameters.width + 0.25, 0.04, m.geometry.parameters.depth + 0.25, m.position.x, 0.14, m.position.z, F.frame).userData.plate = 1; });
   return { g, L, W, H, top: ry + 2 };
 }
 
