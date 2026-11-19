@@ -4,11 +4,13 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=3';
+import * as S3 from './space3d.js?v=4';
+import { cutHit } from './cabin3d.js?v=10';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['500', 50, 90]];
-const BLK = { mumty: ['Mumty (stair room)', 10, 18], lift: ['Lift room', 6, 6], shaft: ['Shaft', 3, 4], room: ['Room already built', 10, 12] };
+const BLK = { mumty: ['Mumty (stair room)', 10, 18], lift: ['Lift room', 6, 6], shaft: ['Shaft', 3, 4], room: ['Room already built', 10, 12], ac: ['AC outdoor unit', 3, 1.2] };
+const CUTS = [['bl', 'Back-left'], ['br', 'Back-right'], ['fl', 'Front-left'], ['fr', 'Front-right']];   // front = the road side
 // kind: free (stands anywhere) | floor (decking: things stand on it) | edge (along the parapet / boundary) | wall (a panel; snaps to a wall when near)
 // fit: how the size maps to the price engine — l / w / h are taken from the item's length, depth and height
 const CATS = [
@@ -62,7 +64,7 @@ const P0 = () => S.site.kind === 'terrace' ? PAR : 0;
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 const rectI = it => { const f = foot(it); return { x: +it.x, z: +it.z, w: f[0], d: f[1] }; };
 const hit = (a, b) => a.x < b.x + b.w - 0.01 && a.x + a.w > b.x + 0.01 && a.z < b.z + b.d - 0.01 && a.z + a.d > b.z + 0.01;
-function inside(r) { const t = S.site, p = P0(); return r.x >= p - 0.01 && r.z >= p - 0.01 && r.x + r.w <= t.pw - p + 0.01 && r.z + r.d <= t.pd - p + 0.01; }
+function inside(r) { const t = S.site, p = P0(); return r.x >= p - 0.01 && r.z >= p - 0.01 && r.x + r.w <= t.pw - p + 0.01 && r.z + r.d <= t.pd - p + 0.01 && !(t.kind === 'terrace' && cutHit(t, r, PAR)); }
 function clashes(it, i) {   // what it would sit on
   const r = rectI(it), fl = CAT[it.cat] && CAT[it.cat].kind === 'floor';
   if (!inside(r)) return 'edge';
@@ -112,10 +114,13 @@ function addBlock(t, type, w, d, side, at) {
 }
 function wallB(t, b, side) { if (side === 'left') b.x = PAR; else if (side === 'right') b.x = t.pw - PAR - b.w; else if (side === 'back') b.z = PAR; else if (side === 'front') b.z = t.pd - PAR - b.d; b.x = Math.max(PAR, Math.min(t.pw - PAR - b.w, b.x)); b.z = Math.max(PAR, Math.min(t.pd - PAR - b.d, b.z)); }
 function freeB(t, i) {
-  const b = t.blocks[i], others = t.blocks.filter((o, j) => j !== i); if (!others.some(o => hit(b, o))) return true;
+  const b = t.blocks[i], others = t.blocks.filter((o, j) => j !== i), ok = r => !others.some(o => hit(r, o)) && !cutHit(t, r, PAR); if (ok(b)) return true;
   for (let dd = 0.5; dd < Math.max(t.pw, t.pd); dd += 0.5) for (const s0 of [-dd, dd]) for (const q of [[b.x, b.z + s0], [b.x + s0, b.z]]) {
-    if (q[0] < PAR || q[1] < PAR || q[0] > t.pw - PAR - b.w || q[1] > t.pd - PAR - b.d) continue; const c2 = { x: q[0], z: q[1], w: b.w, d: b.d }; if (!others.some(o => hit(c2, o))) { b.x = q[0]; b.z = q[1]; return true; } }
+    if (q[0] < PAR || q[1] < PAR || q[0] > t.pw - PAR - b.w || q[1] > t.pd - PAR - b.d) continue; const c2 = { x: q[0], z: q[1], w: b.w, d: b.d }; if (ok(c2)) { b.x = q[0]; b.z = q[1]; return true; } }
   return false;
+}
+function afterCut() {   // a corner cut changed: blocks and things move out of it
+  const t = S.site; t.blocks.forEach((b, i) => freeB(t, i)); S.items = S.items.filter((it, i) => { const ok = settle(it, i); if (!ok) S.msg = 'Some things didn\'t fit any more and were taken off'; return ok; });
 }
 function setPlot(pw, pd) {   // a new size: blocks and things keep their place in proportion, then settle
   const t = S.site, opw = t.pw, opd = t.pd; t.pw = Math.max(12, Math.min(150, Math.round(pw))); t.pd = Math.max(12, Math.min(200, Math.round(pd)));
@@ -201,9 +206,18 @@ function roomy(it, i) {   // a free spot away from what's already there (so a se
   }
   if (best) { it.x = best[1]; it.z = best[2]; } return !!best;
 }
+function wallSpot(it, i) {   // a new panel goes against the parapet, at the free spot farthest from other things
+  const t = S.site, p = P0(), others = S.items.filter((o, j) => j !== i).map(o => { const g = foot(o); return [o.x + g[0] / 2, o.z + g[1] / 2]; }); let best = null;
+  for (const sd of ['back', 'left', 'right', 'front']) { const run = sd === 'back' || sd === 'front' ? t.pw : t.pd;
+    for (let u = p; u <= run - p - it.w + 0.01; u += 1) {
+      if (sd === 'back' || sd === 'front') { it.rot = sd === 'back' ? 0 : 180; it.x = r2(u); it.z = sd === 'back' ? p : t.pd - p - it.d; } else { it.rot = sd === 'left' ? 270 : 90; it.z = r2(u); it.x = sd === 'left' ? p : t.pw - p - it.d; }
+      if (clashes(it, i)) continue; const f = foot(it), cx = it.x + f[0] / 2, cz = it.z + f[1] / 2, dmin = others.length ? Math.min(...others.map(o => Math.hypot(o[0] - cx, o[1] - cz))) : 99;
+      const sc = Math.min(dmin, 20) + (sd === 'back' ? 0.5 : 0); if (!best || sc > best[0]) best = [sc, it.x, it.z, it.rot]; } }
+  if (best) { it.x = best[1]; it.z = best[2]; it.rot = best[3]; }
+}
 function addItem(k) {
   const it = newItem(k); if (!it) return; const i = S.items.length; S.items.push(it);
-  if (CAT[k].kind !== 'edge' && CAT[k].kind !== 'wall' && i > 0) roomy(it, i);
+  if (CAT[k].kind === 'wall') wallSpot(it, i); else if (CAT[k].kind !== 'edge' && i > 0) roomy(it, i);
   if (!settle(it, i)) { S.items.pop(); S.msg = 'No free room for it — make the space bigger or move things'; return; }
   S.sel = i; S.msg = '';
 }
@@ -274,8 +288,12 @@ function stepSite() {
   if (terr) {
     h += '<p class="pl-h">Parapet</p><div class="pl-tabs">' + btn('data-pl="par:3"', +t.par === 3, '3 ft') + btn('data-pl="par:4"', +t.par === 4, '4 ft') + '</div>';
     h += '<p class="pl-h">Corner plot?</p><div class="pl-tabs">' + btn('data-pl="corner:"', !t.corner, 'No') + btn('data-pl="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-pl="corner:right"', t.corner === 'right', 'Road on the right') + '</div>';
+    const C = t.cuts || {};
+    h += '<p class="pl-h">Corners cut? <small style="font-weight:400;color:#7A7268">front = road side</small></p>' + CUTS.map(([k, lbl]) => { const c = C[k] || {}, on = c.type === 'notch' || c.type === 'slant';
+      return `<div class="pl-blk"><b>${lbl}</b><div class="pl-tabs" style="gap:5px">${btn(`data-pl="cut:${k}:"`, !on, 'No cut')}${btn(`data-pl="cut:${k}:notch"`, c.type === 'notch', '⌐ Straight')}${btn(`data-pl="cut:${k}:slant"`, c.type === 'slant', '◸ Slant')}</div>` +
+        (on ? `<div class="pl-row" style="width:100%;margin:2px 0 0">${nIn('ca:' + k, c.a, 'Across (ft)', 1, t.pw - 4)}${nIn('cb:' + k, c.b, 'Deep (ft)', 1, t.pd - 4)}</div>` : '') + '</div>'; }).join('');
     h += '<p class="pl-h">Already on the roof <small style="font-weight:400;color:#7A7268">drag them on the 3D</small></p>' + t.blocks.map((b, i) => `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}<button type="button" class="pl-xx" data-pl="bdel:${i}" aria-label="Remove">✕</button></div>`).join('');
-    h += '<div class="pl-tabs">' + Object.keys(BLK).map(k => `<button type="button" data-pl="badd:${k}">+ ${esc(BLK[k][0].replace(/ \(.*\)/, ''))}</button>`).join('') + '</div>';
+    h += '<div class="pl-tabs">' + Object.keys(BLK).map(k => `<button type="button" data-pl="badd:${k}">+ ${esc(BLK[k][0].replace(/ \(.*\)/, '').replace('AC outdoor unit', 'AC unit'))}</button>`).join('') + '</div>';
   }
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   return h;
@@ -368,6 +386,7 @@ function onClick(e) {
     case 'kind': if (t.kind !== a[1]) { t.kind = a[1]; if (a[1] === 'terrace' && !t.blocks.length) defBlocks(t); S.items = S.items.filter((x, i) => !(CAT[x.cat].lawn && a[1] === 'terrace') && settle(x, i)); } break;
     case 'plot': { const p = PLOTS.find(z => z[0] === a[1]); t.plot = a[1]; setPlot(p[1], p[2]); break; }
     case 'par': t.par = +a[1]; break;
+    case 'cut': { t.cuts = t.cuts || {}; if (!a[2]) delete t.cuts[a[1]]; else t.cuts[a[1]] = Object.assign({ a: Math.min(8, Math.round(t.pw / 4)), b: Math.min(8, Math.round(t.pd / 6)) }, t.cuts[a[1]] || {}, { type: a[2] }); afterCut(); break; }
     case 'corner': t.corner = a[1] || ''; break;
     case 'bdel': t.blocks.splice(+a[1], 1); break;
     case 'badd': { const D = BLK[a[1]]; if (!addBlock(t, a[1], D[1], D[2], a[1] === 'room' ? 'back' : 'right')) S.msg = 'No free room for it — make the others smaller or move them'; S.items = S.items.filter((x, i) => settle(x, i)); break; }
@@ -398,6 +417,7 @@ function onInput(e) {
   if (/^(rs|cz):/.test(k)) { const it = S.sel != null ? S.items[S.sel] : null, f = k.split(':')[1]; if (!it) return;
     if (k[0] === 'r') resizeItem(it, f, 0, v); else { const L = cabinLay(it); cabinSize(it, f === 'L' ? v : num(L.L), f === 'W' ? v : num(L.W)); }
     return draw(); }
+  if (/^c[ab]:/.test(k)) { const [f, c] = k.split(':'), cu = t.cuts && t.cuts[c]; if (!cu) return; cu[f === 'ca' ? 'a' : 'b'] = Math.max(1, Math.min(f === 'ca' ? t.pw - 4 : t.pd - 4, Math.round(v * 2) / 2)); afterCut(); return draw(); }
   if (k === 'pw' || k === 'pd') { t.plot = ''; setPlot(k === 'pw' ? v : t.pw, k === 'pd' ? v : t.pd); }
   else { const [f, i] = k.split(':'), b = t.blocks[+i]; if (!b) return; const keep = JSON.stringify(b); if (f === 'bw') b.w = Math.max(1, Math.min(t.pw - 2, v)); else b.d = Math.max(1, Math.min(t.pd - 2, v)); wallB(t, b, b.side);
     if (!freeB(t, +i)) { Object.assign(b, JSON.parse(keep)); S.msg = 'That would sit on top of another one'; } S.items = S.items.filter((x, j) => settle(x, j)); }
@@ -407,7 +427,7 @@ function on3d(ev) {
   const t = S.site; S.msg = '';
   if (ev.t === 'block') { const b = t.blocks[ev.i]; if (!b) return; const keep = { x: b.x, z: b.z, side: b.side }; b.x = ev.x; b.z = ev.z;
     b.side = b.x <= PAR + 1 ? 'left' : b.x + b.w >= t.pw - PAR - 1 ? 'right' : b.z <= PAR + 1 ? 'back' : b.z + b.d >= t.pd - PAR - 1 ? 'front' : 'free'; wallB(t, b, b.side);
-    if (t.blocks.some((o, j) => j !== ev.i && hit(b, o))) { Object.assign(b, keep); S.msg = 'It can\'t go on top of another one'; } }
+    if (t.blocks.some((o, j) => j !== ev.i && hit(b, o))) { Object.assign(b, keep); S.msg = 'It can\'t go on top of another one'; } else if (cutHit(t, b, PAR)) { Object.assign(b, keep); S.msg = 'That corner is cut — it can\'t go there'; } }
   else if (ev.t === 'move') { const it = S.items[ev.i]; if (!it) return; const keep = JSON.stringify(it); it.x = ev.x; it.z = ev.z; if (!settle(it, ev.i, [ev.x, ev.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It doesn\'t fit there'; } S.sel = ev.i; }
   else if (ev.t === 'sel') S.sel = ev.i;
   draw();

@@ -614,8 +614,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=9').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=9'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=10').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=10'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -673,7 +673,8 @@
   // (mumty, lift room, shafts, rooms — each on a wall or free, sized, dragged in 3D, never on top of each other), and the
   // cabin placed on it (drag it, turn its front). Plot coords: x from the left, z from the back (pd = front / road).
   var TS_PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['500', 50, 90]];
-  var TS_KIND = { mumty: ['Mumty (stair room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft', 'Shaft'], room: ['Room already built', 'Room'] };
+  var TS_KIND = { mumty: ['Mumty (stair room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft', 'Shaft'], room: ['Room already built', 'Room'], ac: ['AC outdoor unit', 'AC unit'] };
+  var TS_CUTS = [['bl', 'Back-left'], ['br', 'Back-right'], ['fl', 'Front-left'], ['fr', 'Front-right']];   // 193: corners cut (front = road side)
   var TS_WALLS = [['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']];
   var TS_ROT = [[0, 'Road side'], [90, 'Right'], [180, 'Back'], [270, 'Left']];
   function tsNew(lay) { var t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, corner: '', par: 3, tanks: true, rot: 0, high: {}, blocks: [] }; tsPlot(t, 30, 60, lay, true); return t; }
@@ -683,14 +684,20 @@
     if (side === 'left') b.x = P; else if (side === 'right') b.x = t.pw - P - b.w; else if (side === 'back') b.z = P; else if (side === 'front') b.z = t.pd - P - b.d;
     b.x = Math.max(P, Math.min(t.pw - P - b.w, b.x)); b.z = Math.max(P, Math.min(t.pd - P - b.d, b.z));
   }
+  function tsCut(t, r) {   // = cabin3d.js cutHit: does rect r reach into a cut corner (with the parapet)?
+    var C = t && t.cuts, P = 0.75; if (!C) return false;
+    return ['bl', 'br', 'fl', 'fr'].some(function (k) { var c = C[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return false; var a = num(c.a) || 0, b = num(c.b) || 0; if (!(a > 0 && b > 0)) return false;
+      var x0 = k[1] === 'r' ? t.pw - (r.x + r.w) : r.x, z0 = k[0] === 'f' ? t.pd - (r.z + r.d) : r.z;
+      return c.type === 'notch' ? x0 < a + P - 0.01 && z0 < b + P - 0.01 : x0 / a + z0 / b < 1 + P * Math.hypot(1 / a, 1 / b) - 0.001; });
+  }
   function tsHit(a, b) { return a.x < b.x + b.w - 0.01 && a.x + a.w > b.x + 0.01 && a.z < b.z + b.d - 0.01 && a.z + a.d > b.z + 0.01; }
   function tsFree(t, i) {   // block i sits on another one: slide it along its wall (or anywhere when free) to the nearest clear spot
     var b = t.blocks[i], P = 0.75, others = t.blocks.filter(function (o, j) { return j !== i; });
-    if (!others.some(function (o) { return tsHit(b, o); })) return true;
+    if (!others.some(function (o) { return tsHit(b, o); }) && !tsCut(t, b)) return true;
     var alongZ = b.side === 'left' || b.side === 'right', alongX = b.side === 'back' || b.side === 'front', best = null;
     for (var dd = 0.5; dd < Math.max(t.pw, t.pd) && !best; dd += 0.5) [-dd, dd].forEach(function (s0) { if (best) return;
       var tries = alongZ ? [[b.x, b.z + s0]] : alongX ? [[b.x + s0, b.z]] : [[b.x + s0, b.z], [b.x, b.z + s0]];
-      tries.forEach(function (q) { if (best || q[0] < P || q[1] < P || q[0] > t.pw - P - b.w || q[1] > t.pd - P - b.d) return; var c2 = { x: q[0], z: q[1], w: b.w, d: b.d }; if (!others.some(function (o) { return tsHit(c2, o); })) best = q; }); });
+      tries.forEach(function (q) { if (best || q[0] < P || q[1] < P || q[0] > t.pw - P - b.w || q[1] > t.pd - P - b.d) return; var c2 = { x: q[0], z: q[1], w: b.w, d: b.d }; if (!others.some(function (o) { return tsHit(c2, o); }) && !tsCut(t, c2)) best = q; }); });
     if (!best) return false; b.x = best[0]; b.z = best[1]; return true;
   }
   function tsAdd(t, type, side, w, d, at) {   // a new block on a wall, at a clear spot
@@ -712,6 +719,7 @@
     var F = tsFoot(t, lay), r = { x: t.cx - F.e.l, z: t.cz - F.e.b, w: F.L + F.e.l + F.e.r, d: F.W + F.e.b + F.e.f };
     if (r.w > t.pw - 1.5 || r.d > t.pd - 1.5) return 'The cabin is bigger than this terrace — make it smaller in the next steps';
     if (r.x < 0.75 || r.z < 0.75 || r.x + r.w > t.pw - 0.75 || r.z + r.d > t.pd - 0.75) return 'The cabin goes over the parapet — drag it in';
+    if (tsCut(t, r)) return 'The cabin reaches into a cut corner — drag it in';
     var b = arr(t.blocks).filter(function (o) { return tsHit(r, o); })[0];
     return b ? 'The cabin sits on the ' + TS_KIND[b.type][1].toLowerCase() + ' — drag one of them' : '';
   }
@@ -734,13 +742,17 @@
       h += sec('Corner plot?', 'road on which side') + '<div class="wz-tabs">' + btn('data-ts="corner:"', !t.corner, 'No') + btn('data-ts="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-ts="corner:right"', t.corner === 'right', 'Road on the right') + '</div>';
       h += sec('Parapet') + '<div class="wz-tabs">' + btn('data-ts="par:3"', t.par === 3, '3 ft') + btn('data-ts="par:4"', t.par === 4, '4 ft') + '</div>';
       h += sec('Neighbour\'s wall higher than yours?') + '<div class="wz-tabs">' + [['left', 'Left'], ['right', 'Right'], ['back', 'Back']].filter(function (s0) { return s0[0] !== t.corner; }).map(function (s0) { var hi = t.high && t.high[s0[0]]; return btn('data-ts="high:' + s0[0] + '"', hi, (hi ? '✓ ' : '') + s0[1]); }).join('') + '</div>';
+      var CU = t.cuts || {};
+      h += sec('Corners cut?', 'front = road side') + TS_CUTS.map(function (ck) { var c = CU[ck[0]] || {}, cOn = c.type === 'notch' || c.type === 'slant';
+        return '<div class="ts-blk"><div class="ts-bh"><b>' + ck[1] + '</b></div><div class="wz-tabs ts-sm">' + btn('data-ts="cut:' + ck[0] + ':"', !cOn, 'No cut') + btn('data-ts="cut:' + ck[0] + ':notch"', c.type === 'notch', '⌐ Straight') + btn('data-ts="cut:' + ck[0] + ':slant"', c.type === 'slant', '◸ Slant') + '</div>' +
+          (cOn ? '<div class="ts-row">' + nIn('ca:' + ck[0], c.a, 'Across', 1, t.pw - 4) + nIn('cb:' + ck[0], c.b, 'Deep', 1, t.pd - 4) + '</div>' : '') + '</div>'; }).join('');
       h += sec('Already on the roof', 'drag them on the 3D too') + arr(t.blocks).map(function (b, i) {
         return '<div class="ts-blk"><div class="ts-bh"><b>' + esc(TS_KIND[b.type][0]) + '</b><button type="button" class="ts-x" data-ts="del:' + i + '" aria-label="Remove">✕</button></div>' +
           '<div class="wz-tabs ts-sm">' + TS_WALLS.map(function (wl) { return btn('data-ts="wall:' + i + ':' + wl[0] + '"', b.side === wl[0], wl[1]); }).join('') + '</div>' +
           '<div class="ts-row">' + nIn('w:' + i, b.w, 'Width', 1, 40) + nIn('d:' + i, b.d, 'Length', 1, 40) + nIn('l:' + i, Math.round(b.x * 2) / 2, 'From left', 0.75, t.pw) + nIn('f:' + i, Math.round((t.pd - b.z - b.d) * 2) / 2, 'From front', 0.75, t.pd) + '</div>' +
           (b.type === 'mumty' ? '<label class="ts-ck"><input type="checkbox" data-ts="tanks"' + (t.tanks !== false ? ' checked' : '') + '> Water tanks on top</label>' : '') + '</div>';
       }).join('');
-      h += '<div class="wz-tabs ts-add">' + ['mumty', 'lift', 'shaft', 'room'].map(function (k) { return '<button type="button" data-ts="add:' + k + '">+ ' + TS_KIND[k][1] + '</button>'; }).join('') + '</div>';
+      h += '<div class="wz-tabs ts-add">' + ['mumty', 'lift', 'shaft', 'room', 'ac'].map(function (k) { return '<button type="button" data-ts="add:' + k + '">+ ' + TS_KIND[k][1] + '</button>'; }).join('') + '</div>';
       if (S.tsMsg) h += '<div class="wz-note" style="background:#FFF4E5;border-color:#F1D3A8">' + esc(S.tsMsg) + '</div>';
       h += sec('Place the cabin', 'drag it on the 3D') + '<p class="ts-lb">Its front faces</p><div class="wz-tabs">' + TS_ROT.map(function (r) { return btn('data-ts="rot:' + r[0] + '"', (num(t.rot) || 0) === r[0], r[1]); }).join('') + '</div>';
       h += '<div class="ts-row">' + nIn('cx', t.cx, 'From left', 0, t.pw) + nIn('cf', Math.round((t.pd - t.cz - tsDims(t, lay)[1]) * 2) / 2, 'From front', 0, t.pd) + '<button type="button" class="ts-c" data-ts="centre">Find a free spot</button></div>';
@@ -759,11 +771,12 @@
     if (a[0] === 'plot') { var p = TS_PLOTS.filter(function (z) { return z[0] === a[1]; })[0]; x.plot = a[1]; tsPlot(x, p[1], p[2], lay); }
     else if (a[0] === 'corner') { x.corner = a[1] || ''; if (x.high && x.corner) x.high[x.corner] = false; }
     else if (a[0] === 'par') x.par = +a[1];
+    else if (a[0] === 'cut') { x.cuts = x.cuts || {}; if (!a[2]) delete x.cuts[a[1]]; else x.cuts[a[1]] = Object.assign({ a: Math.min(8, Math.round(x.pw / 4)), b: Math.min(8, Math.round(x.pd / 6)) }, x.cuts[a[1]] || {}, { type: a[2] }); x.blocks.forEach(function (bb, i) { tsFree(x, i); }); if (tsClash(x, lay)) tsCentre(x, lay); }
     else if (a[0] === 'high') { x.high = x.high || {}; x.high[a[1]] = !x.high[a[1]]; }
     else if (a[0] === 'tanks') x.tanks = x.tanks === false;
     else if (a[0] === 'del' && b) x.blocks.splice(+a[1], 1);
     else if (a[0] === 'wall' && b) { tsWall(x, b, a[2]); if (!tsFree(x, +a[1])) { b.x = keep.x; b.z = keep.z; b.side = keep.side; S.tsMsg = 'No free room on that wall'; } }
-    else if (a[0] === 'add') { var D = { mumty: [10, 18], lift: [6, 6], shaft: [3, 4], room: [10, 12] }[a[1]]; if (!tsAdd(x, a[1], a[1] === 'room' ? 'back' : 'right', D[0], D[1])) S.tsMsg = 'No free room for it — make the others smaller or move them'; }
+    else if (a[0] === 'add') { var D = { mumty: [10, 18], lift: [6, 6], shaft: [3, 4], room: [10, 12], ac: [3, 1.2] }[a[1]]; if (!tsAdd(x, a[1], a[1] === 'room' ? 'back' : 'right', D[0], D[1])) S.tsMsg = 'No free room for it — make the others smaller or move them'; }
     else if (a[0] === 'rot') { var d0 = tsDims(x, lay), mx = x.cx + d0[0] / 2, mz = x.cz + d0[1] / 2; x.rot = +a[1]; var d1 = tsDims(x, lay); x.cx = Math.round((mx - d1[0] / 2) * 2) / 2; x.cz = Math.round((mz - d1[1] / 2) * 2) / 2; }
     else if (a[0] === 'centre') tsCentre(x, lay);
     return true;
@@ -771,6 +784,7 @@
   function tsInput(el) {   // the exact sizes typed in
     var k = el.getAttribute('data-tsin'), x = S.site, lay = S.o.layout, v = parseFloat(el.value); if (!k || !x || !(v >= 0)) return false; var a = k.split(':'), b = a[1] != null ? x.blocks[+a[1]] : null; S.tsMsg = '';
     if (a[0] === 'pw' || a[0] === 'pd') { x.plot = ''; tsPlot(x, a[0] === 'pw' ? v : x.pw, a[0] === 'pd' ? v : x.pd, lay); return true; }
+    if (a[0] === 'ca' || a[0] === 'cb') { var cu = x.cuts && x.cuts[a[1]]; if (!cu) return false; cu[a[0] === 'ca' ? 'a' : 'b'] = Math.max(1, Math.min(a[0] === 'ca' ? x.pw - 4 : x.pd - 4, Math.round(v * 2) / 2)); x.blocks.forEach(function (bb, i) { tsFree(x, i); }); if (tsClash(x, lay)) tsCentre(x, lay); return true; }
     if (a[0] === 'cx') { x.cx = Math.max(0, Math.min(x.pw, v)); return true; }
     if (a[0] === 'cf') { x.cz = Math.max(0, x.pd - v - tsDims(x, lay)[1]); return true; }
     if (!b) return false; var keep = JSON.stringify(b);
@@ -783,6 +797,7 @@
     var x = S.site, b = x && arr(x.blocks)[ev.i]; if (!b) return; var keep = { x: b.x, z: b.z, side: b.side }, P = 0.75; b.x = ev.x; b.z = ev.z;
     b.side = b.x <= P + 1 ? 'left' : b.x + b.w >= x.pw - P - 1 ? 'right' : b.z <= P + 1 ? 'back' : b.z + b.d >= x.pd - P - 1 ? 'front' : 'free'; tsWall(x, b, b.side);
     S.tsMsg = ''; if (x.blocks.some(function (o, j) { return j !== ev.i && tsHit(b, o); })) { b.x = keep.x; b.z = keep.z; b.side = keep.side; S.tsMsg = 'It can\'t go on top of another one — try a clear spot'; }
+    else if (tsCut(x, b)) { b.x = keep.x; b.z = keep.z; b.side = keep.side; S.tsMsg = 'That corner is cut — it can\'t go there'; }
   }
   function cabinUI(m, o) {
     var c = m.cabin, lay = o.layout, w = S.wz, q0 = cabin(c, lay), st = w.step, TITLES = ['Glass & roof', 'How big?', 'Doors', 'Rooms inside', 'Outside', 'The look', 'Your cabin'];

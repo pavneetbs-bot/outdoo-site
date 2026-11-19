@@ -253,7 +253,25 @@ function site(g, L, W) {
 // Plot coords: x across the width (0 = left), z front-to-back (0 = back, pd = front / road). t.rot = where the cabin's front
 // faces (0 road, 90 right, 180 back, 270 left); (cx, cz) = the back-left corner of the cabin's footprint on the plot.
 // 'site' (at the cabin's centre, turned) holds 'plot' (in plot coords), so every drag converts with plot.worldToLocal().
-const BH_ = { mumty: 9, lift: 11, shaft: 3, room: 9 };
+const BH_ = { mumty: 9, lift: 11, shaft: 3, room: 9, ac: 2.4 };
+// 193: a terrace may have its corners cut (t.cuts {bl|br|fl|fr: {type: notch | slant, a: ft across, b: ft deep}}; b = back, f = front / road, l / r = left / right)
+export function plotOutline(t) {
+  const pw = +t.pw || 30, pd = +t.pd || 60, C = t.cuts || {}, pts = [];
+  const cut = k => { const c = C[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return null; const a = Math.max(0.5, Math.min(pw - 2, +c.a || 0)), b = Math.max(0.5, Math.min(pd - 2, +c.b || 0)); return { type: c.type, a, b }; };
+  const corner = (k, X, Z, sx, sz, first) => {   // walking round: back-left → back-right → front-right → front-left; (sx, sz) point into the plot
+    const c = cut(k); if (!c) { pts.push([X, Z]); return; }
+    const pA = [X + sx * c.a, Z], pB = [X, Z + sz * c.b], inn = [X + sx * c.a, Z + sz * c.b], along = first ? [pB, pA] : [pA, pB];   // first = the side we arrive on runs along z
+    if (c.type === 'slant') pts.push(along[0], along[1]); else pts.push(along[0], inn, along[1]);
+  };
+  corner('bl', 0, 0, 1, 1, true); corner('br', pw, 0, -1, 1, false); corner('fr', pw, pd, -1, -1, true); corner('fl', 0, pd, 1, -1, false);
+  return pts;
+}
+export function cutHit(t, r, P) {   // does rect r (x, z, w, d) reach into a cut corner (grown by the parapet P)?
+  const C = t && t.cuts; if (!C || t.kind === 'ground') return false; const pw = +t.pw, pd = +t.pd;
+  return ['bl', 'br', 'fl', 'fr'].some(k => { const c = C[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return false; const a = +c.a || 0, b = +c.b || 0; if (!(a > 0 && b > 0)) return false;
+    const x0 = k[1] === 'r' ? pw - (r.x + r.w) : r.x, z0 = k[0] === 'f' ? pd - (r.z + r.d) : r.z;
+    return c.type === 'notch' ? x0 < a + P - 0.01 && z0 < b + P - 0.01 : x0 / a + z0 / b < 1 + P * Math.hypot(1 / a, 1 / b) - 0.001; });
+}
 function tsFootDims(t, L, W) { return (+t.rot || 0) % 180 ? [W, L] : [L, W]; }
 function terrace(g, L, W, t) {
   const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); sg.position.set(L / 2, 0, W / 2); sg.rotation.y = -(+t.rot || 0) * Math.PI / 180;
@@ -268,9 +286,19 @@ function drawPlot(tg, t) {
   const pw = +t.pw || 30, pd = +t.pd || 60, Y = -0.6, par = +t.par || 3, PT = 0.75, BH = 50, hi = t.high || {};
   const P = (n, col) => M[n] || (M[n] = new THREE.MeshStandardMaterial({ color: col, roughness: 0.95 }));
   const plaster = P('t_pl', 0xEAE5DC), tile = P('t_tile', 0xC4BDB1), side2 = P('t_side', 0xDCD3C4), dark = P('t_dark', 0x2F3437), road = P('t_road', 0x6E6C68), win = P('t_win', 0x55626B);
-  box(tg, pw, 0.5, pd, pw / 2, Y - 0.25, pd / 2, tile).userData.under = 1;
-  [[pw / 2, PT / 2, pw, PT], [pw / 2, pd - PT / 2, pw, PT], [PT / 2, pd / 2, PT, pd], [pw - PT / 2, pd / 2, PT, pd]].forEach(([x, z, w, d]) => { box(tg, w, par, d, x, Y + par / 2, z, plaster); box(tg, w + 0.1, 0.15, d + 0.1, x, Y + par + 0.07, z, side2); });
-  box(tg, pw, BH, pd, pw / 2, Y - 0.5 - BH / 2, pd / 2, plaster, false).userData.under = 1;
+  const OL = plotOutline(t), shaped = OL.length > 4;
+  if (!shaped) {
+    box(tg, pw, 0.5, pd, pw / 2, Y - 0.25, pd / 2, tile).userData.under = 1;
+    [[pw / 2, PT / 2, pw, PT], [pw / 2, pd - PT / 2, pw, PT], [PT / 2, pd / 2, PT, pd], [pw - PT / 2, pd / 2, PT, pd]].forEach(([x, z, w, d]) => { box(tg, w, par, d, x, Y + par / 2, z, plaster); box(tg, w + 0.1, 0.15, d + 0.1, x, Y + par + 0.07, z, side2); });
+    box(tg, pw, BH, pd, pw / 2, Y - 0.5 - BH / 2, pd / 2, plaster, false).userData.under = 1;
+  } else {   // 193: corners cut — slab + building follow the outline, a parapet along every edge
+    const sh = new THREE.Shape(); OL.forEach(([x, z], i) => i ? sh.lineTo(x, z) : sh.moveTo(x, z)); sh.closePath();
+    const prism = (depth, top, m, cast) => { const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false }); g.rotateX(Math.PI / 2); const me = new THREE.Mesh(g, m); me.position.y = top; me.castShadow = !!cast; me.receiveShadow = true; me.userData.under = 1; tg.add(me); return me; };
+    prism(0.5, Y, tile); prism(BH, Y - 0.5, plaster);
+    OL.forEach((p0, i) => { const p1 = OL[(i + 1) % OL.length], dx = p1[0] - p0[0], dz = p1[1] - p0[1], L = Math.hypot(dx, dz); if (L < 0.05) return;
+      const nx = -dz / L, nz = dx / L, ang = -Math.atan2(dz, dx), mx = (p0[0] + p1[0]) / 2 + nx * PT / 2, mz = (p0[1] + p1[1]) / 2 + nz * PT / 2;
+      box(tg, L + PT, par, PT, mx, Y + par / 2, mz, plaster).rotation.y = ang; box(tg, L + PT + 0.1, 0.15, PT + 0.1, mx, Y + par + 0.07, mz, side2).rotation.y = ang; });
+  }
   for (let f = 0; f < 4; f++) { const yb = Y - 0.5 - 10 * f - 5.5; box(tg, pw * 0.7, 4, 0.1, pw / 2, yb, pd + 0.05, win, false); box(tg, pw, 0.4, 3, pw / 2, yb - 2.6, pd + 1.5, side2, false); }
   const gy = Y - 0.5 - BH; const gr = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), P('t_gnd', 0xA9A296)); gr.rotation.x = -Math.PI / 2; gr.position.set(pw / 2, gy, pd / 2); tg.add(gr);
   box(tg, 400, 0.1, 24, pw / 2, gy + 0.05, pd + 15, road, false);
@@ -290,6 +318,14 @@ function drawPlot(tg, t) {
   // what's already on the roof
   (t.blocks || []).forEach((bk, i) => {
     const bg = new THREE.Group(); bg.userData.st = { i }; tg.add(bg); const x = +bk.x + bk.w / 2, z = +bk.z + bk.d / 2, h = BH_[bk.type] || 9;
+    if (bk.type === 'ac') {   // an AC outdoor unit: a grey cabinet on low stands, the fan grille facing the open terrace
+      const acm = P('t_ac', 0xD9DCDD), grill = P('t_acg', 0x3A3F44), ac = h - 0.4, alongX = bk.w >= bk.d;
+      box(bg, bk.w, ac, bk.d, x, Y + 0.4 + ac / 2, z, acm); box(bg, alongX ? bk.w - 0.2 : 0.25, 0.4, alongX ? 0.25 : bk.d - 0.2, x, Y + 0.2, z, grill, false);
+      const dx = pw / 2 - x, dz = pd / 2 - z, fan = new THREE.Mesh(new THREE.CircleGeometry(Math.min(ac, alongX ? bk.w : bk.d) * 0.36, 24), grill);
+      if (alongX) { fan.position.set(x - bk.w * 0.15, Y + 0.4 + ac / 2, z + Math.sign(dz || 1) * (bk.d / 2 + 0.02)); if (dz < 0) fan.rotation.y = Math.PI; }
+      else { fan.position.set(x + Math.sign(dx || 1) * (bk.w / 2 + 0.02), Y + 0.4 + ac / 2, z - bk.d * 0.15); fan.rotation.y = dx > 0 ? Math.PI / 2 : -Math.PI / 2; }
+      bg.add(fan); return;
+    }
     if (bk.type === 'shaft') { const th = 0.33; box(bg, bk.w, h, th, x, Y + h / 2, z - bk.d / 2 + th / 2, plaster); box(bg, bk.w, h, th, x, Y + h / 2, z + bk.d / 2 - th / 2, plaster);
       box(bg, th, h, bk.d, x - bk.w / 2 + th / 2, Y + h / 2, z, plaster); box(bg, th, h, bk.d, x + bk.w / 2 - th / 2, Y + h / 2, z, plaster); box(bg, bk.w - 0.6, 0.05, bk.d - 0.6, x, Y + 0.3, z, dark, false); return; }
     box(bg, bk.w, h, bk.d, x, Y + h / 2, z, plaster); box(bg, bk.w + 0.6, 0.35, bk.d + 0.6, x, Y + h + 0.17, z, side2);
