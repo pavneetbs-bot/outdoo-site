@@ -4,8 +4,8 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=15';
-import { cutHit } from './cabin3d.js?v=18';
+import * as S3 from './space3d.js?v=16';
+import { cutHit } from './cabin3d.js?v=19';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
@@ -400,6 +400,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv h4{margin:0 0 4px;font-size:17px}#plOv .pl-sub{color:#6A6258;font-size:13px;margin:0 0 12px}#plOv .pl-h{margin:16px 0 8px;font-size:13px;font-weight:700}
 #plOv .pl-tabs{display:flex;gap:8px;flex-wrap:wrap}#plOv .pl-tabs button{border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:8px 14px;min-height:38px;font:inherit;font-size:13px;cursor:pointer}#plOv .pl-tabs button.on{border:2px solid #C26445;font-weight:700}
 #plOv .pl-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:8px 0}#plOv .pl-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px}#plOv .pl-n input{width:76px;height:36px;border:1px solid #D9CDBB;border-radius:8px;padding:0 8px;font:inherit}
+#plOv .pl-qh{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:11.5px;color:#7A7268;font-weight:600}#plOv .pl-qh i{display:flex;gap:4px;flex:1}#plOv .pl-qh i b{width:18px;height:4px;border-radius:2px;background:#E2D6C4}#plOv .pl-qh i b.on{background:#C26445}#plOv .pl-qh i b.dn{background:#B9C4AE}#plOv .pl-qh .pl-tsq{margin:0}#plOv .pl-col{flex-direction:column;align-items:stretch}#plOv .pl-col button,#plOv .pl-big button{text-align:left;padding:12px 14px;font-size:14px}
 #plOv .pl-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}#plOv .pl-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}#plOv .pl-tsq{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:10px 0 0}
 #plOv .pl-blk{border:1px solid #E7DDCF;border-radius:12px;padding:10px;margin:0 0 8px;background:#FFFCF8;display:flex;align-items:center;gap:8px;flex-wrap:wrap}#plOv .pl-blk b{flex:1;font-size:13.5px}
 #plOv .pl-xx{border:0;background:none;color:#B3261E;font-size:16px;cursor:pointer}
@@ -441,31 +442,38 @@ function shell() {
 function btn(attr, on, txt) { return `<button type="button" ${attr} class="${on ? 'on' : ''}" aria-pressed="${!!on}">${txt}</button>`; }
 function nIn(key, val, lbl, min, max) { return `<label class="pl-n"><span>${lbl}</span><input type="number" inputmode="decimal" min="${min}" max="${max}" step="0.5" data-plin="${key}" value="${val}"></label>`; }
 
-function stepSite() {
-  const t = S.site, terr = t.kind === 'terrace';
-  const full = window.tsFull ? window.tsFull() : true;   // 201: quick (plot, road, staircase room) unless staff / Detailed chosen
-  let h = `<h4>Your space</h4><p class="pl-sub">${terr ? 'Close is enough — it only sets the scene. Drag the stair room, lift and shafts on the 3D.' : 'Your lawn or garden — its size.'}</p>`;
-  h += '<div class="pl-tabs">' + btn('data-pl="kind:terrace"', terr, '🏙 Terrace') + btn('data-pl="kind:ground"', !terr, '🌳 Lawn / garden') + '</div>';
-  h += '<p class="pl-h">Plot</p><div class="pl-tabs" style="margin-bottom:6px">' + btn('data-pl="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-pl="unit:m"', AU() === 'm', 'sq m') + '</div><div class="pl-tabs">' + PLOTS.map(p => btn(`data-pl="plot:${p[0]}"`, t.plot === p[0], plotLab(p[0]))).join('') + '</div>';
+// 202: one kind of question at a time (Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof)
+function siteSecs() {
+  const t = S.site, terr = t.kind === 'terrace', full = window.tsFull ? window.tsFull() : true, sm = s0 => `<small style="font-weight:400;color:#7A7268">${s0}</small>`, L = [];
+  let h = '<div class="pl-tabs pl-big">' + btn('data-pl="kind:terrace"', terr, '🏙 Terrace / rooftop') + btn('data-pl="kind:ground"', !terr, '🌳 Lawn / garden') + '</div>';
+  h += '<p class="pl-h">How big is the plot?</p><div class="pl-tabs">' + PLOTS.map(p => btn(`data-pl="plot:${p[0]}"`, t.plot === p[0], plotLab(p[0]))).join('') + '</div><div class="pl-tabs" style="margin-top:6px">' + btn('data-pl="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-pl="unit:m"', AU() === 'm', 'sq m') + '</div>';
   if (!terr || full) h += '<div class="pl-row">' + nIn('pw', t.pw, 'Width (ft)', 12, 150) + nIn('pd', t.pd, 'Depth (ft)', 12, 200) + '</div>';
-  if (terr && !full) {
-    const mu = t.blocks.find(b => b.type === 'mumty'), rq = t.road_back ? 'back' : t.corner || 'front';
-    h += '<p class="pl-h">Where is the road? <small style="font-weight:400;color:#7A7268">the side facing the road is the front</small></p><div class="pl-tabs">' + [['front', 'In front'], ['left', 'Front + left (corner plot)'], ['right', 'Front + right (corner plot)'], ['back', 'Front + back']].map(([k, l]) => btn(`data-pl="qroad:${k}"`, rq === k, l)).join('') + '</div>';
-    h += '<p class="pl-h">Staircase room (mumty) on the roof? <small style="font-weight:400;color:#7A7268">standing at the road, looking in</small></p><div class="pl-tabs">' + [['left', 'On the left'], ['right', 'On the right'], ['back', 'At the back'], ['none', 'None']].map(([k, l]) => btn(`data-pl="qmumty:${k}"`, k === 'none' ? !mu : mu && mu.side === k, l)).join('') + '</div>';
-    h += '<p class="pl-sub" style="margin:12px 0 8px">We add the usual lift room, water tanks and 3 ft boundary wall. Close is enough — it only sets the scene.</p><button type="button" class="pl-full" data-pl="tsmode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>';
+  L.push(['Your space', terr ? 'A terrace or a lawn, and roughly how big' : 'Your lawn or garden — roughly how big', h]);
+  if (!terr) return L;
+  const rq = t.road_back ? 'back' : t.corner || 'front', mu = t.blocks.find(b => b.type === 'mumty');
+  if (!full) {
+    L.push(['Where is the road?', 'The side facing the road is the front', '<div class="pl-tabs pl-col">' + [['front', 'In front'], ['left', 'Front + left (corner plot)'], ['right', 'Front + right (corner plot)'], ['back', 'Front + back']].map(([k, l]) => btn(`data-pl="qroad:${k}"`, rq === k, l)).join('') + '</div>']);
+    L.push(['Staircase room (mumty)?', 'Standing at the road, looking in', '<div class="pl-tabs pl-col">' + [['left', 'On the left'], ['right', 'On the right'], ['back', 'At the back'], ['none', 'None on the roof']].map(([k, l]) => btn(`data-pl="qmumty:${k}"`, k === 'none' ? !mu : mu && mu.side === k, l)).join('') + '</div>' +
+      '<p class="pl-sub" style="margin:14px 0 8px">We add the usual lift room, water tanks and 3 ft boundary wall — close is enough, it only sets the scene.</p><button type="button" class="pl-full" data-pl="tsmode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>']);
+    return L;
   }
-  if (terr && full) {
-    h += '<button type="button" class="pl-tsq" data-pl="tsmode:quick">← Quick setup</button>';
-    h += '<p class="pl-h">Parapet <small style="font-weight:400;color:#7A7268">the low boundary wall round the roof</small></p><div class="pl-tabs">' + btn('data-pl="par:3"', +t.par === 3, '3 ft') + btn('data-pl="par:4"', +t.par === 4, '4 ft') + '</div>';
-    h += '<p class="pl-h">Corner plot?</p><div class="pl-tabs">' + btn('data-pl="corner:"', !t.corner, 'No') + btn('data-pl="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-pl="corner:right"', t.corner === 'right', 'Road on the right') + '</div>';
-    h += '<p class="pl-h">Road in front / at the back?</p><div class="pl-tabs">' + btn('data-pl="rfront"', t.road_front !== false, (t.road_front !== false ? '✓ ' : '') + 'Road in front') + btn('data-pl="rback"', !!t.road_back, (t.road_back ? '✓ ' : '') + 'Road at the back') + '</div>';
-    const C = t.cuts || {};
-    h += '<p class="pl-h">Corners cut? <small style="font-weight:400;color:#7A7268">front = road side</small></p>' + CUTS.map(([k, lbl]) => { const c = C[k] || {}, on = c.type === 'notch' || c.type === 'slant';
-      return `<div class="pl-blk"><b>${lbl}</b><div class="pl-tabs" style="gap:5px">${btn(`data-pl="cut:${k}:"`, !on, 'No cut')}${btn(`data-pl="cut:${k}:notch"`, c.type === 'notch', '⌐ Straight')}${btn(`data-pl="cut:${k}:slant"`, c.type === 'slant', '◸ Slant')}</div>` +
-        (on ? `<div class="pl-row" style="width:100%;margin:2px 0 0">${nIn('ca:' + k, c.a, 'Across (ft)', 1, t.pw - 4)}${nIn('cb:' + k, c.b, 'Deep (ft)', 1, t.pd - 4)}</div>` : '') + '</div>'; }).join('');
-    h += '<p class="pl-h">Already on the roof <small style="font-weight:400;color:#7A7268">drag them on the 3D</small></p>' + t.blocks.map((b, i) => `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${b.type !== 'ac' ? nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30) : ''}<button type="button" class="pl-xx" data-pl="bdel:${i}" aria-label="Remove">✕</button><div class="pl-tabs" style="width:100%;gap:5px;margin:0">${[['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']].map(([k2, l2]) => btn(`data-pl="bside:${i}:${k2}"`, (b.side || 'free') === k2, l2)).join('')}${btn(`data-pl="block:${i}"`, !!b.lock, b.lock ? '🔒 Locked' : '🔓 Lock')}</div></div>`).join('');
-    h += '<div class="pl-tabs">' + Object.keys(BLK).map(k => `<button type="button" data-pl="badd:${k}">+ ${esc(BLK[k][0].replace(/ \(.*\)/, '').replace('AC outdoor unit', 'AC unit'))}</button>`).join('') + '</div>';
-  }
+  L.push(['Roads', 'Which sides of the plot face a road', '<p class="pl-h">Corner plot?</p><div class="pl-tabs">' + btn('data-pl="corner:"', !t.corner, 'No') + btn('data-pl="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-pl="corner:right"', t.corner === 'right', 'Road on the right') + '</div>' +
+    '<p class="pl-h">In front / at the back</p><div class="pl-tabs">' + btn('data-pl="rfront"', t.road_front !== false, (t.road_front !== false ? '✓ ' : '') + 'Road in front') + btn('data-pl="rback"', !!t.road_back, (t.road_back ? '✓ ' : '') + 'Road at the back') + '</div>']);
+  L.push(['Boundary wall', 'The low wall round the roof (parapet)', '<div class="pl-tabs">' + btn('data-pl="par:3"', +t.par === 3, '3 ft') + btn('data-pl="par:4"', +t.par === 4, '4 ft') + '</div>']);
+  const C = t.cuts || {};
+  L.push(['Corners cut?', 'Front = the road side', CUTS.map(([k, lbl]) => { const c = C[k] || {}, on = c.type === 'notch' || c.type === 'slant';
+    return `<div class="pl-blk"><b>${lbl}</b><div class="pl-tabs" style="gap:5px">${btn(`data-pl="cut:${k}:"`, !on, 'No cut')}${btn(`data-pl="cut:${k}:notch"`, c.type === 'notch', '⌐ Straight')}${btn(`data-pl="cut:${k}:slant"`, c.type === 'slant', '◸ Slant')}</div>` +
+      (on ? `<div class="pl-row" style="width:100%;margin:2px 0 0">${nIn('ca:' + k, c.a, 'Across (ft)', 1, t.pw - 4)}${nIn('cb:' + k, c.b, 'Deep (ft)', 1, t.pd - 4)}</div>` : '') + '</div>'; }).join('')]);
+  L.push(['Already on the roof', 'Drag them on the 3D — a wall picked keeps them on it', t.blocks.map((b, i) => `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${b.type !== 'ac' ? nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30) : ''}<button type="button" class="pl-xx" data-pl="bdel:${i}" aria-label="Remove">✕</button><div class="pl-tabs" style="width:100%;gap:5px;margin:0">${[['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']].map(([k2, l2]) => btn(`data-pl="bside:${i}:${k2}"`, (b.side || 'free') === k2, l2)).join('')}${btn(`data-pl="block:${i}"`, !!b.lock, b.lock ? '🔒 Locked' : '🔓 Lock')}</div></div>`).join('') +
+    '<div class="pl-tabs">' + Object.keys(BLK).map(k => `<button type="button" data-pl="badd:${k}">+ ${esc(BLK[k][0].replace(/ \(.*\)/, '').replace('AC outdoor unit', 'AC unit'))}</button>`).join('') + '</div>']);
+  return L;
+}
+function siteLast() { return (S.tsq || 0) >= siteSecs().length - 1; }
+function stepSite() {
+  const L = siteSecs(), full = window.tsFull ? window.tsFull() : true, n = L.length; S.tsq = Math.max(0, Math.min(n - 1, S.tsq || 0)); const [ti, sub, body] = L[S.tsq];
+  let h = `<div class="pl-qh"><span>${S.tsq + 1} of ${n}</span><i>${L.map((x, i) => `<b class="${i === S.tsq ? 'on' : i < S.tsq ? 'dn' : ''}"></b>`).join('')}</i>${S.site.kind === 'terrace' && full ? '<button type="button" class="pl-tsq" data-pl="tsmode:quick">Quick setup</button>' : ''}</div>`;
+  h += `<h4>${ti}</h4><p class="pl-sub">${sub}</p>` + body;
+  if (S.tsq > 0) h += '<button type="button" class="pl-tsq" style="margin-top:14px" data-pl="tsq:-1">← Back</button>';
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   return h;
 }
@@ -573,7 +581,7 @@ function draw(rec) {
   EL.classList.toggle('pl-locked', !!(S.gate && !priceOk())); paintSaved();
   const T = total(), lock = !priceOk();
   const E = exact();
-  document.getElementById('plFt').innerHTML = S.step === 0 ? '<button type="button" class="pl-go" data-pl="step:1">Next: add things →</button>'
+  document.getElementById('plFt').innerHTML = S.step === 0 ? (siteLast() ? '<button type="button" class="pl-go" data-pl="step:1">Next: add things →</button>' : '<button type="button" class="pl-go" data-pl="tsq:1">Next →</button>')
     : S.step === 2 ? (lock || !S.items.length ? '' : `<div class="pl-tot"><b>${E.n ? lakh(E.t) : '—'}</b><small>${E.n} design${E.n === 1 ? '' : 's'} · before delivery & installation (added at checkout)</small></div><button type="button" class="pl-go" data-pl="cart"${E.n ? '' : ' disabled'}>Add all to cart</button>`)
     : `<div class="pl-tot">${S.items.length ? (lock ? '<b>🔒</b><small>Sign in to see the estimate</small>' : (T.n ? `<b>${lakh(T.t)}+</b><small>${S.items.length} thing${S.items.length > 1 ? 's' : ''} · starting price${T.n < S.items.length ? ' of ' + T.n : ''}, before delivery & installation</small>` : `<b>—</b><small>Prices open soon for these</small>`)) : '<b>—</b><small>Add something to see the estimate</small>'}</div>` + (S.items.length ? '<button type="button" class="pl-go" data-pl="step:2">Pick designs →</button>' : '');
   document.getElementById('plZ').innerHTML = `<button type="button" data-pl="undo" aria-label="Undo" title="Undo (Ctrl+Z)"${S.hi > 0 ? '' : ' disabled'}>↶</button><button type="button" data-pl="redo" aria-label="Redo" title="Redo (Ctrl+Y)"${S.hi < S.hist.length - 1 ? '' : ' disabled'}>↷</button>` +
@@ -601,7 +609,8 @@ function act(a) {   // one button's action on S; true = draw again
     case 'par': t.par = +a[1]; break;
     case 'cut': { t.cuts = t.cuts || {}; if (!a[2]) delete t.cuts[a[1]]; else t.cuts[a[1]] = Object.assign({ a: Math.min(8, Math.round(t.pw / 4)), b: Math.min(8, Math.round(t.pd / 6)) }, t.cuts[a[1]] || {}, { type: a[2] }); afterCut(); break; }
     case 'corner': t.corner = a[1] || ''; break;
-    case 'tsmode': try { localStorage.setItem('outrr_ts_mode', a[1] === 'full' ? 'full' : 'quick'); } catch (e) {} break;
+    case 'tsq': S.tsq = Math.max(0, (S.tsq || 0) + (+a[1] || 0)); { const pn = document.getElementById('plPn'); if (pn) pn.scrollTop = 0; } break;
+    case 'tsmode': S.tsq = 0; try { localStorage.setItem('outrr_ts_mode', a[1] === 'full' ? 'full' : 'quick'); } catch (e) {} break;
     case 'qroad': t.road_front = true; t.road_back = a[1] === 'back'; t.corner = a[1] === 'left' || a[1] === 'right' ? a[1] : ''; t.high = t.high || {}; if (t.corner) t.high[t.corner] = false; if (t.road_back) t.high.back = false; break;
     case 'qmumty': { const mi = t.blocks.findIndex(b => b.type === 'mumty'), li = t.blocks.findIndex(b => b.type === 'lift');
       if (a[1] === 'none') { if (mi >= 0) t.blocks.splice(mi, 1); S.items = S.items.filter((x, j) => settle(x, j)); break; }

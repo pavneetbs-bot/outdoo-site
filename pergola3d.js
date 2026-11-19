@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=18';   // 193f: the same terrace as the cabin studio and the planner
+import { plotModel } from './cabin3d.js?v=19';   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -96,7 +96,7 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
   }
   if (leg === 'branch') [L * 0.27, L * 0.73].forEach(x => { const z = W / 2, y0 = top - 3.2; post(x, z, y0);
     [[x - 2.6, z], [x + 2.6, z], [x, rows[0]], [x, rows[rows.length - 1]]].forEach(([a, b]) => rod(g, [x, y0, z], [a, top, b], P * 0.8, P * 0.8, F.frame)); });
-  if (leg === 'aframe') cols.forEach(x => box(g, MM(60), MM(60), rows[rows.length - 1] - rows[0] + 2 * 1.8 * (1 - 2.6 / top), x, 2.6, W / 2, F.frame));   // tie bar on each side
+  if (leg === 'aframe' && rows.length > 1) cols.forEach(x => box(g, MM(60), MM(60), rows[rows.length - 1] - rows[0] + 2 * 1.8 * (1 - 2.6 / top), x, 2.6, W / 2, F.frame));   // tie bar on each side
   if (leg === 'portal') [cols[0], cols[cols.length - 1]].forEach(x => box(g, P, P, W - 2 * inset, x, top + BH + RH + 1.5 - P / 2, W / 2, F.frame));
   if (leg === 'gate') { const s = MM(150), x = cols[cols.length - 1]; box(g, s, s, rows[rows.length - 1] - rows[0] + s, x, top + BH + 2.5 - s / 2, W / 2, F.frame); }
   if (r.roof === 'float') for (const x of cols) for (const z of rows) box(g, MM(50), 0.8, MM(50), x, top - 0.4, z, F.frame);
@@ -162,7 +162,7 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
     for (let x = eL + 0.35; x < eR; x += 0.62) { const s2 = new THREE.Mesh(new THREE.BoxGeometry(MM(230), MM(14), R1 - R0), F.roof); s2.position.set(x, ry + MM(60), (R0 + R1) / 2); s2.rotation.z = 0.62; s2.castShadow = true; g.add(s2); }
   } else if (roof === 'grid' && r.flush) {   // an egg-crate grid set inside a box frame, flush
     rows.forEach(z => { beamAt(z); led(z); }); [eL, eR].forEach(x => box(g, BW, BH, W - 2 * inset, x, y0 + BH / 2, W / 2, F.frame));
-    const yy = y0 + (BH - RH) / 2, z0 = rows[0], z1 = rows[rows.length - 1]; rafters(() => yy, z0, z1);
+    const yy = y0 + (BH - RH) / 2, z0 = wall ? -P / 2 + BW : rows[0], z1 = rows[rows.length - 1]; rafters(() => yy, z0, z1);
     for (let z = z0 + gap; z < z1 - 0.1; z += gap + RW) box(g, eR - eL, RH, RW, L / 2, yy + RH / 2, z, F.roof); cover(y0 + BH, z0, z1);
   } else if (roof === 'grid') {
     rows.forEach(z => { beamAt(z); led(z); }); rafters(() => ry); for (let z = R0; z <= R1 + 0.01; z += gap + RW) box(g, eR - eL, RH, RW, L / 2, ry + RH / 2, z, F.roof); cover(ry + RH);
@@ -171,13 +171,35 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
     rows.forEach(z => led(z, fy)); rafters(() => fy + BH - RH, R0, R1); cover(fy + BH);
   } else {   // flat (most designs)
     rows.forEach(z => { if (leg === 'twin' && !wall) [-1, 1].forEach(sg => beamAt(z + sg * (P / 2 + BW / 2))); else beamAt(z); led(z); });
-    if (r.flush) { [eL, eR].forEach(x => box(g, BW, BH, W - 2 * inset, x, y0 + BH / 2, W / 2, F.frame)); rafters(() => y0 + (BH - RH) / 2, rows[0], rows[rows.length - 1]); cover(y0 + BH, rows[0], rows[rows.length - 1]); }
+    if (r.flush) { const fz0 = wall ? -P / 2 + BW : rows[0]; [eL, eR].forEach(x => box(g, BW, BH, W - 2 * inset + (wall ? P / 2 : 0), x, y0 + BH / 2, W / 2 - (wall ? P / 4 : 0), F.frame)); rafters(() => y0 + (BH - RH) / 2, fz0, rows[rows.length - 1]); cover(y0 + BH, fz0, rows[rows.length - 1]); }
     else { rafters(() => ry); if (r.clad) [R0, R1].forEach(z => box(g, eR - eL, MM(300), MM(40), L / 2, ry + MM(150), z, F.roof)); cover(ry + RH); }
   }
   if (leg === 'sidetwin') box(g, BW, BH, W - 2 * inset, cols[cols.length - 1] - 1.4, y0 + BH / 2, W / 2, F.frame);   // the double end beam over the twin posts
-  if (wall) box(g, eR - eL, BH, BW, (eL + eR) / 2, ry - BH / 2, -P / 2 + BW / 2, F.frame);   // ledger fixed to the wall
-  if (lsh) { const ex = Math.min(8, L * 0.5); box(g, P, top, P, L - inset - P / 2, top / 2, W + ex, F.frame); box(g, BW, BH, ex + over, L - inset - P / 2, top + BH / 2, W + ex / 2, F.frame);
-    for (let z = W; z < W + ex; z += gap + RW) box(g, Math.min(6, L * 0.4), RH, RW, L - Math.min(6, L * 0.4) / 2, ry + RH / 2, z, F.roof); box(g, P, top, P, L - Math.min(6, L * 0.4), top / 2, W + ex, F.frame); }
+  if (wall) box(g, eR - eL, BH, BW, (eL + eR) / 2, y0 + BH / 2, -P / 2 + BW / 2, F.frame);   // ledger fixed to the wall
+  if (lsh) {   // L-shape: a second bay in front of the right part, its own posts + frame, the same roof
+    const ex = Math.min(8, W * 0.8), ew = Math.min(8, L * 0.6), xa = L - inset - ew, xb = L - inset, zf = W + ex - P / 2, yb = r.flush ? y0 : y0;
+    [[xa + P / 2, zf], [xb - P / 2, zf]].forEach(([x, z]) => post(x, z));
+    box(g, ew, BH, BW, (xa + xb) / 2, yb + BH / 2, zf, F.frame);   // front beam
+    [xa + P / 2, xb - P / 2].forEach(x => box(g, BW, BH, ex, x, yb + BH / 2, W + ex / 2 - P / 2, F.frame));   // side beams back to the main frame
+    const n = Math.max(2, Math.round(ew / (gap + RW))), ys = r.flush ? y0 + (BH - RH) / 2 : ry, z0 = W - P / 2, z1 = r.flush ? zf : zf + (r.over === 0 ? 0 : over);
+    for (let i = 0; i <= n; i++) { const x = xa + P / 2 + (ew - P) * i / n; box(g, RW, RH, z1 - z0, x, ys + RH / 2, (z0 + z1) / 2, F.roof); }
+    cover(r.flush ? y0 + BH : ry + RH, z0, z1, xa, xb);
+  }
+  // add-ons the customer picked (o.addons: names)
+  const AD = (o.addons || []).map(x => String(x).toLowerCase()), has = re => AD.some(x => re.test(x)), zF = rows[rows.length - 1], zB = wall ? -P / 2 : rows[0];
+  const metal = mat('steel', { color: 0xb9bcc0, roughness: 0.35, metalness: 0.8 });
+  if (has(/gutter/)) { const gz = zF + BW / 2 + MM(60); box(g, eR - eL, MM(110), MM(120), (eL + eR) / 2, y0 + BH - MM(55), gz, F.frame); box(g, MM(75), y0 + BH, MM(75), cols[cols.length - 1] + P / 2 + MM(60), (y0 + BH) / 2, gz, F.frame); }
+  if (has(/spot/)) { const sm = mat('spot', { color: 0x222222, emissive: 0xffe2a8, emissiveIntensity: R && R.night ? 3 : 0.4 });
+    [[L * 0.3, zF], [L * 0.7, zF], [L * 0.3, zB], [L * 0.7, zB]].forEach(([x, z]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(MM(55), MM(70), MM(90), 16), sm); c.position.set(x, y0 - MM(45), z + (z === zF ? -BW : BW)); g.add(c); }); }
+  if (has(/curtain/)) { const cm = mat('curt', { color: 0xEDE4D3, roughness: 1, side: THREE.DoubleSide }), hh = y0 - 0.1;
+    box(g, eR - eL, MM(25), MM(25), (eL + eR) / 2, hh, zF + BW / 2 + MM(40), metal);   // rod on the front
+    [[cols[0] + 0.9, zF], [cols[cols.length - 1] - 0.9, zF]].forEach(([x, z]) => { for (let k = 0; k < 5; k++) box(g, 0.28, hh - 0.1, MM(20), x + (k - 2) * 0.27, (hh - 0.1) / 2 + 0.1, z + BW / 2 + MM(40) + (k % 2) * 0.12, cm); });   // gathered at the posts
+    if (!wall) { box(g, MM(25), MM(25), W, cols[0] - P / 2 - MM(40), hh, W / 2, metal); [rows[0] + 0.9, zF - 0.9].forEach(z => { for (let k = 0; k < 5; k++) box(g, MM(20), hh - 0.1, 0.28, cols[0] - P / 2 - MM(40) - (k % 2) * 0.12, (hh - 0.1) / 2 + 0.1, z + (k - 2) * 0.27, cm); }); } }
+  if (has(/swing/)) [L / 2 - 1.6, L / 2 + 1.6].forEach(x => { const t = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.035, 8, 20), metal); t.position.set(x, y0 - 0.2, W / 2); g.add(t); box(g, MM(30), 0.12, MM(30), x, y0 - 0.06, W / 2, metal); });
+  if (has(/planter hook/)) { const pot = mat('pot', { color: 0xB0603E, roughness: 0.9 }), leaf = mat('leaf', { color: 0x4E7A3A, roughness: 1 });
+    [0.18, 0.39, 0.61, 0.82].forEach(f => { const x = eL + (eR - eL) * f, z = zF; box(g, MM(12), 1.4, MM(12), x, y0 - 0.7, z, metal);
+      const pt = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.55, 16), pot); pt.position.set(x, y0 - 1.65, z); pt.castShadow = true; g.add(pt);
+      const lf = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), leaf); lf.scale.set(1, 0.75, 1); lf.position.set(x, y0 - 1.15, z); g.add(lf); }); }
   // base plates
   g.children.filter(m => m.isMesh && m.material === F.frame && m.rotation.x === 0 && m.rotation.z === 0 && Math.abs(m.position.y - m.geometry.parameters.height / 2) < 0.01 && m.geometry.parameters.height >= top - 1)
     .forEach(m => { box(g, m.geometry.parameters.width + 0.25, 0.04, m.geometry.parameters.depth + 0.25, m.position.x, 0.14, m.position.z, F.frame).userData.plate = 1; });
@@ -204,7 +226,7 @@ function ensure(el) {
 function size() { if (!R || !R.el) return; const w = R.el.clientWidth || 600, h = R.el.clientHeight || 400; R.renderer.setSize(w, h, false); R.renderer.domElement.style.width = '100%'; R.renderer.domElement.style.height = '100%'; R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); }
 function setNight(on) {
   R.night = on; R.scene.background = new THREE.Color(on ? 0x16203a : 0xeef0ea); R.renderer.toneMappingExposure = on ? 0.75 : 1;
-  R.hemi.intensity = on ? 0.12 : 0.7; R.sun.intensity = on ? 0.08 : 1.9; mat('led', {}).emissiveIntensity = on ? 2.4 : 0; mat('led', {}).color.set(on ? 0xfff3d0 : 0x3a3a3a);
+  R.hemi.intensity = on ? 0.12 : 0.7; R.sun.intensity = on ? 0.08 : 1.9; mat('led', {}).emissiveIntensity = on ? 2.4 : 0; mat('led', {}).color.set(on ? 0xfff3d0 : 0x3a3a3a); if (M.spot) M.spot.emissiveIntensity = on ? 3 : 0.4;
 }
 // 193f: on a terrace (opts.site: the studio's terrace — cx / cz = the pergola's corner, rot = where its front faces), with an optional deck and furniture to see it
 let FURN = null, FURN_LOADING = false, ITEMS = null;
@@ -222,7 +244,7 @@ export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
-  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=15').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=16').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
