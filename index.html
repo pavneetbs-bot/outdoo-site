@@ -519,7 +519,7 @@ body.flt-open .ctas,body.cmp-in .ctas{display:none!important}
 .gnav .gp{left:10px}.gnav .gn{right:10px}.gnav .gc{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(46,46,46,.72);color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px}
 .gnav .gz{position:absolute;bottom:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;font-size:16px}
 .gnav.one .gp,.gnav.one .gn,.gnav.one .gc{display:none}
-#lbx{position:fixed;inset:0;z-index:200;background:#111;display:none}#lbx.open{display:block}
+#lbx{position:fixed;inset:0;z-index:9000;background:#111;display:none}#lbx.open{display:block}
 #lbx .lstage{position:absolute;inset:56px 0 64px;overflow:hidden;touch-action:none;display:flex;align-items:center;justify-content:center}
 #lbx img{max-width:100%;max-height:100%;object-fit:contain;transition:transform .12s ease-out;user-select:none;-webkit-user-drag:none;cursor:zoom-in}
 #lbx .lx{position:absolute;top:8px;right:10px;z-index:2;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:20px;cursor:pointer}
@@ -527,6 +527,9 @@ body.flt-open .ctas,body.cmp-in .ctas{display:none!important}
 #lbx .lbar{position:absolute;bottom:0;left:0;right:0;height:64px;display:flex;align-items:center;justify-content:center;gap:16px;color:#fff;font-size:14px}
 #lbx .lzb{border:1px solid rgba(255,255,255,.4);background:none;color:#fff;border-radius:99px;padding:8px 16px;font:inherit;cursor:pointer}
 #lbx.one .lp,#lbx.one .ln{display:none}
+body.flt-open .near-pill,body.flt-open #wachat,body.flt-open .wa-fab{display:none!important}
+#lbx .lthumbs{position:absolute;left:0;right:0;bottom:10px;display:flex;gap:6px;overflow-x:auto;padding:0 12px;z-index:2;scrollbar-width:none}#lbx .lthumbs::-webkit-scrollbar{display:none}#lbx .lthumbs img{flex:0 0 auto;width:56px;height:42px;object-fit:cover;border-radius:6px;opacity:.5;border:2px solid transparent;cursor:pointer;transform:none!important}#lbx .lthumbs img.on{opacity:1;border-color:#fff}
+@media(max-width:899px){#lbx:has(.lthumbs img) .lstage{bottom:116px}#lbx:has(.lthumbs img) .lbar{bottom:58px;height:48px}}
 @media(max-width:760px){.gnav button{width:34px;height:34px;font-size:20px}#lbx .lp,#lbx .ln{display:none}}
 .pdp-info{margin-top:16px}
 .pdp-info h1,.pdp-info .h1{font-size:19px;margin-bottom:7px}
@@ -2996,7 +2999,7 @@ window.lbxOne=function(url){ if(!window.PDG0) window.PDG0=window.PDG; window.PDG
 function lbxShow(){ const b=document.getElementById('lbx'), g=window.PDG; if(!b||!g) return; LZ={s:1,x:0,y:0};
   const im=b.querySelector('.lstage img'); im.src=bigImg(g.list[g.i]); lbxApply(); b.querySelector('.lc').textContent=(g.i+1)+' / '+g.list.length+(matchMedia('(min-width:900px) and (hover:hover)').matches?' · move the mouse to zoom':'');
   let th=b.querySelector('.lthumbs'); if(!th){ th=document.createElement('div'); th.className='lthumbs'; b.appendChild(th); th.addEventListener('click',e=>{ const t=e.target.closest('[data-li]'); if(t) pdGo(+t.getAttribute('data-li')); }); }
-  th.innerHTML=g.list.length>1?g.list.map((u,i)=>`<img src="${bigImg(u,300)}" data-li="${i}" class="${i===g.i?'on':''}" alt="">`).join(''):'';
+  th.innerHTML=g.list.length>1?g.list.map((u,i)=>`<img src="${bigImg(u,300)}" data-li="${i}" class="${i===g.i?'on':''}" alt="">`).join(''):''; const on=th.querySelector('.on'); if(on) th.scrollLeft=Math.max(0,on.offsetLeft-th.clientWidth/2+28);
   b.classList.toggle('one', g.list.length<2); }
 function lbxApply(){ const im=document.querySelector('#lbx .lstage img'); if(im) im.style.transform=`translate(${LZ.x}px,${LZ.y}px) scale(${LZ.s})`; const z=document.querySelector('#lbx .lzb'); if(z) z.textContent=LZ.s>1?'Zoom out':'Zoom in'; }
 function lbxZoom(cx,cy){ if(LZ.s>1){ LZ={s:1,x:0,y:0}; } else { const st=document.querySelector('#lbx .lstage').getBoundingClientRect(); const s=2.5;
@@ -4543,7 +4546,7 @@ async function shareProduct(){
 <script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=8"></script>
-<script src="/mto.js?v=37"></script>
+<script src="/mto.js?v=38"></script>
 <script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){return import('/planner.js?v=8').then(function(m){m.open(seed&&seed.item?seed:null);});};(function(){function go(){if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
 <script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=8" defer></script>

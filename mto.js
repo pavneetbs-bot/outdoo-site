@@ -1402,6 +1402,16 @@
         return [y.name, y.name + (pr && !np ? ' (' + pr + ')' : '')]; }), (o.groups || {})[g.name], esc(g.name)));
     });
     var adds = arr(m.addons).filter(function (a) { return a.name; });
+    if (isPg(S.id)) {   // pergolas: every choice is made in the 3D customiser; the page shows what was picked
+      var pq0 = pgOpts(); if (!num(o.l)) o.l = pq0.l; if (!num(o.w)) o.w = pq0.w;
+      var rows = [['Size', o.l + ' × ' + o.w + ' ft']]; if (mats.length > 1 && mat) rows.push([(m.labels && m.labels.material) || 'Finish', mat.name]); if (o.colour) rows.push([(m.labels && m.labels.colour) || 'Colour', o.colour]);
+      arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }).forEach(function (g) { var v = (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name; if (v) rows.push([g.name, String(v).split(' (')[0]]); });
+      if (adds.length) rows.push(['Add-ons', arr(o.addons).length ? o.addons.join(', ') : 'None']);
+      el.innerHTML = p3Btn() + '<div class="pg-sum"><div class="pg-sum-h"><b>Your pergola</b><button type="button" data-act="pg3">Change in 3D</button></div>' + rows.map(function (r) { return '<div class="pg-sum-r"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></div>'; }).join('') + '</div>' +
+        (np ? lockHTML(x, true) : pdpTail(x, m, o) + '<div class="mto-sum lt" id="mtoSum"></div>');
+      if (np) { ctaPaint(null); return; }
+      return paint();
+    }
     var hint = u === 'area' ? 'Length × width of the floor it covers, in feet.' : u === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : u === 'face' ? 'Width × height of the wall or opening, in feet.' : u === 'length' ? 'Total running length, in feet.' : '';
     el.innerHTML = p3Btn() + '<h3 class="mto-ph">' + (m.labels ? 'Choose your options' : 'Choose your size &amp; options') + '</h3>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + (hint ? '<p class="mto-hint">' + hint + '</p>' : '') + '<div class="mto-pks">' + f.join('') + '</div>' +
       (adds.length ? '<div class="mto-adds"><span class="mto-al">Add-ons</span>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span>' + (np ? '' : '<span class="r">+' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span>') + '</label>'; }).join('') + '</div>' : '') +
@@ -1926,6 +1936,8 @@
       '.pg3-sw{width:30px;height:30px;border-radius:50%;padding:0!important;border:2px solid #fff!important;box-shadow:0 0 0 1px #ccc}.pg3-sw.on{box-shadow:0 0 0 2px var(--terra,#BE5633)}' +
       '.pg3-sz{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}.pg3-sz span{display:inline-flex;align-items:center;gap:7px}.pg3-sz button{width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:16px;cursor:pointer}' +
       '.pg3-ft{position:absolute;right:0;bottom:0;width:340px;padding:12px 16px;background:#fff;border-top:1px solid #eee;border-left:1px solid #eee}.pg3-ft button{width:100%;padding:13px;border:0;border-radius:10px;background:var(--terra,#BE5633);color:#fff;font:700 14px inherit;font-family:inherit;cursor:pointer}' +
+      '.pg3-pr{margin:18px 0 0;padding:12px 14px;border-radius:12px;background:#F6F1EA;font-size:13px;color:#4A4640}.pg3-pr b{display:block;font-size:20px;color:#2E2E2E;margin:2px 0}.pg3-pr small{font-size:11.5px;color:#8a857c}' +
+      '.pg-sum{border:1px solid #E7DFD3;border-radius:12px;padding:4px 14px 8px;margin:0 0 6px;background:#fff}.pg-sum-h{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F0EAE1;margin-bottom:4px}.pg-sum-h b{font-size:14px}.pg-sum-h button{border:0;background:none;color:var(--terra,#BE5633);font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:4px 0}.pg-sum-r{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13px}.pg-sum-r span{color:#8a857c}.pg-sum-r b{font-weight:600;color:#2E2E2E;text-align:right}' +
       '@media(max-width:760px){.pg3-bd{grid-template-columns:1fr;grid-template-rows:46vh auto}.pg3-pn{border-left:0;border-top:1px solid #eee}.pg3-ft{width:100%;border-left:0}}';
     document.head.appendChild(st);
   }
@@ -1938,7 +1950,11 @@
     if (mats.length > 1) h += '<div class="lb">' + esc((m.labels && m.labels.material) || 'Finish') + '</div><div class="pg3-ch">' + mats.map(function (y) { return '<button type="button" class="' + (y === mat ? 'on' : '') + '" data-p3m="' + esc(y.name) + '">' + esc(y.name) + '</button>'; }).join('') + '</div>';
     var cols = arr(mat && mat.colours);
     if (cols.length) h += '<div class="lb">Colour · ' + esc(o.colour || '') + '</div><div class="pg3-ch">' + cols.map(function (c) { return '<button type="button" class="pg3-sw' + (c.name === o.colour ? ' on' : '') + '" title="' + esc(c.name) + '" aria-label="' + esc(c.name) + '" data-p3c="' + esc(c.name) + '" style="background:' + (c.hex2 ? 'linear-gradient(135deg,' + c.hex + ' 50%,' + c.hex2 + ' 50%)' : c.hex || '#999') + '"></button>'; }).join('') + '</div>';
-    [/roof|cover/i, /height/i, /layout/i].forEach(function (re) { var g = pgGrp(m, re); if (g) h += '<div class="lb">' + esc(g.name) + '</div>' + chips(g, (o.groups || {})[g.name]); });
+    var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }), rk = function (g) { return /roof|cover/i.test(g.name) ? 0 : /height/i.test(g.name) ? 1 : /layout/i.test(g.name) ? 2 : 3; };
+    gs.slice().sort(function (a, b) { return rk(a) - rk(b); }).forEach(function (g) { h += '<div class="lb">' + esc(g.name) + '</div>' + chips(g, (o.groups || {})[g.name]); });   // every option group of the design, not only roof / height / layout
+    var adds = arr(m.addons).filter(function (a) { return a.name; }), ok = mtoOk();
+    if (adds.length) h += '<div class="lb">Add-ons</div><div class="pg3-ch">' + adds.map(function (a) { var on = arr(o.addons).indexOf(a.name) >= 0; return '<button type="button" class="' + (on ? 'on' : '') + '" data-p3a="' + esc(a.name) + '">' + (on ? '✓ ' : '+ ') + esc(a.name) + (ok && +a.price ? ' · ' + rs(a.price) + (a.charge === 'unit' ? '/' + UW(m.unit) : '') : '') + '</button>'; }).join('') + '</div>';
+    if (ok) { var pq = null; try { pq = priceR(S.id, m, o, PCT); } catch (e) {} if (pq && pq.ok) h += '<div class="pg3-pr">Your price <b>' + rs(pq.total) + '</b><small>incl. GST' + (pq.install && pq.install.amount ? ' and installation' : '') + ' · delivery as per pincode</small></div>'; }
     return h;
   }
   function p3Draw() {
@@ -1969,6 +1985,7 @@
     if (a === 'close') return window.pg3Open(false);
     if (a === 'night') { P3.night = !P3.night; return p3Draw(); }
     if (a === 'plan') { window.pg3Open(false); return window.mtoPlanFrom(); }   // 193
+    var ad = t.getAttribute('data-p3a'); if (ad) { o.addons = arr(o.addons).filter(function (z) { return z !== ad; }); if (!t.classList.contains('on')) o.addons.push(ad); draw(); return p3Draw(); }
     if (a === 'done') { window.pg3Open(false); if (!mtoOk()) return window.mtoUnlock(S.id); var c = document.getElementById('mtoCfg'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     var d = t.getAttribute('data-p3d'); if (d) { var k = d.split(',')[0], q = pgOpts(), lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20; o[k] = Math.min(Math.max(q[k] + (+d.split(',')[1]), lo), hi); draw(); return p3Draw(); }
     var mt = t.getAttribute('data-p3m'); if (mt) { o.material = mt; var mm = arr(m.materials).filter(function (y) { return y.name === mt; })[0]; o.colour = (arr(mm && mm.colours)[0] || {}).name || ''; if (o.colour) colPic(o.colour); draw(); return p3Draw(); }
