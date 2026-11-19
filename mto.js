@@ -1965,7 +1965,7 @@
     if (P3.st === 2) { try { window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=3').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=4').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');

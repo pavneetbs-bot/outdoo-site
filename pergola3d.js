@@ -9,8 +9,8 @@ const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
 // leg: straight | aframe | lean | knee | ladder | twin | branch | pillar | mast | portal | gate | sidetwin; raf = rafter (w × h mm), gap = rafter spacing (mm)
 const D = {
-  'MTO-PG-AF': { leg: 'aframe' },
-  'MTO-PG-AL': { roof: 'louvre' },
+  'MTO-PG-AF': { leg: 'aframe', flush: true, over: 0, bover: 0, raf: [40, 120], gap: 200 },
+  'MTO-PG-AL': { roof: 'louvre', over: 150 },
   'MTO-PG-BR': { leg: 'branch', post: 125 },
   'MTO-PG-CA': { roof: 'barrel' },
   'MTO-PG-EG': { roof: 'grid', post: 125, raf: [50, 200], gap: 600 },
@@ -30,7 +30,7 @@ const D = {
   'MTO-PG-SO': { leg: 'sidetwin' },
   'MTO-PG-TP': { leg: 'mast' },
   'MTO-PG-TT': { roof: 'tiers' },
-  'MTO-PG-TW': { leg: 'twin', post: 75 },
+  'MTO-PG-TW': { leg: 'twin', post: 90 },
   'MTO-PG-WC': { post: 200, beam: [100, 300], raf: [50, 150], gap: 220, over: 150, clad: true },
   'MTO-PG-WV': { roof: 'wave' },
   'MTO-PG-XG': { roof: 'xgable', post: 125 },
@@ -79,20 +79,22 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
   // ---- posts / legs
   for (const x of cols) for (const z of rows) {
     if (!edge(x, z)) continue;
-    if (leg === 'lean') { const k = Math.tan(10 * Math.PI / 180) * top, dx = x < L / 2 ? 1 : x > L / 2 ? -1 : 0, dz = z < W / 2 ? 1 : -1; rod(g, [x + dx * k, 0, z + dz * k], [x, top, z], P, P, F.frame); continue; }
-    if (leg === 'aframe') { if (x !== cols[0] && x !== cols[cols.length - 1]) continue; const dz = z < W / 2 ? -1 : 1; rod(g, [x, 0, z + dz * 1.6], [x, top, z], P, P, F.frame); continue; }   // each end: two legs splayed out like an A
+    if (leg === 'lean') { const k = Math.tan(6 * Math.PI / 180) * top, dx = x < L / 2 ? 1 : x > L / 2 ? -1 : 0, dz = z < W / 2 ? 1 : -1; rod(g, [x + dx * k, 0, z + dz * k], [x, top, z], P, P, F.frame); continue; }
+    if (leg === 'aframe') { if (x !== cols[0] && x !== cols[cols.length - 1]) continue; const dx = x < L / 2 ? -1 : 1; rod(g, [x + dx * 1.8, 0, z], [x, top, z], P, P, F.frame); continue; }   // each corner leg splays out along the length: the front and back faces read as an A
     if (leg === 'ladder') { const s = MM(220) / 2; [-s, s].forEach(d => post(x + d, z)); for (let k = 1; k <= 4; k++) box(g, 2 * s, MM(40), MM(40), x, top * k / 5, z, F.frame); continue; }
-    if (leg === 'twin') { const s = MM(75); [-s, s].forEach(d => post(x, z + d)); continue; }
+    if (leg === 'twin') { const s = MM(130); [-s, s].forEach(d => post(x + d, z)); continue; }   // two posts side by side with a gap, along the front / back face
     if (leg === 'branch') continue;
     if (leg === 'pillar') { box(g, 1.6, 3, 1.6, x, 1.5, z, X.stone); box(g, P, top - 3, P, x, 3 + (top - 3) / 2, z, F.frame); continue; }
     if (leg === 'mast') { post(x, z, top + BH + RH + 2.3); box(g, P + 0.15, 0.12, P + 0.15, x, top + BH + RH + 2.36, z, F.frame); continue; }
     if (leg === 'portal' && (x === cols[0] || x === cols[cols.length - 1])) { post(x, z, top + BH + RH + 1.5); continue; }
-    post(x, z, r.roof === 'float' ? top - 0.8 : top, r.clad ? P : P);
+    if (r.clad) { box(g, P, top, P, x, top / 2, z, mat('fwood', { color: FIN.wood, roughness: 0.65, metalness: 0 })).userData.post = 1; continue; }   // wood-clad posts (the frame finish stays on the beams)
+    post(x, z, r.roof === 'float' ? top - 0.8 : top);
     if (leg === 'knee') { const b = 2; rod(g, [x, top - b, z], [x + (x < L / 2 ? b : -b), top, z], MM(60), MM(60), F.frame); rod(g, [x, top - b, z], [x, top, z + (z < W / 2 ? b : -b)], MM(60), MM(60), F.frame); }
-    if (leg === 'sidetwin' && x === cols[cols.length - 1]) post(x - 1.3, z);
+    if (leg === 'sidetwin' && (x === cols[0] || x === cols[cols.length - 1])) post(x + (x < L / 2 ? 1.4 : -1.4), z);   // a second post just inside each corner
   }
-  if (leg === 'branch') [L * 0.27, L * 0.73].forEach(x => { const z = W / 2, y0 = top - 2.6; post(x, z, y0);
-    [[x - 1.8, z], [x + 1.8, z], [x, rows[0]], [x, rows[rows.length - 1]]].forEach(([a, b]) => rod(g, [x, y0, z], [a, top, b], P * 0.8, P * 0.8, F.frame)); });
+  if (leg === 'branch') [L * 0.27, L * 0.73].forEach(x => { const z = W / 2, y0 = top - 3.2; post(x, z, y0);
+    [[x - 2.6, z], [x + 2.6, z], [x, rows[0]], [x, rows[rows.length - 1]]].forEach(([a, b]) => rod(g, [x, y0, z], [a, top, b], P * 0.8, P * 0.8, F.frame)); });
+  if (leg === 'aframe') rows.forEach(z => box(g, cols[cols.length - 1] - cols[0] + 2 * 1.8 * (1 - 2.6 / top), MM(60), MM(60), L / 2, 2.6, z, F.frame));   // tie bar
   if (leg === 'portal') [cols[0], cols[cols.length - 1]].forEach(x => box(g, P, P, W - 2 * inset, x, top + BH + RH + 1.5 - P / 2, W / 2, F.frame));
   if (leg === 'gate') { const z = W + 2.6, hh = top + BH + RH + 3, s = MM(200); [L * 0.2, L * 0.8].forEach(x => box(g, s, hh, s, x, hh / 2, z, F.frame)); box(g, L * 0.6 + s, s, s, L / 2, hh - s / 2, z, F.frame);
     [L * 0.2, L * 0.8].forEach(x => box(g, MM(80), MM(120), 2.6, x, top + BH / 2, W + 1.3, F.frame)); }
@@ -147,14 +149,16 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
       rod(g, [x, ry + Math.sin(Math.PI * t0) * rise, z0], [x, ry + Math.sin(Math.PI * t1) * rise, z1], RW, RH, F.roof); } }
     for (let k = 1; k < 4; k++) { const t = k / 4, z = R0 + (R1 - R0) * t; box(g, eR - eL, MM(40), MM(40), L / 2, ry + Math.sin(Math.PI * t) * rise + RH, z, F.roof); }
     coverCurve(t => ry + Math.sin(Math.PI * t) * rise, 16);
-  } else if (roof === 'wave') {
-    rows.forEach(z => { beamAt(z); led(z); }); const n = Math.max(3, Math.round(L / 1.2)), seg = 14, amp = 0.6;   // every rafter rises and falls once across the width
-    for (let i = 0; i <= n; i++) { const x = eL + (eR - eL) * i / n; for (let k = 0; k < seg; k++) { const t0 = k / seg, t1 = (k + 1) / seg, yy = t => ry + amp + Math.sin(Math.PI * 2 * t - Math.PI / 2) * -amp;
-      rod(g, [x, yy(t0), R0 + (R1 - R0) * t0], [x, yy(t1), R0 + (R1 - R0) * t1], RW, RH, F.roof); } }
-    coverCurve(t => ry + 0.6 + Math.sin(Math.PI * 2 * t - Math.PI / 2) * -0.6, 20);
+  } else if (roof === 'wave') {   // wave members run along the length, rising and falling ~2½ times (the front face shows the waves), on cross rafters
+    rows.forEach(z => { beamAt(z); led(z); }); const amp = 0.75, nw = Math.max(1.5, Math.round(L / 5) + 0.5), seg = 40, yy = t => ry + RH + amp * (1 - Math.cos(Math.PI * 2 * nw * t)) / 2;
+    [eL + 0.2, (eL + eR) / 2, eR - 0.2].forEach(x => box(g, RW, RH, R1 - R0, x, ry + RH / 2, (R0 + R1) / 2, F.roof));
+    const nz = Math.max(4, Math.round((R1 - R0) / 1.1)); for (let j = 0; j <= nz; j++) { const z = R0 + (R1 - R0) * j / nz;
+      for (let k = 0; k < seg; k++) { const t0 = k / seg, t1 = (k + 1) / seg; rod(g, [eL + (eR - eL) * t0, yy(t0), z], [eL + (eR - eL) * t1, yy(t1), z], MM(40), MM(40), F.roof); } }
+    { const c = String(o.cover || '').toLowerCase(), m = /poly/.test(c) ? X.poly : /glass/.test(c) ? X.glass : null; if (m) for (let k = 0; k < seg; k++) { const t0 = k / seg, t1 = (k + 1) / seg, A = new THREE.Vector3(eL + (eR - eL) * t0, yy(t0) + MM(25), (R0 + R1) / 2), B = new THREE.Vector3(eL + (eR - eL) * t1, yy(t1) + MM(25), (R0 + R1) / 2), mesh = new THREE.Mesh(new THREE.BoxGeometry(A.distanceTo(B), MM(10), R1 - R0), m);
+      mesh.position.copy(A).add(B).multiplyScalar(0.5); mesh.rotation.z = Math.atan2(B.y - A.y, B.x - A.x); g.add(mesh); } }
   } else if (roof === 'louvre') {
     rows.forEach(z => { beamAt(z); led(z); }); cols.forEach(x => box(g, BW, BH, W - 2 * inset, x, y0 + BH / 2, W / 2, F.frame));
-    for (let x = eL + 0.4; x < eR; x += 0.5) louv(x, ry - BH / 2 - MM(90), rows[0], rows[rows.length - 1]);
+    for (let x = eL + 0.35; x < eR; x += 0.62) { const s2 = new THREE.Mesh(new THREE.BoxGeometry(MM(230), MM(14), R1 - R0), F.roof); s2.position.set(x, ry + MM(60), (R0 + R1) / 2); s2.rotation.z = 0.62; s2.castShadow = true; g.add(s2); }
   } else if (roof === 'grid') {
     rows.forEach(z => { beamAt(z); led(z); }); rafters(() => ry); for (let z = R0; z <= R1 + 0.01; z += gap + RW) box(g, eR - eL, RH, RW, L / 2, ry + RH / 2, z, F.roof); cover(ry + RH);
   } else if (roof === 'float') {
