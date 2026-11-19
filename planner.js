@@ -4,7 +4,7 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=9';
+import * as S3 from './space3d.js?v=10';
 import { cutHit } from './cabin3d.js?v=13';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -225,6 +225,11 @@ function priceAt(id, it) {   // one design at this item's size: its cheapest mat
     else if (it.layout && window.mtoCabinSize) { const r = window.mtoCabinSize(id, null, it.layout.L, it.layout.W); if (r && r.lay) o = { layout: r.lay }; }
     let q = null;   // (another cabin above: priced at the same size)
     try { q = window.mtoPrice(m, o); } catch (e) {} return q && q.ok ? { price: q.product, o } : null; }
+  if (it.cfg && it.cfgId === id) {   // 193g: set up in the designer — its own finish / colour / roof / add-ons, at the plan's size
+    const o = Object.assign(oFor(m, it), JSON.parse(JSON.stringify(it.cfg)), { l: it.w, w: it.d }), n = 1; delete o._n; delete o.layout;
+    const hg = (m.groups || []).find(g => /height/i.test(g.name || '')); if (hg && it.h) { const op = (hg.options || []).slice().sort((a, b) => Math.abs(parseFloat(a.name) - it.h) - Math.abs(parseFloat(b.name) - it.h))[0]; if (op) o.groups = Object.assign({}, o.groups, { [hg.name]: op.name }); }
+    let q = null; try { q = window.mtoPrice(m, o); } catch (e) {} if (q && q.ok) return { price: q.product, o, n, own: true };
+  }
   const mats = (m.materials || []).length ? m.materials : [{ name: '' }];
   for (const mt of mats.slice(0, 8)) { const o = Object.assign(oFor(m, it), { material: mt.name, colour: ((mt.colours || [])[0] || {}).name || '', addons: (m.addons || []).filter(a => a.on).map(a => a.name) });
     const n = o._n || 1; delete o._n; let q = null; try { q = window.mtoPrice(m, o); } catch (e) {} if (q && q.ok && (!best || q.product * n < best.price)) best = { price: q.product * n, o, n }; }
@@ -237,7 +242,8 @@ function choices(it) {   // the designs the customer can pick for this item, che
 function picked(it) { const ch = choices(it); return ch.find(x => x.id === it.pick) || (it.cat === 'cabin' && ch.find(x => x.id === it.sku)) || ch[0] || null; }
 const IMG = id => { try { const x = PR()[id]; return (typeof IMGS !== 'undefined' ? IMGS : window.IMGS || {})[x.img] || ''; } catch (e) { return ''; } };
 function fromPrice(it) {   // cheapest orderable design of the category at this size: { price, n, soon }
-  const c = CAT[it.cat]; if (!c) return null; const k = [it.cat, it.w, it.d, it.h, it.pw || '', it.sku || ''].join('|'); if (PC[k]) return PC[k];
+  const c = CAT[it.cat]; if (!c) return null; const k = [it.cat, it.w, it.d, it.h, it.pw || '', it.sku || '', it.cfgId || '', JSON.stringify(it.cfg || '')].join('|'); if (PC[k]) return PC[k];
+  if (it.cfg && it.cfgId && c.k !== 'cabin') { const q = priceAt(it.cfgId, it); if (q) return (PC[k] = { price: q.price, n: designs(c).length, soon: false, own: true }); }
   const ids = designs(c), P = PR(); let best = null, open = 0;
   for (const id of ids) {
     const p = P[id], m = p.cz; if (p.oo === false) continue; open++;
@@ -330,6 +336,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-see{display:inline-block;margin-top:6px;font-size:12.5px;color:#C26445}#plOv .pl-go[disabled]{opacity:.4}
 #plOv .pl-set{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}#plOv .pl-set button{flex:0 0 138px;border:1px solid #E2D6C4;background:#FFFCF8;border-radius:12px;padding:10px;text-align:left;font:inherit;cursor:pointer}#plOv .pl-set button:hover{border-color:#C26445}#plOv .pl-set i{font-style:normal;font-size:20px}#plOv .pl-set b{display:block;font-size:13px;margin:4px 0 2px}#plOv .pl-set small{font-size:11px;color:#7A7268;line-height:1.3;display:block}
 #plOv .pl-ask{display:grid;gap:8px;margin-top:8px}#plOv .pl-ask button{border:1px solid #E2D6C4;background:#fff;border-radius:12px;padding:12px;text-align:left;font:inherit;cursor:pointer}#plOv .pl-ask button:hover{border-color:#C26445}#plOv .pl-ask b{display:block;font-size:14px}#plOv .pl-ask small{color:#6A6258;font-size:12px}
+#plOv .pl-design{display:block;width:100%;text-align:left;border:1.5px solid #C26445;background:#fff;color:#8a3a1f;border-radius:12px;padding:10px 12px;font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;margin:8px 0}#plOv .pl-design small{display:block;font-weight:500;color:#6A6258;font-size:11.5px;margin-top:2px}
 #plOv .pl-lock{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:12.5px;cursor:pointer}
 @media(max-width:760px){#plOv .pl-bd{flex-direction:column}#plOv .pl-3d{flex:none;height:46vh}#plOv .pl-side{width:auto;max-width:none;border-left:0;border-top:1px solid #E2D6C4;flex:1}#plOv .pl-st button{padding:6px 10px;font-size:12px}#plOv .pl-hd small{display:none}#plOv .pl-l{display:none}#plOv .pl-hd h2{font-size:14px}}`;
 
@@ -380,6 +387,7 @@ function stepPlace() {
     if (sel.mode === 'par') h += '<p class="pl-h">On which parapets?</p><div class="pl-tabs">' + [['back', 'Back'], ['left', 'Left'], ['right', 'Right'], ['front', 'Front (road)']].map(([k2, l2]) => btn(`data-pl="pside:${k2}"`, (sel.sides || []).includes(k2), l2)).join('') + `</div><p class="pl-sub" style="margin:6px 0 0">${sel.w} ft in all — left open where a cabin, the mumty, a feature wall, a big partition or a fountain stands against it.</p>` + pm('h', 'Height above parapet', sel.h);
     else if (sel.mode === 'tank') h += `<p class="pl-sub" style="margin:6px 0 0">Round the tanks on the mumty roof — ${sel.w} ft.</p>` + pm('h', 'Height', sel.h);
     else if (!sel.lock && c.size === 'wh') h += pm('w', 'Length', sel.w) + pm('h', 'Height', sel.h);
+    if ((sel.cat === 'cabin' || sel.cat === 'pergola') && window.mtoFromPlan) h += `<button type="button" class="pl-design" data-pl="design">✎ ${sel.cfg ? 'Change it' : 'Customise it'} in the ${sel.cat === 'cabin' ? 'cabin' : 'pergola'} designer<small>${sel.cat === 'cabin' ? 'walls, doors, rooms, finishes' : 'finish, colour, roof, layout, add-ons'} — on this terrace; "Save to my plan" brings it back</small></button>`;
     if (sel.cat === 'pergola' && !sel.lock) h += pm('h', 'Height', sel.h) + `<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="pdeck"${sel.deck ? ' checked' : ''}> Deck floor under it (as high as a porta cabin's)</label>` + (sel.att && sel.att.length ? '<p class="pl-sub" style="margin:2px 0 6px">Fixed to the wall on ' + sel.att.length + ' side' + (sel.att.length > 1 ? 's' : '') + ' — no posts there' + (sel.hAuto !== false && S.items.some(o => o.cat === 'cabin') ? '; height and deck matched to the cabin' : '') + '.</p>' : '');
     if (sel.cat === 'graffiti') h += `<label class="pl-ck" style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="gfit"${sel.fit !== false ? ' checked' : ''}> Fit the whole wall it's on${sel.open ? ' (door left open)' : ''}</label>`;
     h += `<p style="margin:10px 0 0;font-size:14px">${fp && fp.price != null ? (lock ? '🔒 Price after sign-in' : 'From <b>' + rs(fp.price) + '</b>') : fp && fp.soon ? 'Coming soon' : 'Our team will price it'} <small style="color:#7A7268">· ${fp ? fp.n : 0} designs</small></p>`;
@@ -479,6 +487,7 @@ function onClick(e) {
       S.items.push(it2); attach(it2, S.items.length - 1); S.sel = S.items.length - 1; if (!it2.w) S.msg = m === 'tank' ? 'Add the mumty (with tanks) in step 1 first' : 'No free parapet on those sides — pick others'; break; }
     case 'askx': S.ask = null; break;
     case 'lock': if (it) it.lock = !it.lock; break;
+    case 'design': if (it) { save(); const ok = window.mtoFromPlan && window.mtoFromPlan(S.sel, JSON.parse(JSON.stringify(it)), JSON.parse(JSON.stringify(S.site))); if (ok) { close(); return; } S.msg = 'Couldn\'t open the designer — try again'; } break;
     case 'pdeck': if (it) { it.deck = !it.deck; it.deckAuto = false; } break;
     case 'pside': if (it && it.mode === 'par') { const sd = a[1], ss = new Set(it.sides || []); ss.has(sd) ? ss.delete(sd) : ss.add(sd); it.sides = ['back', 'left', 'right', 'front'].filter(x => ss.has(x)); attach(it, S.sel); if (!it.w) S.msg = 'No free parapet on those sides'; } break;
     case 'gfit': if (it && it.cat === 'graffiti') { it.fit = it.fit === false; if (!settle(it, S.sel)) S.msg = 'It doesn\'t fit there'; } break;
@@ -491,7 +500,7 @@ function onClick(e) {
     case 'cz': if (it && !it.lock && it.cat === 'cabin') { const L = cabinLay(it); cabinSize(it, a[1] === 'L' ? num(L.L) + +a[2] : num(L.L), a[1] === 'W' ? num(L.W) + +a[2] : num(L.W)); } break;
     case 'csku': if (it) { const keep = JSON.stringify(it), L0 = it.layout; it.sku = a[1] + (a[2] ? ':' + a[2] : ''); if (L0 && window.mtoCabinSize) { const r = window.mtoCabinSize(it.sku, null, L0.L, L0.W); if (r && r.lay) { it.layout = r.lay; it.lsku = it.sku; } } cabinFoot(it); it.label = PR()[it.sku].n.replace(/ —.*$/, ''); if (!settle(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'That cabin doesn\'t fit here'; } } break;
     case 'unlock': return unlock();
-    case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
+    case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cfgId && x.cfgId !== id) { delete x.cfg; delete x.cfgId; } if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
     case 'cart': return toCart();
     case 'setup': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; let n = 0, miss = 0; const sel0 = S.sel;
       x.items.forEach(k => { if (!designs(CAT[k]).length) return; const before = S.items.length; addItem(k); if (S.items.length > before) n++; else miss++; });
@@ -568,7 +577,8 @@ function lifewall() {
 function close() { if (EL) EL.style.display = 'none'; document.body.style.overflow = ''; try { const u = new URL(location.href); if (u.searchParams.has('plan')) { u.searchParams.delete('plan'); history.replaceState(history.state, '', u.pathname + (u.search || '') + u.hash); } } catch (e) {} }
 
 export function open(seed) {
-  for (const k in PC) delete PC[k]; shell(); if (!S) { S = load(); S.hist = []; S.hi = -1; }
+  for (const k in PC) delete PC[k]; shell(); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
+  S.items.forEach(it => { if (it.cat === 'cabin' && it.bcx != null && cabinCfg(it)) { cabinFoot(it); it.x = r2(it.bcx - foot(it)[0] / 2); it.z = r2(it.bcz - foot(it)[1] / 2); delete it.bcx; delete it.bcz; } });   // 193g: back from the studio
   S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
   let q = null; try { q = new URLSearchParams(location.search).get('plan'); } catch (e) {}
   if (q && q.length > 10 && !S.linkDone) { S.linkDone = true; fromLink(q); }

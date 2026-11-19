@@ -216,7 +216,7 @@ function frame(cx, cz, d, h) { R.controls.target.set(cx, h, cz); R.cam.position.
 export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
-  if (opts.furn && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=9').then(m => { FURN = m.generic; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if (opts.furn && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=10').then(m => { FURN = m.generic; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';

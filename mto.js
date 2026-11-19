@@ -922,7 +922,7 @@
       var pj2 = lay.proj && arr(lay.proj.sides).length ? 'Pergola projection (' + arr(lay.proj.sides).join(', ') + ') · ' + [lay.proj.design, lay.proj.top, lay.proj.under].filter(Boolean).join(' · ') : '';
       h += '<ul class="wz-sum"><li><b>' + fi(lay.L) + ' × ' + fi(lay.W) + '</b> · ' + (num(lay.L) * num(lay.W)) + ' sq ft</li><li>' + esc(gname) + ' · ' + esc(dname) + ' (' + esc(w.side) + ')' + (lay.full_doors === true ? ' · full-height doors' : ' · 8 ft doors') + (SIDES.some(function (sd) { return lay.walls[sd].indexOf('slide') >= 0; }) && lay.tracks ? ' · ' + esc(lay.tracks) : '') + '</li><li>' + esc(ins.join(' · ') || 'open inside') + '</li>' + (pj2 ? '<li>' + esc(pj2) + '</li>' : '') + (SIDES.indexOf(lay.gutter) >= 0 ? '<li>Rain gutter, slope to the ' + esc(lay.gutter) + '</li>' : '') + '<li>' + esc([lay.roof, lay.frame, lay.height].filter(Boolean).join(' · ')) + ' · LED lights included</li></ul>';
       h += '<div class="wz-note"><b>Before we make it:</b> final drawings of your cabin are sent to you for approval. Making starts only after you approve them.</div>';
-      h += '<button type="button" class="plan-card" onclick="mtoPlanFrom()"><span>🗺️</span><span><b>Add more around it</b><small>Put a pergola, seating, planters, a bar… on your ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'lawn') + ' with this cabin — see it all in 3D</small></span><i>→</i></button>';   // 193f
+      if (S.fromPlan == null) h += '<button type="button" class="plan-card" onclick="mtoPlanFrom()"><span>🗺️</span><span><b>Add more around it</b><small>Put a pergola, seating, planters, a bar… on your ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'lawn') + ' with this cabin — see it all in 3D</small></span><i>→</i></button>';   // 193f
       if (S.pdp) h += pdpTail(PRODS[S.id], m, o);
       h += partsMini();
       if (S && !S.cabDone) { S.cabDone = true; setTimeout(function () { try { var x0 = PRODS[S.id]; if (x0 && document.getElementById('mtoFull') && !document.getElementById('mfParts')) window.mtoShowParts(); } catch (e) {} }, 0); }
@@ -1185,9 +1185,9 @@
     var x = PRODS[S.id], last = S.wz.step >= 6 && !S.wz.adv, closed = x.oo === false, o = S.o, needPin = !(q.ok && q.install && q.install.available);
     var NX = ['Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Review'], hs = document.getElementById('cbsStep'), sE = S.studio && S.siteEd; if (hs) hs.textContent = S.wz.adv ? 'Edit each wall' : S.studio ? 'Step ' + (sE ? 1 : S.wz.step + 2) + ' of 8' : 'Step ' + (S.wz.step + 1) + ' of 7';
     if (sE) last = false;
-    b.innerHTML = (S.studio && !sE ? '<button type="button" class="cbb" onclick="cbPrev()" aria-label="Back">←</button>' : '') +
-      (last && !closed && !needPin && q.ok ? '<button type="button" class="cbb" style="width:auto;padding:0 12px;font-size:13px;font-weight:600" onclick="mtoAddCart()">' + (S.editK ? 'Update cart' : '+ Cart') + '</button>' : '') + '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
-      '<button type="button" class="cbn" onclick="cbNext()"' + (last && (closed || needPin || !q.ok) ? ' disabled' : '') + '>' + (!last ? (sE ? 'Next: Glass & roof →' : S.studio && !S.wz.adv ? 'Next: ' + NX[S.wz.step] + ' →' : 'Next →') : closed ? 'Coming soon' : needPin ? 'Enter your pincode' : 'Order · pay ' + rs(q.pay_now)) + '</button>';
+    b.innerHTML = (S.studio && !sE ? '<button type="button" class="cbb" onclick="cbPrev()" aria-label="Back">←</button>' : '') + (S.fromPlan != null && !last ? '<button type="button" class="cbb" style="width:auto;padding:0 12px;font-size:13px;font-weight:600" onclick="mtoBackToPlan()">Save to plan</button>' : '') +
+      (last && S.fromPlan == null && !closed && !needPin && q.ok ? '<button type="button" class="cbb" style="width:auto;padding:0 12px;font-size:13px;font-weight:600" onclick="mtoAddCart()">' + (S.editK ? 'Update cart' : '+ Cart') + '</button>' : '') + '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
+      '<button type="button" class="cbn" onclick="' + (last && S.fromPlan != null ? 'mtoBackToPlan()' : 'cbNext()') + '"' + (last && S.fromPlan == null && (closed || needPin || !q.ok) ? ' disabled' : '') + '>' + (!last ? (sE ? 'Next: Glass & roof →' : S.studio && !S.wz.adv ? 'Next: ' + NX[S.wz.step] + ' →' : 'Next →') : S.fromPlan != null ? 'Save to my plan →' : closed ? 'Coming soon' : needPin ? 'Enter your pincode' : 'Order · pay ' + rs(q.pay_now)) + '</button>';
     var pr = document.getElementById('pdPrice'); if (pr && q.ok && x.oo !== false && S.studio) pr.innerHTML = rs(q.total) + '<span class="mrplab">your design, incl. GST</span>';
   }
   // 175: cabins — the product page shows photos, a highlighted Customise button and Check price (average cost of the three types);
@@ -1248,6 +1248,7 @@
     } else {
       if (!el || !el.classList.contains('open')) return;
       if (on !== null && history.state && history.state.v === 'modal') return history.back();   // back closes it (popstate → closeModals)
+      if (S.fromPlan != null) { S.fromPlan = null; setTimeout(function () { if (window.outrrPlan) window.outrrPlan({ reload: true }); }, 150); }   // 193g: closed without saving — back to the plan as it was
       el.classList.remove('open'); document.body.classList.remove('cb-studio', 'cbs-big'); S.studio = false; S.big = false; if (S.pan) { S.pan = false; try { window.Cabin3D.panMode(false); } catch (er) {} } S.v3 = null; draw(); window.scrollTo(0, 0);
     }
   };
@@ -1716,15 +1717,44 @@
     return Object.assign({ lay: l }, lim);
   };
   // 193: from a cabin studio / pergola designer into "Plan your space" with this design (and the studio's terrace) already on it
+  // 193g: designers ↔ planner. Rotation: the studio turns the cabin / pergola by +rot on the plot, the planner by −rot.
+  function planRot(r) { return (360 - (num(r) || 0)) % 360; }
+  function siteOut(t) { if (!t) return null; var v = JSON.parse(JSON.stringify(t)); ['cx', 'cz', 'rot', 'clash', 'place', 'whole'].forEach(function (k) { delete v[k]; }); return v; }
+  function planItem() {   // this design as a planner item, where it stands on the studio's terrace
+    var x = PRODS[S.id], m = x.cz, t = S.site, ter = t && t.kind === 'terrace', it;
+    if (m.unit === 'cabin') { var lay = S.o.layout || {}; it = { cat: 'cabin', sku: S.id, pick: S.id, lsku: S.id, layout: cbClone(lay), cfg: cfgOf(S.o), cfgId: S.id, label: short(x.n), w: (num(lay.L) || 12) + 1.2, d: (num(lay.W) || 10) + 1.2, h: 10, rot: ter ? planRot(t.rot) : 0 };
+      if (ter) { var F = tsFoot(t, lay); it.bcx = t.cx + F.L / 2; it.bcz = t.cz + F.W / 2; } }   // the planner centres it there (its plinth / projections around)
+    else { var q = pgOpts(); it = { cat: 'pergola', pick: S.id, cfg: cfgOf(S.o), cfgId: S.id, label: short(x.n), w: q.l, d: q.w, h: parseFloat(q.height) || 8, deck: !!S.o.deck, rot: ter ? planRot(t.rot) : 0, hAuto: false, deckAuto: false };
+      if (ter) { it.x = t.cx; it.z = t.cz; } }
+    return it;
+  }
   window.mtoPlanFrom = function () {
-    if (!S || !PRODS[S.id] || !window.outrrPlan) return; var x = PRODS[S.id], m = x.cz, seed = { item: null, site: null };
-    if (m.unit === 'cabin') { var lay = S.o.layout || {}, t = S.site;
-      seed.item = { cat: 'cabin', sku: S.id, pick: S.id, lsku: S.id, layout: cbClone(lay), label: short(x.n), w: (num(lay.L) || 12) + 1.2, d: (num(lay.W) || 10) + 1.2, h: 10, rot: 0 };
-      if (t && t.kind === 'terrace') { var F = tsFoot(t, lay); seed.site = JSON.parse(JSON.stringify(t)); seed.item.bcx = t.cx + F.L / 2; seed.item.bcz = t.cz + F.W / 2; }   // the planner centres the cabin there
-      else if (t && t.kind === 'ground') seed.site = { kind: 'ground' };
-    } else seed.item = { cat: 'pergola', pick: S.id, label: short(x.n), w: num(S.o.l) || 12, d: num(S.o.w) || 10, h: 9, rot: 0 };
-    try { window.mtoClose(); } catch (e) {} try { if (S.studio) window.cbStudio(null); } catch (e) {}
+    if (!S || !PRODS[S.id] || !window.outrrPlan) return; var t = S.site, seed = { item: planItem(), site: t && t.kind === 'terrace' ? siteOut(t) : t && t.kind === 'ground' ? { kind: 'ground' } : null };
+    try { window.mtoClose(); } catch (e) {} try { if (S.studio) window.cbStudio(null); } catch (e) {} try { window.pg3Open(false); } catch (e) {}
     window.outrrPlan(seed);
+  };
+  // from the planner: open this cabin / pergola's designer on the plan's terrace, where it stands; "Save to my plan" brings it back
+  window.mtoFromPlan = function (idx, it, site) {
+    var id = it.cat === 'cabin' ? it.sku : (it.cfgId || it.pick); if (!id || !PRODS[id]) return false;
+    try { openProduct(id); } catch (e) { return false; }
+    var n = 0; (function wait() { if (!S || S.id !== id || !S.o) { if (n++ < 60) return setTimeout(wait, 100); return; }
+      if (it.cfg && it.cfgId === id) { var c = it.cfg; ['material', 'colour', 'h', 'note'].forEach(function (k) { if (c[k] != null) S.o[k] = c[k]; }); S.o.groups = Object.assign({}, S.o.groups, c.groups || {}); S.o.addons = arr(c.addons).slice(); }
+      var ter = site && site.kind === 'terrace', t = ter ? JSON.parse(JSON.stringify(site)) : site && site.kind === 'ground' ? { kind: 'ground' } : null;
+      if (it.cat === 'cabin') { if (it.layout && (it.lsku || it.sku) === id) S.o.layout = cbClone(it.layout);
+        if (ter) { t.rot = planRot(it.rot); var F = tsFoot(t, S.o.layout), f = (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d]; t.cx = Math.round((it.x + f[0] / 2 - F.L / 2) * 2) / 2; t.cz = Math.round((it.z + f[1] / 2 - F.W / 2) * 2) / 2; }
+        S.site = t; S.fromPlan = idx; S.siteDone = true; S.cbsInit = true; window.cbStudio(true); }
+      else { S.o.l = it.w; S.o.w = it.d; S.o.deck = !!it.deck; if (ter) { t.rot = planRot(it.rot); t.cx = it.x; t.cz = it.z; } S.site = t; S.fromPlan = idx; window.pg3Open(true); }
+      draw(); })();
+    return true;
+  };
+  window.mtoBackToPlan = function () {   // write this design back into the plan item it came from, open the planner
+    if (!S || S.fromPlan == null || !window.outrrPlan) return; var plan = null; try { plan = JSON.parse(localStorage.getItem('outrr_plan') || 'null'); } catch (e) {}
+    if (!plan || !Array.isArray(plan.items)) return; var idx = S.fromPlan, nu = planItem(), old = plan.items[idx] || {};
+    nu.lock = old.lock; if (S.site && S.site.kind === 'terrace') plan.site = siteOut(S.site);
+    if (nu.x == null && nu.bcx == null) { nu.x = old.x; nu.z = old.z; }
+    plan.items[idx] = nu; plan.step = 1; try { localStorage.setItem('outrr_plan', JSON.stringify(plan)); } catch (e) {}
+    S.fromPlan = null; try { if (S.studio) window.cbStudio(null); } catch (e) {} try { window.pg3Open(false); } catch (e) {} try { window.mtoClose(); } catch (e) {}
+    window.outrrPlan({ reload: true });
   };
   window.mtoOpenCart = function () { try { openCart(); } catch (e) {} };
   window.mtoAddCart = function () { if (!S) return; if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); addM(false); };
@@ -2042,16 +2072,17 @@
     var x = PRODS[S.id];
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(x.n) + ' · 3D</b><button type="button" id="pg3Night" data-p3="night">☾ Night</button><button type="button" data-p3="close" aria-label="Close">✕ Close</button></div>' +
       '<div class="pg3-bd"><div class="pg3-st" id="pg3St"><div class="pg3-cap" id="pg3Cap"></div></div><div class="pg3-pn" id="pg3Pn"></div></div>' +
-      '<div class="pg3-ft"><button type="button" class="plan-card" data-p3="plan"><span>🗺️</span><span><b>Add more around it</b><small>Seating, planters, a bar, a cabin… on your terrace / lawn with this pergola</small></span><i>→</i></button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see the price' : 'Done — check the price') + '</button></div>';
+      '<div class="pg3-ft">' + (S.fromPlan != null ? '<button type="button" data-p3="toplan">Save to my plan →</button></div>' : '') + (S.fromPlan != null ? '' : '<button type="button" class="plan-card" data-p3="plan"><span>🗺️</span><span><b>Add more around it</b><small>Seating, planters, a bar, a cabin… on your terrace / lawn with this pergola</small></span><i>→</i></button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see the price' : 'Done — check the price') + '</button></div>');
     var oo = S.o, q = pgOpts(); oo.l = oo.l || q.l; oo.w = oo.w || q.w;   // the model's size becomes the order size
     ov.classList.add('open'); document.body.classList.add('pg3-on'); P3.open = true; draw(); p3Draw();
     try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: '3d' }); } catch (e) {}
   };
   function p3Click(e) {
     var t = e.target.closest('button'); if (!t || !S) return; var o = S.o, m = PRODS[S.id].cz, a = t.getAttribute('data-p3');
-    if (a === 'close') return window.pg3Open(false);
+    if (a === 'close') { if (S.fromPlan != null) { S.fromPlan = null; window.pg3Open(false); return window.outrrPlan && window.outrrPlan({ reload: true }); } return window.pg3Open(false); }
     if (a === 'night') { P3.night = !P3.night; return p3Draw(); }
     if (a === 'plan') { window.pg3Open(false); return window.mtoPlanFrom(); }   // 193
+    if (a === 'toplan') return window.mtoBackToPlan();   // 193g
     if (t.hasAttribute('data-ts')) { var wasT = S.site && S.site.kind === 'terrace'; tsClick(t); var isT = S.site && S.site.kind === 'terrace';
       if (isT && !wasT) S.pgW = true; if (isT && S.site.cx == null) tsCentre(S.site, pgLay()); if (/^rot:|^centre/.test(t.getAttribute('data-ts'))) pgAutoWall(); keepSite(); draw(); return p3Draw(); }
     if (a === 'wopen') { S.pgW = true; return p3Draw(); }

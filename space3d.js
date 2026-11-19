@@ -137,9 +137,13 @@ function tag(text) {   // a small label above a placed thing
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, depthTest: false, transparent: true, toneMapped: false })); s.scale.set(4.6, 1, 1); s.renderOrder = 20; return s;
 }
 
+function pgO(it) {   // 193g: the pergola as set up in its designer (finish, colour, roof, layout), at the plan's size
+  const c = it.cfg || {}, g = c.groups || {}, gv = re => { const k = Object.keys(g).find(n => re.test(n)); return k ? g[k] : ''; };
+  return { l: it.w, w: it.d, height: String(+it.h || 8), colour: c.colour || 'Black', material: c.material, cover: gv(/roof|cover/i), layout: gv(/layout/i) };
+}
 function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w, d)
   if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { const b = cabinModel(P.cabinCfg(it), P.cabinLay(it)); const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }
-  if (it.cat === 'pergola') { try { const b = pergolaModel(P.pergolaSku || 'MTO-PG-TW', { l: it.w, w: it.d, height: String(+it.h || 8), colour: 'Black' }), h = new THREE.Group(), y0 = it.deck ? 0.6 : 0;   // 193d: on a deck as high as a porta cabin's
+  if (it.cat === 'pergola') { try { const b = pergolaModel(/^MTO-PG-/.test(it.cfgId || it.pick || '') ? (it.cfgId || it.pick) : (P.pergolaSku || 'MTO-PG-TW'), pgO(it)), h = new THREE.Group(), y0 = it.deck ? 0.6 : 0;   // 193d: on a deck as high as a porta cabin's
     b.g.position.y = y0; h.add(b.g); if (it.deck) { const dk = mat('c_pdeck', 0x8B6A4A); const n = Math.max(1, Math.round(it.d / 0.5)); for (let k = 0; k < n; k++) box(h, it.w, 0.6, it.d / n - 0.03, it.w / 2, 0.3, it.d * (k + 0.5) / n, k % 2 ? dk : mat('c_pdeck2', 0x7A5C40)); }
     h.userData.pg = { top: (+it.h || 8) + y0 }; return h; } catch (e) { /* fall back to a box */ } }
   const g = generic(it.cat, it.w, it.d, it.h, it); g.position.set(it.w / 2, 0, it.d / 2); const h = new THREE.Group(); h.add(g); return h;
