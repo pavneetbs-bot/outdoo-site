@@ -3298,9 +3298,10 @@ function updBadge(){try{localStorage.setItem('outrr_cart',JSON.stringify(CART))}
 // 135: not ready to sell yet (seller not live / preview) — no price, no add to cart, "Coming soon" everywhere
 function soon(id){const x=typeof id==='object'?id:PRODS[id]; return !!x&&x.oo===false;}
 // pergolas (outrr designs): priced per sq ft — the card shows the starting rate and opens the 3D customiser
-function pgRate(x){if(!x||!x.cz||x.cz.unit!=='area'||!/^MTO-PG-/.test(x.sku||x.img||''))return 0; const r=(x.cz.materials||[]).map(m=>+m.rate||0).filter(Boolean); return r.length?Math.min(...r):0;}
-function pgRateH(x){return `<span class="vfrom">From</span> ${inr(pgRate(x))}<span class="vfrom"> / sq ft</span>`;}
-function pgCard(id,how){window.__mtoPre={id,open3d:how==='3d'||(window.mtoOk&&mtoOk())}; openProduct(id); if(how!=='3d'&&window.mtoOk&&!mtoOk()) setTimeout(()=>{try{mtoUnlock(id)}catch(e){}},300);}
+// 198: every outrr make + install design (not furniture / sculptures / cabins): its starting rate — per sq ft / running ft, or the smallest size
+function pgRate(x){if(!x||!x.cz||!/^MTO-/.test(x.img||'')||/^MTO-PL-/.test(x.img||'')||['furniture','sculptures'].includes(x.col)||x.cz.unit==='cabin')return 0; const u=x.cz.unit; if(u==='fixed') return +x.p||0; const r=(x.cz.materials||[]).map(m=>+m.rate||0).filter(Boolean); return r.length?Math.min(...r):0;}
+function pgRateH(x){const u=x.cz.unit; return `<span class="vfrom">From</span> ${inr(pgRate(x))}${u==='fixed'?'':`<span class="vfrom"> / ${u==='length'?'running ft':'sq ft'}</span>`}`;}
+function pgCard(id,how){openProduct(id); setTimeout(()=>{try{ if(how==='3d'||(window.mtoOk&&mtoOk())) window.mtoCustomise&&mtoCustomise(); else mtoUnlock(id); }catch(e){}},400);}
 function soonH(){return '<span class="soonb">Coming soon</span>';}
 function ordersClosed(id){const x=PRODS[id]; if(x&&x.oo===false){toast('Coming soon. Save it to your wishlist!');return true;} return false;}
 function addCart(id){id=id||curPid;if(!id||!PRODS[id]){toast('Added to cart');return;} if(ordersClosed(id)) return;
@@ -4565,7 +4566,7 @@ async function shareProduct(){
 <script src="/track.js?v=2"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=8"></script>
-<script src="/mto.js?v=44"></script>
+<script src="/mto.js?v=45"></script>
 <script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){return import('/planner.js?v=18').then(function(m){m.open(seed&&(seed.item||seed.reload||seed.load||seed.sload)?seed:null);});};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
 <script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=8" defer></script>
