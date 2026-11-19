@@ -160,11 +160,29 @@
     const T = (k, l) => `<button class="${tab === k ? 'on' : ''}" onclick="acTab('${k}')">${l}</button>`
     view(`<div class="pagetop"><span class="bk" onclick="showHome()">←</span><h2>My account</h2></div>
       <div class="ac-hello"><div><b>Hi${me.name ? ', ' + esc(me.name.split(' ')[0]) : ''}</b><span>${esc(me.email)}</span></div><a onclick="acSignOut()">Sign out</a></div>
-      <div class="ac-tabs">${T('orders', 'Orders')}${T('plans', 'Saved plans')}${T('addresses', 'Addresses')}${T('profile', 'Profile & GST')}</div>
+      <div class="ac-tabs">${T('orders', 'Orders')}${T('proposals', 'Proposals')}${T('plans', 'Saved plans')}${T('addresses', 'Addresses')}${T('profile', 'Profile & GST')}</div>
       <div id="acBody"></div>`)
-    tab === 'orders' ? drawOrders() : tab === 'plans' ? drawPlans() : tab === 'addresses' ? drawAddresses() : drawProfile()
+    tab === 'orders' ? drawOrders() : tab === 'proposals' ? drawProposals() : tab === 'plans' ? drawPlans() : tab === 'addresses' ? drawAddresses() : drawProfile()
   }
   window.acTab = t => { tab = t; draw() }
+
+  // ---------------------------------------------------------------- 197: proposals (pergola customiser → proposal page)
+  async function drawProposals() {
+    const b = $('acBody'); if (!b) return; b.innerHTML = '<p class="mut">Loading your proposals…</p>'
+    let list = []; try { list = await rpc('my_proposals') || [] } catch (e) { b.innerHTML = `<p class="mut">${esc(e.message)}</p>`; return }
+    b.innerHTML = '<p class="mut sm" style="margin:4px 0 12px">Every design you customised, with its price, drawings and specifications. Open one to change it or add it to the cart.</p>' +
+      (list.length ? list.map(p => { const s = p.summary || {}, pr = p.price || {}, img = typeof PRODS !== 'undefined' && PRODS[p.sku] && typeof IMGS !== 'undefined' ? IMGS[PRODS[p.sku].img] : ''
+        return `<div class="ac-order" style="padding:14px 16px"><div style="display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+          <div style="display:flex;gap:12px;align-items:flex-start;min-width:0">${img ? `<img src="${esc(img)}" alt="" style="width:76px;height:60px;object-fit:cover;border-radius:8px;flex:none">` : ''}
+          <div><b>${esc(p.name)}</b><div class="mut sm">${esc(p.no)} · ${[s.height ? s.height + ' clear' : '', s.colour, s.cover, s.layout].filter(Boolean).map(esc).join(' · ')}</div>
+            ${(s.addons || []).length ? `<div class="mut sm">Add-ons: ${s.addons.map(esc).join(', ')}</div>` : ''}
+            <div class="mut sm">${pr.total ? '<b>' + rs(pr.total) + '</b> incl. GST' + (pr.install ? ' and installation' : '') + ' · ' : ''}Saved ${d8(p.updated_at, true)}${p.carted_at ? ' · <b>added to cart</b>' : ''}${p.around ? ' · ' + p.around + ' more thing' + (p.around > 1 ? 's' : '') + ' around it' : ''}</div></div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPropOpen('${p.id}')">Open</button><button class="btn ghost" style="padding:8px 12px" onclick="acPropDel('${p.id}')">Delete</button></div>
+        </div></div>` }).join('') : '<div class="ac-empty"><p>No proposals yet.</p><p class="mut sm">Customise a pergola in 3D — your proposal with price, drawings and specifications is saved here.</p></div>')
+    drawProposals.list = list
+  }
+  window.acPropOpen = id => { const p = (drawProposals.list || []).find(x => x.id === id); if (p && window.mtoOpenProposal) mtoOpenProposal(p.sku, p.cfg, p.pincode) }
+  window.acPropDel = async id => { if (!confirm('Delete this proposal?')) return; try { await rpc('proposal_delete', { p_id: id }); drawProposals() } catch (e) { say(e.message) } }
 
   // ---------------------------------------------------------------- 195: saved plans ("Plan your space")
   const CATN = { cabin: 'Cabin', pergola: 'Pergola', sofa: 'Sofa set', swing: 'Swing', dining: 'Dining set', chair: 'Chairs', bench: 'Bench', table: 'Table', bar: 'Bar counter', planter: 'Planter', water: 'Water feature', sculpture: 'Sculpture', deck: 'Decking', railing: 'Railing', privacy: 'Privacy screen', feature: 'Feature wall', vgarden: 'Vertical garden', graffiti: 'Graffiti art', accover: 'AC cover', gate: 'Gate' }
@@ -472,7 +490,8 @@
   }
   document.addEventListener('DOMContentLoaded', paintHeader); if (document.readyState !== 'loading') paintHeader()
   const qs = new URLSearchParams(location.search)
-  if (qs.has('account') || location.hash === '#account') setTimeout(() => acOpen(), 300)
+  if (qs.has('account') || location.hash === '#account') setTimeout(() => acOpen(qs.get('account') === 'proposals' ? 'proposals' : undefined), 300)
+  if (location.hash === '#proposals') setTimeout(() => acOpen('proposals'), 300)
   if (qs.has('wishlist')) setTimeout(() => acWishlist(), 400)
   if (qs.has('track') || location.hash === '#track') setTimeout(() => acTrack(qs.get('track') || ''), 300)
 
