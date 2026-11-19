@@ -407,6 +407,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-sv{display:flex;align-items:center;gap:6px;font-size:12px;color:#55634A;margin-left:auto;max-width:34vw;overflow:hidden;white-space:nowrap}#plOv .pl-sv span{overflow:hidden;text-overflow:ellipsis}#plOv .pl-sv button{border:1px solid #E2D6C4;background:#fff;border-radius:99px;padding:4px 9px;font:inherit;font-size:11.5px;cursor:pointer;white-space:nowrap}
 #plOv .pl-gate{border:2px solid #C26445;border-radius:16px;padding:18px;background:#FFF8F2}#plOv .pl-gate b{font-size:18px}#plOv .pl-gate p{font-size:13.5px;color:#4A4640;margin:8px 0 14px}#plOv .pl-gate small{display:block;margin-top:8px;color:#7A7268}#plOv .pl-gate .pl-go{margin:0;width:100%}
 #plOv.pl-locked .pl-3d{filter:blur(2px);pointer-events:none}#plOv.pl-locked .pl-ft{display:none}
+#plOv .pl-est{border:1px solid #E7DDCF;border-radius:14px;padding:12px;margin:6px 0 10px;background:#FFFCF8}
 #plOv .pl-lock{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 12px;font:inherit;font-size:12.5px;cursor:pointer}
 @media(max-width:760px){#plOv .pl-sv{display:none}#plOv .pl-bd{flex-direction:column}#plOv .pl-3d{flex:none;height:46vh}#plOv .pl-side{width:auto;max-width:none;border-left:0;border-top:1px solid #E2D6C4;flex:1}#plOv .pl-st button{padding:6px 10px;font-size:12px}#plOv .pl-hd small{display:none}#plOv .pl-l{display:none}#plOv .pl-hd h2{font-size:14px}}`;
 
@@ -496,9 +497,24 @@ function stepPick() {
     if (pk) h += (c.k === 'cabin' || c.k === 'pergola' ? `<button type="button" class="pl-cust" data-pl="sel2:${i}">✎ Customise in the designer</button>` : `<button type="button" class="pl-cust" data-pl="cust:${i}">✎ Customise${it.cfg && it.cfgId === pk.id ? ' (your choices)' : ''}</button>`) + `<a class="pl-see" href="/?p=${encodeURIComponent(pk.id)}" target="_blank" rel="noopener">See this design ↗</a>`;
     h += '</div>';
   });
+  h += estBox();
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   if (lwOk()) h += lwCard();
   return h;
+}
+function estBox() {   // 193i: delivery + installation for the picked designs at a pincode
+  const E2 = S.est || {}, pin = E2.pin || pinNow();
+  let h = `<div class="pl-est"><b>Delivery & installation</b><div class="pl-row" style="margin:6px 0 0"><label class="pl-n"><span>Site pincode</span><input type="text" inputmode="numeric" maxlength="6" data-plin="estpin" value="${esc(pin)}" style="width:110px"></label><button type="button" class="pl-cust" data-pl="estgo" style="margin:0">${E2.busy ? 'Working it out…' : 'Estimate'}</button></div>`;
+  if (E2.res && E2.res.pin === pin) { const r = E2.res; h += `<p class="pl-sub" style="margin:8px 0 0">Delivery ${r.dlv ? rs(r.dlv) : 'included / on the way'} · Installation ${r.inst ? rs(r.inst) : '—'}${r.na ? ' · ' + r.na + ' not available at this pincode yet' : ''}<br><b>Total about ${lakh(r.total)}</b> <small>(lifting to your floor is added at checkout)</small></p>`; }
+  return h + '</div>';
+}
+async function estimate() {
+  const pin = (S.est && S.est.pin) || pinNow(); if (!/^\d{6}$/.test(pin) || !window.mtoEstimate) { S.msg = 'Type the 6-digit pincode of the site'; return draw(false); }
+  S.est = { pin, busy: true }; draw(false); let dlv = 0, inst = 0, prod = 0, na = 0;
+  for (const it of S.items) { const pk = picked(it); if (!pk) continue; const q = await window.mtoEstimate(pk.id, pk.q.o, pin), n = pk.q.n || 1;
+    if (!q || !q.ok) { na++; prod += pk.q.price; continue; } prod += (q.product || 0) * n; dlv += (q.delivery_fee || 0) * n; inst += (q.install_fee || 0) * n; }
+  S.est = { pin, res: { pin, dlv, inst, na, total: prod + dlv + inst } }; try { const a = JSON.parse(localStorage.getItem('outrr_addr') || '{}'); if (!a.pincode) { a.pincode = pin; localStorage.setItem('outrr_addr', JSON.stringify(a)); } } catch (e) {}
+  draw(false);
 }
 function lwCard() { return '<div class="pl-note" style="margin:0 0 12px"><b>A big project?</b> For a whole terrace or a large cabin, our group company <b>LifeWall</b> can design and build it all turnkey — one team, one price. <button type="button" class="pl-lock" data-pl="lw" style="margin-top:8px;display:block">Talk to LifeWall (free consultation) →</button></div>'; }
 function exact() { let t = 0, n = 0; S.items.forEach(it => { const pk = picked(it); if (pk) { t += pk.q.price; n++; } }); return { t, n }; }
@@ -577,6 +593,7 @@ function onClick(e) {
     case 'unlock': return unlock();
     case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cfgId && x.cfgId !== id) { delete x.cfg; delete x.cfgId; } realSize(x, id, x.cfg); if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
     case 'cart': return toCart();
+    case 'estgo': return estimate();
     case 'sel2': S.step = 1; S.sel = +a[1]; break;
     case 'cust': { const x = S.items[+a[1]], pk = x && picked(x); if (!pk) break; const m = PR()[pk.id].cz, o = JSON.parse(JSON.stringify(x.cfg && x.cfgId === pk.id ? x.cfg : pk.q.o)); delete o._n;
       if (m.unit === 'fixed' && !o.size) o.size = ((m.sizes || [])[0] || {}).label; if (m.unit === 'seat' && !num(o.n)) o.n = num(m.n && m.n.min) || 4; S.cust = { i: +a[1], id: pk.id, o }; break; }
@@ -600,6 +617,7 @@ function onClick(e) {
 }
 function onInput(e) {
   const k = e.target.getAttribute && e.target.getAttribute('data-plin'); if (!k) return; const v = parseFloat(e.target.value), t = S.site; if (!(v > 0)) return; S.msg = '';
+  if (k === 'estpin') { S.est = { pin: String(e.target.value || '').replace(/\D/g, '').slice(0, 6) }; return estimate(); }
   if (/^(rs|cz):/.test(k)) { const it = S.sel != null ? S.items[S.sel] : null, f = k.split(':')[1]; if (!it || it.lock) return; if (it.cat === 'pergola' && f === 'h') it.hAuto = false;
     if (k[0] === 'r') { if (it.cat === 'graffiti' && f === 'w') it.fit = false; resizeItem(it, f, 0, v); } else { const L = cabinLay(it); cabinSize(it, f === 'L' ? v : num(L.L), f === 'W' ? v : num(L.W)); }
     return draw(); }

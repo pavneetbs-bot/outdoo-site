@@ -1756,6 +1756,12 @@
     S.fromPlan = null; try { if (S.studio) window.cbStudio(null); } catch (e) {} try { window.pg3Open(false); } catch (e) {} try { window.mtoClose(); } catch (e) {}
     window.outrrPlan({ reload: true });
   };
+  // 193i: the planner's estimate of delivery + installation for one design at a pincode (installation when the design offers it)
+  window.mtoEstimate = function (id, o0, pin) {
+    var x = PRODS[id]; if (!x || !x.cz || !/^\d{6}$/.test(pin || '')) return Promise.resolve(null); var m = x.cz, o = Object.assign({}, o0, { pin: pin });
+    o.zone = zoneOf(m.ships_from, pin); if (m.install && (m.install.required || m.install.offered)) o.install = true;
+    return new Promise(function (res) { var n = 0; (function poll() { var q = null; try { q = priceR(id, m, o, PCT); } catch (e) {} if (q && q.install && q.install.pending && n++ < 40) return setTimeout(poll, 250); res(q); })(); });
+  };
   window.mtoOpenCart = function () { try { openCart(); } catch (e) {} };
   window.mtoAddCart = function () { if (!S) return; if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); addM(false); };
   window.mtoCartRm = function (k) { MC = MC.filter(function (c) { return c.k !== k; }); mSave(); try { updBadge(); } catch (e) {} if (isOn('checkout')) { if (!MC.length && !CART.length) return openCart(); renderCheckout(); } else renderCart(); };
