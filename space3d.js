@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=19';
-import { pergolaModel } from './pergola3d.js?v=11';
+import { cabinModel, plotModel } from './cabin3d.js?v=20';
+import { pergolaModel } from './pergola3d.js?v=12';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -63,17 +63,58 @@ function art() {
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return (M.c_art = new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }));
 }
 function rodA(g, a, b, m) { const v = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), L = v.length(), r = new THREE.Mesh(new THREE.BoxGeometry(0.2, L, 0.2), m); r.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); r.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.normalize()); r.castShadow = true; g.add(r); return r; }
-const PL_HEX = { teak: 0x8B5A2B, walnut: 0x5C3A21, 'ash grey': 0x8E8A84, charcoal: 0x3A3A3A, 'oak wood grain': 0xB08A5A, 'white marble': 0xECEBE6, 'beige marble': 0xD8C8A8, 'black granite': 0x222222,
+const PL_HEX = { teak: 0x6E4524, walnut: 0x4A2E1A, 'ash grey': 0x8E8A84, charcoal: 0x3A3A3A, 'oak wood grain': 0x9A7448, 'white marble': 0xECEBE6, 'beige marble': 0xD8C8A8, 'black granite': 0x222222,
   'grey granite': 0x7A7A78, terracotta: 0xC26445, olive: 0x55634A, 'matt white': 0xF2F2EE, 'matt black': 0x1E1E1E, 'marble print': 0xDEDBD4 };
-function planterModel(g, w, d, h, it, K) {   // 199: box / round planter of the customer's size (one piece), cap + kick plinth, soil and plants, optional LED glow
-  const c = it.cfg || {}, code = String(it.cfgId || it.pick).slice(7), round = ['OC', 'RB'].indexOf(code) >= 0, hex = PL_HEX[String(c.colour || '').toLowerCase()] || 0x8B5A2B;
-  const H = Math.max(1, +h || 2), skin = mat('pl_' + hex.toString(16), hex, { roughness: 0.7 }), kick = 0.25, led = /LED/i.test(Object.values(c.groups || {}).join(' '));
-  if (round) { const r = Math.min(w, d) / 2; cyl(g, r * 0.88, r * 0.88, kick, 0, kick / 2, 0, K.dark, 28); cyl(g, r, r * 0.92, H - kick, 0, kick + (H - kick) / 2, 0, skin, 32); cyl(g, r * 0.9, r * 0.9, 0.06, 0, H - 0.05, 0, mat('c_soil', 0x4A3626), 28); }
-  else { box(g, w - 0.2, kick, d - 0.2, 0, kick / 2, 0, K.dark); box(g, w, H - kick - 0.1, d, 0, kick + (H - kick - 0.1) / 2, 0, skin); box(g, w + 0.12, 0.1, d + 0.12, 0, H - 0.05, 0, skin); box(g, w - 0.3, 0.06, d - 0.3, 0, H - 0.08, 0, mat('c_soil', 0x4A3626)); }
-  if (led) { const gl = mat('c_led', 0xFFE2A8, { emissive: 0xFFC870, emissiveIntensity: 1.4 }); if (round) cyl(g, Math.min(w, d) / 2 * 0.9, Math.min(w, d) / 2 * 0.9, 0.04, 0, 0.02, 0, gl, 28); else box(g, w - 0.15, 0.04, d - 0.15, 0, 0.02, 0, gl); }
-  const n = Math.max(1, Math.round(Math.max(w, d) / 1.4)), along = w >= d;   // plants along the long side
-  for (let i = 0; i < n; i++) { const t = (i + 0.5) / n - 0.5, x = along ? t * w : 0, z = along ? 0 : t * d, r = Math.min(Math.min(w, d) * 0.42, 0.9);
-    const f = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), i % 2 ? K.leaf2 : K.leaf); f.position.set(x, H + r * 0.75, z); f.scale.y = 1.25; f.castShadow = true; g.add(f); }
+function planterModel(g, w, d, h, it, K) {   // 199b: each outrr planter's own shape (battens, slats, cap, plinth, legs, taper, barrel…) at the customer's size, finish colour, plants, LED glow
+  const c = it.cfg || {}, code = String(it.cfgId || it.pick).slice(7), hex = PL_HEX[String(c.colour || '').toLowerCase()] || 0x8B5A2B;
+  const H = Math.max(1, +h || 2), skin = mat('pl_' + hex.toString(16), hex, { roughness: 0.65 }), dark = mat('pl_dark', 0x2B2B2B, { roughness: 0.6, metalness: 0.3 }), soil = mat('c_soil', 0x4A3626);
+  const led = /LED/i.test(Object.values(c.groups || {}).join(' ')), glow = mat('c_led', 0xFFE2A8, { emissive: 0xFFC870, emissiveIntensity: 1.6 });
+  const STY = { VT: 'vbat', VB: 'vbat', LS: 'hslat', SC: 'hslat', CB: 'hslat', TP: 'hslat', SS: 'hslat', SP: 'hslat', OF: 'hslat', RL: 'hslat', WS: 'hslat', RH: 'hslat', TT: 'hslat', TL: 'vbat' }[code] || 'plain';
+  const leaf = (x, y, z, r) => { [[0, 0, 0, 1], [-0.45, -0.2, 0.15, 0.75], [0.45, -0.15, -0.1, 0.8], [0.1, 0.35, 0.05, 0.7]].forEach(([a, b, e, k], q) => {
+    const f = new THREE.Mesh(new THREE.IcosahedronGeometry(r * k, 1), q % 2 ? mat('pl_leaf2', 0x4C7F38) : mat('pl_leaf', 0x2F5E26)); f.position.set(x + a * r, y + r * 0.55 + b * r, z + e * r); f.scale.y = 1.25; f.castShadow = true; g.add(f); }); };
+  const plants = (x, z, w2, d2, y) => { box(g, w2 - 0.12, 0.05, d2 - 0.12, x, y - 0.06, z, soil); const n = Math.max(1, Math.round(Math.max(w2, d2) / 1.0)), along = w2 >= d2, r = Math.min(Math.min(w2, d2) * 0.36, 0.55);
+    for (let i = 0; i < n; i++) { const t = (i + 0.5) / n - 0.5; leaf(x + (along ? t * w2 : 0), y, z + (along ? 0 : t * d2), r); } };
+  // one box section of the planter: style plain / vertical battens / horizontal slats (dark core in the gaps)
+  const body = (x, z, w2, d2, y0, hh, sty, top) => {
+    if (sty === 'plain') box(g, w2, hh, d2, x, y0 + hh / 2, z, skin);
+    else { box(g, w2 - 0.08, hh, d2 - 0.08, x, y0 + hh / 2, z, dark);
+      if (sty === 'vbat') { const bw = 0.22, gap = 0.07, th = 0.06; [[w2, d2 / 2, 0], [w2, -d2 / 2, 0], [d2, w2 / 2, 1], [d2, -w2 / 2, 1]].forEach(([len, off, side]) => { const n = Math.max(2, Math.floor((len + gap) / (bw + gap))), st = len / n;
+        for (let k = 0; k < n; k++) { const u = -len / 2 + st * (k + 0.5); side ? box(g, th, hh, st - gap, x + off, y0 + hh / 2, z + u, skin) : box(g, st - gap, hh, th, x + u, y0 + hh / 2, z + off, skin); } }); }
+      else { const sh = 0.24, gap = 0.06, n = Math.max(2, Math.floor((hh + gap) / (sh + gap))), st = hh / n; for (let k = 0; k < n; k++) box(g, w2, st - gap, d2, x, y0 + st * (k + 0.5), z, skin); } }
+    if (top !== false) plants(x, z, w2, d2, y0 + hh);
+  };
+  const kickH = 0.28, kick = (x, z, w2, d2, inset) => { box(g, w2 - inset, kickH, d2 - inset, x, kickH / 2, z, dark); if (led) box(g, w2 - inset + 0.06, 0.03, d2 - inset + 0.06, x, 0.02, z, glow); };
+  const legs = (x, z, w2, d2, hh) => [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.12, hh, 0.12, x + a * (w2 / 2 - 0.15), hh / 2, z + b * (d2 / 2 - 0.15), dark));
+  if (code === 'OC' || code === 'RB') { const r = Math.min(w, d) / 2;
+    cyl(g, r * 0.85, r * 0.85, kickH, 0, kickH / 2, 0, dark, code === 'OC' ? 8 : 28); if (led) cyl(g, r * 0.9, r * 0.9, 0.03, 0, 0.02, 0, glow, 28);
+    cyl(g, r, r * 0.94, H - kickH, 0, kickH + (H - kickH) / 2, 0, skin, code === 'OC' ? 8 : 32);
+    if (code === 'RB') [0.28, 0.72].forEach(t => cyl(g, r * 1.01, r * 1.01, 0.12, 0, kickH + (H - kickH) * t, 0, dark, 32));
+    cyl(g, r * 0.9, r * 0.9, 0.05, 0, H - 0.04, 0, soil, 28); leaf(0, H, 0, r * 0.75); return; }
+  if (code === 'CW') { const r = Math.min(w, d), q = new THREE.Mesh(new THREE.CylinderGeometry(r, r, H - kickH, 24, 1, false, 0, Math.PI / 2), skin); q.position.set(-w / 2, kickH + (H - kickH) / 2, -d / 2); q.castShadow = true; g.add(q);
+    box(g, w * 0.7, kickH, d * 0.7, -w * 0.15, kickH / 2, -d * 0.15, dark); leaf(-w * 0.1, H, -d * 0.1, r * 0.35); return; }
+  if (code === 'LC') { const a = Math.min(d, w * 0.45); kick(0, -d / 2 + a / 2, w, a, 0.1); body(0, -d / 2 + a / 2, w, a, kickH, H - kickH, 'plain'); kick(-w / 2 + a / 2, a / 2, a, d - a, 0.1); body(-w / 2 + a / 2, a / 2, a, d - a, kickH, H - kickH, 'plain'); return; }
+  if (code === 'DS') { const w1 = w * 0.55, w2 = w * 0.4; kick(-w / 2 + w1 / 2, 0, w1, d, 0.1); body(-w / 2 + w1 / 2, 0, w1, d, kickH, H - kickH, 'plain'); kick(w / 2 - w2 / 2, 0, w2, d * 0.8, 0.1); body(w / 2 - w2 / 2, 0, w2, d * 0.8, kickH, H * 0.5 - kickH, 'plain'); return; }
+  if (code === 'TN') { const s3 = [0.38, 0.32, 0.26]; let x0 = -w / 2; s3.forEach((f, k) => { const ww = w * f - 0.1, hh = H * [1, 0.8, 0.62][k]; kick(x0 + ww / 2, 0, ww, Math.min(d, ww), 0.08); body(x0 + ww / 2, 0, ww, Math.min(d, ww), kickH, hh - kickH, 'plain'); x0 += ww + 0.15; }); return; }
+  if (code === 'TT') { kick(0, -d / 4, w, d / 2, 0.1); body(0, -d / 4, w, d / 2, kickH, H - kickH, STY); kick(0, d / 4, w, d / 2, 0.1); body(0, d / 4, w, d / 2, kickH, H * 0.55 - kickH, STY); return; }
+  if (code === 'SP') { const n = 3, bh = (H - kickH) / n; kick(0, 0, w, d, 0.1); for (let k = 0; k < n; k++) { const f = 1 - k * 0.16; body(0, 0, w * f, d * f, kickH + bh * k, bh, 'hslat', k === n - 1); } return; }
+  if (code === 'SS' || code === 'TL') { const th = Math.max(1.6, H * 0.32); kick(0, 0, w, d, 0.1); body(0, 0, w, d, kickH, th - kickH, STY);
+    if (code === 'SS') { const n = Math.max(3, Math.floor(w / 0.35)); for (let k = 0; k < n; k++) box(g, w / n - 0.08, H - th, 0.08, -w / 2 + w / n * (k + 0.5), th + (H - th) / 2, -d / 2 + 0.06, skin); box(g, w, 0.1, 0.12, 0, H - 0.05, -d / 2 + 0.06, skin); }
+    else { [-1, 1].forEach(a => box(g, 0.08, H - th, 0.08, a * (w / 2 - 0.05), th + (H - th) / 2, -d / 2 + 0.1, dark)); for (let y = th + 0.5; y < H; y += 0.5) box(g, w, 0.04, 0.04, 0, y, -d / 2 + 0.1, dark); for (let x = -w / 2 + 0.5; x < w / 2; x += 0.5) box(g, 0.04, H - th, 0.04, x, th + (H - th) / 2, -d / 2 + 0.1, dark); } return; }
+  if (code === 'LG' || code === 'RL') { const lh = code === 'RL' ? H * 0.55 : H * 0.35; legs(0, 0, w, d, lh); if (led) box(g, w - 0.1, 0.03, d - 0.1, 0, lh - 0.02, 0, glow); body(0, 0, w, d, lh, H - lh, STY); return; }
+  if (code === 'LN') { kick(0, 0, w, d, 0.1); body(0, 0, w * 0.86, d * 0.86, kickH, H * 0.6 - kickH, 'plain'); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.1, H, 0.1, a * (w / 2 - 0.05), H / 2, b * (d / 2 - 0.05), dark)); box(g, w, 0.1, d, 0, H, 0, dark); return; }
+  if (code === 'WS') { [-1, 1].forEach(a => box(g, 0.08, 0.6, d, a * (w / 2 - 0.4), H * 0.35, 0, dark)); body(0, 0, w, d, H * 0.4, H * 0.6, STY); return; }
+  if (code === 'RH') { box(g, w, 0.06, 0.3, 0, H, -d / 2 - 0.1, dark); body(0, 0, w, d, 0.1, H - 0.1, STY); return; }
+  if (code === 'TK' || code === 'TP') { kick(0, 0, w * 0.82, d * 0.82, 0.1); const geo = new THREE.BoxGeometry(w, H - kickH, d), pos = geo.attributes.position;
+    for (let k = 0; k < pos.count; k++) if (pos.getY(k) < 0) { pos.setX(k, pos.getX(k) * 0.8); pos.setZ(k, pos.getZ(k) * 0.8); } geo.computeVertexNormals();
+    const m2 = new THREE.Mesh(geo, skin); m2.position.y = kickH + (H - kickH) / 2; m2.castShadow = true; g.add(m2);
+    if (code === 'TP') for (let y = kickH + 0.3; y < H - 0.1; y += 0.3) { const f = 0.8 + 0.2 * (y - kickH) / (H - kickH); box(g, w * f + 0.01, 0.04, d * f + 0.01, 0, y, 0, dark); }
+    plants(0, 0, w, d, H); return; }
+  if (code === 'OF') { kick(0, 0, w, d, 0.1); body(0, 0, w - 0.1, d - 0.1, kickH, H - kickH, 'hslat'); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.1, H - kickH, 0.1, a * (w / 2 - 0.05), kickH + (H - kickH) / 2, b * (d / 2 - 0.05), dark)); box(g, w, 0.08, d, 0, H, 0, dark); return; }
+  // troughs and cubes: kick plinth (recessed more on the floating plinth), body, cap rim on capped designs
+  kick(0, 0, w, d, code === 'FP' ? 0.4 : 0.12);
+  const cap = ['CB', 'CT', 'DV'].indexOf(code) >= 0, ch = cap ? 0.12 : 0;
+  body(0, 0, w, d, kickH, H - kickH - ch, STY, !cap);
+  if (cap) { box(g, w + 0.18, ch, d + 0.18, 0, H - ch / 2, 0, skin); plants(0, 0, w, d, H); }
 }
 export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
@@ -263,3 +304,34 @@ function pUp(e) {
   R.tapEmpty = false;
 }
 window.Space3D = { show, onEvent, zoom, home, resize, snapshot, _r: () => R };
+
+// 199b: a small 3D preview of one design (planters…) on a plain patio — the customiser shows it next to the photo.
+// items: [{cat, cfgId, pick, cfg, w, d, h}] — drawn side by side (0.5 ft apart), front to the camera.
+let PV = null;
+export function preview(el, items) {
+  if (!PV || PV.el !== el) {
+    if (PV) { try { PV.renderer.dispose(); PV.ro && PV.ro.disconnect(); } catch (e) {} }
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    el.innerHTML = ''; el.appendChild(renderer.domElement); renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none';
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(0xF1ECE3);
+    const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    const cam = new THREE.PerspectiveCamera(35, 1, 0.1, 400), controls = new OrbitControls(cam, renderer.domElement);
+    controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 2; controls.maxDistance = 80;
+    const hemi = new THREE.HemisphereLight(0xffffff, 0xb8ad98, 0.8), sun = new THREE.DirectionalLight(0xffffff, 1.7); sun.position.set(-12, 22, 14); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, far: 80 }); scene.add(hemi, sun);
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat('pv_floor', 0xD9CFC0, { roughness: 0.95 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; scene.add(fl);
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(120, 12, 0.5), mat('pv_wall', 0xE8E1D6)); wall.position.set(0, 6, -6); wall.receiveShadow = true; scene.add(wall);
+    PV = { el, renderer, scene, cam, controls, group: null, key: '' };
+    const size = () => { const w = el.clientWidth || 600, h = el.clientHeight || 400; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); };
+    PV.size = size; size(); try { PV.ro = new ResizeObserver(size); PV.ro.observe(el); } catch (e) {}
+    const loop = () => { if (!PV || PV.renderer !== renderer) return; if (el.isConnected && el.offsetParent !== null) { controls.update(); renderer.render(scene, cam); } requestAnimationFrame(loop); }; loop();
+  }
+  const key = JSON.stringify(items); if (key === PV.key) return; const first = !PV.key; PV.key = key;
+  if (PV.group) PV.scene.remove(PV.group);
+  const g = new THREE.Group(); let x = 0, W = 0, D = 0, H = 0;
+  (items || []).forEach(it => { const m = generic(it.cat, +it.w || 2, +it.d || 2, +it.h || 2, it); m.position.set(x + (+it.w || 2) / 2, 0, 0); g.add(m); x += (+it.w || 2) + 0.5; D = Math.max(D, +it.d || 2); H = Math.max(H, (+it.h || 2) + 0.9); });
+  W = Math.max(0.5, x - 0.5); g.position.x = -W / 2; g.position.z = -6 + 0.25 + D / 2 + 0.6; PV.group = g; PV.scene.add(g);
+  const span = Math.max(W, D * 1.6, H * 1.8 + 1.5), tz = g.position.z, ty = Math.min(H * 0.5, 3);
+  if (first || PV.span !== Math.round(span * 2)) { PV.span = Math.round(span * 2); PV.controls.target.set(0, ty, tz); PV.cam.position.set(span * 0.55, ty + span * 0.55, tz + span * 1.35); PV.controls.update(); }
+}
