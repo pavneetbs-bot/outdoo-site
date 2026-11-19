@@ -1240,6 +1240,7 @@
   }
   window.cbStudio = function (on, fresh) {
     if (!S || !S.pdp || !S.wz) return;
+    if (on && S.fromPlan == null && !S.spaceDone && !S.siteDone) return window.mtoSpaceAsk('cabin', function (r) { spaceApply(r, S.o.layout).then(function () { if (S.site && S.site.kind === 'ground') { S.siteDone = true; S.siteEd = false; } window.cbStudio(true, fresh); }); });   // 199
     var el = document.getElementById('cbStudio');
     if (on) {
       if (!el) { el = document.createElement('div'); el.id = 'cbStudio'; el.className = 'cbs-ov'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el); }
@@ -1367,6 +1368,7 @@
     ['mtoCfg', 'mtoAccs', 'mtoChip', 'mtoChip2'].forEach(function (k) { var e = document.getElementById(k); if (e) e.remove(); });
     try { var dh = window.mtoPdp.descHome; if (dh) { dh[0].classList.remove('mto-desc'); dh[1].insertBefore(dh[0], dh[2] && dh[2].parentNode === dh[1] ? dh[2] : null); window.mtoPdp.descHome = null; } } catch (e) {}
     try { window.mtoProposal(false); } catch (e) {}
+    try { var pc0 = document.getElementById('ppCard'); if (pc0) pc0.remove(); ppStick(false); } catch (e) {}
     if (S) S.pdp = false;
   };
   window.mtoPdp = function (id) {
@@ -1388,8 +1390,9 @@
       if (dc && tc && dc !== tc && tc.nextSibling !== dc) { window.mtoPdp.descHome = [dc, dc.parentNode, dc.nextSibling]; tc.parentNode.insertBefore(dc, tc.nextSibling); } dc && dc.classList.add('mto-desc'); }
     // the configurator card: right under the title card
     var first = document.querySelector('#pdp .pdp-info .pcard'), cfg = document.createElement('div'); cfg.id = 'mtoCfg'; cfg.className = 'pcard mto-pcfg';
-    if (isProp(id) && first.nextSibling && first.nextSibling.classList && first.nextSibling.classList.contains('mto-desc')) first = first.nextSibling;
+    if (isProp(id) && m.unit === 'cabin') { var pc = document.createElement('div'); pc.id = 'ppCard'; pc.className = 'pcard pp-card'; first.parentNode.insertBefore(pc, first.nextSibling); pc.innerHTML = cabCard(x, m); pc.addEventListener('click', function (e) { var t = e.target.closest('[data-act]'); if (t && t.getAttribute('data-act') === 'cab') window.cbStudio(true); }); first = pc; }
     first.parentNode.insertBefore(cfg, first.nextSibling);
+    if (isProp(id)) { if (m.unit !== 'cabin') cfg.classList.add('pp-card'); var dc2 = document.querySelector('#pdp .mto-desc'); if (dc2) cfg.parentNode.insertBefore(dc2, cfg.nextSibling); ppStick(true); }
     // details: the design's own specifications
     var kv = document.getElementById('pdKV');
     if (kv) kv.innerHTML = arr(m.specs).map(function (sp) { return '<div class="k">' + esc(sp.label) + '</div><div class="v">' + esc(sp.value) + '</div>'; }).join('') +
@@ -1441,7 +1444,7 @@
     var adds = arr(m.addons).filter(function (a) { return a.name; });
     if (isPg(S.id)) {   // pergolas: every choice is made in the 3D customiser; price, drawings and site details are on the proposal after it
       var pq0 = pgOpts(); if (!num(o.l)) o.l = pq0.l; if (!num(o.w)) o.w = pq0.w;
-      if (!S.pgLegacy) { el.innerHTML = p3Btn() + propInfo(x, m); ctaPaint(null); return; }
+      if (!S.pgLegacy) { el.innerHTML = propInfo(x, m, p3Btn()); ctaPaint(null); return; }
       var rows = [['Size', o.l + ' × ' + o.w + ' ft']]; if (mats.length > 1 && mat) rows.push([(m.labels && m.labels.material) || 'Finish', mat.name]); if (o.colour) rows.push([(m.labels && m.labels.colour) || 'Colour', o.colour]);
       arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }).forEach(function (g) { var v = (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name; if (v) rows.push([g.name, String(v).split(' (')[0]]); });
       if (adds.length) rows.push(['Add-ons', arr(o.addons).length ? o.addons.join(', ') : 'None']);
@@ -1450,7 +1453,7 @@
       if (np) { ctaPaint(null); return; }
       return paint();
     }
-    if (isProp(S.id) && !S.pgLegacy) { el.innerHTML = cuBtn() + propInfo(x, m); ctaPaint(null); if (CU.open) cuDraw(); return; }   // 198
+    if (isProp(S.id) && !S.pgLegacy) { el.innerHTML = propInfo(x, m, cuBtn()); ctaPaint(null); if (CU.open) cuDraw(); return; }   // 198
     var hint = u === 'area' ? 'Length × width of the floor it covers, in feet.' : u === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : u === 'face' ? 'Width × height of the wall or opening, in feet.' : u === 'length' ? 'Total running length, in feet.' : '';
     el.innerHTML = p3Btn() + '<h3 class="mto-ph">' + (m.labels ? 'Choose your options' : 'Choose your size &amp; options') + '</h3>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + (hint ? '<p class="mto-hint">' + hint + '</p>' : '') + '<div class="mto-pks">' + f.join('') + '</div>' +
       (adds.length ? '<div class="mto-adds"><span class="mto-al">Add-ons</span>' + adds.map(function (a) { return '<label class="mto-chk"><input type="checkbox" data-add="' + esc(a.name) + '"' + (o.addons.indexOf(a.name) >= 0 ? ' checked' : '') + '><span>' + esc(a.name) + '</span>' + (np ? '' : '<span class="r">+' + rs(a.price) + (a.charge === 'unit' ? ' / ' + uw : '') + '</span>') + '</label>'; }).join('') + '</div>' : '') +
@@ -1788,7 +1791,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=18').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=19').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2141,7 +2144,7 @@
   }
   function q2(q) { return q.l + ' × ' + q.w + ' ft'; }
   function p3Panel() {
-    if (S.projAsk && S.proj !== 'pending') return projAskUI2();
+
     if (S.pgW) return p3Where();
     var x = PRODS[S.id], m = x.cz, o = S.o, q = pgOpts(), h = p3Where(), chips = function (g, cur) { return '<div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + '</button>'; }).join('') + '</div>'; };
     h += '<div class="lb">Size (ft)</div><div class="pg3-sz"><span>Length <button type="button" data-p3d="l,-1" aria-label="Shorter">−</button><b>' + q.l + '</b><button type="button" data-p3d="l,1" aria-label="Longer">+</button></span><span>Width <button type="button" data-p3d="w,-1" aria-label="Narrower">−</button><b>' + q.w + '</b><button type="button" data-p3d="w,1" aria-label="Wider">+</button></span></div>';
@@ -2172,7 +2175,7 @@
     if (on === false) { if (ov) ov.classList.remove('open'); document.body.classList.remove('pg3-on'); P3.open = false; return; }
     if (!ov) { ov = document.createElement('div'); ov.id = 'pg3'; ov.className = 'pg3-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Design your pergola in 3D'); document.body.appendChild(ov);
       ov.addEventListener('click', p3Click); ov.addEventListener('change', function (e) { if (S && isPg(S.id) && tsInput(e.target)) { if (S.site && S.site.cx == null) tsCentre(S.site, pgLay()); keepSite(); draw(); p3Draw(); } }); }
-    if (S.fromPlan == null && S.proj == null) projLoad();
+    if (on && S.fromPlan == null && !S.spaceDone) return window.mtoSpaceAsk('pergola', function (r) { spaceApply(r, pgLay()).then(function () { S.pgW = r.kind === 'terrace'; window.pg3Open(true); }); });
     if (!S.site && S.proj !== 'new') { var sh = sharedSite(); if (sh) { S.site = sh; tsCentre(sh, pgLay()); } }
     var x = PRODS[S.id];
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(x.n) + ' · 3D</b><button type="button" id="pg3Night" data-p3="night">☾ Night</button><button type="button" data-p3="close" aria-label="Close">✕ Close</button></div>' +
@@ -2448,12 +2451,12 @@
   function cuBtn() { p3Css(); propCss(); var x = PRODS[S.id], cab = x.cz.unit === 'cabin';
     return '<button type="button" class="pg3-btn" data-act="' + (cab ? 'cab' : 'cu') + '"><span style="font-size:22px">✦</span><span>Customise &amp; check price<small>' + (cab ? 'Size, doors, rooms and finishes in 3D' : 'Size, finish, colour and options') + ' — then your proposal with price and drawings</small></span></button>'; }
   function unitWord(m) { return m.unit === 'length' ? 'running ft' : m.unit === 'area' || m.unit === 'face' ? 'sq ft' : ''; }
-  function propInfo(x, m) {   // under the button: the starting rate (public) and what happens next
+  function propInfo(x, m, btn) {   // the card: the starting rate (public), the Customise button, what happens next
     propCss(); var mats = arr(m.materials).filter(function (y) { return y.name; }), uw = unitWord(m), line = '';
     if (uw) { var lo = Math.min.apply(null, mats.map(function (y) { return +y.rate || Infinity; })); if (isFinite(lo) && lo > 0) line = '<div class="pg-rate"><span>Starts at</span><b>' + rs(lo) + ' <small>/ ' + uw + '</small></b><em>incl. GST · ' + esc((mats.filter(function (y) { return +y.rate === lo; })[0] || {}).name || '') + '</em></div>'; }
     else if (m.unit === 'fixed') { var best = Infinity; arr(m.sizes).forEach(function (z) { mats.slice(0, 6).forEach(function (mt) { var v = fixedAt(m, mt, z); if (+v > 0 && v < best) best = v; }); }); if (isFinite(best)) line = '<div class="pg-rate"><span>Starts at</span><b>' + rs(best) + '</b><em>incl. GST · ' + esc((arr(m.sizes)[0] || {}).label || 'smallest size') + '</em></div>'; }
     var cab = m.unit === 'cabin', inst = m.install && m.install.offered;
-    return line + '<ol class="pg-next"><li><b>Customise' + (cab || isPg(S.id) ? ' in 3D' : '') + '</b> — ' + (cab ? 'size, doors, rooms, roof and finishes' : isPg(S.id) ? 'size, finish, colour, roof, height, layout and add-ons' : 'size, finish, colour and options') + '</li><li><b>Get your proposal</b> — price, drawings with sizes, specifications</li><li><b>Add to cart</b> — pay ' + PCT + '% now, the rest before dispatch' + (inst ? (m.install.required ? ' · installed by outrr' : ' · installed by outrr or by you') : '') + '</li></ol>' +
+    return (line || '<div class="pg-rate"><span>Made to your size</span></div>') + (btn || '') + '<ol class="pg-next"><li><b>Customise' + (cab || isPg(S.id) ? ' in 3D' : '') + '</b> — ' + (cab ? 'size, doors, rooms, roof and finishes' : isPg(S.id) ? 'size, finish, colour, roof, height, layout and add-ons' : 'size, finish, colour and options') + '</li><li><b>Get your proposal</b> — price, drawings with sizes, specifications</li><li><b>Add to cart</b> — pay ' + PCT + '% now, the rest before dispatch' + (inst ? (m.install.required ? ' · installed by outrr' : ' · installed by outrr or by you') : '') + '</li></ol>' +
       (S.prop0 ? '<button type="button" class="pg-again" onclick="mtoProposal(true)">See your proposal →</button>' : '');
   }
   function sizeTxt(m, o) {
@@ -2615,5 +2618,74 @@
     draw(); p3Draw();
   }
   document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-proj]'); if (b && S) { e.preventDefault(); e.stopPropagation(); projPick(b.getAttribute('data-proj')); } }, true);
+
+  // ------------------------------------------------------------ 199: before a designer (pergola / cabin) or the planner opens — a blank screen:
+  // "Which space is this for?" (the plan open on this device + the plans saved in the account) → else "Where will it go? Lawn / Terrace"
+  window.mtoSpaceAsk = function (what, cb) {
+    propCss(); var d = document.getElementById('spAsk'); if (!d) { d = document.createElement('div'); d.id = 'spAsk'; d.className = 'sp-ov'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); document.body.appendChild(d); }
+    var W = what === 'planner' ? 'your plan' : 'this ' + what, list = [], st = { step: 'load' };
+    var close = function () { d.classList.remove('open'); document.body.classList.remove('sp-on'); };
+    var paint = function () {
+      var h = '<div class="sp-hd"><b>' + (what === 'planner' ? 'Plan your space' : what === 'cabin' ? 'Design your cabin' : 'Design your pergola') + '</b><button type="button" data-sp="x" aria-label="Close">✕</button></div><div class="sp-bd">';
+      if (st.step === 'load') h += '<p class="sp-sub">Loading your plans…</p>';
+      else if (st.step === 'plans') h += '<h2>Which space is ' + esc(W) + ' for?</h2><p class="sp-sub">Pick one of your plans — ' + (what === 'planner' ? 'it opens as you left it' : 'it goes on that terrace / lawn, with the things around it') + '. Or start a new one, for another home or client.</p><div class="sp-list">' +
+        list.map(function (p, i) { return '<button type="button" data-sp="p:' + i + '"><i>' + (p.kind === 'lawn' ? '🌳' : '🏙') + '</i><span><b>' + esc(p.name) + '</b><small>' + esc([p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace', p.size, p.n ? p.n + ' thing' + (p.n > 1 ? 's' : '') : '', p.local ? 'open on this device' : p.at ? 'saved ' + new Date(p.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')) + '</small></span></button>'; }).join('') +
+        '<button type="button" data-sp="new" class="sp-new"><i>＋</i><span><b>A new space</b><small>Another home, a client’s site… — your plans stay saved</small></span></button></div>';
+      else h += (list.length ? '<button type="button" class="sp-back" data-sp="back">← My plans</button>' : '') + '<h2>Where will ' + esc(W) + ' go?</h2><p class="sp-sub">We set up the space first' + (what === 'planner' ? '' : ', then you design ' + esc(W) + ' on it in 3D') + '.</p><div class="sp-kinds">' +
+        '<button type="button" data-sp="k:ground"><i>🌳</i><b>Lawn / garden</b><small>Ground level — a lawn, garden, farmhouse or courtyard</small></button>' +
+        '<button type="button" data-sp="k:terrace"><i>🏙</i><b>Terrace / rooftop</b><small>Set its size, parapet, mumty, tanks and walls next</small></button></div>';
+      d.innerHTML = h + '</div>';
+    };
+    if (!d.dataset.w) { d.dataset.w = 1; d.addEventListener('click', function (e) { var b = e.target.closest('[data-sp]'); if (!b || !d._go) return; d._go(b.getAttribute('data-sp')); }); }
+    d._go = function (k) {
+      if (k === 'x') return close();
+      if (k === 'new') { st.step = 'kind'; return paint(); }
+      if (k === 'back') { st.step = 'plans'; return paint(); }
+      if (k.indexOf('p:') === 0) { var p = list[+k.slice(2)]; close(); return cb({ plan: p, had: true }); }
+      if (k.indexOf('k:') === 0) { close(); return cb({ kind: k.slice(2), had: list.length > 0 }); }
+    };
+    d.classList.add('open'); document.body.classList.add('sp-on'); paint();
+    var lp = null; try { lp = JSON.parse(localStorage.getItem('outrr_plan') || 'null'); } catch (e) {}
+    var its = arr(lp && lp.items).filter(function (o) { return o && !o._me; });
+    if (lp && lp.site && (its.length || (lp.site.kind === 'terrace' && arr(lp.site.blocks).length))) list.push({ local: true, id: lp.pid || 'local', name: lp.pname || 'The plan open on this device', size: lp.site.pw && lp.site.kind !== 'ground' ? lp.site.pw + ' × ' + lp.site.pd + ' ft' : '', kind: lp.site.kind === 'ground' ? 'lawn' : 'terrace', n: its.length });
+    var fin = function () { st.step = list.length ? 'plans' : 'kind'; paint(); };
+    if (!window.acToken || !localStorage.getItem('outrr_session')) return fin();
+    authRpc('my_plans').then(function (r) { arr(r).slice(0, 20).forEach(function (p) { if (list.some(function (z) { return z.id === p.id; })) return; list.push({ id: p.id, name: p.name, size: p.size || '', kind: p.kind, n: p.item_count || 0, at: p.updated_at }); }); fin(); }, fin);
+  };
+  async function spaceApply(r, lay) {   // the answer → this designer's site (and the plan it belongs to)
+    S.spaceDone = true; S.pl = null; S.site = null;
+    if (r.plan) { S.proj = 'same';
+      if (!r.plan.local) { var g = await authRpc('plan_get', { p_id: r.plan.id }); if (g && g.site) { try { localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: 1, site: g.site, items: arr(g.items), pid: g.id, pname: g.name, source: g.source || 'planner' })); if (g.site.kind === 'terrace') localStorage.setItem('outrr_site', JSON.stringify(g.site)); else localStorage.removeItem('outrr_site'); } catch (e) {} } }
+      var sh = sharedSite(), pl = null; try { pl = JSON.parse(localStorage.getItem('outrr_plan') || 'null'); } catch (e) {}
+      if (pl && pl.site && pl.site.kind === 'ground') S.site = { kind: 'ground' }; else if (sh) { S.site = sh; tsCentre(sh, lay); }
+    } else { S.proj = r.had ? 'new' : 'same';
+      if (r.kind === 'terrace') { var t = (!r.had && sharedSite()) || tsNew(lay); t.kind = 'terrace'; S.site = t; tsCentre(t, lay); }
+      else S.site = { kind: 'ground' }; }
+    try { draw(); } catch (e) {}
+  }
+  function cabCard(x, m) {   // cabins: the same card (the studio keeps its own panel)
+    return '<div class="pg-rate"><span>Starts at</span><b>' + rs(x.p) + '</b><em>incl. GST · smallest size, one door — delivered and assembled</em></div>' + cuBtn() +
+      '<ol class="pg-next"><li><b>Customise in 3D</b> — size, doors, rooms, roof and finishes</li><li><b>Get your proposal</b> — price, plan and views with sizes, specifications</li><li><b>Add to cart</b> — pay ' + PCT + '% now, the rest before dispatch · installed by outrr</li></ol>';
+  }
+  var ppObs = null;
+  function ppStick(on) {   // the card sticks at the side (desktop); once it scrolls away with the column, the floating button comes back
+    document.body.classList.toggle('pdp-prop', !!on); document.body.classList.remove('pp-float');
+    if (ppObs) { ppObs.disconnect(); ppObs = null; } if (!on) return;
+    var hd = document.querySelector('.stickytop') || document.querySelector('header'); document.documentElement.style.setProperty('--pptop', ((hd && hd.offsetHeight) || 150) + 14 + 'px');
+    setTimeout(function () { var c = document.querySelector('#pdp .pp-card'); if (!c || !window.IntersectionObserver) return;
+      ppObs = new IntersectionObserver(function (es) { es.forEach(function (en) { document.body.classList.toggle('pp-float', !en.isIntersecting); }); }); ppObs.observe(c); }, 50);
+  }
+  (function () { try { var st = document.createElement('style'); st.textContent =
+    '.sp-ov{position:fixed;inset:0;z-index:340;background:#F7F3EC;display:none;flex-direction:column}.sp-ov.open{display:flex}body.sp-on{overflow:hidden}body.sp-on .near-pill,body.sp-on .wa-fab,body.sp-on #wachat{display:none!important}' +
+    '.sp-hd{display:flex;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #E7DFD3}.sp-hd b{flex:1;font-size:15px}.sp-hd button{border:1px solid #ddd;background:#fff;border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:15px}' +
+    '.sp-bd{flex:1;overflow:auto;padding:40px 18px;max-width:720px;width:100%;margin:0 auto;box-sizing:border-box}.sp-bd h2{font-size:26px;margin:0 0 6px}.sp-sub{font-size:14px;color:#6A6258;margin:0 0 20px}' +
+    '.sp-list{display:flex;flex-direction:column;gap:10px}.sp-list button,.sp-kinds button{display:flex;gap:14px;align-items:center;text-align:left;border:1.5px solid #E2D6C4;background:#fff;border-radius:16px;padding:14px 16px;font:inherit;color:#2E2E2E;cursor:pointer}.sp-list button:hover,.sp-kinds button:hover{border-color:#C26445;background:#FFF8F2}' +
+    '.sp-list i,.sp-kinds i{font-style:normal;font-size:26px;flex:none}.sp-list b{display:block;font-size:15px}.sp-list small,.sp-kinds small{display:block;font-size:12.5px;color:#7A7268;margin-top:2px}.sp-new{border-style:dashed!important}' +
+    '.sp-kinds{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sp-kinds button{flex-direction:column;align-items:flex-start;padding:22px 18px;min-height:170px}.sp-kinds i{font-size:40px}.sp-kinds b{font-size:18px;margin-top:6px}' +
+    '.sp-back{border:0;background:none;color:#8a3a1f;font:700 13px inherit;font-family:inherit;cursor:pointer;padding:0;margin:0 0 14px}' +
+    '.pp-card .pg-rate{margin:0 0 12px}.pp-card .pg3-btn{margin:0 0 12px}' +
+    '@media(min-width:900px){body.pdp-prop .pdp-grid{align-items:stretch}#pdp .pp-card{position:sticky;top:var(--pptop,170px);z-index:4;box-shadow:0 6px 24px rgba(46,46,46,.08)}body.pdp-prop:not(.pp-float) .ctas{display:none!important}}' +
+    '@media(max-width:600px){.sp-kinds{grid-template-columns:1fr}.sp-kinds button{min-height:0}.sp-bd{padding:24px 14px}.sp-bd h2{font-size:22px}}';
+    document.head.appendChild(st); } catch (e) {} })();
 
 })();
