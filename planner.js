@@ -64,16 +64,23 @@ async function rpc(fn, args) {
   const r = await fetch(C.url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: C.anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) });
   const j = await r.json().catch(() => null); if (!r.ok) throw new Error((j && j.message) || 'Could not save'); return j;
 }
+const assistTok = () => (window.ASSIST && window.ASSIST.token) || '';   // 196: Sales mode — saved on the CRM lead
+async function anonRpc(fn, args) {
+  const C = window.OUTRR_SUPA || {}; if (!C.url) throw new Error('Not connected');
+  const r = await fetch(C.url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: C.anon, Authorization: 'Bearer ' + C.anon, 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) });
+  const j = await r.json().catch(() => null); if (!r.ok) throw new Error((j && j.message) || 'Could not save'); return j;
+}
 const signedIn = () => { try { return !!localStorage.getItem('outrr_session'); } catch (e) { return false; } };
 const pinNow = () => { try { return (JSON.parse(localStorage.getItem('outrr_addr') || '{}').pincode) || ''; } catch (e) { return ''; } };
 let cloudT = null, cloudBusy = false;
-function cloudSoon(extra) { if (!S || !signedIn() || !priceOk()) return; clearTimeout(cloudT); cloudT = setTimeout(() => cloudSave(extra), extra ? 0 : 3000); }
+function cloudSoon(extra) { if (!S || (!assistTok() && (!signedIn() || !priceOk()))) return; clearTimeout(cloudT); cloudT = setTimeout(() => cloudSave(extra), extra ? 0 : 3000); }
 async function cloudSave(extra) {
   if (cloudBusy || !S) return; cloudBusy = true;
   try {
     const est = S.step === 2 ? exact().t : total().t, first = !S.pid;
-    const r = await rpc('plan_save', { p: Object.assign({ id: S.pid || null, name: S.pid ? undefined : S.pname || undefined, kind: S.site.kind === 'terrace' ? 'terrace' : 'lawn', site: S.site, items: S.items, step: S.step,
-      est: Math.round(est || 0), pincode: pinNow(), device: innerWidth < 760 ? 'mobile' : 'desktop', source: S.source || 'planner' }, extra || {}) });
+    const pl = Object.assign({ id: S.pid || null, name: S.pid ? undefined : S.pname || undefined, kind: S.site.kind === 'terrace' ? 'terrace' : 'lawn', site: S.site, items: S.items, step: S.step,
+      est: Math.round(est || 0), pincode: pinNow(), device: innerWidth < 760 ? 'mobile' : 'desktop', source: S.source || 'planner' }, extra || {});
+    const r = assistTok() ? await anonRpc('sales_plan_save', { p_token: assistTok(), p: pl }) : await rpc('plan_save', { p: pl });
     if (r && r.id) { S.pid = r.id; S.pname = r.name; S.savedAt = Date.now(); S.dirty = false; save(); S.dirty = true; paintSaved(); if (first) ev('plan_save', {}); }
   } catch (e) { S.saveErr = String(e.message || e); paintSaved(); } finally { cloudBusy = false; }
 }
@@ -683,6 +690,7 @@ function close() { if (EL) EL.style.display = 'none'; document.body.style.overfl
 
 export function open(seed) {
   if (seed && seed.load) return openSaved(seed.load);
+  if (seed && seed.sload) return openSaved(seed.sload, true);
   for (const k in PC) delete PC[k]; shell(); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
   S.items.forEach(it => { if (it.cat === 'cabin' && it.bcx != null && cabinCfg(it)) { cabinFoot(it); it.x = r2(it.bcx - foot(it)[0] / 2); it.z = r2(it.bcz - foot(it)[1] / 2); delete it.bcx; delete it.bcz; } });   // 193g: back from the studio
   S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
@@ -701,8 +709,8 @@ export function open(seed) {
   } EL.style.display = 'flex'; document.body.style.overflow = 'hidden';
   draw(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60); ev('plan_open', { ref: seed && seed.item ? seed.item.cat : '' }); gateWatch(); if (priceOk()) cloudSoon();
 }
-async function openSaved(id) {   // My account → Saved plans → Open
-  try { const v = await rpc('plan_get', { p_id: id }); if (!v) throw new Error('Plan not found');
+async function openSaved(id, sales) {   // My account → Saved plans → Open; CRM → lead → Plans (Sales mode)
+  try { const v = sales ? await anonRpc('sales_plan_get', { p_token: assistTok(), p_id: id }) : await rpc('plan_get', { p_id: id }); if (!v) throw new Error('Plan not found');
     localStorage.setItem(KEY, JSON.stringify({ v: 1, step: v.step || 1, site: v.site, items: v.items || [], pid: v.id, pname: v.name, source: v.source }));
     return open({ reload: true });
   } catch (e) { alert(e.message || 'Could not open the plan'); }
