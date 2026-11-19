@@ -372,6 +372,7 @@
     '.wz-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E2D6C4;border-radius:14px;padding:12px;margin-bottom:10px;cursor:pointer}.wz-row>span:first-child{flex:1;display:flex;flex-direction:column}.wz-row small{font-size:12px;color:#6A6258}.wz-pr{font-size:12.5px;color:#6A6258;white-space:nowrap}'+
     '.wz-sw{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:99px;background:#D9D4CB;position:relative;cursor:pointer;flex:none;margin:0;transition:background .15s}.wz-sw:checked{background:#C26445}.wz-sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .15s}.wz-sw:checked::after{left:23px}'+
     '.ts-h{margin:16px 0 8px;font-size:13px;font-weight:700;color:#2E2E2E}.ts-h span{font-weight:400;color:#7A7268;font-size:12px}.ts-lb{margin:0 0 6px;font-size:12px;color:#6A6258}.ts-big{margin:2px 0 4px!important}.ts-big button{padding:10px 16px!important;font-size:14px!important}.ts-sm button{padding:5px 10px!important;font-size:12px!important}.ts-add{margin-top:6px!important}.ts-add button{border-style:dashed!important}'+
+    '.ts-q{font-size:12.5px;color:#6A6258;margin:12px 0 8px}.ts-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}.ts-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}.ts-back{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:6px 0 2px}' +
     '.ts-lk{border:1px solid #D9CDBB;background:#fff;border-radius:999px;padding:4px 10px;font:600 11.5px inherit;font-family:inherit;cursor:pointer;margin-right:6px;color:#4A4640}.ts-lk.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}' +
     '.ts-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:8px 0}.ts-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px;position:relative}.ts-n input{width:80px;height:38px;border:1px solid #D9CDBB;border-radius:10px;padding:0 24px 0 10px;font:600 14px Inter,sans-serif;box-sizing:border-box}.ts-n i{position:absolute;right:9px;bottom:11px;font-style:normal;font-size:12px;color:#8A8276}.ts-x{width:32px;height:32px;border-radius:8px;border:1px solid #E2D6C4;background:#fff;cursor:pointer;flex:none}.ts-c{height:38px;padding:0 12px;border-radius:10px;border:1px solid #2E2E2E;background:#fff;font-weight:600;font-size:12.5px;cursor:pointer}'+
     '.ts-blk{border:1px solid #E7DDCF;border-radius:12px;padding:10px 12px;margin:0 0 8px;background:#FFFCF8}.ts-bh{display:flex;align-items:center;justify-content:space-between;margin:0 0 6px}.ts-bh b{font-size:13.5px}.ts-ck{display:flex;gap:6px;align-items:center;font-size:12.5px;color:#4A4640}'+
@@ -680,7 +681,9 @@
   // cabin placed on it (drag it, turn its front). Plot coords: x from the left, z from the back (pd = front / road).
   var TS_PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
   var AU = function () { try { return localStorage.getItem('outrr_area_unit') === 'm' ? 'm' : 'yd'; } catch (e) { return 'yd'; } }, plotLab = function (g) { return AU() === 'm' ? Math.round(+g * 0.836127) + ' sq m' : g + ' sq yd'; };   // plot size in sq yd (gaj) or sq m
-  var TS_KIND = { mumty: ['Mumty (stair room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft', 'Shaft'], room: ['Room already built', 'Room'], ac: ['AC outdoor unit', 'AC unit'] };
+  // 201: Quick setup (3 questions) for customers; Detailed for staff / CSP (Sales mode), ?pro=1, or anyone who opened it once
+  window.tsFull = function () { try { if (/[?&]pro=1\b/.test(location.search)) localStorage.setItem('outrr_ts_mode', 'full'); } catch (e) {} if (window.ASSIST && window.ASSIST.name) return true; try { return localStorage.getItem('outrr_ts_mode') === 'full'; } catch (e) { return false; } };
+  var TS_KIND = { mumty: ['Mumty (staircase room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft (open duct)', 'Shaft'], room: ['Room already built', 'Room'], ac: ['AC outdoor unit', 'AC unit'] };
   var TS_BH = { mumty: 9, lift: 11, shaft: 3, room: 9 };   // = cabin3d.js BH_: a block's height when not typed
   var TS_CUTS = [['bl', 'Back-left'], ['br', 'Back-right'], ['fl', 'Front-left'], ['fr', 'Front-right']];   // 193: corners cut (front = road side)
   var TS_WALLS = [['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']];
@@ -748,11 +751,22 @@
     h += '<div class="cbs-t"><h4 class="wz-h">Where will it go?</h4><p class="wz-sub">' + (on ? 'Set up your terrace — close, not exact. Your ' + tsWord() + ' comes on it next' + (tsWord() === 'cabin' ? '; move it any time with ▦ Whole terrace' : ' — then drag it where you want') + '. Doesn\'t change the price.' : 'A lawn or a terrace? We\'ll show the cabin there.') + '</p></div><div class="cbs-o">';
     h += '<div class="wz-tabs ts-big">' + btn('data-ts="kind:ground"', !on, '🌳 Lawn / garden') + btn('data-ts="kind:terrace"', on, '🏙 Terrace') + '</div>';
     if (on) {
+      if (!window.tsFull()) {   // quick: plot, road, staircase room — the rest stays typical
+        var mu = arr(t.blocks).filter(function (b0) { return b0.type === 'mumty'; })[0], rq = t.road_back ? 'back' : t.corner || 'front';
+        h += sec('How big is the plot?') + '<div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], plotLab(p[0])); }).join('') + '</div>' + '<div class="wz-tabs ts-sm" style="margin-top:6px">' + btn('data-ts="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-ts="unit:m"', AU() === 'm', 'sq m') + '</div>';
+        h += sec('Where is the road?', 'the side facing the road is the front') + '<div class="wz-tabs">' + [['front', 'In front'], ['left', 'Front + left (corner plot)'], ['right', 'Front + right (corner plot)'], ['back', 'Front + back']].map(function (r0) { return btn('data-ts="qroad:' + r0[0] + '"', rq === r0[0], r0[1]); }).join('') + '</div>';
+        h += sec('Staircase room (mumty) on the roof?', 'standing at the road, looking in') + '<div class="wz-tabs">' + [['left', 'On the left'], ['right', 'On the right'], ['back', 'At the back'], ['none', 'None']].map(function (r0) { return btn('data-ts="qmumty:' + r0[0] + '"', r0[0] === 'none' ? !mu : mu && mu.side === r0[0], r0[1]); }).join('') + '</div>';
+        h += '<p class="ts-q">We add the usual lift room, water tanks and 3 ft boundary wall. Close is enough — it only sets the scene and never changes the price.</p><button type="button" class="ts-full" data-ts="mode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>';
+        if (S.tsMsg) h += '<div class="wz-note" style="background:#FFF4E5;border-color:#F1D3A8">' + esc(S.tsMsg) + '</div>';
+        if (!noPlace) h += placeBox(lay);
+        return h + '</div>';
+      }
+      h += '<button type="button" class="ts-back" data-ts="mode:quick">← Quick setup</button>';
       h += sec('Plot') + '<div class="wz-tabs" style="margin-bottom:6px">' + btn('data-ts="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-ts="unit:m"', AU() === 'm', 'sq m') + '</div><div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], plotLab(p[0])); }).join('') + '</div>';
       h += '<div class="ts-row">' + nIn('pw', t.pw, 'Width', 15, 120) + nIn('pd', t.pd, 'Depth', 20, 150) + '</div>';
       h += sec('Corner plot?', 'road on which side') + '<div class="wz-tabs">' + btn('data-ts="corner:"', !t.corner, 'No') + btn('data-ts="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-ts="corner:right"', t.corner === 'right', 'Road on the right') + '</div>';
       h += sec('Road in front / at the back?') + '<div class="wz-tabs">' + btn('data-ts="rfront"', t.road_front !== false, (t.road_front !== false ? '✓ ' : '') + 'Road in front') + btn('data-ts="rback"', !!t.road_back, (t.road_back ? '✓ ' : '') + 'Road at the back') + '</div>';
-      h += sec('Parapet') + '<div class="wz-tabs">' + btn('data-ts="par:3"', t.par === 3, '3 ft') + btn('data-ts="par:4"', t.par === 4, '4 ft') + '</div>';
+      h += sec('Parapet', 'the low boundary wall round the roof') + '<div class="wz-tabs">' + btn('data-ts="par:3"', t.par === 3, '3 ft') + btn('data-ts="par:4"', t.par === 4, '4 ft') + '</div>';
       h += sec('Neighbour\'s wall higher than yours?') + '<div class="wz-tabs">' + [['left', 'Left'], ['right', 'Right'], ['back', 'Back']].filter(function (s0) { return s0[0] !== t.corner && !(s0[0] === 'back' && t.road_back); }).map(function (s0) { var hi = t.high && t.high[s0[0]]; return btn('data-ts="high:' + s0[0] + '"', hi, (hi ? '✓ ' : '') + s0[1]); }).join('') + '</div>';
       var CU = t.cuts || {};
       h += sec('Corners cut?', 'front = road side') + TS_CUTS.map(function (ck) { var c = CU[ck[0]] || {}, cOn = c.type === 'notch' || c.type === 'slant';
@@ -791,6 +805,15 @@
     if (a[0] === 'view') { S.v3 = S.view3 = a[1]; return true; }
     if (!x) return true;
     var b = a[1] != null && /^\d+$/.test(a[1]) ? x.blocks[+a[1]] : null, keep = b ? { x: b.x, z: b.z, side: b.side } : null;
+    if (a[0] === 'mode') { try { localStorage.setItem('outrr_ts_mode', a[1] === 'full' ? 'full' : 'quick'); } catch (e) {} return true; }
+    if (a[0] === 'qroad') { x.road_front = true; x.road_back = a[1] === 'back'; x.corner = a[1] === 'left' || a[1] === 'right' ? a[1] : ''; x.high = x.high || {}; if (x.corner) x.high[x.corner] = false; if (x.road_back) x.high.back = false; return true; }
+    if (a[0] === 'qmumty') { var mi = x.blocks.map(function (b0) { return b0.type; }).indexOf('mumty'), li = x.blocks.map(function (b0) { return b0.type; }).indexOf('lift');
+      if (a[1] === 'none') { if (mi >= 0) x.blocks.splice(mi, 1); return true; }
+      if (mi < 0) { var sm = x.pw <= 25; if (!tsAdd(x, 'mumty', a[1], sm ? 8 : 10, sm ? 16 : 18)) S.tsMsg = 'No free room for it on that side'; return true; }
+      var mb = x.blocks[mi], mk = JSON.stringify(mb); if (a[1] === 'back' && mb.side !== 'back') { var tw = mb.w; mb.w = mb.d; mb.d = tw; } else if (a[1] !== 'back' && mb.side === 'back') { var tw2 = mb.w; mb.w = mb.d; mb.d = tw2; }   // its long side along the wall
+      tsWall(x, mb, a[1]); if (!tsFree(x, mi)) { var o0 = JSON.parse(mk); Object.keys(o0).forEach(function (kk) { mb[kk] = o0[kk]; }); S.tsMsg = 'No free room for it on that side'; return true; }
+      if (li >= 0) { var lb = x.blocks[li]; tsWall(x, lb, a[1]); if (!tsFree(x, li)) tsFree(x, li); }   // the lift room goes along with it
+      return true; }
     if (a[0] === 'unit') { try { localStorage.setItem('outrr_area_unit', a[1] === 'm' ? 'm' : 'yd'); } catch (e) {} return true; }
     if (a[0] === 'plot') { var p = TS_PLOTS.filter(function (z) { return z[0] === a[1]; })[0]; x.plot = a[1]; tsPlot(x, p[1], p[2], lay); }
     else if (a[0] === 'corner') { x.corner = a[1] || ''; if (x.high && x.corner) x.high[x.corner] = false; }
@@ -2138,10 +2161,10 @@
       '.pg3-ft{position:absolute;right:0;bottom:0;width:340px;padding:12px 16px;background:#fff;border-top:1px solid #eee;border-left:1px solid #eee}.pg3-ft button{width:100%;padding:13px;border:0;border-radius:10px;background:var(--terra,#BE5633);color:#fff;font:700 14px inherit;font-family:inherit;cursor:pointer}' +
             '.pg3-where{margin:0 0 6px}.pg3-where .wz-tabs{display:flex;flex-wrap:wrap;gap:6px}.pg3-where .wz-tabs button,.pg3-where .ts-c{border:1px solid #ddd;background:#fff;border-radius:999px;padding:6px 11px;font:600 12px inherit;font-family:inherit;cursor:pointer}.pg3-where .wz-tabs button.on{border-color:var(--terra,#BE5633);background:#fbefe9;color:#8a3a1f}.pg3-where .wz-h{font-size:16px;margin:4px 0}.pg3-where .wz-sub{font-size:12.5px;color:#6A6258}.pg3-where .ts-h{font-size:12px;font-weight:700;margin:12px 0 6px}.pg3-where .ts-h span{font-weight:500;color:#8a857c}.pg3-where .ts-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:6px 0}.pg3-where .ts-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258}.pg3-where .ts-n input{width:64px;height:32px;border:1px solid #D9CDBB;border-radius:8px;padding:0 6px}.pg3-where .ts-n i{display:none}.pg3-where .ts-blk{border:1px solid #EEE6DA;border-radius:10px;padding:8px;margin:0 0 6px}.pg3-where .ts-bh{display:flex;justify-content:space-between}.pg3-where .ts-x{border:0;background:none;color:#B3261E;cursor:pointer}.pg3-where .wz-note{font-size:12px;background:#EEF3E8;border:1px solid #D3DEC5;border-radius:10px;padding:7px 10px;margin:8px 0}.pg3-where .ts-lb{font-size:12px;margin:4px 0}.pg3-go{width:100%;margin:12px 0 0;padding:12px;border:0;border-radius:10px;background:#2E2E2E;color:#fff;font:700 14px inherit;font-family:inherit;cursor:pointer}.pg3-note{font-size:12px;color:#6A6258;margin:6px 0 0}'+
       '.pg3-stp{display:flex;gap:4px;margin:0 0 12px;overflow-x:auto}.pg3-stp button{flex:1 0 auto;border:1px solid #E2D6C4;background:#fff;border-radius:999px;padding:6px 9px;font:700 11px inherit;font-family:inherit;color:#8a857c;cursor:pointer;white-space:nowrap}.pg3-stp button.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}.pg3-stp button.dn{color:#55634A;border-color:#B9C4AE}.pg3-stp button:disabled{cursor:default;opacity:.7}' +
-      '.pg3-sh{font-size:16px;margin:4px 0 4px}.pg3-bk{border:0;background:none;color:#8a3a1f;font:700 13px inherit;font-family:inherit;cursor:pointer;padding:14px 0 0}' +
+      '.pg3-sh{font-size:16px;margin:4px 0 4px}.pg3-ft .pg3-sec{background:#fff!important;color:#2E2E2E!important;border:1px solid #ddd!important;margin-bottom:8px}.pg3-bk{border:0;background:none;color:#8a3a1f;font:700 13px inherit;font-family:inherit;cursor:pointer;padding:14px 0 0}' +
       '.pg3-pr{margin:18px 0 0;padding:12px 14px;border-radius:12px;background:#F6F1EA;font-size:13px;color:#4A4640}.pg3-pr b{display:block;font-size:20px;color:#2E2E2E;margin:2px 0}.pg3-pr small{font-size:11.5px;color:#8a857c}' +
       '.pg-sum{border:1px solid #E7DFD3;border-radius:12px;padding:4px 14px 8px;margin:0 0 6px;background:#fff}.pg-sum-h{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F0EAE1;margin-bottom:4px}.pg-sum-h b{font-size:14px}.pg-sum-h button{border:0;background:none;color:var(--terra,#BE5633);font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:4px 0}.pg-sum-r{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13px}.pg-sum-r span{color:#8a857c}.pg-sum-r b{font-weight:600;color:#2E2E2E;text-align:right}' +
-      '@media(max-width:760px){.pg3-ft .plan-card small{display:none}.pg3-ft .plan-card{padding:8px 12px!important;margin-bottom:6px}.pg3-ft .plan-card>span:first-child{font-size:20px}.pg3-pn{padding-bottom:130px}.pg3-bd{grid-template-columns:1fr;grid-template-rows:46vh auto}.pg3-pn{border-left:0;border-top:1px solid #eee}.pg3-ft{width:100%;border-left:0}}';
+      '@media(max-width:760px){.pg3-ft .plan-card small{display:none}.pg3-ft .plan-card{padding:8px 12px!important;margin-bottom:6px}.pg3-ft .plan-card>span:first-child{font-size:20px}.pg3-pn{padding-bottom:130px}.pg3-bd{grid-template-columns:1fr;grid-template-rows:40vh auto}.pg3-pn{border-left:0;border-top:1px solid #eee}.pg3-ft{width:100%;border-left:0}}';
     document.head.appendChild(st);
   }
   function p3Btn() { if (!isPg(S && S.id)) return ''; p3Css();   // its styles were added only when the 3D opened, so the button showed tiny and unstyled
@@ -2162,33 +2185,39 @@
     return h;
   }
   function q2(q) { return q.l + ' × ' + q.w + ' ft'; }
-  function p3Steps() {   // 1 Space → 2 Design → 3 Around it → 4 Proposal (proposal only from the last step)
-    var terr = S.site && S.site.kind === 'terrace', cur = S.pgW ? 0 : S.pgS === 'around' ? 2 : 1, L = [terr ? 'Terrace' : 'Space', 'Design', 'Around', 'Proposal'];
-    return '<div class="pg3-stp">' + L.map(function (t, i) { var dn = i < cur, on = i === cur, can = i < 3 && i !== cur && !(i === 0 && !terr) && (i < cur || !S.pgW);
-      return '<button type="button"' + (can ? ' data-p3s="' + i + '"' : ' disabled') + ' class="' + (on ? 'on' : dn ? 'dn' : '') + '">' + (dn ? '✓ ' : '') + (i + 1) + ' · ' + t + '</button>'; }).join('') + '</div>';
+  var PG_ORD = ['size', 'look', 'extras', 'around'];
+  function pgStep() { var k = S.pgS === 'design' || !S.pgS ? 'size' : S.pgS; return PG_ORD.indexOf(k) >= 0 ? k : 'size'; }
+  function p3Steps() {   // Terrace → Size → Look → Extras → Around → Proposal (the proposal only from the last step)
+    var terr = S.site && S.site.kind === 'terrace', cur = S.pgW ? 0 : PG_ORD.indexOf(pgStep()) + 1, L = [terr ? 'Terrace' : 'Space', 'Size', 'Look', 'Extras', 'Around', 'Proposal'], K = ['site'].concat(PG_ORD);
+    return '<div class="pg3-stp">' + L.map(function (t, i) { var dn = i < cur, on = i === cur, can = i < 5 && i !== cur && !(i === 0 && !terr) && (i < cur || !S.pgW);
+      return '<button type="button"' + (can ? ' data-p3s="' + K[i] + '"' : ' disabled') + ' class="' + (on ? 'on' : dn ? 'dn' : '') + '">' + (dn ? '✓ ' : '') + (i + 1) + ' · ' + t + '</button>'; }).join('') + '</div>';
   }
-  function p3Ft() {   // the footer follows the step: nothing while setting up the terrace, Next on the design, the planner + proposal at the end
-    if (S.pgW) return '';
-    if (S.fromPlan != null) return '<button type="button" data-p3="toplan">Save to my plan →</button>';
-    if (S.pgS !== 'around') return '<button type="button" data-p3="next">Next — add things around it →</button>';
+  function p3Ft() {   // the footer follows the step: nothing while setting up the terrace, Next through the design, the planner + proposal at the end
+    if (S.pgW) return ''; var k = pgStep(), NX = { size: 'Next — the look →', look: 'Next — extras →', extras: 'Next — add things around it →' };
+    var sv = S.fromPlan != null ? '<button type="button" data-p3="toplan"' + (k === 'extras' || k === 'around' ? '' : ' class="pg3-sec"') + '>Save to my plan →</button>' : '';
+    if (S.fromPlan != null && (k === 'extras' || k === 'around')) return sv;
+    if (k !== 'around') return sv + '<button type="button" data-p3="next">' + NX[k] + '</button>';
     return '<button type="button" class="plan-card" data-p3="plan"><span>🗺️</span><span><b>Plan the whole ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'lawn') + '</b><small>Seating, planters, a bar, a cabin… with this pergola, in the planner</small></span><i>→</i></button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button>';
   }
   function p3Panel() {
-
     if (S.pgW) return p3Steps() + p3Where();
-    if (S.pgS === 'around') return p3Steps() + '<h4 class="pg3-sh">Add things around it</h4><p class="pg3-note" style="margin-top:0">To see how it looks — a deck, seating, planters… Optional.</p>' + p3Around() + '<button type="button" class="pg3-bk" data-p3="back">← Back to the design</button>';
-    var x = PRODS[S.id], m = x.cz, o = S.o, q = pgOpts(), h = p3Steps() + p3Where(), chips = function (g, cur) { return '<div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + '</button>'; }).join('') + '</div>'; };
-    h += '<div class="lb">Size (ft)</div><div class="pg3-sz"><span>Length <button type="button" data-p3d="l,-1" aria-label="Shorter">−</button><b>' + q.l + '</b><button type="button" data-p3d="l,1" aria-label="Longer">+</button></span><span>Width <button type="button" data-p3d="w,-1" aria-label="Narrower">−</button><b>' + q.w + '</b><button type="button" data-p3d="w,1" aria-label="Wider">+</button></span></div>';
+    var k = pgStep(), bk = '<button type="button" class="pg3-bk" data-p3="back">← Back</button>';
+    if (k === 'around') return p3Steps() + '<h4 class="pg3-sh">Add things around it</h4><p class="pg3-note" style="margin-top:0">To see how it looks — a deck, seating, planters… Optional.</p>' + p3Around() + bk;
+    var x = PRODS[S.id], m = x.cz, o = S.o, q = pgOpts(), h = p3Steps(), chips = function (g, cur) { return '<div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + '</button>'; }).join('') + '</div>'; };
+    if (k === 'size') h += '<h4 class="pg3-sh">How big?</h4><div class="lb">Size (ft)</div><div class="pg3-sz"><span>Length <button type="button" data-p3d="l,-1" aria-label="Shorter">−</button><b>' + q.l + '</b><button type="button" data-p3d="l,1" aria-label="Longer">+</button></span><span>Width <button type="button" data-p3d="w,-1" aria-label="Narrower">−</button><b>' + q.w + '</b><button type="button" data-p3d="w,1" aria-label="Wider">+</button></span></div>';
     var mats = arr(m.materials).filter(function (y) { return y.name; }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
-    if (mats.length > 1) h += '<div class="lb">' + esc((m.labels && m.labels.material) || 'Finish') + '</div><div class="pg3-ch">' + mats.map(function (y) { return '<button type="button" class="' + (y === mat ? 'on' : '') + '" data-p3m="' + esc(y.name) + '">' + esc(y.name) + '</button>'; }).join('') + '</div>';
+    if (k === 'look') h += '<h4 class="pg3-sh">The look</h4><p class="pg3-note" style="margin-top:0">Finish, colour and the roof — the 3D changes as you pick.</p>';
+    if (k === 'look' && mats.length > 1) h += '<div class="lb">' + esc((m.labels && m.labels.material) || 'Finish') + '</div><div class="pg3-ch">' + mats.map(function (y) { return '<button type="button" class="' + (y === mat ? 'on' : '') + '" data-p3m="' + esc(y.name) + '">' + esc(y.name) + '</button>'; }).join('') + '</div>';
     var cols = arr(mat && mat.colours);
-    if (cols.length) h += '<div class="lb">Colour · ' + esc(o.colour || '') + '</div><div class="pg3-ch">' + cols.map(function (c) { return '<button type="button" class="pg3-sw' + (c.name === o.colour ? ' on' : '') + '" title="' + esc(c.name) + '" aria-label="' + esc(c.name) + '" data-p3c="' + esc(c.name) + '" style="background:' + (c.hex2 ? 'linear-gradient(135deg,' + c.hex + ' 50%,' + c.hex2 + ' 50%)' : c.hex || '#999') + '"></button>'; }).join('') + '</div>';
+    if (k === 'look' && cols.length) h += '<div class="lb">Colour · ' + esc(o.colour || '') + '</div><div class="pg3-ch">' + cols.map(function (c) { return '<button type="button" class="pg3-sw' + (c.name === o.colour ? ' on' : '') + '" title="' + esc(c.name) + '" aria-label="' + esc(c.name) + '" data-p3c="' + esc(c.name) + '" style="background:' + (c.hex2 ? 'linear-gradient(135deg,' + c.hex + ' 50%,' + c.hex2 + ' 50%)' : c.hex || '#999') + '"></button>'; }).join('') + '</div>';
     var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }), rk = function (g) { return /roof|cover/i.test(g.name) ? 0 : /height/i.test(g.name) ? 1 : /layout/i.test(g.name) ? 2 : 3; };
-    gs.slice().sort(function (a, b) { return rk(a) - rk(b); }).forEach(function (g) { h += '<div class="lb">' + esc(g.name) + '</div>' + chips(g, (o.groups || {})[g.name]); });   // every option group of the design, not only roof / height / layout
+    gs.slice().sort(function (a, b) { return rk(a) - rk(b); }).filter(function (g) { return k !== 'extras' && (k === 'size') === /height|layout/i.test(g.name); }).forEach(function (g) { h += '<div class="lb">' + esc(g.name) + '</div>' + chips(g, (o.groups || {})[g.name]); });
+    if (k === 'size') h += '<h4 class="pg3-sh" style="margin-top:18px">Where it stands</h4>' + p3Where();   // every option group of the design, not only roof / height / layout
     var adds = arr(m.addons).filter(function (a) { return a.name; }), ok = mtoOk();
-    if (adds.length) h += '<div class="lb">Add-ons</div><div class="pg3-ch">' + adds.map(function (a) { var on = arr(o.addons).indexOf(a.name) >= 0; return '<button type="button" class="' + (on ? 'on' : '') + '" data-p3a="' + esc(a.name) + '">' + (on ? '✓ ' : '+ ') + esc(a.name) + (ok && +a.price ? ' · ' + rs(a.price) + (a.charge === 'unit' ? '/' + UW(m.unit) : '') : '') + '</button>'; }).join('') + '</div>';
+    if (k === 'extras') h += '<h4 class="pg3-sh">Extras</h4><p class="pg3-note" style="margin-top:0">' + (adds.length ? 'Optional — tap to add. Skip if you don\'t need any.' : 'No extras for this design — go on.') + '</p>';
+    if (k === 'extras' && adds.length) h += '<div class="lb">Add-ons</div><div class="pg3-ch">' + adds.map(function (a) { var on = arr(o.addons).indexOf(a.name) >= 0; return '<button type="button" class="' + (on ? 'on' : '') + '" data-p3a="' + esc(a.name) + '">' + (on ? '✓ ' : '+ ') + esc(a.name) + (ok && +a.price ? ' · ' + rs(a.price) + (a.charge === 'unit' ? '/' + UW(m.unit) : '') : '') + '</button>'; }).join('') + '</div>';
     if (ok) { var pq = null; try { pq = priceR(S.id, m, o, PCT); } catch (e) {} if (pq && pq.ok) h += '<div class="pg3-pr">Your price <b>' + rs(pq.total) + '</b><small>incl. GST' + (pq.install && pq.install.amount ? ' and installation' : '') + ' · delivery as per pincode</small></div>'; }
-    return h;
+    return h + (k !== 'size' ? bk : '');
   }
   function p3Draw() {
     var ov = document.getElementById('pg3'); if (!ov || !P3.open || !S || !isPg(S.id)) return; var q = pgOpts();
@@ -2207,19 +2236,19 @@
     if (on === false) { if (ov) ov.classList.remove('open'); document.body.classList.remove('pg3-on'); P3.open = false; return; }
     if (!ov) { ov = document.createElement('div'); ov.id = 'pg3'; ov.className = 'pg3-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Design your pergola in 3D'); document.body.appendChild(ov);
       ov.addEventListener('click', p3Click); ov.addEventListener('change', function (e) { if (S && isPg(S.id) && tsInput(e.target)) { if (S.site && S.site.cx == null) tsCentre(S.site, pgLay()); keepSite(); draw(); p3Draw(); } }); }
-    if (on && S.fromPlan == null && !S.spaceDone) return window.mtoSpaceAsk('pergola', function (r) { spaceApply(r, pgLay()).then(function () { S.pgW = !!(r.kind === 'terrace' || (r.plan && S.site && S.site.kind === 'terrace' && !arr(S.site.blocks).length)); S.pgS = 'design'; window.pg3Open(true); }); });
+    if (on && S.fromPlan == null && !S.spaceDone) return window.mtoSpaceAsk('pergola', function (r) { spaceApply(r, pgLay()).then(function () { S.pgW = !!(r.kind === 'terrace' || (r.plan && S.site && S.site.kind === 'terrace' && !arr(S.site.blocks).length)); S.pgS = 'size'; window.pg3Open(true); }); });
     if (!S.site && S.proj !== 'new') { var sh = sharedSite(); if (sh) { S.site = sh; tsCentre(sh, pgLay()); } }
     var x = PRODS[S.id];
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(x.n) + ' · 3D</b><button type="button" id="pg3Night" data-p3="night">☾ Night</button><button type="button" data-p3="close" aria-label="Close">✕ Close</button></div>' +
       '<div class="pg3-bd"><div class="pg3-st" id="pg3St"><div class="pg3-cap" id="pg3Cap"></div></div><div class="pg3-pn" id="pg3Pn"></div></div>' +
-      '<div class="pg3-ft" id="pg3Ft"></div>'; if (!S.pgS) S.pgS = 'design';
+      '<div class="pg3-ft" id="pg3Ft"></div>'; if (!S.pgS) S.pgS = 'size';
     var oo = S.o, q = pgOpts(); oo.l = oo.l || q.l; oo.w = oo.w || q.w;   // the model's size becomes the order size
     ov.classList.add('open'); document.body.classList.add('pg3-on'); P3.open = true; draw(); p3Draw();
     try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: '3d' }); } catch (e) {}
   };
   function p3Click(e) {
     var t = e.target.closest('button'); if (!t || !S) return; var o = S.o, m = PRODS[S.id].cz, a = t.getAttribute('data-p3');
-    if (a === 'close') { if (S.fromPlan != null) { S.fromPlan = null; window.pg3Open(false); return window.outrrPlan && window.outrrPlan({ reload: true }); } S.spaceDone = false; S.pgS = 'design'; S.pgW = false; return window.pg3Open(false); }   // opened again → which space? asked again
+    if (a === 'close') { if (S.fromPlan != null) { S.fromPlan = null; window.pg3Open(false); return window.outrrPlan && window.outrrPlan({ reload: true }); } S.spaceDone = false; S.pgS = 'size'; S.pgW = false; return window.pg3Open(false); }   // opened again → which space? asked again
     if (a === 'night') { P3.night = !P3.night; return p3Draw(); }
     if (a === 'proj-same' || a === 'proj-new') { S.proj = a === 'proj-new' ? 'new' : 'same'; S.projAsk = null;
       if (S.proj === 'new') { S.site = null; S.pl = null; } else if (!S.site) { var sh2 = sharedSite(); if (sh2) { S.site = sh2; tsCentre(sh2, pgLay()); } }
@@ -2229,9 +2258,9 @@
     if (t.hasAttribute('data-ts')) { var wasT = S.site && S.site.kind === 'terrace'; tsClick(t); var isT = S.site && S.site.kind === 'terrace';
       if (isT && !wasT) S.pgW = true; if (isT && S.site.cx == null) tsCentre(S.site, pgLay()); if (/^rot:|^centre/.test(t.getAttribute('data-ts'))) pgAutoWall(); keepSite(); draw(); return p3Draw(); }
     if (a === 'wopen') { S.pgW = true; return p3Draw(); }
-    if (a === 'next') { S.pgS = 'around'; draw(); var pn0 = document.getElementById('pg3Pn'); p3Draw(); if (pn0) pn0.scrollTop = 0; return; }
-    if (a === 'back') { S.pgS = 'design'; p3Draw(); var pn1 = document.getElementById('pg3Pn'); if (pn1) pn1.scrollTop = 0; return; }
-    var sg = t.getAttribute('data-p3s'); if (sg != null) { if (sg === '0') S.pgW = true; else { if (S.pgW) { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); } S.pgS = sg === '2' ? 'around' : 'design'; } p3Draw(); var pn2 = document.getElementById('pg3Pn'); if (pn2) pn2.scrollTop = 0; return; }
+    if (a === 'next') { S.pgS = PG_ORD[Math.min(PG_ORD.length - 1, PG_ORD.indexOf(pgStep()) + 1)]; draw(); var pn0 = document.getElementById('pg3Pn'); p3Draw(); if (pn0) pn0.scrollTop = 0; return; }
+    if (a === 'back') { var bi = PG_ORD.indexOf(pgStep()); if (bi > 0) S.pgS = PG_ORD[bi - 1]; else if (S.site && S.site.kind === 'terrace') S.pgW = true; p3Draw(); var pn1 = document.getElementById('pg3Pn'); if (pn1) pn1.scrollTop = 0; return; }
+    var sg = t.getAttribute('data-p3s'); if (sg != null) { if (sg === 'site') S.pgW = true; else { if (S.pgW) { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); } S.pgS = PG_ORD.indexOf(sg) >= 0 ? sg : 'size'; } p3Draw(); var pn2 = document.getElementById('pg3Pn'); if (pn2) pn2.scrollTop = 0; return; }
     if (a === 'wdone') { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); return p3Draw(); }
     if (t.hasAttribute('data-p3x')) { o.deck = !o.deck; draw(); return p3Draw(); }
     if (t.hasAttribute('data-p3f')) { o.furn = t.getAttribute('data-p3f'); return p3Draw(); }
