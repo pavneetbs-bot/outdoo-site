@@ -2958,7 +2958,7 @@ var GALC = {};   // 187: sku → [[url, colour]] — photos that show one finish
 function pdColList(id){ const c=window.mtoColourOf&&mtoColourOf(id), l=(GALC[id]||[]).filter(g=>g[1]===c).map(g=>g[0]); return l.length?l:null; }
 function pdThumbs(id){
   const x=PRODS[id]; if(!x) return; const cl=pdColList(id), list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
-  if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg');
+  if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg?v=2');
   if(/^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(id)) list.push('/img/trust/cb-assurance.jpg');   // cabins: factory-made, kit, 2–5 day assembly, 10-year warranty
   window.PDG={id,list,i:0};
   const box=document.querySelector('#pdp .thumbs')||document.querySelector('.thumbs'); if(!box) return;
@@ -4580,7 +4580,7 @@ async function shareProduct(){
 <script src="/track.js?v=3"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=9"></script>
-<script src="/mto.js?v=57"></script>
+<script src="/mto.js?v=58"></script>
 <script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){var go=function(sd){return import('/planner.js?v=27').then(function(m){m.open(sd&&(sd.item||sd.items||sd.reload||sd.load||sd.sload||sd.fresh)?sd:null);});};var q=new URLSearchParams(location.search).get('plan')||'';if(!seed&&window.mtoSpaceAsk&&q.length<10&&!(window.ASSIST&&window.ASSIST.name)){window.mtoSpaceAsk('planner',function(r){go(r.plan?(r.plan.local?null:{load:r.plan.id}):{fresh:true,kind:r.kind});});return Promise.resolve();}return go(seed);};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
 <script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=8" defer></script>

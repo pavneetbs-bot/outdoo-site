@@ -1380,7 +1380,7 @@
       C.map(function (c, i) { return '<div class="tr-c"><img src="' + IMG[i] + '" alt="" loading="lazy" onerror="this.remove()"><div><b>' + c[0] + esc(c[1]) + '</b><p>' + esc(c[2]) + '</p></div></div>'; }).join('') + '</div>' +
       (cab ? '<div class="tr-line" style="font-weight:600"><span><em>✓</em>10-year warranty on all items</span><span><em>✓</em>Built for Indian weather — heat, monsoon, strong winds</span><span><em>✓</em>No civil work by us — sits on our steel deck</span><span><em>✓</em>Electrical + LED lights included</span><span><em>✓</em>Damage in delivery or assembly is ours to fix</span></div>' +
         '</section>'
-      : '<div class="tr-line" style="font-weight:600"><span><em>✓</em>3-year warranty on the steel frame</span><span><em>✓</em>Built for Indian weather and Delhi wind loads</span><span><em>✓</em>Damage in delivery or fitting is ours to fix</span><span><em>✓</em>Fixed on steel base plates with chemical anchors</span></div>' +
+      : '<div class="tr-line" style="font-weight:600"><span><em>✓</em>10-year warranty on the steel frame</span><span><em>✓</em>Built for Indian weather and Delhi wind loads</span><span><em>✓</em>Damage in delivery or fitting is ours to fix</span><span><em>✓</em>Fixed on steel base plates with chemical anchors</span></div>' +
         '</section>');   // 8: the steps are in "How your order is made" just below
   }
   function partsMini() { var ps = arr(mtoFull.parts); if (!ps.length) return '';
@@ -2474,7 +2474,7 @@
       '<h3>Size</h3>' + row('Length × width', ftin(sp.L) + ' × ' + ftin(sp.W)) + row('Area covered', Math.round(sp.L * sp.W) + ' sq ft') + row('Clear height', String(q.height)) + row('Layout', String(q.layout || 'Free-standing').split(' (')[0]) +
       '<h3>Frame &amp; roof</h3>' + row((m.labels && m.labels.material) || 'Finish', mat && mat.name) + row((m.labels && m.labels.colour) || 'Colour', o.colour) + row('Roof covering', String(q.cover || 'Open').split(' (')[0]) + row('Roof', specOf(/^roof$/i)) + row('Posts', sp.posts + ' × ' + sp.post + ' mm MS SHS') +
       others.map(function (g) { return row(g.name, grpVal(g)); }).join('') + row('Add-ons', arr(o.addons).length ? o.addons.join(', ') : 'None') +
-      '<h3>Build &amp; service</h3>' + row('Structure', specOf(/structure/i)) + row('Lighting', specOf(/light/i)) + row('Fixing', specOf(/fixing/i)) + row('Made in', (daysTxt(m.make_days) || '15–25 days') + ' after you approve the drawing') + row('Warranty', '3 years on the steel frame') + row('Installation', 'Your choice below — outrr installer or install yourself') + '</div></section>';
+      '<h3>Build &amp; service</h3>' + row('Structure', specOf(/structure/i)) + row('Lighting', specOf(/light/i)) + row('Fixing', specOf(/fixing/i)) + row('Made in', (daysTxt(m.make_days) || '15–25 days') + ' after you approve the drawing') + row('Warranty', '10 years on the steel frame') + row('Installation', 'Your choice below — outrr installer or install yourself') + '</div></section>';
     // 4. price
     h += '<section class="pp-s pp-price"><h2>Price</h2><p class="sub">Incl. GST · delivery and installation for your pincode (enter it below)</p><div class="mto-sum lt" id="mtoSum"></div></section>';
     // 5. what goes into it + 6. technical specifications
