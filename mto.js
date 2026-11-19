@@ -1958,8 +1958,8 @@
       if (q.delivery && q.delivery.fee == null) { s.needPin = true; bad('Enter your pincode'); }
       if ((o.install || o.lift) && q.install && !q.install.available && !q.install.pending && /^\d{6}$/.test(o.pin)) bad((o.install ? 'Installation' : 'Lifting') + ' for ' + short(x.n) + ' isn’t available at ' + o.pin + '. Untick it or use another address.');
       s.total += q.total; s.now += q.pay_now; s.later += q.before_dispatch; s.inst += q.install_fee || 0; });
-    s.full = fullPay(s.total); if (s.full) { s.now = s.total; s.later = 0; }   // 206
-    s.lines.forEach(function (l) { l.full = s.full; });
+    s.full = !s.needPin && fullPay(s.total); s.maybe = s.needPin && fullPay(s.total); if (s.full) { s.now = s.total; s.later = 0; }   // 206
+    s.lines.forEach(function (l) { l.full = s.full; l.maybe = s.maybe; });
     return s;
   }
   function short(n) { return String(n || '').replace(/ — .*$/, ''); }
@@ -1971,7 +1971,7 @@
     var x = l.x, q = l.q, o = l.c.o;
     return '<div class="cline mline"><div class="im"><img src="' + esc(IMGS[x.img] || '') + '" alt=""></div><div class="inf"><div class="nm">' + esc(x.n) + ' <span class="mto-badge" style="font-size:9px;padding:3px 7px">Made to Order</span></div>' +
       '<div class="vlab">' + esc(specOf(x, o)) + '</div><div class="vlab">' + (o.drawing ? 'Drawing to approve before production' : 'Made to the size you confirmed') + (o.install || (x.cz.install && x.cz.install.required) ? ' · with installation' : '') + '</div>' +
-      '<div class="pr">' + (q.ok ? rs(q.total) : '<span class="mto-err">' + esc(q.error) + '</span>') + '</div>' + (q.ok ? '<div class="vlab">' + (l.full ? 'Paid in full now (Made to Order ' + fullTxt() + ')' : 'Pay ' + rs(q.pay_now) + ' now · ' + rs(q.before_dispatch) + ' before dispatch') + '</div>' : '') +
+      '<div class="pr">' + (q.ok ? rs(q.total) : '<span class="mto-err">' + esc(q.error) + '</span>') + '</div>' + (q.ok ? '<div class="vlab">' + (l.full ? 'Paid in full now (Made to Order ' + fullTxt() + ')' : l.maybe ? 'Enter your pincode to see what you pay now (Made to Order ' + fullTxt() + ' with delivery is paid in full)' : 'Pay ' + rs(q.pay_now) + ' now · ' + rs(q.before_dispatch) + ' before dispatch') + '</div>' : '') +
       '<div class="row2"><span class="rm" onclick="mtoCartEdit(\'' + l.c.k + '\')">Edit design</span><span class="rm" onclick="mtoCartRm(\'' + l.c.k + '\')">Remove</span></div></div></div>';
   }
   function payLine(rts, s) {
@@ -1991,7 +1991,7 @@
   window.renderCart = function () {
     _rcart.apply(this, arguments);
     var body = document.getElementById('cartBody'); if (!body || !mLive().length) return;
-    var s = mSum(), html = '<div class="mto-cart"><div class="cgrp">Made to Order <span>made for you · ' + (s.full ? 'paid in full (' + fullTxt() + ')' : PCT + '% now, the rest before dispatch') + '</span></div>' + s.lines.map(mLineHTML).join('') + '</div>';
+    var s = mSum(), html = '<div class="mto-cart"><div class="cgrp">Made to Order <span>made for you · ' + (s.full ? 'paid in full (' + fullTxt() + ')' : s.maybe ? 'in full if ' + fullTxt() + ' with delivery, else ' + PCT + '% now' : PCT + '% now, the rest before dispatch') + '</span></div>' + s.lines.map(mLineHTML).join('') + '</div>';
     var cnt = document.getElementById('cartCnt'); if (cnt) cnt.textContent = (CART.reduce(function (a, c) { return a + c.q; }, 0) + s.n) + ' items';
     var row = '<div class="r"><span>Made to Order (' + s.n + (s.n > 1 ? ' designs' : ' design') + ')</span><span>' + (s.ok || s.total ? rs(s.total) : '—') + '</span></div>';
     if (!CART.length) {
