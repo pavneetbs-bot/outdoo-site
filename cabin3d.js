@@ -303,23 +303,26 @@ function drawPlot(tg, t) {
   }
   for (let f = 0; f < 4; f++) { const yb = Y - 0.5 - 10 * f - 5.5; box(tg, pw * 0.7, 4, 0.1, pw / 2, yb, pd + 0.05, win, false); box(tg, pw, 0.4, 3, pw / 2, yb - 2.6, pd + 1.5, side2, false); }
   const gy = Y - 0.5 - BH; const gr = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), P('t_gnd', 0xA9A296)); gr.rotation.x = -Math.PI / 2; gr.position.set(pw / 2, gy, pd / 2); tg.add(gr);
-  box(tg, 400, 0.1, 24, pw / 2, gy + 0.05, pd + 15, road, false);
+  const rf = t.road_front !== false, rb = !!t.road_back;   // roads in front (the usual) and / or at the back
+  if (rf) box(tg, 400, 0.1, 24, pw / 2, gy + 0.05, pd + 15, road, false);
+  if (rb) box(tg, 400, 0.1, 24, pw / 2, gy + 0.05, -15, road, false);
   const cs = t.corner === 'left' || t.corner === 'right' ? t.corner : '';   // a corner plot: the road on that side
   if (cs) box(tg, 24, 0.1, 400, cs === 'left' ? -15 : pw + 15, gy + 0.06, pd / 2, road, false);
   let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const nb = (x, z, w, d) => { const h = BH + (rnd() * 20 - 8), m = P('t_nb' + (seed % 3), [0xD9CBB5, 0xE6DDD0, 0xCFC2AE][seed % 3]); box(tg, w, h, d, x, gy + h / 2, z, m, false); box(tg, w, 3, 0.6, x, gy + h + 1.5, z + d / 2 - 0.3, m, false);
     if (rnd() > 0.4) box(tg, 9, 9, 16, x + (rnd() > 0.5 ? w / 2 - 5 : -w / 2 + 5), gy + h + 4.5, z, m, false); };
-  if (cs !== 'left') { nb(-pw / 2 - 0.3, pd / 2, pw, pd); nb(-pw / 2 - 0.3, -pd / 2 - 0.3, pw, pd); }
-  if (cs !== 'right') { nb(pw * 1.5 + 0.3, pd / 2, pw, pd); nb(pw * 1.5 + 0.3, -pd / 2 - 0.3, pw, pd); }
-  nb(pw / 2, -pd / 2 - 0.3, pw, pd); nb(pw / 2, pd + 30 + pd / 2, pw * 3, pd);
+  if (cs !== 'left') { nb(-pw / 2 - 0.3, pd / 2, pw, pd); if (!rb) nb(-pw / 2 - 0.3, -pd / 2 - 0.3, pw, pd); }
+  if (cs !== 'right') { nb(pw * 1.5 + 0.3, pd / 2, pw, pd); if (!rb) nb(pw * 1.5 + 0.3, -pd / 2 - 0.3, pw, pd); }
+  if (rb) nb(pw / 2, -30 - pd / 2, pw * 3, pd); else nb(pw / 2, -pd / 2 - 0.3, pw, pd);
+  if (rf) nb(pw / 2, pd + 30 + pd / 2, pw * 3, pd); else nb(pw / 2, pd + pd / 2 + 0.3, pw, pd);
   // a neighbour's wall that rises above our parapet on a side
   const HW = 12, hw = P('t_hw', 0xD4C6B0);
   if (hi.left && cs !== 'left') box(tg, 0.75, HW, pd, -0.4, Y + HW / 2, pd / 2, hw);
   if (hi.right && cs !== 'right') box(tg, 0.75, HW, pd, pw + 0.4, Y + HW / 2, pd / 2, hw);
-  if (hi.back) box(tg, pw, HW, 0.75, pw / 2, Y + HW / 2, -0.4, hw);
+  if (hi.back && !rb) box(tg, pw, HW, 0.75, pw / 2, Y + HW / 2, -0.4, hw);
   // what's already on the roof
   (t.blocks || []).forEach((bk, i) => {
-    const bg = new THREE.Group(); bg.userData.st = { i }; tg.add(bg); const x = +bk.x + bk.w / 2, z = +bk.z + bk.d / 2, h = BH_[bk.type] || 9;
+    const bg = new THREE.Group(); bg.userData.st = { i }; tg.add(bg); const x = +bk.x + bk.w / 2, z = +bk.z + bk.d / 2, h = (bk.type !== 'ac' && +bk.h > 0 ? +bk.h : 0) || BH_[bk.type] || 9;   // a height the customer typed
     if (bk.type === 'ac') {   // an AC outdoor unit: a grey cabinet on low stands, the fan grille facing the open terrace
       const acm = P('t_ac', 0xD9DCDD), grill = P('t_acg', 0x3A3F44), ac = h - 0.4, alongX = bk.w >= bk.d;
       box(bg, bk.w, ac, bk.d, x, Y + 0.4 + ac / 2, z, acm); box(bg, alongX ? bk.w - 0.2 : 0.25, 0.4, alongX ? 0.25 : bk.d - 0.2, x, Y + 0.2, z, grill, false);
@@ -333,7 +336,7 @@ function drawPlot(tg, t) {
     box(bg, bk.w, h, bk.d, x, Y + h / 2, z, plaster); box(bg, bk.w + 0.6, 0.35, bk.d + 0.6, x, Y + h + 0.17, z, side2);
     if (bk.type !== 'lift') {   // a door on the side that faces the open terrace
       const dx = pw / 2 - x, dz = pd / 2 - z, door = P('t_door', 0x6B4A2F);
-      if (Math.abs(dx) / pw > Math.abs(dz) / pd) box(bg, 0.1, 7, Math.min(3.2, bk.d - 1), x + Math.sign(dx) * (bk.w / 2 + 0.05), Y + 3.5, z, door); else box(bg, Math.min(3.2, bk.w - 1), 7, 0.1, x, Y + 3.5, z + Math.sign(dz) * (bk.d / 2 + 0.05), door);
+      const dh = Math.min(7, h - 1); if (dh >= 4) if (Math.abs(dx) / pw > Math.abs(dz) / pd) box(bg, 0.1, dh, Math.min(3.2, bk.d - 1), x + Math.sign(dx) * (bk.w / 2 + 0.05), Y + dh / 2, z, door); else box(bg, Math.min(3.2, bk.w - 1), dh, 0.1, x, Y + dh / 2, z + Math.sign(dz) * (bk.d / 2 + 0.05), door);
     }
     if (bk.type === 'mumty' && t.tanks !== false) { const n = Math.max(bk.w, bk.d) >= 12 ? 2 : 1, along = bk.d >= bk.w; for (let j = 0; j < n; j++) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 4, 20), P('t_tank', 0x1F2224)); const o = n > 1 ? (j ? 3 : -3) : 0; tk.position.set(x + (along ? 0 : o), Y + h + 2.35, z + (along ? o : 0)); tk.castShadow = true; bg.add(tk); } }
   });
@@ -341,7 +344,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=11').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=12').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }

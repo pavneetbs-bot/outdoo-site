@@ -615,8 +615,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=14').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=14'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=15').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=15'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -676,6 +676,7 @@
   var TS_PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
   var AU = function () { try { return localStorage.getItem('outrr_area_unit') === 'm' ? 'm' : 'yd'; } catch (e) { return 'yd'; } }, plotLab = function (g) { return AU() === 'm' ? Math.round(+g * 0.836127) + ' sq m' : g + ' sq yd'; };   // plot size in sq yd (gaj) or sq m
   var TS_KIND = { mumty: ['Mumty (stair room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft', 'Shaft'], room: ['Room already built', 'Room'], ac: ['AC outdoor unit', 'AC unit'] };
+  var TS_BH = { mumty: 9, lift: 11, shaft: 3, room: 9 };   // = cabin3d.js BH_: a block's height when not typed
   var TS_CUTS = [['bl', 'Back-left'], ['br', 'Back-right'], ['fl', 'Front-left'], ['fr', 'Front-right']];   // 193: corners cut (front = road side)
   var TS_WALLS = [['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']];
   var TS_ROT = [[0, 'Road side'], [90, 'Right'], [180, 'Back'], [270, 'Left']];
@@ -745,8 +746,9 @@
       h += sec('Plot') + '<div class="wz-tabs" style="margin-bottom:6px">' + btn('data-ts="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-ts="unit:m"', AU() === 'm', 'sq m') + '</div><div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], plotLab(p[0])); }).join('') + '</div>';
       h += '<div class="ts-row">' + nIn('pw', t.pw, 'Width', 15, 120) + nIn('pd', t.pd, 'Depth', 20, 150) + '</div>';
       h += sec('Corner plot?', 'road on which side') + '<div class="wz-tabs">' + btn('data-ts="corner:"', !t.corner, 'No') + btn('data-ts="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-ts="corner:right"', t.corner === 'right', 'Road on the right') + '</div>';
+      h += sec('Road in front / at the back?') + '<div class="wz-tabs">' + btn('data-ts="rfront"', t.road_front !== false, (t.road_front !== false ? '✓ ' : '') + 'Road in front') + btn('data-ts="rback"', !!t.road_back, (t.road_back ? '✓ ' : '') + 'Road at the back') + '</div>';
       h += sec('Parapet') + '<div class="wz-tabs">' + btn('data-ts="par:3"', t.par === 3, '3 ft') + btn('data-ts="par:4"', t.par === 4, '4 ft') + '</div>';
-      h += sec('Neighbour\'s wall higher than yours?') + '<div class="wz-tabs">' + [['left', 'Left'], ['right', 'Right'], ['back', 'Back']].filter(function (s0) { return s0[0] !== t.corner; }).map(function (s0) { var hi = t.high && t.high[s0[0]]; return btn('data-ts="high:' + s0[0] + '"', hi, (hi ? '✓ ' : '') + s0[1]); }).join('') + '</div>';
+      h += sec('Neighbour\'s wall higher than yours?') + '<div class="wz-tabs">' + [['left', 'Left'], ['right', 'Right'], ['back', 'Back']].filter(function (s0) { return s0[0] !== t.corner && !(s0[0] === 'back' && t.road_back); }).map(function (s0) { var hi = t.high && t.high[s0[0]]; return btn('data-ts="high:' + s0[0] + '"', hi, (hi ? '✓ ' : '') + s0[1]); }).join('') + '</div>';
       var CU = t.cuts || {};
       h += sec('Corners cut?', 'front = road side') + TS_CUTS.map(function (ck) { var c = CU[ck[0]] || {}, cOn = c.type === 'notch' || c.type === 'slant';
         return '<div class="ts-blk"><div class="ts-bh"><b>' + ck[1] + '</b></div><div class="wz-tabs ts-sm">' + btn('data-ts="cut:' + ck[0] + ':"', !cOn, 'No cut') + btn('data-ts="cut:' + ck[0] + ':notch"', c.type === 'notch', '⌐ Straight') + btn('data-ts="cut:' + ck[0] + ':slant"', c.type === 'slant', '◸ Slant') + '</div>' +
@@ -754,7 +756,7 @@
       h += sec('Already on the roof', 'drag them on the 3D too') + arr(t.blocks).map(function (b, i) {
         return '<div class="ts-blk"><div class="ts-bh"><b>' + esc(TS_KIND[b.type][0]) + '</b><button type="button" class="ts-x" data-ts="del:' + i + '" aria-label="Remove">✕</button></div>' +
           '<div class="wz-tabs ts-sm">' + TS_WALLS.map(function (wl) { return btn('data-ts="wall:' + i + ':' + wl[0] + '"', b.side === wl[0], wl[1]); }).join('') + '</div>' +
-          '<div class="ts-row">' + nIn('w:' + i, b.w, 'Width', 1, 40) + nIn('d:' + i, b.d, 'Length', 1, 40) + nIn('l:' + i, Math.round(b.x * 2) / 2, 'From left', 0.75, t.pw) + nIn('f:' + i, Math.round((t.pd - b.z - b.d) * 2) / 2, 'From front', 0.75, t.pd) + '</div>' +
+          '<div class="ts-row">' + nIn('w:' + i, b.w, 'Width', 1, 40) + nIn('d:' + i, b.d, 'Length', 1, 40) + nIn('l:' + i, Math.round(b.x * 2) / 2, 'From left', 0.75, t.pw) + nIn('f:' + i, Math.round((t.pd - b.z - b.d) * 2) / 2, 'From front', 0.75, t.pd) + (b.type !== 'ac' ? nIn('h:' + i, num(b.h) || TS_BH[b.type] || 9, 'Height', 2, 30) : '') + '</div>' +
           (b.type === 'mumty' ? '<label class="ts-ck"><input type="checkbox" data-ts="tanks"' + (t.tanks !== false ? ' checked' : '') + '> Water tanks on top</label>' : '') + '</div>';
       }).join('');
       h += '<div class="wz-tabs ts-add">' + ['mumty', 'lift', 'shaft', 'room', 'ac'].map(function (k) { return '<button type="button" data-ts="add:' + k + '">+ ' + TS_KIND[k][1] + '</button>'; }).join('') + '</div>';
@@ -788,6 +790,8 @@
     if (a[0] === 'plot') { var p = TS_PLOTS.filter(function (z) { return z[0] === a[1]; })[0]; x.plot = a[1]; tsPlot(x, p[1], p[2], lay); }
     else if (a[0] === 'corner') { x.corner = a[1] || ''; if (x.high && x.corner) x.high[x.corner] = false; }
     else if (a[0] === 'par') x.par = +a[1];
+    else if (a[0] === 'rfront') x.road_front = x.road_front === false;
+    else if (a[0] === 'rback') { x.road_back = !x.road_back; if (x.road_back && x.high) x.high.back = false; }
     else if (a[0] === 'cut') { x.cuts = x.cuts || {}; if (!a[2]) delete x.cuts[a[1]]; else x.cuts[a[1]] = Object.assign({ a: Math.min(8, Math.round(x.pw / 4)), b: Math.min(8, Math.round(x.pd / 6)) }, x.cuts[a[1]] || {}, { type: a[2] }); x.blocks.forEach(function (bb, i) { tsFree(x, i); }); if (tsClash(x, lay)) tsCentre(x, lay); }
     else if (a[0] === 'high') { x.high = x.high || {}; x.high[a[1]] = !x.high[a[1]]; }
     else if (a[0] === 'tanks') x.tanks = x.tanks === false;
@@ -804,7 +808,7 @@
     if (a[0] === 'ca' || a[0] === 'cb') { var cu = x.cuts && x.cuts[a[1]]; if (!cu) return false; cu[a[0] === 'ca' ? 'a' : 'b'] = Math.max(1, Math.min(a[0] === 'ca' ? x.pw - 4 : x.pd - 4, Math.round(v * 2) / 2)); x.blocks.forEach(function (bb, i) { tsFree(x, i); }); if (tsClash(x, lay)) tsCentre(x, lay); return true; }
     if (a[0] === 'cx') { x.cx = Math.max(0, Math.min(x.pw, v)); return true; }
     if (a[0] === 'cf') { x.cz = Math.max(0, x.pd - v - tsDims(x, lay)[1]); return true; }
-    if (!b) return false; var keep = JSON.stringify(b);
+    if (!b) return false; if (a[0] === 'h') { b.h = Math.max(2, Math.min(30, Math.round(v * 2) / 2)); return true; } var keep = JSON.stringify(b);
     if (a[0] === 'w') b.w = Math.max(1, Math.min(x.pw - 1.5, v)); else if (a[0] === 'd') b.d = Math.max(1, Math.min(x.pd - 1.5, v));
     else if (a[0] === 'l') { b.x = v; b.side = 'free'; } else if (a[0] === 'f') { b.z = x.pd - v - b.d; b.side = 'free'; }
     tsWall(x, b, b.side); if (!tsFree(x, +a[1])) { var o = JSON.parse(keep); Object.keys(o).forEach(function (kk) { b[kk] = o[kk]; }); S.tsMsg = 'That would sit on top of another one'; }
@@ -1246,7 +1250,7 @@
     var el = document.getElementById('cbStudio');
     if (on) {
       if (!el) { el = document.createElement('div'); el.id = 'cbStudio'; el.className = 'cbs-ov'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el); }
-      el.innerHTML = '<div class="cbs-hd"><button type="button" class="cbs-x" onclick="cbStudio(false)" aria-label="Back to the product">←</button><div class="cbs-tt"><b>' + esc(String(PRODS[S.id].n).replace(/ — .*$/, '')) + '</b><small id="cbsStep">Step 1 of 7</small></div><div class="cbs-st" id="cbsSteps"></div><button type="button" class="cbs-x" onclick="cbStudio(false)" aria-label="Close">✕</button></div>';
+      el.innerHTML = '<div class="cbs-hd"><button type="button" class="cbs-x" onclick="cbStudioX()" aria-label="Back to the product">←</button><div class="cbs-tt"><b>' + esc(String(PRODS[S.id].n).replace(/ — .*$/, '')) + '</b><small id="cbsStep">Step 1 of 7</small></div><div class="cbs-st" id="cbsSteps"></div><button type="button" class="cbs-x" onclick="cbStudioX()" aria-label="Close">✕</button></div>';
       if (!el.dataset.w) { el.dataset.w = 1; el.addEventListener('click', function (e) { var t = e.target.closest('[data-wzgo],[data-ts]'); if (!t || t.disabled || !S || !S.studio) return; if (t.hasAttribute('data-ts')) { tsClick(t); draw(); return; } if (wzClick(t)) { draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; } }); }
       if (!S.cbsInit || fresh) { cbCheap(); S.cbsInit = true; }
       var pz = window.__cbsSize; if (pz) { window.__cbsSize = null; var c0 = PRODS[S.id].cz.cabin;   // home "Design it yourself": the size picked there
@@ -1267,7 +1271,8 @@
     var o = el.querySelector('.cbs-o'); if (!o) return;
     [].slice.call(o.querySelectorAll(':scope > .wz-lbl')).forEach(function (l) { var n = l.nextElementSibling, g = document.createElement('div'); g.className = 'cbs-g'; o.insertBefore(g, l); g.appendChild(l); if (n && !n.classList.contains('wz-lbl')) g.appendChild(n); });
   }
-  window.cbStudioClose = function () { window.cbStudio(null); };   // from the store's back-button handler
+  window.cbStudioClose = function () { window.cbStudio(null); };
+  window.cbStudioX = function () { if (S && S.fromPlan == null) { S.spaceDone = false; S.siteDone = false; } window.cbStudio(false); };   // closed by the customer: opened again → which space? asked again   // from the store's back-button handler
   window.cbPrev = function () { if (!S || !S.wz) return; var w = S.wz; if (w.adv) w.adv = false; else if (S.studio && w.step === 0) { S.siteEd = true; S.sel3 = null; S.psel = null; } else if (w.step > 0) { w.step--; S.v3 = null; S.psel = null; } draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; };
   // 176: Made to Order — full-width sections under the product: what goes into it (parts with photos), specs, how it's made, reviews, questions
   var PART_IMG = window.OUTRR_PART_IMG || {"frame-ms":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_01_hero_v1.jpg?width=500&resize=contain&quality=75","frame-alu":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_02_side_v1.jpg?width=500&resize=contain&quality=75","base-gi":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_03_front_v1.jpg?width=500&resize=contain&quality=75","puf":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_04_closeup_v1.jpg?width=500&resize=contain&quality=75","glass":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-1/MTO-PL-1_06_scene2_v1.jpg?width=500&resize=contain&quality=75","dgu":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_01_hero_v1.jpg?width=500&resize=contain&quality=75","glassroof":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_02_side_v1.jpg?width=500&resize=contain&quality=75","frosted":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_03_front_v1.jpg?width=500&resize=contain&quality=75","slidedoor":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_04_closeup_v1.jpg?width=500&resize=contain&quality=75","door":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-2/MTO-PL-2_06_scene2_v1.jpg?width=500&resize=contain&quality=75","window":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_01_hero_v1.jpg?width=500&resize=contain&quality=75","ledpanel":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_02_side_v1.jpg?width=500&resize=contain&quality=75","ledstrip":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_03_front_v1.jpg?width=500&resize=contain&quality=75","switch":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_04_closeup_v1.jpg?width=500&resize=contain&quality=75","metalroof":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-3/MTO-PL-3_06_scene2_v1.jpg?width=500&resize=contain&quality=75","gutter":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_01_hero_v1.jpg?width=500&resize=contain&quality=75","louver":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_02_side_v1.jpg?width=500&resize=contain&quality=75","wpcdeck":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_03_front_v1.jpg?width=500&resize=contain&quality=75","wpcslat":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_04_closeup_v1.jpg?width=500&resize=contain&quality=75","hpl":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-4/MTO-PL-4_06_scene2_v1.jpg?width=500&resize=contain&quality=75","jali":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_01_hero_v1.jpg?width=500&resize=contain&quality=75","powder":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_02_side_v1.jpg?width=500&resize=contain&quality=75","teak":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_03_front_v1.jpg?width=500&resize=contain&quality=75","acacia":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_04_closeup_v1.jpg?width=500&resize=contain&quality=75","rattan":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-5/MTO-PL-5_06_scene2_v1.jpg?width=500&resize=contain&quality=75","fabric":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_01_hero_v1.jpg?width=500&resize=contain&quality=75","ss":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_02_side_v1.jpg?width=500&resize=contain&quality=75","anchor":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_03_front_v1.jpg?width=500&resize=contain&quality=75","granite":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_04_closeup_v1.jpg?width=500&resize=contain&quality=75","onyx":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-6/MTO-PL-6_06_scene2_v1.jpg?width=500&resize=contain&quality=75","pustone":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_01_hero_v1.jpg?width=500&resize=contain&quality=75","mosaic":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_02_side_v1.jpg?width=500&resize=contain&quality=75","hedge":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_03_front_v1.jpg?width=500&resize=contain&quality=75","polycarb":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_04_closeup_v1.jpg?width=500&resize=contain&quality=75","corten":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-7/MTO-PL-7_06_scene2_v1.jpg?width=500&resize=contain&quality=75","stone":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_01_hero_v1.jpg?width=500&resize=contain&quality=75","frp":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_02_side_v1.jpg?width=500&resize=contain&quality=75","pump":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_03_front_v1.jpg?width=500&resize=contain&quality=75","rafter":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_04_closeup_v1.jpg?width=500&resize=contain&quality=75","bamboo":"https://ewgpvclqbnaeucvjnuch.supabase.co/storage/v1/render/image/public/product-images/ai/MTO-PL-8/MTO-PL-8_06_scene2_v1.jpg?width=500&resize=contain&quality=75"};   // 176: the parts photo library (Runway, MTO-PL-1..8 in the admin — drafts, not for sale)
@@ -1794,7 +1799,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=20').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=21').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2126,6 +2131,8 @@
       '.pg3-sz{display:flex;gap:16px;flex-wrap:wrap;font-size:13px}.pg3-sz span{display:inline-flex;align-items:center;gap:7px}.pg3-sz button{width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:16px;cursor:pointer}' +
       '.pg3-ft{position:absolute;right:0;bottom:0;width:340px;padding:12px 16px;background:#fff;border-top:1px solid #eee;border-left:1px solid #eee}.pg3-ft button{width:100%;padding:13px;border:0;border-radius:10px;background:var(--terra,#BE5633);color:#fff;font:700 14px inherit;font-family:inherit;cursor:pointer}' +
             '.pg3-where{margin:0 0 6px}.pg3-where .wz-tabs{display:flex;flex-wrap:wrap;gap:6px}.pg3-where .wz-tabs button,.pg3-where .ts-c{border:1px solid #ddd;background:#fff;border-radius:999px;padding:6px 11px;font:600 12px inherit;font-family:inherit;cursor:pointer}.pg3-where .wz-tabs button.on{border-color:var(--terra,#BE5633);background:#fbefe9;color:#8a3a1f}.pg3-where .wz-h{font-size:16px;margin:4px 0}.pg3-where .wz-sub{font-size:12.5px;color:#6A6258}.pg3-where .ts-h{font-size:12px;font-weight:700;margin:12px 0 6px}.pg3-where .ts-h span{font-weight:500;color:#8a857c}.pg3-where .ts-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:6px 0}.pg3-where .ts-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258}.pg3-where .ts-n input{width:64px;height:32px;border:1px solid #D9CDBB;border-radius:8px;padding:0 6px}.pg3-where .ts-n i{display:none}.pg3-where .ts-blk{border:1px solid #EEE6DA;border-radius:10px;padding:8px;margin:0 0 6px}.pg3-where .ts-bh{display:flex;justify-content:space-between}.pg3-where .ts-x{border:0;background:none;color:#B3261E;cursor:pointer}.pg3-where .wz-note{font-size:12px;background:#EEF3E8;border:1px solid #D3DEC5;border-radius:10px;padding:7px 10px;margin:8px 0}.pg3-where .ts-lb{font-size:12px;margin:4px 0}.pg3-go{width:100%;margin:12px 0 0;padding:12px;border:0;border-radius:10px;background:#2E2E2E;color:#fff;font:700 14px inherit;font-family:inherit;cursor:pointer}.pg3-note{font-size:12px;color:#6A6258;margin:6px 0 0}'+
+      '.pg3-stp{display:flex;gap:4px;margin:0 0 12px;overflow-x:auto}.pg3-stp button{flex:1 0 auto;border:1px solid #E2D6C4;background:#fff;border-radius:999px;padding:6px 9px;font:700 11px inherit;font-family:inherit;color:#8a857c;cursor:pointer;white-space:nowrap}.pg3-stp button.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}.pg3-stp button.dn{color:#55634A;border-color:#B9C4AE}.pg3-stp button:disabled{cursor:default;opacity:.7}' +
+      '.pg3-sh{font-size:16px;margin:4px 0 4px}.pg3-bk{border:0;background:none;color:#8a3a1f;font:700 13px inherit;font-family:inherit;cursor:pointer;padding:14px 0 0}' +
       '.pg3-pr{margin:18px 0 0;padding:12px 14px;border-radius:12px;background:#F6F1EA;font-size:13px;color:#4A4640}.pg3-pr b{display:block;font-size:20px;color:#2E2E2E;margin:2px 0}.pg3-pr small{font-size:11.5px;color:#8a857c}' +
       '.pg-sum{border:1px solid #E7DFD3;border-radius:12px;padding:4px 14px 8px;margin:0 0 6px;background:#fff}.pg-sum-h{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F0EAE1;margin-bottom:4px}.pg-sum-h b{font-size:14px}.pg-sum-h button{border:0;background:none;color:var(--terra,#BE5633);font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:4px 0}.pg-sum-r{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13px}.pg-sum-r span{color:#8a857c}.pg-sum-r b{font-weight:600;color:#2E2E2E;text-align:right}' +
       '@media(max-width:760px){.pg3-ft .plan-card small{display:none}.pg3-ft .plan-card{padding:8px 12px!important;margin-bottom:6px}.pg3-ft .plan-card>span:first-child{font-size:20px}.pg3-pn{padding-bottom:130px}.pg3-bd{grid-template-columns:1fr;grid-template-rows:46vh auto}.pg3-pn{border-left:0;border-top:1px solid #eee}.pg3-ft{width:100%;border-left:0}}';
@@ -2138,18 +2145,33 @@
     if (S.pgW) return '<div class="pg3-where">' + terraceUI(pgLay(), true) + '<button type="button" class="pg3-go" data-p3="wdone">Done — put the pergola on it →</button></div>';
     h += '<div class="lb">Where</div><div class="pg3-ch">' + '<button type="button" data-ts="kind:ground" class="' + (!on ? 'on' : '') + '">🌳 Lawn / garden</button><button type="button" data-ts="kind:terrace" class="' + (on ? 'on' : '') + '">🏙 Terrace</button>' + (on ? '<button type="button" data-p3="wopen">✎ Set up the terrace</button>' : '') + '</div>';
     if (on) h += '<div class="pg3-where">' + placeBox(pgLay()) + (S.tsMsg ? '<div class="wz-note">' + esc(S.tsMsg) + '</div>' : '') + '</div>';
-    var fu = S.o.furn || '';
+    return h;
+  }
+  function p3Around() {   // step 3: things around it (to see how it looks) — a deck, furniture, the planner
+    var t = S.site, on = t && t.kind === 'terrace', h = '', fu = S.o.furn || '';
     if (on) return h + '<div class="lb">Under it</div><div class="pg3-ch"><button type="button" data-p3x="deck" class="' + (S.o.deck ? 'on' : '') + '">' + (S.o.deck ? '✓ ' : '+ ') + 'Deck floor under it</button></div>' + (S.o.deck && mtoOk() ? (function (dl) { return '<p class="pg3-note">' + (dl ? 'Goes in your cart as <b>' + esc(short(PRODS[dl.id].n)) + '</b>, ' + q2(pgOpts()) + ' — ' + rs(dl.price) : 'Our team will price the deck') + '</p>'; })(deckLine()) : '') + arUI();   // 193j
-    h += '<div class="lb">Around it <span style="text-transform:none;font-weight:500;letter-spacing:0">— to see how it looks</span></div><div class="pg3-ch"><button type="button" data-p3x="deck" class="' + (S.o.deck ? 'on' : '') + '">' + (S.o.deck ? '✓ ' : '+ ') + 'Deck floor under it</button></div>';
+    h += '<div class="lb">Under it <span style="text-transform:none;font-weight:500;letter-spacing:0">— to see how it looks</span></div><div class="pg3-ch"><button type="button" data-p3x="deck" class="' + (S.o.deck ? 'on' : '') + '">' + (S.o.deck ? '✓ ' : '+ ') + 'Deck floor under it</button></div>';
     if (S.o.deck && mtoOk()) { var dl = deckLine(); h += '<p class="pg3-note">' + (dl ? 'Goes in your cart as <b>' + esc(short(PRODS[dl.id].n)) + '</b>, ' + q2(pgOpts()) + ' — ' + rs(dl.price) : 'Our team will price the deck') + '</p>'; }
     h += '<div class="pg3-ch" style="margin-top:6px">' + [['', 'No furniture'], ['lounge', 'Sofa set'], ['dining', 'Dining set'], ['swing', 'Swing']].map(function (f) { return '<button type="button" data-p3f="' + f[0] + '" class="' + (fu === f[0] ? 'on' : '') + '">' + f[1] + '</button>'; }).join('') + '</div>';
     return h;
   }
   function q2(q) { return q.l + ' × ' + q.w + ' ft'; }
+  function p3Steps() {   // 1 Space → 2 Design → 3 Around it → 4 Proposal (proposal only from the last step)
+    var terr = S.site && S.site.kind === 'terrace', cur = S.pgW ? 0 : S.pgS === 'around' ? 2 : 1, L = [terr ? 'Terrace' : 'Space', 'Design', 'Around', 'Proposal'];
+    return '<div class="pg3-stp">' + L.map(function (t, i) { var dn = i < cur, on = i === cur, can = i < 3 && i !== cur && !(i === 0 && !terr) && (i < cur || !S.pgW);
+      return '<button type="button"' + (can ? ' data-p3s="' + i + '"' : ' disabled') + ' class="' + (on ? 'on' : dn ? 'dn' : '') + '">' + (dn ? '✓ ' : '') + (i + 1) + ' · ' + t + '</button>'; }).join('') + '</div>';
+  }
+  function p3Ft() {   // the footer follows the step: nothing while setting up the terrace, Next on the design, the planner + proposal at the end
+    if (S.pgW) return '';
+    if (S.fromPlan != null) return '<button type="button" data-p3="toplan">Save to my plan →</button>';
+    if (S.pgS !== 'around') return '<button type="button" data-p3="next">Next — add things around it →</button>';
+    return '<button type="button" class="plan-card" data-p3="plan"><span>🗺️</span><span><b>Plan the whole ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'lawn') + '</b><small>Seating, planters, a bar, a cabin… with this pergola, in the planner</small></span><i>→</i></button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button>';
+  }
   function p3Panel() {
 
-    if (S.pgW) return p3Where();
-    var x = PRODS[S.id], m = x.cz, o = S.o, q = pgOpts(), h = p3Where(), chips = function (g, cur) { return '<div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + '</button>'; }).join('') + '</div>'; };
+    if (S.pgW) return p3Steps() + p3Where();
+    if (S.pgS === 'around') return p3Steps() + '<h4 class="pg3-sh">Add things around it</h4><p class="pg3-note" style="margin-top:0">To see how it looks — a deck, seating, planters… Optional.</p>' + p3Around() + '<button type="button" class="pg3-bk" data-p3="back">← Back to the design</button>';
+    var x = PRODS[S.id], m = x.cz, o = S.o, q = pgOpts(), h = p3Steps() + p3Where(), chips = function (g, cur) { return '<div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + '</button>'; }).join('') + '</div>'; };
     h += '<div class="lb">Size (ft)</div><div class="pg3-sz"><span>Length <button type="button" data-p3d="l,-1" aria-label="Shorter">−</button><b>' + q.l + '</b><button type="button" data-p3d="l,1" aria-label="Longer">+</button></span><span>Width <button type="button" data-p3d="w,-1" aria-label="Narrower">−</button><b>' + q.w + '</b><button type="button" data-p3d="w,1" aria-label="Wider">+</button></span></div>';
     var mats = arr(m.materials).filter(function (y) { return y.name; }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     if (mats.length > 1) h += '<div class="lb">' + esc((m.labels && m.labels.material) || 'Finish') + '</div><div class="pg3-ch">' + mats.map(function (y) { return '<button type="button" class="' + (y === mat ? 'on' : '') + '" data-p3m="' + esc(y.name) + '">' + esc(y.name) + '</button>'; }).join('') + '</div>';
@@ -2165,32 +2187,33 @@
   function p3Draw() {
     var ov = document.getElementById('pg3'); if (!ov || !P3.open || !S || !isPg(S.id)) return; var q = pgOpts();
     var pn = document.getElementById('pg3Pn'); if (pn) pn.innerHTML = p3Panel();
+    var ft = document.getElementById('pg3Ft'); if (ft) { ft.innerHTML = p3Ft(); ft.style.display = S.pgW ? 'none' : ''; }
     var cap = document.getElementById('pg3Cap'); if (cap) cap.textContent = q.l + ' × ' + q.w + ' ft · ' + q.height + ' clear · ' + (q.colour || '') + (q.cover && !/^open/i.test(q.cover) ? ' · ' + String(q.cover).split(' (')[0] : '') + (q.layout && !/free/i.test(q.layout) ? ' · ' + String(q.layout).split(' (')[0] : '');
     var nb = document.getElementById('pg3Night'); if (nb) nb.textContent = P3.night ? '☀ Day' : '☾ Night';
     if (P3.st === 2) { try { if (!P3.ev && window.Pergola3D.onEvent) { P3.ev = 1; window.Pergola3D.onEvent(pgEv); }
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: !!S.o.deck, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=6').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=7').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
     if (on === false) { if (ov) ov.classList.remove('open'); document.body.classList.remove('pg3-on'); P3.open = false; return; }
     if (!ov) { ov = document.createElement('div'); ov.id = 'pg3'; ov.className = 'pg3-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Design your pergola in 3D'); document.body.appendChild(ov);
       ov.addEventListener('click', p3Click); ov.addEventListener('change', function (e) { if (S && isPg(S.id) && tsInput(e.target)) { if (S.site && S.site.cx == null) tsCentre(S.site, pgLay()); keepSite(); draw(); p3Draw(); } }); }
-    if (on && S.fromPlan == null && !S.spaceDone) return window.mtoSpaceAsk('pergola', function (r) { spaceApply(r, pgLay()).then(function () { S.pgW = r.kind === 'terrace'; window.pg3Open(true); }); });
+    if (on && S.fromPlan == null && !S.spaceDone) return window.mtoSpaceAsk('pergola', function (r) { spaceApply(r, pgLay()).then(function () { S.pgW = !!(r.kind === 'terrace' || (r.plan && S.site && S.site.kind === 'terrace' && !arr(S.site.blocks).length)); S.pgS = 'design'; window.pg3Open(true); }); });
     if (!S.site && S.proj !== 'new') { var sh = sharedSite(); if (sh) { S.site = sh; tsCentre(sh, pgLay()); } }
     var x = PRODS[S.id];
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(x.n) + ' · 3D</b><button type="button" id="pg3Night" data-p3="night">☾ Night</button><button type="button" data-p3="close" aria-label="Close">✕ Close</button></div>' +
       '<div class="pg3-bd"><div class="pg3-st" id="pg3St"><div class="pg3-cap" id="pg3Cap"></div></div><div class="pg3-pn" id="pg3Pn"></div></div>' +
-      '<div class="pg3-ft">' + (S.fromPlan != null ? '<button type="button" data-p3="toplan">Save to my plan →</button></div>' : '') + (S.fromPlan != null ? '' : '<button type="button" class="plan-card" data-p3="plan"><span>🗺️</span><span><b>Add more around it</b><small>Seating, planters, a bar, a cabin… on your terrace / lawn with this pergola</small></span><i>→</i></button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button></div>');
+      '<div class="pg3-ft" id="pg3Ft"></div>'; if (!S.pgS) S.pgS = 'design';
     var oo = S.o, q = pgOpts(); oo.l = oo.l || q.l; oo.w = oo.w || q.w;   // the model's size becomes the order size
     ov.classList.add('open'); document.body.classList.add('pg3-on'); P3.open = true; draw(); p3Draw();
     try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: '3d' }); } catch (e) {}
   };
   function p3Click(e) {
     var t = e.target.closest('button'); if (!t || !S) return; var o = S.o, m = PRODS[S.id].cz, a = t.getAttribute('data-p3');
-    if (a === 'close') { if (S.fromPlan != null) { S.fromPlan = null; window.pg3Open(false); return window.outrrPlan && window.outrrPlan({ reload: true }); } return window.pg3Open(false); }
+    if (a === 'close') { if (S.fromPlan != null) { S.fromPlan = null; window.pg3Open(false); return window.outrrPlan && window.outrrPlan({ reload: true }); } S.spaceDone = false; S.pgS = 'design'; S.pgW = false; return window.pg3Open(false); }   // opened again → which space? asked again
     if (a === 'night') { P3.night = !P3.night; return p3Draw(); }
     if (a === 'proj-same' || a === 'proj-new') { S.proj = a === 'proj-new' ? 'new' : 'same'; S.projAsk = null;
       if (S.proj === 'new') { S.site = null; S.pl = null; } else if (!S.site) { var sh2 = sharedSite(); if (sh2) { S.site = sh2; tsCentre(sh2, pgLay()); } }
@@ -2200,6 +2223,9 @@
     if (t.hasAttribute('data-ts')) { var wasT = S.site && S.site.kind === 'terrace'; tsClick(t); var isT = S.site && S.site.kind === 'terrace';
       if (isT && !wasT) S.pgW = true; if (isT && S.site.cx == null) tsCentre(S.site, pgLay()); if (/^rot:|^centre/.test(t.getAttribute('data-ts'))) pgAutoWall(); keepSite(); draw(); return p3Draw(); }
     if (a === 'wopen') { S.pgW = true; return p3Draw(); }
+    if (a === 'next') { S.pgS = 'around'; draw(); var pn0 = document.getElementById('pg3Pn'); p3Draw(); if (pn0) pn0.scrollTop = 0; return; }
+    if (a === 'back') { S.pgS = 'design'; p3Draw(); var pn1 = document.getElementById('pg3Pn'); if (pn1) pn1.scrollTop = 0; return; }
+    var sg = t.getAttribute('data-p3s'); if (sg != null) { if (sg === '0') S.pgW = true; else { if (S.pgW) { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); } S.pgS = sg === '2' ? 'around' : 'design'; } p3Draw(); var pn2 = document.getElementById('pg3Pn'); if (pn2) pn2.scrollTop = 0; return; }
     if (a === 'wdone') { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); return p3Draw(); }
     if (t.hasAttribute('data-p3x')) { o.deck = !o.deck; draw(); return p3Draw(); }
     if (t.hasAttribute('data-p3f')) { o.furn = t.getAttribute('data-p3f'); return p3Draw(); }
@@ -2234,7 +2260,7 @@
     'MTO-PG-CA': { roof: 'barrel' }, 'MTO-PG-EG': { roof: 'grid', post: 125, raf: [50, 200], gap: 600 }, 'MTO-PG-FP': { leg: 'gate' }, 'MTO-PG-FR': { roof: 'float' }, 'MTO-PG-GB': { roof: 'gable' },
     'MTO-PG-HP': { roof: 'hip', post: 125 }, 'MTO-PG-IP': { post: 125, inset: 600, over: 600 }, 'MTO-PG-KB': { leg: 'knee', post: 125, over: 450 }, 'MTO-PG-LD': { leg: 'ladder', post: 80 },
     'MTO-PG-LP': { leg: 'lean' }, 'MTO-PG-OV': { over: 300, bover: 300 }, 'MTO-PG-PA': { post: 200, beam: [200, 200], over: 0, bover: 0, raf: [40, 150], gap: 150 }, 'MTO-PG-PB': { leg: 'pillar' },
-    'MTO-PG-PF': { leg: 'portal', post: 150 }, 'MTO-PG-RH': { gap: 120, raf: [40, 120] }, 'MTO-PG-SO': { leg: 'sidetwin' }, 'MTO-PG-TP': { leg: 'mast' }, 'MTO-PG-TT': { roof: 'tiers' },
+    'MTO-PG-PF': { leg: 'portal', post: 150 }, 'MTO-PG-RH': { gap: 120, raf: [40, 120] }, 'MTO-PG-SO': { leg: 'sidetwin', over: 0, bover: 0, beam: [100, 250], raf: [40, 100], gap: 150 }, 'MTO-PG-TP': { leg: 'mast' }, 'MTO-PG-TT': { roof: 'tiers' },
     'MTO-PG-TW': { leg: 'twin', post: 90 }, 'MTO-PG-WC': { post: 200, beam: [100, 300], raf: [50, 150], gap: 220, over: 150 }, 'MTO-PG-WV': { roof: 'wave' }, 'MTO-PG-XG': { roof: 'xgable', post: 125 } };
   function pgSpec(id, q) {   // = pergola3d.js build(): posts, beams, rafters at this size (for the drawings and the numbers)
     var r = PG_D[id] || {}, ft = function (v) { return v / 304.8; }, L = +q.l || 12, W = +q.w || 10, H = parseFloat(q.height) || 8;
@@ -2243,8 +2269,9 @@
     var spread = function (a, b, minN) { var n = Math.max(minN, Math.ceil((b - a) / 14 - 0.001)), o = []; for (var k = 0; k <= n; k++) o.push(a + (b - a) * k / n); return o; };
     var rows = wall ? [W - inset - P / 2] : spread(inset + P / 2, W - inset - P / 2, 1), cols = spread(inset + P / 2, L - inset - P / 2, dbl ? 2 : 1), leg = r.leg || 'straight', pts = [];
     cols.forEach(function (x) { rows.forEach(function (z) { if (x === cols[0] || x === cols[cols.length - 1] || z === rows[0] || z === rows[rows.length - 1] || W > 20) pts.push([x, z]); }); });
+    if (leg === 'sidetwin') rows.forEach(function (z) { if (wall || z === rows[0] || z === rows[rows.length - 1]) pts.push([cols[cols.length - 1] - 1.4, z]); });
     if (leg === 'branch') pts = cols.filter(function (x, i) { return i > 0 && i < cols.length - 1; }).length ? cols.slice(1, -1).map(function (x) { return [x, W / 2]; }) : [[L * 0.27, W / 2], [L * 0.73, W / 2]];
-    var n = pts.length * (leg === 'twin' ? 2 : 1) + (leg === 'sidetwin' ? 4 : 0), span = L + 2 * over, nRaf = Math.max(2, Math.floor(span / ft(gap)) + 1);
+    var n = pts.length * (leg === 'twin' ? 2 : 1), span = L + 2 * over, nRaf = Math.max(2, Math.floor(span / ft(gap)) + 1);
     return { L: L, W: W, H: H, post: post, beam: beam, raf: raf, gap: gap, over: over, bover: bover, P: P, rows: rows, cols: cols, pts: pts, posts: n, nRaf: nRaf, wall: wall, leg: leg, roof: r.roof || 'flat' };
   }
   function ftin(v) { v = Math.round((+v || 0) * 12); var f = Math.floor(v / 12), i = v - f * 12; return f + "'" + (i ? ' ' + i + '"' : ''); }
@@ -2695,7 +2722,7 @@
     '.sp-kinds{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sp-kinds button{flex-direction:column;align-items:flex-start;padding:22px 18px;min-height:170px}.sp-kinds i{font-size:40px}.sp-kinds b{font-size:18px;margin-top:6px}' +
     '.sp-back{border:0;background:none;color:#8a3a1f;font:700 13px inherit;font-family:inherit;cursor:pointer;padding:0;margin:0 0 14px}' +
     '.pp-go{display:block;width:100%;margin:14px 0 0;padding:15px 16px;border:0;border-radius:12px;background:var(--terra,#C26445);color:#fff;font:700 15.5px inherit;font-family:inherit;cursor:pointer;letter-spacing:.01em}.pp-go:hover{filter:brightness(.95)}.pp-card .pg-next{margin:0}' +
-    '@media(min-width:900px){body.pdp-prop .pdp-grid{align-items:stretch}#pdp .pp-card{position:sticky;top:var(--pptop,170px);z-index:4;box-shadow:0 6px 24px rgba(46,46,46,.08)}body.pdp-prop:not(.pp-float) .ctas{display:none!important}}' +
+    '@media(min-width:900px){body.pdp-prop .pdp-grid{align-items:stretch}#pdp .pp-card{position:sticky;top:var(--pptop,170px);z-index:4;box-shadow:0 6px 24px rgba(46,46,46,.08)}body.pdp-prop:not(.pp-float):not(.cb-studio) .ctas{display:none!important}}' +
     '@media(max-width:600px){.sp-kinds{grid-template-columns:1fr}.sp-kinds button{min-height:0}.sp-bd{padding:24px 14px}.sp-bd h2{font-size:22px}}';
     document.head.appendChild(st); } catch (e) {} })();
 

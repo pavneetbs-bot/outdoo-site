@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=14';   // 193f: the same terrace as the cabin studio and the planner
+import { plotModel } from './cabin3d.js?v=15';   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -28,7 +28,7 @@ const D = {
   'MTO-PG-PB': { leg: 'pillar' },
   'MTO-PG-PF': { leg: 'portal', post: 150 },
   'MTO-PG-RH': { groups: 3, gap: 120, raf: [40, 120] },
-  'MTO-PG-SO': { leg: 'sidetwin' },
+  'MTO-PG-SO': { leg: 'sidetwin', flush: true, over: 0, bover: 0, beam: [100, 250], raf: [40, 100], gap: 150 },   // box frame, close slats inside it; the right end on twin posts with a double end beam
   'MTO-PG-TP': { leg: 'mast' },
   'MTO-PG-TT': { roof: 'tiers' },
   'MTO-PG-TW': { leg: 'twin', post: 90 },
@@ -91,7 +91,7 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
     if (r.clad) { box(g, P, top, P, x, top / 2, z, mat('fwood', { color: FIN.wood, roughness: 0.65, metalness: 0 })).userData.post = 1; continue; }   // wood-clad posts (the frame finish stays on the beams)
     post(x, z, r.roof === 'float' ? top - 0.8 : top);
     if (leg === 'knee') { const b = 2; rod(g, [x, top - b, z], [x + (x < L / 2 ? b : -b), top, z], MM(60), MM(60), F.frame); rod(g, [x, top - b, z], [x, top, z + (z < W / 2 ? b : -b)], MM(60), MM(60), F.frame); }
-    if (leg === 'sidetwin' && (x === cols[0] || x === cols[cols.length - 1])) post(x + (x < L / 2 ? 1.4 : -1.4), z);   // a second post just inside each corner
+    if (leg === 'sidetwin' && x === cols[cols.length - 1]) post(x - 1.4, z);   // the right end only: a second post 1.4 ft in from each corner
   }
   if (leg === 'branch') [L * 0.27, L * 0.73].forEach(x => { const z = W / 2, y0 = top - 3.2; post(x, z, y0);
     [[x - 2.6, z], [x + 2.6, z], [x, rows[0]], [x, rows[rows.length - 1]]].forEach(([a, b]) => rod(g, [x, y0, z], [a, top, b], P * 0.8, P * 0.8, F.frame)); });
@@ -170,6 +170,7 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
     if (r.flush) { [eL, eR].forEach(x => box(g, BW, BH, W - 2 * inset, x, y0 + BH / 2, W / 2, F.frame)); rafters(() => y0 + (BH - RH) / 2, rows[0], rows[rows.length - 1]); cover(y0 + BH, rows[0], rows[rows.length - 1]); }
     else { rafters(() => ry); if (r.clad) [R0, R1].forEach(z => box(g, eR - eL, MM(300), MM(40), L / 2, ry + MM(150), z, F.roof)); cover(ry + RH); }
   }
+  if (leg === 'sidetwin') box(g, BW, BH, W - 2 * inset, cols[cols.length - 1] - 1.4, y0 + BH / 2, W / 2, F.frame);   // the double end beam over the twin posts
   if (wall) box(g, eR - eL, BH, BW, (eL + eR) / 2, ry - BH / 2, -P / 2 + BW / 2, F.frame);   // ledger fixed to the wall
   if (lsh) { const ex = Math.min(8, L * 0.5); box(g, P, top, P, L - inset - P / 2, top / 2, W + ex, F.frame); box(g, BW, BH, ex + over, L - inset - P / 2, top + BH / 2, W + ex / 2, F.frame);
     for (let z = W; z < W + ex; z += gap + RW) box(g, Math.min(6, L * 0.4), RH, RW, L - Math.min(6, L * 0.4) / 2, ry + RH / 2, z, F.roof); box(g, P, top, P, L - Math.min(6, L * 0.4), top / 2, W + ex, F.frame); }
@@ -217,7 +218,7 @@ export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
-  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=11').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=12').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
