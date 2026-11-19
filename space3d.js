@@ -116,6 +116,146 @@ function planterModel(g, w, d, h, it, K) {   // 199b: each outrr planter's own s
   body(0, 0, w, d, kickH, H - kickH - ch, STY, !cap);
   if (cap) { box(g, w + 0.18, ch, d + 0.18, 0, H - ch / 2, 0, skin); plants(0, 0, w, d, H); }
 }
+// 211: privacy screens — each outrr screen design's own look (CNC jali pattern, slats / louvres, hedge, rope, cane, glass,
+// planter + screen) at the customer's running length × height, panel joints (4 / 3 / 2 ft modules) and finish colour.
+const PS_HEX = { 'charcoal black': 0x2A2A2A, 'corten rust': 0x8B4A2B, terracotta: 0xC26445, 'off white': 0xEDE8DE, 'antique gold': 0xA88B4A, teak: 0x8A5A32, walnut: 0x5A3A22,
+  'ash grey': 0x8E8A84, charcoal: 0x3A3A3A, 'teak wood grain': 0x9A6A3E, 'concrete grey': 0x8C8A86, black: 0x1E1E1E, 'natural bamboo': 0xC9A86A, 'dark walnut bamboo': 0x5A3E26,
+  'jute-colour rope': 0xB89A6A, 'charcoal rope': 0x3A3A3A, 'off-white rope': 0xEDE6D8, 'charcoal grey': 0x45474A, 'teak wood finish': 0x8A5A32 };
+const PS_JALI = { 'JALI-MUGHAL': 'star', 'JALI-BACKLIT': 'star', 'JALI-DIAMOND': 'diamond', 'JALI-HEXA': 'hexa', 'JALI-QUATRE': 'quatre', 'JALI-RIPPLE': 'ripple', 'JALI-LEAF': 'leaf',
+  'JALI-BANYAN': 'tree', 'JALI-BAMBOO': 'bamboo', 'BAL-CHEVRON': 'chevron', 'BAL-LOTUS': 'lotus', 'BAL-PEBBLE': 'pebble', 'FEA-CASCADE': 'cascade', 'FEA-TREE': 'tree', 'FREE-BASKET': 'basket',
+  'FREE-GEOGRID': 'geogrid', 'FREE-KOLAM': 'kolam', 'FREE-MANDALA': 'mandala', 'PER-ARABESQUE': 'arch', 'PER-SUNBURST': 'sun', 'PER-VINE': 'vine', 'POOL-REEDS': 'reeds', 'POOL-SCALES': 'scales',
+  'UTL-DOTS': 'dots', 'UTL-OPENDIA': 'opendia', 'PLANTER-CLIMBER': 'diamond', 'PLANTER-RIPPLE': 'ripple' };
+const PS_MOTIF = { tree: 1, bamboo: 1, cascade: 1, sun: 1, vine: 1, reeds: 1 };   // drawn once per panel (not tiled per foot)
+const PS_HEDGE = { 'HEDGE-BOXWOOD': 'box', 'BAL-BOXWOOD': 'box', 'HEDGE-IVY': 'ivy', 'FREE-IVY': 'ivy', 'FEA-FERN': 'fern', 'PER-TROPICAL': 'trop', 'HEDGE-WINDOW': 'box' };
+function jaliTex(kind) {   // white = material, transparent = cut-out; one tile = 1 ft square (motifs: one panel)
+  const key = 'ps_tx_' + kind; if (M[key]) return M[key];
+  const motif = PS_MOTIF[kind], W = motif ? 256 : 128, Hh = motif ? 512 : kind === 'hexa' ? 148 : 128, cv = document.createElement('canvas'); cv.width = W; cv.height = Hh; const x = cv.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0, 0, W, Hh); x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000'; x.strokeStyle = '#000';
+  const P = (pts) => { x.beginPath(); pts.forEach(([a, b], i) => i ? x.lineTo(a, b) : x.moveTo(a, b)); x.closePath(); x.fill(); };
+  const C = (a, b, r) => { x.beginPath(); x.arc(a, b, r, 0, Math.PI * 2); x.fill(); };
+  const E = (a, b, rx, ry, rot) => { x.beginPath(); x.ellipse(a, b, rx, ry, rot || 0, 0, Math.PI * 2); x.fill(); };
+  const solid = (f) => { x.globalCompositeOperation = 'source-over'; x.fillStyle = '#fff'; x.strokeStyle = '#fff'; f(); x.globalCompositeOperation = 'destination-out'; x.fillStyle = '#000'; x.strokeStyle = '#000'; };
+  const cutAll = (m) => x.fillRect(m, m, W - 2 * m, Hh - 2 * m);
+  if (kind === 'star') { [[32, 32], [96, 96], [96, 32], [32, 96]].forEach(([a, b], k) => { const r1 = k < 2 ? 26 : 13, r2 = k < 2 ? 12 : 6, p = []; for (let i = 0; i < 16; i++) { const r = i % 2 ? r2 : r1, t = i * Math.PI / 8; p.push([a + r * Math.cos(t), b + r * Math.sin(t)]); } P(p); }); }
+  else if (kind === 'diamond' || kind === 'opendia') { const s = kind === 'opendia' ? 64 : 32, m = kind === 'opendia' ? 7 : 5; for (let a = 0; a <= 128; a += s) for (let b = 0; b <= 128; b += s) { P([[a, b - s / 2 + m], [a + s / 2 - m, b], [a, b + s / 2 - m], [a - s / 2 + m, b]]); P([[a + s / 2, b + m], [a + s - m, b + s / 2], [a + s / 2, b + s - m], [a + m, b + s / 2]]); } }
+  else if (kind === 'hexa') { const r = 128 / 6, h3 = r * Math.sqrt(3); for (let row = -1; row < 10; row++) for (let col = -1; col < 4; col++) { const a = col * r * 3 + (row % 2 ? r * 1.5 : 0), b = row * h3 / 2, p = []; for (let i = 0; i < 6; i++) p.push([a + (r - 3.5) * Math.cos(i * Math.PI / 3), b + (r - 3.5) * Math.sin(i * Math.PI / 3)]); P(p); } }
+  else if (kind === 'quatre') { [[32, 32], [96, 96], [96, 32], [32, 96]].forEach(([a, b]) => { [[0, -10], [0, 10], [-10, 0], [10, 0]].forEach(([u, v]) => C(a + u, b + v, 11)); }); }
+  else if (kind === 'ripple') { x.lineWidth = 11; x.lineCap = 'round'; for (let b = 12; b < 128; b += 32) { x.beginPath(); for (let a = 0; a <= 128; a += 4) x.lineTo(a, b + Math.sin(a / 128 * Math.PI * 2) * 9); x.stroke(); } }
+  else if (kind === 'leaf') { [[30, 30, 0.6], [92, 40, -0.7], [60, 86, 0.3], [20, 100, -0.4], [108, 104, 0.9]].forEach(([a, b, r]) => E(a, b, 22, 9, r)); }
+  else if (kind === 'chevron') { x.lineWidth = 10; for (let b = -16; b < 160; b += 32) { x.beginPath(); x.moveTo(0, b); x.lineTo(64, b - 24); x.lineTo(128, b); x.stroke(); } }
+  else if (kind === 'lotus') { [[32, 40], [96, 40], [64, 100], [0, 100], [128, 100]].forEach(([a, b]) => { E(a, b, 6, 16); E(a - 10, b + 4, 5, 13, -0.6); E(a + 10, b + 4, 5, 13, 0.6); }); }
+  else if (kind === 'pebble') { [[26, 22, 20, 12, 0.2], [86, 26, 24, 13, -0.3], [48, 66, 22, 14, 0.5], [104, 76, 18, 12, 0.1], [24, 104, 18, 11, -0.2], [78, 112, 24, 12, 0.3]].forEach(e => E(...e)); }
+  else if (kind === 'basket') { for (let a = 0; a < 128; a += 32) for (let b = 0; b < 128; b += 32) { const v = ((a + b) / 32) % 2; v ? x.fillRect(a + 6, b + 3, 20, 10) : x.fillRect(a + 3, b + 6, 10, 20); v ? x.fillRect(a + 6, b + 19, 20, 10) : x.fillRect(a + 19, b + 6, 10, 20); } }
+  else if (kind === 'geogrid') { [[5, 5, 54, 30], [65, 5, 58, 54], [5, 41, 26, 38], [37, 41, 22, 18], [37, 65, 22, 14], [5, 85, 54, 38], [65, 65, 26, 58], [97, 65, 26, 26], [97, 97, 26, 26]].forEach(r => x.fillRect(...r)); }
+  else if (kind === 'kolam') { [[32, 32], [96, 96], [96, 32], [32, 96]].forEach(([a, b]) => { C(a, b, 6); x.lineWidth = 6; x.beginPath(); x.arc(a, b, 20, 0, Math.PI * 2); x.stroke(); }); [[64, 64], [0, 64], [64, 0], [128, 64], [64, 128]].forEach(([a, b]) => C(a, b, 7)); }
+  else if (kind === 'mandala') { const a = 64, b = 64; C(a, b, 10); for (let i = 0; i < 8; i++) { const t = i * Math.PI / 4; E(a + Math.cos(t) * 28, b + Math.sin(t) * 28, 12, 6, t); E(a + Math.cos(t + 0.39) * 50, b + Math.sin(t + 0.39) * 50, 7, 4, t); } [[0, 0], [128, 0], [0, 128], [128, 128]].forEach(([u, v]) => C(u, v, 12)); }
+  else if (kind === 'arch') { [[8, 56], [72, 56]].forEach(([a, b]) => { x.beginPath(); x.moveTo(a, b + 60); x.lineTo(a, b); x.quadraticCurveTo(a, b - 30, a + 24, b - 46); x.quadraticCurveTo(a + 48, b - 30, a + 48, b); x.lineTo(a + 48, b + 60); x.closePath(); x.fill(); }); }
+  else if (kind === 'scales') { x.lineWidth = 7; for (let row = 0; row < 7; row++) for (let col = -1; col < 5; col++) { const a = col * 32 + (row % 2 ? 16 : 0), b = row * 21.33; x.beginPath(); x.arc(a + 16, b, 12, 0.15, Math.PI - 0.15); x.stroke(); } }
+  else if (kind === 'dots') { for (let a = 10.67; a < 128; a += 21.33) for (let b = 10.67; b < 128; b += 21.33) C(a, b, 7); }
+  else if (kind === 'tree') { cutAll(10); solid(() => { x.lineCap = 'round'; x.lineWidth = 22; x.beginPath(); x.moveTo(128, 512); x.lineTo(128, 250); x.stroke();
+      const br = (a, b, l, t, w, d) => { if (d > 5) return; const a2 = a + Math.cos(t) * l, b2 = b - Math.sin(t) * l; x.lineWidth = w; x.beginPath(); x.moveTo(a, b); x.lineTo(a2, b2); x.stroke(); br(a2, b2, l * 0.72, t + 0.5, w * 0.68, d + 1); br(a2, b2, l * 0.72, t - 0.5, w * 0.68, d + 1); if (d > 2) { x.beginPath(); x.ellipse(a2, b2, 12, 7, t, 0, 7); x.fill(); } };
+      br(128, 260, 90, Math.PI / 2, 16, 0); [[50, 470, 0.3], [206, 470, -0.3]].forEach(([a, b, t]) => { x.lineWidth = 7; x.beginPath(); x.moveTo(128, 470); x.quadraticCurveTo((a + 128) / 2, b - 30, a, b + 30); x.stroke(); }); }); }
+  else if (kind === 'bamboo' || kind === 'reeds') { cutAll(8); solid(() => { const n = kind === 'reeds' ? 9 : 6; for (let i = 0; i < n; i++) { const a = 18 + i * (220 / (n - 1)); x.lineWidth = kind === 'reeds' ? 7 : 15; x.beginPath(); x.moveTo(a, 512); x.quadraticCurveTo(a + (i % 2 ? 14 : -14), 256, a + (i % 2 ? -6 : 6), 20); x.stroke();
+      if (kind === 'bamboo') { for (let b = 60; b < 500; b += 70) { x.fillRect(a - 10, b, 20, 5); x.beginPath(); x.ellipse(a + (i % 2 ? 24 : -24), b - 12, 22, 6, i % 2 ? -0.5 : 0.5, 0, 7); x.fill(); } } else { x.beginPath(); x.ellipse(a, 30, 6, 26, 0, 0, 7); x.fill(); } } }); }
+  else if (kind === 'cascade') { x.lineWidth = 16; x.lineCap = 'round'; for (let a = 28; a < 256; a += 50) { x.beginPath(); for (let b = 16; b <= 496; b += 6) x.lineTo(a + Math.sin(b / 60) * 14, b); x.stroke(); } }
+  else if (kind === 'sun') { const a = 128, b = 520; for (let i = 0; i < 9; i++) { const t0 = Math.PI * (0.06 + i * 0.1), t1 = t0 + 0.06; P([[a + Math.cos(t0) * 80, b - Math.sin(t0) * 80], [a + Math.cos(t0) * 560, b - Math.sin(t0) * 560], [a + Math.cos(t1) * 560, b - Math.sin(t1) * 560], [a + Math.cos(t1) * 80, b - Math.sin(t1) * 80]]); } }
+  else if (kind === 'vine') { cutAll(8); solid(() => { [70, 186].forEach((a, k) => { x.lineWidth = 9; x.beginPath(); for (let b = 512; b >= 10; b -= 6) x.lineTo(a + Math.sin(b / 50 + k) * 26, b); x.stroke();
+      for (let b = 470; b > 30; b -= 38) { const c = a + Math.sin(b / 50 + k) * 26, s = (b / 38) % 2 ? 1 : -1; x.beginPath(); x.ellipse(c + s * 20, b, 18, 8, s * 0.5, 0, 7); x.fill(); } }); }); }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.userData.ar = Hh / W; return (M[key] = t);
+}
+function hedgeTex(kind) {
+  const key = 'ps_hd_' + kind; if (M[key]) return M[key];
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256; const x = cv.getContext('2d');
+  const base = { box: '#2F5A24', ivy: '#355E2A', fern: '#2C5226', trop: '#2F6230' }[kind] || '#2F5A24', cs = { box: ['#3E7230', '#4C8238', '#2A5020', '#5A9142'], ivy: ['#4C7A36', '#6B9A4A', '#2E5A26', '#7FA85A'], fern: ['#2E5A28', '#4F7F3A', '#6E9A50', '#22461E'], trop: ['#3F8038', '#5FA048', '#2C5E2A', '#8DBA5E'] }[kind] || ['#3E7230', '#4C8238'];
+  x.fillStyle = base; x.fillRect(0, 0, 256, 256); let s = 7; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  const n = kind === 'trop' ? 90 : 900; for (let i = 0; i < n; i++) { x.fillStyle = cs[i % cs.length]; x.beginPath(); const r = kind === 'trop' ? 14 + rnd() * 18 : kind === 'box' ? 2 + rnd() * 4 : 4 + rnd() * 6; x.ellipse(rnd() * 256, rnd() * 256, r, r * (kind === 'box' ? 1 : 0.5), rnd() * 6, 0, 7); x.fill(); }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return (M[key] = t);
+}
+function canePlane(hex) {   // a woven cane panel
+  const key = 'ps_cane'; if (!M[key]) { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 64, 64);
+    x.globalCompositeOperation = 'destination-out'; for (let a = 0; a < 64; a += 16) for (let b = 0; b < 64; b += 16) { x.beginPath(); x.arc(a + 8, b + 8, 4.5, 0, 7); x.fill(); x.beginPath(); x.arc(a, b, 2.5, 0, 7); x.fill(); }
+    x.globalCompositeOperation = 'source-over'; x.strokeStyle = 'rgba(0,0,0,.45)'; x.lineWidth = 2.5; for (let a = 0; a < 64; a += 8) { x.beginPath(); x.moveTo(a, 0); x.lineTo(a + 32, 64); x.stroke(); x.beginPath(); x.moveTo(a + 32, 0); x.lineTo(a, 64); x.stroke(); }
+    const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; M[key] = t; }
+  return M[key];
+}
+function texPlane(g, tex, w, h, rx, ry, x0, y0, z, m) {   // a double-sided plane w × h with the texture tiled rx × ry, bottom-left at (x0, y0)
+  const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * rx, uv.getY(i) * ry);
+  const p = new THREE.Mesh(geo, m); p.position.set(x0 + w / 2, y0 + h / 2, z); p.castShadow = true; p.receiveShadow = true; g.add(p); return p;
+}
+function psPanels(L, sizes) {   // 4 / 3 / 2 ft modules for a run, biggest first (the last one takes the rest)
+  const sz = (sizes && sizes.length ? sizes : [4]).slice().sort((a, b) => b - a), out = []; let left = Math.max(0.5, L);
+  while (left > 0.01 && out.length < 60) { const s = sz.find(v => v <= left + 0.01) || left; out.push(Math.min(s, left)); left -= Math.min(s, left); }
+  return out;
+}
+export function screenModel(g, w, h, it, K) {
+  const c = it.cfg || {}, code = String(it.cfgId || it.pick || '').replace(/^MTO-/, '').replace(/^P[ST]-/, ''), col = String(c.colour || '').toLowerCase(), mat0 = String(c.material || '');
+  const H = Math.max(0.8, +h || 3), L = Math.max(1, +w || 8), P = (typeof PRODS !== 'undefined' ? PRODS : window.PRODS || {})[it.cfgId || it.pick], cz = (P && P.cz) || {};
+  let hex = PS_HEX[col];
+  const fam = PS_JALI[code] ? 'jali' : PS_HEDGE[code] ? 'hedge' : /LOUV-VERT|POOL-CLOSEVERT|WPC-VCLOSE|WPC-VSLAT|LOUV-RHYTHM|FREE-RHYTHM|STAGGER-SLAT|PLANTER-SLAT|BAL-FINS|PIVOT/.test(code) ? 'vslat'
+    : /LOUV-HORZ|PER-SLAT|UTL-SLAT|WPC-HBOARD|WPC-LOUVRE/.test(code) ? 'hslat' : /WPC-SKYLINE/.test(code) ? 'skyline' : /WPC-PANEL/.test(code) ? 'panel' : /WPC-MIX/.test(code) ? 'wpcmix' : /ROPE/.test(code) ? 'rope' : /CANE/.test(code) ? 'cane' : /GLASS/.test(code) ? 'glass' : /BAMBOO-POLE/.test(code) ? 'poles' : /MIX-PANEL/.test(code) ? 'mix' : 'vslat';
+  if (hex == null) hex = /WPC|LOUV|SLAT|FINS|RHYTHM/.test(code) || /WPC/.test(mat0) ? 0x8A5A32 : /corten|rust/i.test(mat0 + col) || /BACKLIT|RIPPLE/.test(code) ? 0x8B4A2B : /cane/i.test(col) ? 0xC8A877 : 0x2A2A2A;
+  if (/HPL/.test(mat0) && PS_HEX[col] == null) hex = 0x9A6A3E;
+  const skin = mat('ps_' + hex.toString(16), hex, { roughness: 0.6, metalness: /MS|Alumin/i.test(mat0) && !/WPC|HPL/.test(mat0) ? 0.3 : 0.05, side: THREE.DoubleSide });
+  const frameHex = /slat|hedge|rope|cane|glass|poles|mix|skyline|panel/.test(fam) || (fam === 'jali' && /WPC|HPL/.test(mat0)) ? 0x262626 : hex;
+  const fr = mat('ps_fr_' + frameHex.toString(16), frameHex, { roughness: 0.5, metalness: 0.35 });
+  const sizes = cz.panels && cz.panels.sizes, mods = psPanels(L, sizes), T = 0.16;   // ~50 mm posts / rails
+  // planter base (planter screens): a trough along the run, the screen rises from it
+  let y0 = 0; if (/PLANTER|BAMBOO-POLE/.test(code)) { const ph = Math.min(1.6, H * 0.35), pd = 1.2, pm = /SLAT/.test(code) ? skin : /BAMBOO-POLE/.test(code) ? mat('ps_blk', 0x1E1E1E, { roughness: 0.6 }) : mat('ps_rust', 0x8B4A2B, { roughness: 0.75, metalness: 0.2 });
+    box(g, L, ph, pd, 0, ph / 2, 0, pm); box(g, L - 0.15, 0.05, pd - 0.15, 0, ph - 0.03, 0, mat('c_soil', 0x4A3626));
+    const n = Math.max(2, Math.round(L / 0.7)); for (let i = 0; i < n; i++) { const f = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 0), i % 2 ? K.leaf : K.leaf2); f.position.set(-L / 2 + L * (i + 0.5) / n, ph + 0.22, (i % 3 - 1) * 0.25); f.scale.y = /BAMBOO/.test(code) ? 1.6 : 1.1; g.add(f); }
+    y0 = ph; }
+  const SH = H - y0;
+  // posts at every joint + top / bottom rails (free-standing / parapet)
+  let x = -L / 2; const xs = [x]; mods.forEach(m => { x += m; xs.push(x); });
+  if (fam !== 'skyline') { xs.forEach(px => box(g, T, SH, T, Math.max(-L / 2 + T / 2, Math.min(L / 2 - T / 2, px)), y0 + SH / 2, 0, fr)); if (!/poles|rope/.test(fam)) { box(g, L, T * 0.8, T, 0, y0 + SH - T * 0.4, 0, fr); box(g, L, T * 0.8, T, 0, y0 + T * 0.4, 0, fr); } }
+  const iy = y0 + T * 0.8, ih = SH - T * 1.6;   // the infill between the rails
+  const each = (f) => { for (let k = 0; k < mods.length; k++) { const a = xs[k] + T / 2, b = xs[k + 1] - T / 2; if (b - a > 0.05) f(a, b, k); } };
+  if (fam === 'jali') {
+    const kind = PS_JALI[code], t = jaliTex(kind), key = 'ps_j_' + kind + '_' + hex.toString(16);
+    const jm = M[key] || (M[key] = new THREE.MeshStandardMaterial({ color: hex, map: t, alphaTest: 0.5, transparent: false, side: THREE.DoubleSide, roughness: 0.55, metalness: /WPC|HPL/.test(mat0) ? 0.05 : 0.3 }));
+    each((a, b, k) => { const pw = b - a; if (code === 'HEDGE-WINDOW') return; texPlane(g, t, pw, ih, PS_MOTIF[kind] ? 1 : pw, PS_MOTIF[kind] ? 1 : ih / (t.userData.ar || 1), a, iy, 0, jm); });
+    if (code === 'JALI-BACKLIT') { const gl = mat('c_led', 0xFFE2A8, { emissive: 0xFFC870, emissiveIntensity: 1.6 }); box(g, L - 0.2, ih, 0.04, 0, iy + ih / 2, -0.18, gl); box(g, L, ih + T, 0.06, 0, iy + ih / 2, -0.24, fr); }
+    if (code === 'PLANTER-CLIMBER') for (let i = 0; i < Math.round(L / 1.5); i++) { const v = new THREE.Mesh(new THREE.IcosahedronGeometry(0.25, 0), K.leaf2); v.position.set(-L / 2 + 0.75 + i * 1.5, iy + ih * (0.3 + (i % 3) * 0.2), 0.08); v.scale.set(1, 2.2, 0.5); g.add(v); }
+  } else if (fam === 'hedge') {
+    const kind = PS_HEDGE[code], t = hedgeTex(kind), hm = M['ps_h_' + kind] || (M['ps_h_' + kind] = new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 }));
+    each((a, b, k) => { const pw = b - a, mid = code === 'HEDGE-WINDOW' && k === Math.floor(mods.length / 2);
+      if (mid) { const t2 = jaliTex('leaf'), wm = M['ps_jw_' + hex.toString(16)] || (M['ps_jw_' + hex.toString(16)] = new THREE.MeshStandardMaterial({ color: hex, map: t2, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.3 })); texPlane(g, t2, pw, ih, pw, ih, a, iy, 0, wm); return; }
+      const bx = new THREE.Mesh(new THREE.BoxGeometry(pw, ih, 0.32), hm), uv = bx.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * pw / 2, uv.getY(i) * ih / 2);
+      bx.position.set(a + pw / 2, iy + ih / 2, 0); bx.castShadow = bx.receiveShadow = true; g.add(bx); });
+  } else if (fam === 'vslat') {
+    const rh = /RHYTHM/.test(code), stag = /STAGGER/.test(code), fin = /FINS/.test(code), piv = /PIVOT/.test(code), close = /CLOSEVERT|VCLOSE/.test(code);
+    const sw = piv ? 0.5 : fin ? 0.4 : 0.16, gap = close ? 0.05 : /VSLAT/.test(code) && /Open/.test(JSON.stringify(c.groups || {})) ? 0.13 : 0.13;
+    each((a, b) => { let u = a + 0.04, k = 0; while (u < b - 0.05) { const ww = rh ? (k % 3 === 2 ? 0.32 : 0.12) : sw, z = stag && k % 2 ? 0.14 : 0, bb = box(g, Math.min(ww, b - u), ih, piv ? 0.06 : 0.1, u + Math.min(ww, b - u) / 2, iy + ih / 2, z, skin);
+      if (fin || piv) bb.rotation.y = piv ? 0.9 : 0.6; u += ww + (fin ? 0.18 : piv ? 0.12 : rh ? 0.1 : gap); k++; } });
+    if (stag) box(g, L - 0.2, 0.04, 0.06, 0, y0 + 0.12, 0.12, mat('c_led', 0xFFE2A8, { emissive: 0xFFC870, emissiveIntensity: 1.6 }));
+  } else if (fam === 'hslat') {
+    const lv = /WPC-LOUVRE/.test(code), bd = /HBOARD/.test(code), wide = /UTL-SLAT/.test(code), sh = lv ? 0.42 : bd ? 0.45 : 0.17, gap = lv ? 0.12 : bd ? 0.04 : wide ? 0.2 : 0.13;
+    each((a, b) => { for (let v = iy + 0.03; v < iy + ih - 0.05; v += sh + gap) { const hh = Math.min(sh, iy + ih - v), bb = box(g, b - a, hh, lv ? 0.04 : 0.08, (a + b) / 2, v + hh / 2, 0, skin); if (lv) bb.rotation.x = -0.6; } });
+  } else if (fam === 'rope') {
+    const rm = mat('ps_rope_' + hex.toString(16), hex, { roughness: 0.95 }); box(g, L, T, T, 0, y0 + SH - T / 2, 0, fr); box(g, L, T, T, 0, y0 + T / 2, 0, fr);
+    for (let u = -L / 2 + 0.12; u < L / 2 - 0.05; u += 0.12) cyl(g, 0.03, 0.03, SH - T * 2, u, y0 + SH / 2, 0, rm, 6);
+  } else if (fam === 'cane') {
+    const caneHex = 0xC8A877, t = canePlane(), cm = M['ps_cane_m'] || (M['ps_cane_m'] = new THREE.MeshStandardMaterial({ color: caneHex, map: t, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.9 }));
+    if (/teak/.test(col)) xs.forEach(px => box(g, T + 0.01, SH, T + 0.01, Math.max(-L / 2 + T / 2, Math.min(L / 2 - T / 2, px)), y0 + SH / 2, 0, mat('ps_8a5a32', 0x8A5A32, { roughness: 0.6 })));
+    each((a, b) => texPlane(g, t, b - a, ih, (b - a) * 3, ih * 3, a, iy, 0, cm));
+  } else if (fam === 'glass') {
+    const gm = mat('ps_glass', 0xDCE8EC, { transparent: true, opacity: 0.55, roughness: 0.25, side: THREE.DoubleSide });
+    each((a, b, k) => { if (k % 2) for (let u = a + 0.04; u < b - 0.05; u += 0.3) box(g, 0.18, ih, 0.1, u + 0.09, iy + ih / 2, 0, skin); else { box(g, b - a, ih, 0.04, (a + b) / 2, iy + ih / 2, 0, gm); for (let u = a + 0.06; u < b - 0.02; u += 0.1) box(g, 0.012, ih, 0.05, u, iy + ih / 2, 0, mat('ps_flute', 0xC4D4DA, { transparent: true, opacity: 0.6 })); } });
+  } else if (fam === 'poles') {
+    const pm = mat('ps_bam_' + hex.toString(16), hex === 0x2A2A2A ? 0xC9A86A : hex, { roughness: 0.6 }); for (let u = -L / 2 + 0.12; u < L / 2 - 0.05; u += 0.2) { cyl(g, 0.08, 0.09, SH, u, y0 + SH / 2, 0, pm, 10); for (let v = y0 + 0.8; v < H; v += 1.1) cyl(g, 0.095, 0.095, 0.05, u, v, 0, mat('ps_bamj', 0x8A6A3A), 10); }
+  } else if (fam === 'mix') {
+    const t = jaliTex('star'), jm = M['ps_j_star_' + hex.toString(16)] || (M['ps_j_star_' + hex.toString(16)] = new THREE.MeshStandardMaterial({ color: hex, map: t, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.5, metalness: 0.3 })), ht = hedgeTex('box'), hm = M.ps_h_box || (M.ps_h_box = new THREE.MeshStandardMaterial({ map: ht, roughness: 0.95 })), wm = mat('ps_8a5a32', 0x8A5A32, { roughness: 0.6 });
+    each((a, b, k) => { const z = k % 2 ? 0.2 : 0, pw = b - a; if (k % 3 === 0) { const bx = new THREE.Mesh(new THREE.BoxGeometry(pw, ih, 0.3), hm); bx.position.set(a + pw / 2, iy + ih / 2, z); g.add(bx); } else if (k % 3 === 1) { for (let v = iy + 0.03; v < iy + ih - 0.05; v += 0.3) box(g, pw, 0.17, 0.08, a + pw / 2, v + 0.085, z, wm); } else texPlane(g, t, pw, ih, pw, ih, a, iy, z, jm); });
+  } else if (fam === 'skyline') {
+    each((a, b, k) => { const hh = SH * [1, 0.78, 0.9, 0.66, 0.84][k % 5]; box(g, b - a + T, hh, 0.12, (a + b) / 2, y0 + hh / 2, 0, skin); box(g, T, hh, T, a - T / 2, y0 + hh / 2, 0.08, fr); });
+  } else if (fam === 'wpcmix') {
+    const two = /2 : 1/.test(JSON.stringify(c.groups || {}));
+    each((a, b, k) => { if (two ? k % 3 !== 2 : k % 2 === 0) box(g, b - a, ih, 0.1, (a + b) / 2, iy + ih / 2, 0, skin); else for (let v = iy + 0.03; v < iy + ih - 0.05; v += 0.3) box(g, b - a, 0.17, 0.08, (a + b) / 2, v + 0.085, 0, skin); });
+  } else if (fam === 'panel') {
+    each((a, b) => { for (let v = iy + 0.03; v < iy + ih - 0.05; v += 0.3) box(g, b - a, 0.17, 0.08, (a + b) / 2, v + 0.085, 0, skin); });
+    xs.forEach(px => box(g, 0.7, 0.04, 0.7, Math.max(-L / 2 + 0.35, Math.min(L / 2 - 0.35, px)), 0.02, 0, fr));
+  }
+}
 export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
   if (cat === 'sofa') {   // 193d: a 3-seater along the back, a 2-seater on the right, a coffee table in front
@@ -168,6 +308,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     if (cat === 'gate') { box(g, w / 2 - 0.2, H - 0.8, 0.12, -w / 4, H / 2, 0, mat('c_gate', 0x55595C, { metalness: 0.5, roughness: 0.4 })); box(g, w / 2 - 0.2, H - 0.8, 0.12, w / 4, H / 2, 0, mat('c_gate', 0x55595C)); }
     else box(g, w - 0.3, H - 0.8, 0.06, 0, H / 2 + 0.1, 0, K.glass);
   } else if (cat === 'privacy') {
+    if (it && /^MTO-P[ST]-/.test(String(it.cfgId || it.pick || ''))) { screenModel(g, w, h, it, K); return g; }
     const H = h || 6, n = Math.max(3, Math.round(w / 0.45)); box(g, w, 0.2, 0.3, 0, H, 0, K.frame); box(g, w, 0.2, 0.3, 0, 0.3, 0, K.frame);
     for (let i = 0; i < n; i++) box(g, 0.28, H - 0.4, 0.15, -w / 2 + w * (i + 0.5) / n, H / 2, 0, K.wood);
   } else if (cat === 'feature') {
@@ -224,7 +365,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
     if (it.segs) {   // a screen fixed on the parapet / round the tanks: pieces in plot coordinates
       const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); H[i] = hd;
       it.segs.forEach((sg, k) => { const L = Math.hypot(sg.x1 - sg.x0, sg.z1 - sg.z0); if (L < 0.3) return; const p = new THREE.Group(); p.position.set((sg.x0 + sg.x1) / 2, sg.y, (sg.z0 + sg.z1) / 2); p.rotation.y = -Math.atan2(sg.z1 - sg.z0, sg.x1 - sg.x0); hd.add(p);
-        p.add(generic('privacy', L, 0.3, +it.h || 3));
+        p.add(generic('privacy', L, 0.3, +it.h || 3, it));
         const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
         if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.2, (+it.h || 3) + 0.2, 0.6)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = (+it.h || 3) / 2; p.add(ln); }
         if (!k && P.labels !== false) { const tg = tag(it.label || 'Privacy screen'); tg.position.y = (+it.h || 3) + 1.4; p.add(tg); } });
@@ -330,7 +471,9 @@ export function preview(el, items) {
   const key = JSON.stringify(items); if (key === PV.key) return; const first = !PV.key; PV.key = key;
   if (PV.group) PV.scene.remove(PV.group);
   const g = new THREE.Group(); let x = 0, W = 0, D = 0, H = 0;
-  (items || []).forEach(it => { const m = generic(it.cat, +it.w || 2, +it.d || 2, +it.h || 2, it); m.position.set(x + (+it.w || 2) / 2, 0, 0); g.add(m); x += (+it.w || 2) + 0.5; D = Math.max(D, +it.d || 2); H = Math.max(H, (+it.h || 2) + 0.9); });
+  (items || []).forEach(it => { const m = generic(it.cat, +it.w || 2, +it.d || 2, +it.h || 2, it), y = it.par ? 3 : 0; m.position.set(x + (+it.w || 2) / 2, y, 0); g.add(m);
+    if (it.par) box(g, (+it.w || 2) + 1, 3, 0.75, x + (+it.w || 2) / 2, 1.5, 0, mat('pv_par', 0xE3DDD2));   // 211: a screen that goes on the parapet / boundary wall, shown on one
+    x += (+it.w || 2) + 0.5; D = Math.max(D, +it.d || 2, it.par ? 0.75 : 0); H = Math.max(H, (+it.h || 2) + y + 0.9); });
   W = Math.max(0.5, x - 0.5); g.position.x = -W / 2; g.position.z = -6 + 0.25 + D / 2 + 0.6; PV.group = g; PV.scene.add(g);
   const span = Math.max(W, D * 1.6, H * 1.8 + 1.5), tz = g.position.z, ty = Math.min(H * 0.5, 3);
   if (first || PV.span !== Math.round(span * 2)) { PV.span = Math.round(span * 2); PV.controls.target.set(0, ty, tz); PV.cam.position.set(span * 0.55, ty + span * 0.55, tz + span * 1.35); PV.controls.update(); }

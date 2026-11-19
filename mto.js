@@ -1864,7 +1864,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=28').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=29').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2688,12 +2688,13 @@
     window.mtoUnlock(function () { try { openProduct(kid); } catch (er) {} var n = 0; (function w() { if (!S || S.id !== kid || !S.pdp) { if (n++ < 80) return setTimeout(w, 100); return; } S.o = ko; Object.assign(S, ks); draw(); window.mtoProposal(true); })(); });
   }
   // 199: designs that sit in the planner as one of its things (planters…): "See it in my space" puts the pieces on a plan — the one on this device, a saved one, or a new space
-  var PCAT = { planters: 'planter' };
+  var PCAT = { planters: 'planter', 'privacy-screens': 'privacy' };
   function cuSpace() {
     var x = PRODS[S.id], m = x.cz, o = S.o, cat = PCAT[x.col]; if (!cat || !window.outrrPlan || !window.mtoSpaceAsk) return;
     var q = price(m, o, PCT); if (!q.ok) return toast(q.error || 'Choose your size');
     var n = num(o.pcs) || 1, cfg = JSON.parse(JSON.stringify(o)); delete cfg.pcs; delete cfg.pin; delete cfg.zone; delete cfg.install;
     var it = { cat: cat, pick: S.id, cfgId: S.id, cfg: cfg, label: short(x.n), w: num(o.l), d: m.round ? num(o.l) : num(o.w), h: (m.hr && num(o.h)) || num(m.ht) || 3, rot: 0 }, items = [];
+    if (m.unit === 'face') { it.w = num(o.w) || 8; it.d = 0.5; it.h = num(o.h) || 3; if (scrPar(m, o)) it.mode = 'par'; n = 1; }   // 211: screens — on the parapet / boundary wall, or a partition
     for (var i = 0; i < n; i++) items.push(JSON.parse(JSON.stringify(it)));
     window.cuOpen(false); try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: 'space' }); } catch (e) {}
     window.mtoSpaceAsk(cat, async function (r) {
@@ -2705,10 +2706,16 @@
     });
   }
   var CU3 = { m: null, st: 0 };
+  function scrPar(m, o) {   // 211: a screen that goes on top of the parapet / boundary wall (1–4 ft designs, or the "On the parapet" mounting) — else a partition
+    var g = JSON.stringify((o && o.groups) || {}); if (/parapet/i.test(g)) return true; if (/On the floor/i.test(g)) return false;
+    var hs = arr(m.h && m.h.options).map(num).filter(Boolean); return hs.length ? Math.max.apply(null, hs) <= 4 : (num(m.h && m.h.max) || 8) <= 4;
+  }
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
-    var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o;
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=18').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
+    if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=19').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
+    if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
     try { CU3.m.preview(el, its); } catch (e) { if (window.console) console.warn(e); }
   }
@@ -2816,7 +2823,7 @@
   // "Which space is this for?" (the plan open on this device + the plans saved in the account) → else "Where will it go? Lawn / Terrace"
   window.mtoSpaceAsk = function (what, cb) {
     propCss(); var d = document.getElementById('spAsk'); if (!d) { d = document.createElement('div'); d.id = 'spAsk'; d.className = 'sp-ov'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); document.body.appendChild(d); }
-    var W = what === 'planner' ? 'your plan' : 'this ' + what, list = [], st = { step: 'load' };
+    var W = what === 'planner' ? 'your plan' : 'this ' + ({ privacy: 'privacy screen' }[what] || what), list = [], st = { step: 'load' };
     var close = function () { d.classList.remove('open'); document.body.classList.remove('sp-on'); };
     var paint = function () {
       var h = '<div class="sp-hd"><b>' + (what === 'planner' ? 'Plan your space' : what === 'cabin' ? 'Design your cabin' : what === 'pergola' ? 'Design your pergola' : 'See it in your space') + '</b><button type="button" data-sp="x" aria-label="Close">✕</button></div><div class="sp-bd">';

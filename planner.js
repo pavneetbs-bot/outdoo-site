@@ -4,7 +4,7 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=18';
+import * as S3 from './space3d.js?v=19';
 import { cutHit } from './cabin3d.js?v=21';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -754,7 +754,12 @@ function lifewall() {
 function close() { if (EL) EL.style.display = 'none'; document.body.style.overflow = ''; try { const u = new URL(location.href); if (u.searchParams.has('plan')) { u.searchParams.delete('plan'); history.replaceState(history.state, '', u.pathname + (u.search || '') + u.hash); } } catch (e) {} }
 
 function putPieces(list) {   // 199: each piece takes a placeholder's spot (same kind, no design yet), else a free spot in a row; things already there stay
-  const dummies = S.items.filter(o => o.cat === list[0].cat && !o.pick && !o.cfgId && !o.lock); let last = null, first = -1;
+  if (list[0] && list[0].cat === 'privacy' && list[0].mode === 'par') {   // 211: a parapet / boundary-wall screen design takes the plan's parapet screen (or goes on the parapet)
+    const p0 = list[0], dm = S.items.find(o => o.cat === 'privacy' && o.mode === 'par' && !o.pick && !o.cfgId), it = dm || { cat: 'privacy', mode: 'par', sides: ['left', 'right', 'back'], w: 0, d: 0.3, x: 0, z: 0, rot: 0 };
+    Object.assign(it, { pick: p0.pick, cfgId: p0.cfgId, cfg: p0.cfg, label: p0.label, h: p0.h }); if (!dm) S.items.push(it); const i = S.items.indexOf(it); attach(it, i);
+    if (it.w) { S.sel = i; return; } S.items.splice(i, 1); list = list.map(o => Object.assign({}, o, { mode: undefined, w: Math.min(+o.w || 8, 12), d: 0.5 }));   // no free parapet: as a partition
+  }
+  const dummies = S.items.filter(o => o.cat === list[0].cat && !o.pick && !o.cfgId && !o.lock && !att(o)); let last = null, first = -1;
   list.forEach((p0, k) => { const it = Object.assign({}, p0), dm = dummies[k];
     if (dm) { const i = S.items.indexOf(dm); it.x = dm.x; it.z = dm.z; it.rot = dm.rot || 0; S.items.splice(i, 1, it); if (!settle(it, i)) { S.items.splice(i, 1, dm); S.items.push(it); if (!placeFree(it, S.items.length - 1)) S.items.pop(); } }
     else { it.x = last ? r2(last.x + last.w + 0.5) : r2((S.site.pw - it.w) / 2); it.z = last ? last.z : r2(S.site.pd * 0.35 - it.d / 2); S.items.push(it); if (!placeFree(it, S.items.length - 1)) { S.items.pop(); S.msg = 'Not all the pieces fit — make room and add more'; return; } }
