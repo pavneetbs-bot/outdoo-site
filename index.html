@@ -515,6 +515,8 @@ body.flt-open .ctas,body.cmp-in .ctas{display:none!important}
 #plp .coloffer{display:none}
 .pdp-grid{padding:12px 0 90px}
 .gal-main{aspect-ratio:1;border-radius:15px}
+/* info graphics (factory / warranty / "Customise & order now") are 4:3 — shown whole, never cropped */
+#pdp img[src*="/img/trust/"]{object-fit:contain!important;background:#F4EEE5}#pdp img[src*="mto-cta"],#lbx img[src*="mto-cta"]{background:#141210}
 .thumbs{display:flex;gap:9px;margin-top:10px}
 .thumbs .th{width:60px;height:60px;border-radius:10px;border:2px solid transparent;cursor:pointer;overflow:hidden}
 .thumbs .th.on{border-color:var(--terra)}
@@ -2994,7 +2996,7 @@ function pdSwipe(el, next, prev, tap){ let x0=null,y0=0,t0=0,multi=false;
   if(tap) el.addEventListener('click',e=>{ if(e.target.closest('button')) return; tap(); }); }
 // full-screen viewer: swipe between photos, double-tap / tap the zoom button / pinch to zoom, drag to look around
 let LZ={s:1,x:0,y:0};
-const MTO_CTA='/img/trust/mto-cta.jpg';
+const MTO_CTA='/img/trust/mto-cta.jpg?v=2';
 function mtoCtaGo(){ const b=document.querySelector('.pp-go')||[...document.querySelectorAll('button[onclick="buyNow()"]')].find(e=>e.offsetParent&&!e.disabled); if(b){ b.scrollIntoView&&b.scrollIntoView({block:'center'}); b.click(); return true; } return false; }
 function lbxOpen(){ const g0=window.PDG; if(g0&&g0.list[g0.i]===MTO_CTA&&mtoCtaGo()) return;   // the "Customise & order now" photo acts as the button
   let b=document.getElementById('lbx');
