@@ -1937,7 +1937,7 @@ header{position:static!important}
     <div class="sh" id="hsSeason"><h2>Winter-ready outdoor furniture</h2><p>All-weather rope, wicker and teak, made to stay outside.</p></div>
     <div style="height:12px"></div>
     <div class="hstrip" id="stripWinter"></div>
-    <span class="pillv" onclick="openCol('furniture')">View all outdoor furniture</span>
+    <span class="pillv" id="winPill" onclick="openCol(this.dataset.col||'furniture')">View all outdoor furniture</span>
   </div>
 
   <div class="sec2 spaces4">
@@ -3390,7 +3390,12 @@ function byCol(c,n,skip=0){return Object.keys(PRODS).filter(i=>PRODS[i].col===c)
 function byPrice(max,n){return Object.keys(PRODS).filter(i=>PRODS[i].p<=max).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,n);}
 fillStrip('stripSofas', byCol('furniture',10,4));
 function winterIds(){const one=l=>(window.vOnePerGroup?vOnePerGroup(l):l); const f=one(Object.keys(PRODS).filter(i=>PRODS[i].col==='furniture'&&PRODS[i].p>0&&(!window.IMGS||IMGS[PRODS[i].img]))); const r=i=>/sofa/i.test(PRODS[i].n)?0:/lounge|chair/i.test(PRODS[i].n)?1:2; return f.sort((a,b)=>r(a)-r(b)).slice(0,12);}
-fillStrip('stripWinter', winterIds());
+// live plants in this slot once 4+ are on sale (winter is planting season); until then the outdoor furniture
+function winterPlants(){return Object.keys(PRODS).filter(i=>PRODS[i].col==='plants'&&PRODS[i].p>0&&PRODS[i].oo!==false&&(!window.IMGS||IMGS[PRODS[i].img])).slice(0,12);}
+function fillWinter(){const pl=winterPlants(),h=document.getElementById('hsSeason'),pv=document.getElementById('winPill'); if(h&&h.dataset.ai) return;   // today's AI season picks win
+  if(pl.length>=4){ if(h&&!h.dataset.ai) h.innerHTML='<h2>Live plants for the winter season</h2><p>Healthy plants for your balcony, terrace and garden — winter is planting season.</p>'; if(pv){pv.dataset.col='plants'; pv.textContent='View all plants';} fillStrip('stripWinter',pl); }
+  else fillStrip('stripWinter', winterIds());}
+fillWinter();
 fillStrip('stripLight', byCol('lighting',10));
 fillStrip('stripRugs', byPrice(12000,10));
 fillStrip('stripPlant', byCol('planters',10));
@@ -3780,7 +3785,7 @@ function homePaint(h){
   const ids=s=>one(((h[s]&&h[s].skus)||[]).filter(i=>PRODS[i]&&IMGS[PRODS[i].img]));
   const head=(el,s)=>{const d=document.getElementById(el); if(!d||!h[s]) return; if(h[s].title) d.querySelector('h2').textContent=h[s].title;
     const pe=d.querySelector('p'); if(pe&&h[s].sub){ pe.textContent=h[s].sub; pe.hidden=false; } };
-  let l=ids('season'); if(l.length>=4){ fillStrip('stripWinter',l); head('hsSeason','season'); }
+  let l=ids('season'); if(l.length>=4){ fillStrip('stripWinter',l); head('hsSeason','season'); const hs=document.getElementById('hsSeason'); if(hs) hs.dataset.ai='1'; }
   l=ids('trend'); if(l.length>=4) fillStrip('stripTrend',l);
   l=ids('best'); if(l.length>=4){ fillTiles('tilesBest',l.slice(0,4)); head('hsBest','best'); }
   l=ids('new'); if(l.length>=4) fillTiles('tilesNew',l.slice(0,4));
@@ -4484,7 +4489,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
         const big = i => ['furniture', 'shade'].includes(PRODS[i].col);
         fillTiles('tilesBest', pick(['lounge','dining','umbp12','awl124'], null, 4));
         fillTiles('tilesNew', pick(['pl119c','orm03','awl37','tusker'], null, 4, 4));
-        fillStrip('stripWinter', winterIds());
+        fillWinter();
         fillStrip('stripTrend', pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8).length ? pick(['bula','giuliaa','cassio','marco','rafale','vesta','honey','selena'], null, 8, 8) : pool.slice(0, 8));
         if(typeof dealsLoad === 'function') dealsLoad();   // 180: today's AI deals
       }catch(e){ console.warn(e) }
