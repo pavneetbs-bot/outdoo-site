@@ -1018,6 +1018,10 @@
      
       groups: arr(m.groups).reduce(function (g, x) { var f = arr(x.options).filter(function (y) { return String(y.name || '').trim(); })[0]; if (f) g[x.name] = f.name; return g; }, {}),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
+    if (!window.__ad3d && /[?&]3d(=|&|$)/.test(location.search)) {   // ad links: /p/<design>/?3d opens the 3D designer / cabin studio straight away
+      window.__ad3d = true; try { if (window.otrack) otrack('customise_start', { sku: id, ref: 'ad3d' }); } catch (e) {}
+      if (m.unit === 'cabin') window.__cbsOpen = id; else if (/^MTO-PG-/.test(id)) window.__mtoPre = Object.assign({}, window.__mtoPre && window.__mtoPre.id === id ? window.__mtoPre : { id: id }, { open3d: true });
+    }
     var pre = window.__mtoPre;   // home "Design it yourself": size / roof / finish picked there carry over (only valid choices)
     if (pre && pre.id !== id) window.__mtoPre = null;   // kept for this product (also after signing in to see the price)
     if (pre && pre.id === id) {
