@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=20';   // 193f: the same terrace as the cabin studio and the planner
+import { plotModel } from './cabin3d.js?v=21';   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -185,21 +185,25 @@ function build(sku, o, bare) {   // 192: bare = the pergola alone (space planner
     for (let i = 0; i <= n; i++) { const x = xa + P / 2 + (ew - P) * i / n; box(g, RW, RH, z1 - z0, x, ys + RH / 2, (z0 + z1) / 2, F.roof); }
     cover(r.flush ? y0 + BH : ry + RH, z0, z1, xa, xb);
   }
-  // add-ons the customer picked (o.addons: names)
-  const AD = (o.addons || []).map(x => String(x).toLowerCase()), has = re => AD.some(x => re.test(x)), zF = rows[rows.length - 1], zB = wall ? -P / 2 : rows[0];
+  // add-ons the customer picked (o.addons: names; o.aside: {name: [sides]} for gutter / curtains / hooks)
+  const ADN = (o.addons || []).map(String), zF = rows[rows.length - 1], zB = wall ? -P / 2 : rows[0], xL = cols[0], xR = cols[cols.length - 1];
+  const sidesOf = (re, def) => { const n = ADN.find(x => re.test(x.toLowerCase())); if (!n) return []; const s0 = ((o.aside || {})[n] || def).filter(sd => !(wall && sd === 'back')); return s0.length ? s0 : def; };
+  const EDGE = { front: { ax: 'x', at: zF + BW / 2, a0: eL, a1: eR, out: 1 }, back: { ax: 'x', at: zB - BW / 2, a0: eL, a1: eR, out: -1 }, left: { ax: 'z', at: xL - P / 2, a0: zB, a1: zF, out: -1 }, right: { ax: 'z', at: xR + P / 2, a0: zB, a1: zF, out: 1 } };
+  const along = (e, len, h, thick, u, y, off, m) => e.ax === 'x' ? box(g, len, h, thick, u, y, e.at + e.out * off, m) : box(g, thick, h, len, e.at + e.out * off, y, u, m);
   const metal = mat('steel', { color: 0xb9bcc0, roughness: 0.35, metalness: 0.8 });
-  if (has(/gutter/)) { const gz = zF + BW / 2 + MM(60); box(g, eR - eL, MM(110), MM(120), (eL + eR) / 2, y0 + BH - MM(55), gz, F.frame); box(g, MM(75), y0 + BH, MM(75), cols[cols.length - 1] + P / 2 + MM(60), (y0 + BH) / 2, gz, F.frame); }
-  if (has(/spot/)) { const sm = mat('spot', { color: 0x222222, emissive: 0xffe2a8, emissiveIntensity: R && R.night ? 3 : 0.4 });
-    [[L * 0.3, zF], [L * 0.7, zF], [L * 0.3, zB], [L * 0.7, zB]].forEach(([x, z]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(MM(55), MM(70), MM(90), 16), sm); c.position.set(x, y0 - MM(45), z + (z === zF ? -BW : BW)); g.add(c); }); }
-  if (has(/curtain/)) { const cm = mat('curt', { color: 0xEDE4D3, roughness: 1, side: THREE.DoubleSide }), hh = y0 - 0.1;
-    box(g, eR - eL, MM(25), MM(25), (eL + eR) / 2, hh, zF + BW / 2 + MM(40), metal);   // rod on the front
-    [[cols[0] + 0.9, zF], [cols[cols.length - 1] - 0.9, zF]].forEach(([x, z]) => { for (let k = 0; k < 5; k++) box(g, 0.28, hh - 0.1, MM(20), x + (k - 2) * 0.27, (hh - 0.1) / 2 + 0.1, z + BW / 2 + MM(40) + (k % 2) * 0.12, cm); });   // gathered at the posts
-    if (!wall) { box(g, MM(25), MM(25), W, cols[0] - P / 2 - MM(40), hh, W / 2, metal); [rows[0] + 0.9, zF - 0.9].forEach(z => { for (let k = 0; k < 5; k++) box(g, MM(20), hh - 0.1, 0.28, cols[0] - P / 2 - MM(40) - (k % 2) * 0.12, (hh - 0.1) / 2 + 0.1, z + (k - 2) * 0.27, cm); }); } }
-  if (has(/swing/)) [L / 2 - 1.6, L / 2 + 1.6].forEach(x => { const t = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.035, 8, 20), metal); t.position.set(x, y0 - 0.2, W / 2); g.add(t); box(g, MM(30), 0.12, MM(30), x, y0 - 0.06, W / 2, metal); });
-  if (has(/planter hook/)) { const pot = mat('pot', { color: 0xB0603E, roughness: 0.9 }), leaf = mat('leaf', { color: 0x4E7A3A, roughness: 1 });
-    [0.18, 0.39, 0.61, 0.82].forEach(f => { const x = eL + (eR - eL) * f, z = zF; box(g, MM(12), 1.4, MM(12), x, y0 - 0.7, z, metal);
-      const pt = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.55, 16), pot); pt.position.set(x, y0 - 1.65, z); pt.castShadow = true; g.add(pt);
-      const lf = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), leaf); lf.scale.set(1, 0.75, 1); lf.position.set(x, y0 - 1.15, z); g.add(lf); }); }
+  sidesOf(/gutter/, ['front']).forEach(sd => { const e = EDGE[sd], mid = (e.a0 + e.a1) / 2, ln = e.a1 - e.a0; along(e, ln, MM(110), MM(120), mid, y0 + BH - MM(55), MM(60), F.frame);
+    along(e, MM(75), y0 + BH, MM(75), e.a1 - MM(40), (y0 + BH) / 2, MM(60), F.frame); });   // gutter + downpipe at one end
+  const cs = sidesOf(/curtain/, wall ? ['front', 'left'] : ['front', 'back']);
+  if (cs.length) { const cm = mat('curt', { color: 0xEDE4D3, roughness: 1, side: THREE.DoubleSide }), hh = y0 - 0.1;
+    cs.forEach(sd => { const e = EDGE[sd], ln = e.a1 - e.a0; along(e, ln, MM(25), MM(25), (e.a0 + e.a1) / 2, hh, MM(40), metal);   // rod
+      [e.a0 + 0.9, e.a1 - 0.9].forEach(u => { for (let k = 0; k < 5; k++) along(e, 0.28, hh - 0.1, MM(20), u + (k - 2) * 0.27, (hh - 0.1) / 2 + 0.1, MM(40) + (k % 2) * 0.12, cm); }); }); }   // gathered at the posts
+  sidesOf(/swing/, ['front']).forEach(sd => { const e = EDGE[sd], mid = (e.a0 + e.a1) / 2; [mid - 1.6, mid + 1.6].forEach(u => { const p0 = e.ax === 'x' ? [u, e.at - e.out * BW] : [e.at - e.out * BW, u];
+    const t = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.035, 8, 20), metal); t.position.set(p0[0], y0 - 0.2, p0[1]); if (e.ax === 'z') t.rotation.y = Math.PI / 2; g.add(t); box(g, MM(30), 0.12, MM(30), p0[0], y0 - 0.06, p0[1], metal); }); });
+  const ph = sidesOf(/planter hook/, ['front']);
+  if (ph.length) { const pot = mat('pot', { color: 0xB0603E, roughness: 0.9 }), leaf = mat('leaf', { color: 0x4E7A3A, roughness: 1 }), per = Math.max(1, Math.round(4 / ph.length));
+    ph.forEach(sd => { const e = EDGE[sd]; for (let k = 0; k < per; k++) { const u = e.a0 + (e.a1 - e.a0) * (k + 0.5) / per, p0 = e.ax === 'x' ? [u, e.at - e.out * BW / 2] : [e.at - e.out * BW / 2, u];
+      box(g, MM(12), 1.4, MM(12), p0[0], y0 - 0.7, p0[1], metal); const pt = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.3, 0.55, 16), pot); pt.position.set(p0[0], y0 - 1.65, p0[1]); pt.castShadow = true; g.add(pt);
+      const lf = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), leaf); lf.scale.set(1, 0.75, 1); lf.position.set(p0[0], y0 - 1.15, p0[1]); g.add(lf); } }); }
   // base plates
   g.children.filter(m => m.isMesh && m.material === F.frame && m.rotation.x === 0 && m.rotation.z === 0 && Math.abs(m.position.y - m.geometry.parameters.height / 2) < 0.01 && m.geometry.parameters.height >= top - 1)
     .forEach(m => { box(g, m.geometry.parameters.width + 0.25, 0.04, m.geometry.parameters.depth + 0.25, m.position.x, 0.14, m.position.z, F.frame).userData.plate = 1; });
@@ -226,26 +230,40 @@ function ensure(el) {
 function size() { if (!R || !R.el) return; const w = R.el.clientWidth || 600, h = R.el.clientHeight || 400; R.renderer.setSize(w, h, false); R.renderer.domElement.style.width = '100%'; R.renderer.domElement.style.height = '100%'; R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); }
 function setNight(on) {
   R.night = on; R.scene.background = new THREE.Color(on ? 0x16203a : 0xeef0ea); R.renderer.toneMappingExposure = on ? 0.75 : 1;
-  R.hemi.intensity = on ? 0.12 : 0.7; R.sun.intensity = on ? 0.08 : 1.9; mat('led', {}).emissiveIntensity = on ? 2.4 : 0; mat('led', {}).color.set(on ? 0xfff3d0 : 0x3a3a3a); if (M.spot) M.spot.emissiveIntensity = on ? 3 : 0.4;
+  R.hemi.intensity = on ? 0.12 : 0.7; R.sun.intensity = on ? 0.08 : 1.9; mat('led', {}).emissiveIntensity = on ? 2.4 : 0; mat('led', {}).color.set(on ? 0xfff3d0 : 0x3a3a3a); if (M.spot) M.spot.emissiveIntensity = on ? 3 : 0.4; if (M.cove) M.cove.emissiveIntensity = on ? 2.5 : 0.25;
 }
 // 193f: on a terrace (opts.site: the studio's terrace — cx / cz = the pergola's corner, rot = where its front faces), with an optional deck and furniture to see it
 let FURN = null, FURN_LOADING = false, ITEMS = null;
-function extras(g, L, W, opts) {   // deck under it (as high as a porta cabin's) + a furniture set, both just to see it; returns the pergola's lift
-  const y0 = opts.deck ? 0.6 : 0;
-  if (opts.deck) { const n = Math.max(1, Math.round(W / 0.5)); for (let k = 0; k < n; k++) box(g, L, 0.6, W / n - 0.03, L / 2, 0.3, W * (k + 0.5) / n, mat(k % 2 ? 'dk1' : 'dk2', { color: k % 2 ? 0x8B6A4A : 0x7A5C40, roughness: 0.85 })); }
+function extras(g, L, W, opts, wall) {   // deck under it (fits the pergola unless sized) + a furniture set, both to see it; returns the pergola's lift
+  const dk = opts.deck, y0 = dk ? 0.6 : 0;
+  if (dk) { const dl = +dk.l || L + 1, dw = +dk.w || W + 1, x0 = L / 2 - dl / 2, z0 = wall ? -0.25 : W / 2 - dw / 2, nose = 0.15, th = 0.12, op = { front: 1, left: 1, right: 1, back: wall ? 0 : 1 };
+    const ix0 = x0 + op.left * nose, ix1 = x0 + dl - op.right * nose, iz0 = z0 + op.back * nose, iz1 = z0 + dw - op.front * nose;
+    box(g, ix1 - ix0, y0 - th, iz1 - iz0, (ix0 + ix1) / 2, (y0 - th) / 2, (iz0 + iz1) / 2, mat('dkb', { color: 0x3E3127, roughness: 0.95 }));   // the frame, set back under the nosing
+    const n = Math.max(1, Math.round(dw / 0.47)); for (let k = 0; k < n; k++) box(g, dl, th, dw / n - 0.025, x0 + dl / 2, y0 - th / 2, z0 + dw * (k + 0.5) / n, mat(k % 2 ? 'dk1' : 'dk2', { color: k % 2 ? 0x8B6A4A : 0x7A5C40, roughness: 0.85 }));
+    const cv = mat('cove', { color: 0xfff2d0, emissive: 0xffd89a, emissiveIntensity: R && R.night ? 2.5 : 0.25 }), yc = y0 - th - 0.05;   // cove light under the nosing
+    if (op.front) box(g, ix1 - ix0, 0.05, 0.05, (ix0 + ix1) / 2, yc, iz1 + 0.04, cv); if (op.back) box(g, ix1 - ix0, 0.05, 0.05, (ix0 + ix1) / 2, yc, iz0 - 0.04, cv);
+    if (op.left) box(g, 0.05, 0.05, iz1 - iz0, ix0 - 0.04, yc, (iz0 + iz1) / 2, cv); if (op.right) box(g, 0.05, 0.05, iz1 - iz0, ix1 + 0.04, yc, (iz0 + iz1) / 2, cv); }
   const f = opts.furn; if (f && FURN) { const set = f === 'dining' ? [['dining', 7, 6, 3]] : f === 'swing' ? [['swing', 6, 4.5, 7]] : [['sofa', Math.min(10, L - 1), Math.min(8, W - 1), 3]];
     set.forEach(([c, w, d, h]) => { const m = FURN(c, Math.min(w, L - 1), Math.min(d, W - 1), h); m.position.set(L / 2, y0, W / 2); g.add(m); }); }
   return y0;
 }
 let HANDLER = null; export function onEvent(fn) { HANDLER = fn; }
+export function view(v) {   // 203: 'top' looks straight down on the terrace; '3d' back to the usual view
+  if (!R || !R.cam) return; const t = R.site, b = R.b, L = b ? b.L : 12, W = b ? b.W : 10, H = b ? b.H : 8;
+  const c = t ? (t.place ? [t.pw / 2, t.pd / 2] : [+t.cx + dims(t, L, W)[0] / 2, +t.cz + dims(t, L, W)[1] / 2]) : [L / 2, W / 2];
+  R.controls.autoRotate = false;
+  R.controls.maxDistance = v === 'top' ? 260 : 80;
+  if (v === 'top') { const span = (t ? Math.max(t.pw, t.pd) : Math.max(L, W)) + 10; R.controls.target.set(c[0], 0, c[1]); R.cam.position.set(c[0], span * 1.9, c[1] + 0.01); R.controls.update(); }
+  else frame(c[0], c[1], Math.max(L, W, H) * 2.2 + 10, H * 0.4);
+}
 function dims(t, L, W) { return (+t.rot || 0) % 180 ? [W, L] : [L, W]; }
 function frame(cx, cz, d, h) { R.controls.target.set(cx, h, cz); R.cam.position.set(cx + d * 0.55, h + d * 0.55, cz + d * 0.75); R.controls.update(); }
 export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
-  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=17').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
-  const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' : '') + (opts.furn || '') + (FURN ? 'F' : '');
+  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=18').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' + JSON.stringify(opts.deck) : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
     const dimsK = [o.l, o.w, o.height, mode, t ? [t.pw, t.pd].join('x') : ''].join('x'), redo = !R.group || dimsK !== R.dims;
@@ -255,13 +273,13 @@ export function show(el, sku, o, opts) {
     else if (!t) {   // a lawn with a deck / furniture: the ground drawn here, the pergola lifted onto the deck
       b = build(sku, o, true); root = new THREE.Group(); const X = S(), L = b.L, W = b.W; box(root, L + 16, 0.1, W + 16, L / 2, -0.05, W / 2, X.ground);
       if (/wall/i.test(String(o.layout || ''))) box(root, L + 4, b.H + 3, 0.6, L / 2, (b.H + 3) / 2, -0.45, X.wall);
-      const y0 = extras(root, L, W, opts); b.g.position.y = y0; root.add(b.g); }
+      const y0 = extras(root, L, W, opts, /wall/i.test(String(o.layout || ''))); b.g.position.y = y0; root.add(b.g); }
     else {
       root = new THREE.Group(); const plot = plotModel(t); plot.position.y = 0.6; root.add(plot);   // slab surface at y 0
       if (wantAr && ITEMS) { try { root.add(ITEMS(t.around, { sel: t.asel != null ? t.asel : null }).g); } catch (e) { if (window.console) console.warn(e); } }
       if (!t.place) { b = build(sku, o, true); const [fw, fd] = dims(t, b.L, b.W), hold = new THREE.Group(); hold.userData.pg = 1;
         hold.position.set(+t.cx + fw / 2, 0, +t.cz + fd / 2); hold.rotation.y = (+t.rot || 0) * Math.PI / 180; root.add(hold);
-        const inner = new THREE.Group(); inner.position.set(-b.L / 2, 0, -b.W / 2); hold.add(inner); const y0 = extras(inner, b.L, b.W, opts); b.g.position.y = y0; inner.add(b.g);
+        const inner = new THREE.Group(); inner.position.set(-b.L / 2, 0, -b.W / 2); hold.add(inner); const y0 = extras(inner, b.L, b.W, opts, /wall/i.test(String(o.layout || ''))); b.g.position.y = y0; inner.add(b.g);
         const hit = new THREE.Mesh(new THREE.BoxGeometry(b.L, b.H + 1, b.W), new THREE.MeshBasicMaterial({ visible: false })); hit.position.set(b.L / 2, (b.H + 1) / 2, b.W / 2); hit.userData.pghit = 1; inner.add(hit);
         if (t.clash) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(fw + 0.4, 0.2, fd + 0.4)), new THREE.LineBasicMaterial({ color: 0xE0352B })); ln.position.set(+t.cx + fw / 2, 0.1, +t.cz + fd / 2); root.add(ln); } }
     }
@@ -305,6 +323,6 @@ function ptr() {
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 }
 export function resize() { size(); }
-window.Pergola3D = { show, resize, onEvent, _r: () => R };
+window.Pergola3D = { show, resize, onEvent, view, _r: () => R };
 export function pergolaModel(sku, o) { return build(sku, o, true); }   // 192: x 0..L, z 0..W, ground at y 0
 export const PERGOLA_SKUS = Object.keys(D);

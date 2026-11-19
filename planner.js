@@ -4,8 +4,8 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=17';
-import { cutHit } from './cabin3d.js?v=20';
+import * as S3 from './space3d.js?v=18';
+import { cutHit } from './cabin3d.js?v=21';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
@@ -111,7 +111,8 @@ function clashes(it, i) {   // what it would sit on
   const r = rectI(it), fl = CAT[it.cat] && CAT[it.cat].kind === 'floor';
   if (!inside(r)) return 'edge';
   if ((S.site.kind === 'terrace' ? S.site.blocks : []).some(b => hit(r, b))) return 'block';
-  if (S.items.some((o, j) => j !== i && !att(o) && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin') && hit(r, rectI(o)))) return 'item';   // decking goes under things, never under a cabin
+  const under = (a, b) => (a.cat === 'pergola' && b.cat !== 'pergola' && b.cat !== 'cabin') || (b.cat === 'pergola' && a.cat !== 'pergola' && a.cat !== 'cabin');   // 203: seating, a bar, planters… can stand under a pergola
+  if (S.items.some((o, j) => j !== i && !att(o) && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin') && !under(it, o) && hit(r, rectI(o)))) return 'item';   // decking goes under things, never under a cabin
   return '';
 }
 function placeFree(it, i, from) {   // nearest free spot to where it was dropped (spiral), keeping its turn
@@ -446,16 +447,19 @@ function nIn(key, val, lbl, min, max) { return `<label class="pl-n"><span>${lbl}
 // 202: one kind of question at a time (Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof)
 function siteSecs() {
   const t = S.site, terr = t.kind === 'terrace', full = window.tsFull ? window.tsFull() : true, sm = s0 => `<small style="font-weight:400;color:#7A7268">${s0}</small>`, L = [];
-  let h = '<div class="pl-tabs pl-big">' + btn('data-pl="kind:terrace"', terr, '🏙 Terrace / rooftop') + btn('data-pl="kind:ground"', !terr, '🌳 Lawn / garden') + '</div>';
-  h += '<p class="pl-h">How big is the plot?</p><div class="pl-tabs">' + PLOTS.map(p => btn(`data-pl="plot:${p[0]}"`, t.plot === p[0], plotLab(p[0]))).join('') + '</div><div class="pl-tabs" style="margin-top:6px">' + btn('data-pl="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-pl="unit:m"', AU() === 'm', 'sq m') + '</div>';
-  if (!terr || full) h += '<div class="pl-row">' + nIn('pw', t.pw, 'Width (ft)', 12, 150) + nIn('pd', t.pd, 'Depth (ft)', 12, 200) + '</div>';
-  L.push(['Your space', terr ? 'A terrace or a lawn, and roughly how big' : 'Your lawn or garden — roughly how big', h]);
+  const kind = '<div class="pl-tabs pl-big pl-col">' + btn('data-pl="kind:terrace"', terr, '🏙 Terrace / rooftop') + btn('data-pl="kind:ground"', !terr, '🌳 Lawn / garden') + '</div>';
+  L.push(['Terrace or lawn?', 'Where you are planning', kind]);
+  L.push(['Measure in', 'How you know your plot size', '<div class="pl-tabs pl-col">' + btn('data-pl="unit:yd"', AU() === 'yd', 'Square yards (gaj)') + btn('data-pl="unit:m"', AU() === 'm', 'Square metres') + '</div>']);
+  L.push([terr ? 'How big is the plot?' : 'How big is the lawn?', full || !terr ? 'Pick one, or type the exact width and depth' : 'Roughly — close is enough', '<div class="pl-tabs">' + PLOTS.map(p => btn(`data-pl="plot:${p[0]}"`, t.plot === p[0], plotLab(p[0]))).join('') + '</div>' + (!terr || full ? '<div class="pl-row">' + nIn('pw', t.pw, 'Width (ft)', 12, 150) + nIn('pd', t.pd, 'Depth (ft)', 12, 200) + '</div>' : '')]);
   if (!terr) return L;
   const rq = t.road_back ? 'back' : t.corner || 'front', mu = t.blocks.find(b => b.type === 'mumty');
   if (!full) {
     L.push(['Where is the road?', 'The side facing the road is the front', '<div class="pl-tabs pl-col">' + [['front', 'In front'], ['left', 'Front + left (corner plot)'], ['right', 'Front + right (corner plot)'], ['back', 'Front + back']].map(([k, l]) => btn(`data-pl="qroad:${k}"`, rq === k, l)).join('') + '</div>']);
     L.push(['Staircase room (mumty)?', 'Standing at the road, looking in', '<div class="pl-tabs pl-col">' + [['left', 'On the left'], ['right', 'On the right'], ['back', 'At the back'], ['none', 'None on the roof']].map(([k, l]) => btn(`data-pl="qmumty:${k}"`, k === 'none' ? !mu : mu && mu.side === k, l)).join('') + '</div>' +
-      '<p class="pl-sub" style="margin:14px 0 8px">We add the usual lift room, water tanks and 3 ft boundary wall — close is enough, it only sets the scene.</p><button type="button" class="pl-full" data-pl="tsmode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>']);
+      '<p class="pl-sub" style="margin:14px 0 8px">We add the usual lift room, water tanks and 3 ft boundary wall — next you can set their sizes.</p>']);
+    if (t.blocks.length) L.push(['Sizes of the rooms', 'Roughly — width × length × height in feet', t.blocks.map((b, i) => b.type === 'ac' ? '' : `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30)}</div>`).join('') +
+      '<button type="button" class="pl-full" style="margin-top:12px" data-pl="tsmode:full">⚙ Detailed setup<small>more rooms, shafts, corner cuts, walls, exact plot size</small></button>']);
+    else L[L.length - 1][2] += '<button type="button" class="pl-full" style="margin-top:12px" data-pl="tsmode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>';
     return L;
   }
   L.push(['Roads', 'Which sides of the plot face a road', '<p class="pl-h">Corner plot?</p><div class="pl-tabs">' + btn('data-pl="corner:"', !t.corner, 'No') + btn('data-pl="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-pl="corner:right"', t.corner === 'right', 'Road on the right') + '</div>' +

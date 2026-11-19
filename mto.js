@@ -625,8 +625,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=20').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=20'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=21').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=21'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -738,7 +738,7 @@
     if (r.x < 0.75 || r.z < 0.75 || r.x + r.w > t.pw - 0.75 || r.z + r.d > t.pd - 0.75) return 'The ' + tsWord() + ' goes over the parapet — drag it in';
     if (tsCut(t, r)) return 'The ' + tsWord() + ' reaches into a cut corner — drag it in';
     var b = arr(t.blocks).filter(function (o) { return tsHit(r, o); })[0];
-    if (!b && S && S.pl && S.plFor === S.id && t === S.site) { var ai = arRects().filter(function (o) { return tsHit(r, o); })[0]; if (ai) return 'The ' + tsWord() + ' sits on the ' + String(ai.label).toLowerCase() + ' — drag one of them'; }
+    if (!b && S && S.pl && S.plFor === S.id && t === S.site) { var ai = arRects().filter(function (o) { return tsHit(r, o) && (!isPg(S.id) || o.cat === 'cabin' || o.cat === 'pergola'); })[0];   /* 203: things can stand under a pergola */ if (ai) return 'The ' + tsWord() + ' sits on the ' + String(ai.label).toLowerCase() + ' — drag one of them'; }
     return b ? 'The ' + tsWord() + ' sits on the ' + TS_KIND[b.type][1].toLowerCase() + ' — drag one of them' : '';
   }
   function tsCentre(t, lay) {   // the best free spot: near the front and the middle first
@@ -755,15 +755,24 @@
     var sec = function (title, sub) { return '<p class="ts-h">' + title + (sub ? ' <span>' + sub + '</span>' : '') + '</p>'; };
     var kind = '<div class="wz-tabs ts-big">' + btn('data-ts="kind:terrace"', on, '🏙 Terrace / rooftop') + btn('data-ts="kind:ground"', !on, '🌳 Lawn / garden') + '</div>';
     if (!on) { L.push(['Where will it go?', 'A lawn or a terrace — we show your ' + tsWord() + ' there. Doesn\'t change the price.', kind]); return L; }
+    var UNIT = '<div class="wz-tabs ts-col">' + btn('data-ts="unit:yd"', AU() === 'yd', 'Square yards (gaj)') + btn('data-ts="unit:m"', AU() === 'm', 'Square metres') + '</div>';
+    var PLOTC = '<div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], plotLab(p[0])); }).join('') + '</div>';
+    var ROOMS = arr(t.blocks).map(function (b0, i0) { return b0.type === 'ac' ? '' : '<div class="ts-blk"><div class="ts-bh"><b>' + esc(TS_KIND[b0.type][0]) + '</b></div><div class="ts-row">' + nIn('w:' + i0, b0.w, 'Width', 1, 40) + nIn('d:' + i0, b0.d, 'Length', 1, 40) + nIn('h:' + i0, num(b0.h) || TS_BH[b0.type] || 9, 'Height', 2, 30) + '</div></div>'; }).join('');
     var full = window.tsFull(), mu = arr(t.blocks).filter(function (b0) { return b0.type === 'mumty'; })[0], rq = t.road_back ? 'back' : t.corner || 'front';
     if (!full) {
-      L.push(['Your space', 'A terrace or a lawn, and roughly how big', kind + sec('How big is the plot?') + '<div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], plotLab(p[0])); }).join('') + '</div>' + '<div class="wz-tabs ts-sm" style="margin-top:6px">' + btn('data-ts="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-ts="unit:m"', AU() === 'm', 'sq m') + '</div>']);
+      L.push(['Terrace or lawn?', 'Where it goes — we show your ' + tsWord() + ' there', kind]);
+      L.push(['Measure in', 'How you know your plot size', UNIT]);
+      L.push(['How big is the plot?', 'Roughly — close is enough', PLOTC]);
       L.push(['Where is the road?', 'The side facing the road is the front', (sec('Where is the road?', 'the side facing the road is the front') + '<div class="wz-tabs">' + [['front', 'In front'], ['left', 'Front + left (corner plot)'], ['right', 'Front + right (corner plot)'], ['back', 'Front + back']].map(function (r0) { return btn('data-ts="qroad:' + r0[0] + '"', rq === r0[0], r0[1]); }).join('') + '</div>').replace(sec('Where is the road?', 'the side facing the road is the front'), '').replace('"wz-tabs"', '"wz-tabs ts-col"')]);
       L.push(['Staircase room (mumty)?', 'Standing at the road, looking in', (sec('Staircase room (mumty) on the roof?', 'standing at the road, looking in') + '<div class="wz-tabs">' + [['left', 'On the left'], ['right', 'On the right'], ['back', 'At the back'], ['none', 'None']].map(function (r0) { return btn('data-ts="qmumty:' + r0[0] + '"', r0[0] === 'none' ? !mu : mu && mu.side === r0[0], r0[1]); }).join('') + '</div>').replace(sec('Staircase room (mumty) on the roof?', 'standing at the road, looking in'), '').replace('"wz-tabs"', '"wz-tabs ts-col"') +
+        '<p class="ts-q">We add the usual lift room, water tanks and 3 ft boundary wall — next you can set their sizes.</p>']);
+      if (arr(t.blocks).length) L.push(['Sizes of the rooms', 'Roughly — width × length × height in feet', ROOMS +
         '<p class="ts-q">We add the usual lift room, water tanks and 3 ft boundary wall — close is enough, it only sets the scene and never changes the price.</p><button type="button" class="ts-full" data-ts="mode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>']);
       return L;
     }
-    L.push(['Your space', 'A terrace or a lawn, and its size', kind + sec('Plot') + '<div class="wz-tabs" style="margin-bottom:6px">' + btn('data-ts="unit:yd"', AU() === 'yd', 'sq yd (gaj)') + btn('data-ts="unit:m"', AU() === 'm', 'sq m') + '</div><div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], plotLab(p[0])); }).join('') + '</div>' + '<div class="ts-row">' + nIn('pw', t.pw, 'Width', 15, 120) + nIn('pd', t.pd, 'Depth', 20, 150) + '</div>']);
+    L.push(['Terrace or lawn?', 'Where it goes — we show your ' + tsWord() + ' there', kind]);
+    L.push(['Measure in', 'How you know your plot size', UNIT]);
+    L.push(['Plot size', 'Pick one, or type the exact width and depth', '<div class="wz-tabs">' + TS_PLOTS.map(function (p) { return btn('data-ts="plot:' + p[0] + '"', t.plot === p[0], plotLab(p[0])); }).join('') + '</div>' + '<div class="ts-row">' + nIn('pw', t.pw, 'Width', 15, 120) + nIn('pd', t.pd, 'Depth', 20, 150) + '</div>']);
     L.push(['Roads', 'Which sides of the plot face a road', sec('Corner plot?', 'road on which side') + '<div class="wz-tabs">' + btn('data-ts="corner:"', !t.corner, 'No') + btn('data-ts="corner:left"', t.corner === 'left', 'Road on the left') + btn('data-ts="corner:right"', t.corner === 'right', 'Road on the right') + '</div>' + sec('Road in front / at the back?') + '<div class="wz-tabs">' + btn('data-ts="rfront"', t.road_front !== false, (t.road_front !== false ? '✓ ' : '') + 'Road in front') + btn('data-ts="rback"', !!t.road_back, (t.road_back ? '✓ ' : '') + 'Road at the back') + '</div>']);
     L.push(['Boundary wall', 'The low wall round the roof, and the neighbours', sec('Parapet', 'the low boundary wall round the roof') + '<div class="wz-tabs">' + btn('data-ts="par:3"', t.par === 3, '3 ft') + btn('data-ts="par:4"', t.par === 4, '4 ft') + '</div>' + sec('Neighbour\'s wall higher than yours?') + '<div class="wz-tabs">' + [['left', 'Left'], ['right', 'Right'], ['back', 'Back']].filter(function (s0) { return s0[0] !== t.corner && !(s0[0] === 'back' && t.road_back); }).map(function (s0) { var hi = t.high && t.high[s0[0]]; return btn('data-ts="high:' + s0[0] + '"', hi, (hi ? '✓ ' : '') + s0[1]); }).join('') + '</div>']);
       var CU = t.cuts || {};
@@ -1849,7 +1858,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=27').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=28').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -1871,7 +1880,7 @@
     if (S.fromPlan != null) try { localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: p.step || 1, site: p.site, items: p.items, pid: p.pid || null, pname: p.pname || '', source: p.source || '' })); } catch (e) {}
   }
   function arAround() { if (!arOn() || (S.fromPlan == null && !(S.pl && S.plFor === S.id))) return null; if (!AR.m) { arLoad(); return null; } arPlan(); if (!arOthers(S.pl).length) return null; var p = arSync(); return { list: p.items.map(function (o) { return o && !o._me ? o : null; }), sel: p.sel }; }
-  function arRects() { return arOthers(S.pl && S.plFor === S.id ? S.pl : null).filter(function (o) { return !o.segs && !o.box && o.mode == null && o.cat !== 'deck'; }).map(function (o) { var f = (+o.rot || 0) % 180 ? [o.d, o.w] : [o.w, o.d]; return { x: +o.x, z: +o.z, w: f[0], d: f[1], label: o.label || o.cat }; }); }
+  function arRects() { return arOthers(S.pl && S.plFor === S.id ? S.pl : null).filter(function (o) { return !o.segs && !o.box && o.mode == null && o.cat !== 'deck'; }).map(function (o) { var f = (+o.rot || 0) % 180 ? [o.d, o.w] : [o.w, o.d]; return { x: +o.x, z: +o.z, w: f[0], d: f[1], label: o.label || o.cat, cat: o.cat }; }); }
   function arDo(fn) { if (!AR.m) return; var p = arSync(); fn(p); arKeep(p); S.arMsg = p.msg || ''; if (!isPg(S.id)) S.whole = true; draw(); arRe(); }
   function arEv(ev) {   // taps / drags on the things in the 3D
     if (!AR.m || !S.pl) return; if (ev.t === 'selitem') return arDo(function (p) { p.sel = p.sel === ev.i ? null : ev.i; p.ask = null; });
@@ -2134,7 +2143,7 @@
   function pgOpts() {
     var x = PRODS[S.id], m = x.cz, o = S.o, gv = function (re) { var g = pgGrp(m, re); return g ? (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name : ''; };
     var lim = function (k, d) { var lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20; return Math.min(Math.max(num(o[k]) || d, lo), hi); };
-    return { l: lim('l', 12), w: lim('w', 10), height: gv(/height/i) || o.h || '8 ft', material: o.material, colour: o.colour, cover: gv(/roof|cover/i), layout: gv(/layout/i), addons: arr(o.addons).slice() };
+    return { l: lim('l', 12), w: lim('w', 10), height: gv(/height/i) || o.h || '8 ft', material: o.material, colour: o.colour, cover: gv(/roof|cover/i), layout: gv(/layout/i), addons: arr(o.addons).slice(), aside: (function () { var r = {}; arr(o.addons).forEach(function (n) { var a = arr(m.addons).filter(function (z) { return z.name === n; })[0]; if (a && +a.sides) r[n] = pgSides(a); }); return r; })() };
   }
   function pgLay() { var q = pgOpts(); return { L: q.l, W: q.w }; }
   function sharedSite() {   // 193f: the terrace the customer set up anywhere (planner / cabin studio) — one terrace everywhere
@@ -2148,13 +2157,13 @@
     var wallOpt = arr(lg.options).filter(function (y) { return /wall/i.test(y.name || ''); })[0], freeOpt = arr(lg.options).filter(function (y) { return /free/i.test(y.name || ''); })[0] || arr(lg.options)[0]; if (!wallOpt) return;
     var L = pgLay(), d = tsDims(t, L), r = { x: t.cx, z: t.cz, w: d[0], d: d[1] }, hit = null;
     arr(t.blocks).filter(function (b) { return /mumty|room|lift/.test(b.type); }).forEach(function (b) { if (hit) return;
-      var oz = Math.min(r.z + r.d, b.z + b.d) - Math.max(r.z, b.z), ox = Math.min(r.x + r.w, b.x + b.w) - Math.max(r.x, b.x), ok = function (g) { return g > -0.05 && g <= 0.8; };
+      var oz = Math.min(r.z + r.d, b.z + b.d) - Math.max(r.z, b.z), ox = Math.min(r.x + r.w, b.x + b.w) - Math.max(r.x, b.x), ok = function (g) { return g > -0.05 && g <= 2.5; };
       if (oz >= 2 && ok(r.x - (b.x + b.w))) hit = ['left', b]; else if (oz >= 2 && ok(b.x - (r.x + r.w))) hit = ['right', b]; else if (ox >= 2 && ok(r.z - (b.z + b.d))) hit = ['back', b]; else if (ox >= 2 && ok(b.z - (r.z + r.d))) hit = ['front', b]; });
     o.groups = Object.assign({}, o.groups);
-    if (hit) { var rot = { back: 0, left: 90, front: 180, right: 270 }[hit[0]], b = hit[1], cx = r.x + r.w / 2, cz = r.z + r.d / 2; t.rot = rot; var d2 = tsDims(t, L);   // its back to the wall, flush
+    if (hit) { var k0 = [t.cx, t.cz, t.rot], rot = { back: 0, left: 90, front: 180, right: 270 }[hit[0]], b = hit[1], cx = r.x + r.w / 2, cz = r.z + r.d / 2; t.rot = rot; var d2 = tsDims(t, L);   // its back to the wall, flush
       if (hit[0] === 'left') { t.cx = b.x + b.w; t.cz = Math.round((cz - d2[1] / 2) * 2) / 2; } else if (hit[0] === 'right') { t.cx = b.x - d2[0]; t.cz = Math.round((cz - d2[1] / 2) * 2) / 2; }
       else if (hit[0] === 'back') { t.cz = b.z + b.d; t.cx = Math.round((cx - d2[0] / 2) * 2) / 2; } else { t.cz = b.z - d2[1]; t.cx = Math.round((cx - d2[0] / 2) * 2) / 2; }
-      if (tsClash(t, L)) return; if (o.groups[lg.name] !== wallOpt.name) { o.groups[lg.name] = wallOpt.name; S.pgAuto = true; S.tsMsg = 'Fixed to the ' + TS_KIND[b.type][1].toLowerCase() + ' wall — no posts on that side ("' + wallOpt.name.split(' (')[0] + '", price updated)'; } }
+      if (tsClash(t, L)) { t.cx = k0[0]; t.cz = k0[1]; t.rot = k0[2]; return; } if (o.groups[lg.name] !== wallOpt.name) { o.groups[lg.name] = wallOpt.name; S.pgAuto = true; S.tsMsg = 'Fixed to the ' + TS_KIND[b.type][1].toLowerCase() + ' wall — no posts on that side ("' + wallOpt.name.split(' (')[0] + '", price updated)'; } }
     else if (S.pgAuto && o.groups[lg.name] === wallOpt.name) { o.groups[lg.name] = freeOpt.name; S.pgAuto = false; S.tsMsg = 'Free-standing again'; }
   }
   function pgEv(ev) { if (!S || !isPg(S.id)) return; if (ev.t === 'selitem' || ev.t === 'moveitem') return arEv(ev); if (ev.t === 'movesite') tsDrop(ev); else if (ev.t === 'movecab') { tsMoveTo(ev, pgLay()); pgAutoWall(); } keepSite(); draw(); p3Draw(); }
@@ -2165,8 +2174,14 @@
     arr(m.materials).slice(0, 6).forEach(function (mt) { var oo = Object.assign({}, o, { material: mt.name, colour: (arr(mt.colours)[0] || {}).name || '' }), q = null; try { q = window.mtoPrice(m, oo); } catch (e) {} if (q && q.ok && (!best || q.product < best.price)) best = { o: oo, price: q.product }; });
     return best;
   }
+  function pgSize(k, v) {   // 203: a new length / width — still on the terrace (moved to the nearest free spot), else not taken
+    var m = PRODS[S.id].cz, o = S.o, lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20, old = pgOpts()[k]; o[k] = Math.min(Math.max(Math.round(+v || old), lo), hi); S.tsMsg = '';
+    var t = S.site; if (!t || t.kind !== 'terrace' || t.cx == null || !tsClash(t, pgLay())) return; tsMoveTo({ cx: t.cx, cz: t.cz }, pgLay());
+    if (tsClash(t, pgLay())) { o[k] = old; S.tsMsg = 'That size doesn\'t fit on this terrace'; } else { pgAutoWall(); keepSite(); }
+  }
+  function deckSize() { var q = pgOpts(), dk = S.o.dk || {}; return { l: num(dk.l) || q.l + 1, w: num(dk.w) || q.w + 1 }; }   // 203: the deck fits the pergola (posts inside it) unless changed
   function deckLine() {   // 193f: the deck under a pergola goes in the cart as the cheapest open Decking design at its size
-    var q = pgOpts(), best = null; Object.keys(PRODS).forEach(function (id) { var x = PRODS[id]; if (!x || !x.cz || x.col !== 'decking' || x.oo === false) return; var b = cheapO(x.cz, q.l, q.w); if (b && (!best || b.price < best.price)) best = { id: id, o: b.o, price: b.price }; });
+    var q = pgOpts(), best = null; Object.keys(PRODS).forEach(function (id) { var x = PRODS[id]; if (!x || !x.cz || x.col !== 'decking' || x.oo === false) return; var ds = deckSize(), b = cheapO(x.cz, ds.l, ds.w); if (b && (!best || b.price < best.price)) best = { id: id, o: b.o, price: b.price }; });
     return best;
   }
   function p3Css() {
@@ -2185,8 +2200,11 @@
       '.pg3-stp{display:flex;gap:4px;margin:0 0 12px;overflow-x:auto}.pg3-stp button{flex:1 0 auto;border:1px solid #E2D6C4;background:#fff;border-radius:999px;padding:6px 9px;font:700 11px inherit;font-family:inherit;color:#8a857c;cursor:pointer;white-space:nowrap}.pg3-stp button.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}.pg3-stp button.dn{color:#55634A;border-color:#B9C4AE}.pg3-stp button:disabled{cursor:default;opacity:.7}' +
       '.pq-cards{display:flex;flex-direction:column;gap:8px;margin:10px 0 4px}.pq-cards button{display:block;text-align:left;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:12px 14px;font:inherit;color:#2E2E2E;cursor:pointer}.pq-cards button b{font-weight:600;font-size:14px}.pq-cards button small{display:block;font-size:12px;color:#7A7268;margin-top:2px}.pq-cards button.on{border-color:var(--terra,#BE5633);background:#FFF8F2}.pq-cards button:disabled{cursor:default}' +
       '.pq-sw{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}.pq-sw button{display:flex;align-items:center;gap:10px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 10px;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.pq-sw button.on{border-color:var(--terra,#BE5633);background:#FFF8F2}.pq-sw i{width:28px;height:28px;border-radius:50%;box-shadow:0 0 0 1px #ccc;flex:none}' +
+      '.pq-sz input{width:58px;text-align:center;font:700 16px inherit;font-family:inherit;border:1px solid #E2D6C4;border-radius:8px;padding:6px 4px}.pq-sz i{font-style:normal;font-size:12px;color:#7A7268}.pq-sub{font-size:14px;font-weight:700;margin:16px 0 6px}.pq-sub small{font-weight:400;color:#7A7268}.pq-chips{display:flex;flex-wrap:wrap;gap:8px}.pq-chips button,.pq-sides button{border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.pq-chips button.on,.pq-sides button.on{border-color:var(--terra,#BE5633);background:#FFF8F2}' +
+      '.pq-add{display:flex;flex-direction:column;gap:0}.pq-add>button{width:100%}.pq-add.on>button{border-bottom-left-radius:0;border-bottom-right-radius:0}.pq-sides{display:flex;flex-wrap:wrap;align-items:center;gap:6px;border:1.5px solid var(--terra,#BE5633);border-top:0;border-radius:0 0 12px 12px;padding:8px 12px;background:#FFFCF8}.pq-sides span{font-size:12px;color:#6A6258;margin-right:4px}.pq-sides button{padding:5px 11px;font-size:12px}' +
       '.pq-sz{display:flex;flex-direction:column;gap:10px;margin:12px 0 4px}.pq-sz>div{display:flex;align-items:center;gap:10px;border:1px solid #E2D6C4;border-radius:12px;padding:10px 12px}.pq-sz span{flex:1;font-size:14px;color:#4A4640}.pq-sz b{min-width:64px;text-align:center;font-size:16px}.pq-sz button{width:36px;height:36px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:18px;cursor:pointer}' +
       '.pg3-pn .ts-qh{display:flex;align-items:center;gap:10px;margin:0 0 8px;font-size:11.5px;color:#7A7268;font-weight:600}.pg3-pn .ts-qh i{display:flex;gap:4px;flex:1}.pg3-pn .ts-qh i b{width:18px;height:4px;border-radius:2px;background:#E2D6C4}.pg3-pn .ts-qh i b.on{background:#C26445}.pg3-pn .ts-qh i b.dn{background:#B9C4AE}' +
+      '.pg3-vw{position:absolute;right:12px;top:12px;display:flex;gap:6px;z-index:3}.pg3-vw button{border:1px solid #ddd;background:rgba(255,255,255,.94);border-radius:999px;padding:7px 12px;font:600 12px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E;box-shadow:0 1px 4px rgba(0,0,0,.08)}' +
       '.pg3-sh{font-size:17px;margin:4px 0 4px}.pg3-ft .pg3-sec{background:#fff!important;color:#2E2E2E!important;border:1px solid #ddd!important;margin-bottom:8px}.pg3-bk{border:0;background:none;color:#8a3a1f;font:700 13px inherit;font-family:inherit;cursor:pointer;padding:14px 0 0}' +
       '.pg3-pr{margin:18px 0 0;padding:12px 14px;border-radius:12px;background:#F6F1EA;font-size:13px;color:#4A4640}.pg3-pr b{display:block;font-size:20px;color:#2E2E2E;margin:2px 0}.pg3-pr small{font-size:11.5px;color:#8a857c}' +
       '.pg-sum{border:1px solid #E7DFD3;border-radius:12px;padding:4px 14px 8px;margin:0 0 6px;background:#fff}.pg-sum-h{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F0EAE1;margin-bottom:4px}.pg-sum-h b{font-size:14px}.pg-sum-h button{border:0;background:none;color:var(--terra,#BE5633);font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:4px 0}.pg-sum-r{display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13px}.pg-sum-r span{color:#8a857c}.pg-sum-r b{font-weight:600;color:#2E2E2E;text-align:right}' +
@@ -2230,22 +2248,31 @@
       return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '"><b>' + esc(nm.split(' (')[0]) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</button>'; }).join('') + '</div>'; };
     var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }), gv = function (g) { return (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name; };
     if (k === 'size') {
-      L.push(['How big?', 'Length and width in feet — the 3D changes as you go', '<div class="pq-sz"><div><span>Length</span><button type="button" data-p3d="l,-1" aria-label="Shorter">−</button><b>' + q.l + ' ft</b><button type="button" data-p3d="l,1" aria-label="Longer">+</button></div><div><span>Width</span><button type="button" data-p3d="w,-1" aria-label="Narrower">−</button><b>' + q.w + ' ft</b><button type="button" data-p3d="w,1" aria-label="Wider">+</button></div></div><p class="pg3-note">' + Math.round(q.l * q.w) + ' sq ft</p>']);
-      gs.filter(function (g) { return /height/i.test(g.name); }).forEach(function (g) { L.push([g.name, 'From the floor to the underside of the beams', cards(g, gv(g))]); });
-      gs.filter(function (g) { return /layout/i.test(g.name); }).forEach(function (g) { L.push(['How does it stand?', 'On its own posts, or fixed to a wall', cards(g, gv(g))]); });
-      if (on) L.push(['Where on the terrace?', 'Drag the pergola on the 3D — or turn it and find a free spot here', placeBox(pgLay()) + '<button type="button" class="pg3-bk" style="display:block" data-p3="wopen">✎ Change the terrace</button>']);
+      var szIn = function (key, lbl, v) { return '<div><span>' + lbl + '</span><button type="button" data-p3d="' + key + ',-1" aria-label="Less">−</button><input type="number" inputmode="decimal" min="' + (num(m[key] && m[key].min) || 8) + '" max="' + (num(m[key] && m[key].max) || 20) + '" step="1" data-p3n="' + key + '" value="' + v + '"><i>ft</i><button type="button" data-p3d="' + key + ',1" aria-label="More">+</button></div>'; };
+      var hg = gs.filter(function (g) { return /height/i.test(g.name); })[0];
+      L.push(['How big?', 'Length, width and height — the 3D changes as you go', '<div class="pq-sz">' + szIn('l', 'Length', q.l) + szIn('w', 'Width', q.w) + '</div><p class="pg3-note">' + Math.round(q.l * q.w) + ' sq ft · up to ' + (num(m.l && m.l.max) || 20) + ' × ' + (num(m.w && m.w.max) || 16) + ' ft</p>' +
+        (hg ? '<p class="pq-sub">' + esc(hg.name) + ' <small>floor to the underside of the beams</small></p><div class="pq-chips">' + arr(hg.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === gv(hg) ? 'on' : '') + '" data-p3g="' + esc(hg.name) + '" data-v="' + esc(y.name) + '">' + esc(y.name.split(' (')[0]) + '</button>'; }).join('') + '</div>' : '')]);
+      gs.filter(function (g) { return /layout/i.test(g.name); }).forEach(function (g) { L.push(['How does it stand?', on ? 'On its own posts, or fixed to a wall — drag it next to the mumty and it fixes itself to it' : 'On its own posts, or fixed to a wall', cards(g, gv(g))]); });
     } else if (k === 'look') {
       var mats = arr(m.materials).filter(function (y) { return y.name; }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0], cols = arr(mat && mat.colours);
       if (mats.length > 1) L.push([(m.labels && m.labels.material) || 'Finish', 'What it is made and clad in', '<div class="pq-cards">' + mats.map(function (y) { return '<button type="button" class="' + (y === mat ? 'on' : '') + '" data-p3m="' + esc(y.name) + '"><b>' + esc(y.name) + '</b></button>'; }).join('') + '</div>']);
       if (cols.length) L.push(['Colour', esc(o.colour || ''), '<div class="pq-sw">' + cols.map(function (c) { return '<button type="button" class="' + (c.name === o.colour ? 'on' : '') + '" data-p3c="' + esc(c.name) + '"><i style="background:' + (c.hex2 ? 'linear-gradient(135deg,' + c.hex + ' 50%,' + c.hex2 + ' 50%)' : c.hex || '#999') + '"></i>' + esc(c.name) + '</button>'; }).join('') + '</div>']);
       gs.filter(function (g) { return !/height|layout/i.test(g.name); }).forEach(function (g) { L.push([/roof|cover/i.test(g.name) ? 'The roof' : g.name, /roof|cover/i.test(g.name) ? 'Open to the sky, or covered against sun and rain' : '', cards(g, gv(g))]); });
     } else if (k === 'extras') {
-      var adds = arr(m.addons).filter(function (a) { return a.name; });
-      L.push(['Extras', adds.length ? 'Optional — tap to add, tap again to remove' : 'No extras for this design', '<div class="pq-cards">' + adds.map(function (a) { var on2 = arr(o.addons).indexOf(a.name) >= 0; return '<button type="button" class="' + (on2 ? 'on' : '') + '" data-p3a="' + esc(a.name) + '"><b>' + (on2 ? '✓ ' : '+ ') + esc(a.name) + '</b>' + (ok && +a.price ? '<small>' + rs(a.price) + (a.charge === 'unit' ? ' / ' + UW(m.unit) : '') + '</small>' : '') + '</button>'; }).join('') + '</div>']);
-      var dl = ok && S.o.deck ? deckLine() : null;
-      L.push(['Deck floor under it?', 'A raised wooden deck, the size of the pergola', '<div class="pq-cards"><button type="button" class="' + (!S.o.deck ? 'on' : '') + '" data-p3x="deck"' + (S.o.deck ? '' : ' disabled') + '><b>No deck</b></button><button type="button" class="' + (S.o.deck ? 'on' : '') + '" data-p3x="deck"' + (S.o.deck ? ' disabled' : '') + '><b>+ Deck floor</b><small>' + q2(pgOpts()) + '</small></button></div>' + (S.o.deck && ok ? '<p class="pg3-note">' + (dl ? 'Goes in your cart as <b>' + esc(short(PRODS[dl.id].n)) + '</b> — ' + rs(dl.price) : 'Our team will price the deck') + '</p>' : '')]);
+      var adds = arr(m.addons).filter(function (a) { return a.name; }), SD = [['front', 'Front'], ['back', 'Back'], ['left', 'Left'], ['right', 'Right']], wallLay = /wall/i.test(pgOpts().layout || '');
+      L.push(['Extras', adds.length ? 'Optional — tap to add, tap again to remove' : 'No extras for this design', '<div class="pq-cards">' + adds.map(function (a) { var on2 = arr(o.addons).indexOf(a.name) >= 0, ns = +a.sides || 0, cur = pgSides(a);
+        return '<div class="pq-add' + (on2 ? ' on' : '') + '"><button type="button" class="' + (on2 ? 'on' : '') + '" data-p3a="' + esc(a.name) + '"><b>' + (on2 ? '✓ ' : '+ ') + esc(a.name) + '</b>' + (ok && +a.price ? '<small>' + rs(a.price) + (a.charge === 'unit' ? ' / ' + UW(m.unit) : '') + '</small>' : '') + '</button>' +
+          (on2 && ns ? '<div class="pq-sides"><span>' + (ns > 1 ? 'Which ' + ns + ' sides?' : 'Which side?') + '</span>' + SD.filter(function (sd) { return !(wallLay && sd[0] === 'back'); }).map(function (sd) { return '<button type="button" class="' + (cur.indexOf(sd[0]) >= 0 ? 'on' : '') + '" data-p3sd="' + esc(a.name) + '|' + sd[0] + '">' + sd[1] + '</button>'; }).join('') + '</div>' : '') + '</div>'; }).join('') + '</div>']);
+      var dl = ok && S.o.deck ? deckLine() : null, ds = deckSize();
+      L.push(['Deck floor under it?', 'A raised wooden deck — fits the pergola by itself, with a nosing and cove light on the open sides', '<div class="pq-cards"><button type="button" class="' + (!S.o.deck ? 'on' : '') + '" data-p3x="deck"' + (S.o.deck ? '' : ' disabled') + '><b>No deck</b></button><button type="button" class="' + (S.o.deck ? 'on' : '') + '" data-p3x="deck"' + (S.o.deck ? ' disabled' : '') + '><b>+ Deck floor</b><small>' + ds.l + ' × ' + ds.w + ' ft</small></button></div>' +
+        (S.o.deck ? '<div class="pq-sz">' + ['l', 'w'].map(function (kk) { return '<div><span>Deck ' + (kk === 'l' ? 'length' : 'width') + '</span><button type="button" data-p3dk="' + kk + ',-0.5" aria-label="Less">−</button><input type="number" inputmode="decimal" step="0.5" data-p3n="dk' + kk + '" value="' + ds[kk] + '"><i>ft</i><button type="button" data-p3dk="' + kk + ',0.5" aria-label="More">+</button></div>'; }).join('') + '</div>' + (S.o.dk ? '<button type="button" class="pg3-bk" data-p3dk="fit">↺ Fit it to the pergola again</button>' : '') : '') +
+        (S.o.deck && ok ? '<p class="pg3-note">' + (dl ? 'Goes in your cart as <b>' + esc(short(PRODS[dl.id].n)) + '</b> — ' + rs(dl.price) : 'Our team will price the deck') + '</p>' : '')]);
     }
     return L;
+  }
+  function pgSides(a) {   // 203: which sides a gutter / curtains / hooks go on (customer's pick, else a sensible default)
+    var n = +a.sides || 0, cur = arr((S.o.aside || {})[a.name]).slice(0, n); if (cur.length) return cur; var lg = pgGrp(PRODS[S.id].cz, /layout/i), wl = !!lg && /wall/i.test((S.o.groups || {})[lg.name] || (arr(lg.options)[0] || {}).name || '');
+    return n >= 2 ? (wl ? ['front', 'left'] : ['front', 'back']) : ['front'];
   }
   function p3Q(k) { var n = p3Qs(k).length; S.pq = Math.max(0, Math.min(n - 1, S.pq || 0)); return { i: S.pq, n: n }; }
   function p3Panel() {
@@ -2261,25 +2288,26 @@
   function p3Draw() {
     var ov = document.getElementById('pg3'); if (!ov || !P3.open || !S || !isPg(S.id)) return; var q = pgOpts();
     var pn = document.getElementById('pg3Pn'); if (pn) pn.innerHTML = p3Panel();
+    var vw = document.getElementById('pg3Vw'); if (vw) { var ter = S.site && S.site.kind === 'terrace' && !S.pgW; vw.innerHTML = ter ? '<button type="button" data-p3v="turn" title="Turn it">↻ Turn</button><button type="button" data-p3v="' + (P3.top ? '3d' : 'top') + '">' + (P3.top ? '◱ 3D view' : '⬒ From the top') + '</button>' : ''; }   // 203: turn it / look from the top, on the 3D
     var ft = document.getElementById('pg3Ft'); if (ft) { ft.innerHTML = p3Ft(); ft.style.display = ''; }
     var cap = document.getElementById('pg3Cap'); if (cap) cap.textContent = q.l + ' × ' + q.w + ' ft · ' + q.height + ' clear · ' + (q.colour || '') + (q.cover && !/^open/i.test(q.cover) ? ' · ' + String(q.cover).split(' (')[0] : '') + (q.layout && !/free/i.test(q.layout) ? ' · ' + String(q.layout).split(' (')[0] : '');
     var nb = document.getElementById('pg3Night'); if (nb) nb.textContent = P3.night ? '☀ Day' : '☾ Night';
     if (P3.st === 2) { try { if (!P3.ev && window.Pergola3D.onEvent) { P3.ev = 1; window.Pergola3D.onEvent(pgEv); }
-      window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: !!S.o.deck, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
+      window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=12').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=13').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
     if (on === false) { if (ov) ov.classList.remove('open'); document.body.classList.remove('pg3-on'); P3.open = false; return; }
     if (!ov) { ov = document.createElement('div'); ov.id = 'pg3'; ov.className = 'pg3-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Design your pergola in 3D'); document.body.appendChild(ov);
-      ov.addEventListener('click', p3Click); ov.addEventListener('change', function (e) { if (S && isPg(S.id) && tsInput(e.target)) { if (S.site && S.site.cx == null) tsCentre(S.site, pgLay()); keepSite(); draw(); p3Draw(); } }); }
+      ov.addEventListener('click', p3Click); ov.addEventListener('change', function (e) { var nk = e.target.getAttribute && e.target.getAttribute('data-p3n'); if (nk && S && isPg(S.id)) { if (/^dk/.test(nk)) { var ds = deckSize(); S.o.dk = { l: ds.l, w: ds.w }; S.o.dk[nk.slice(2)] = Math.max(4, Math.min(40, Math.round(+e.target.value * 2) / 2 || ds[nk.slice(2)])); } else pgSize(nk, e.target.value); draw(); return p3Draw(); } if (S && isPg(S.id) && tsInput(e.target)) { if (S.site && S.site.cx == null) tsCentre(S.site, pgLay()); keepSite(); draw(); p3Draw(); } }); }
     if (on && S.fromPlan == null && !S.spaceDone) return window.mtoSpaceAsk('pergola', function (r) { spaceApply(r, pgLay()).then(function () { S.pgW = !!(r.kind === 'terrace' || (r.plan && S.site && S.site.kind === 'terrace' && !arr(S.site.blocks).length)); S.pgS = 'size'; window.pg3Open(true); }); });
     if (!S.site && S.proj !== 'new') { var sh = sharedSite(); if (sh) { S.site = sh; tsCentre(sh, pgLay()); } }
     var x = PRODS[S.id];
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(x.n) + ' · 3D</b><button type="button" id="pg3Night" data-p3="night">☾ Night</button><button type="button" data-p3="close" aria-label="Close">✕ Close</button></div>' +
-      '<div class="pg3-bd"><div class="pg3-st" id="pg3St"><div class="pg3-cap" id="pg3Cap"></div></div><div class="pg3-pn" id="pg3Pn"></div></div>' +
+      '<div class="pg3-bd"><div class="pg3-st" id="pg3St"><div class="pg3-cap" id="pg3Cap"></div><div class="pg3-vw" id="pg3Vw"></div></div><div class="pg3-pn" id="pg3Pn"></div></div>' +
       '<div class="pg3-ft" id="pg3Ft"></div>'; if (!S.pgS) S.pgS = 'size';
     var oo = S.o, q = pgOpts(); oo.l = oo.l || q.l; oo.w = oo.w || q.w;   // the model's size becomes the order size
     ov.classList.add('open'); document.body.classList.add('pg3-on'); P3.open = true; draw(); p3Draw();
@@ -2289,6 +2317,9 @@
     var t = e.target.closest('button'); if (!t || !S) return; var o = S.o, m = PRODS[S.id].cz, a = t.getAttribute('data-p3');
     if (a === 'close') { if (S.fromPlan != null) { S.fromPlan = null; window.pg3Open(false); return window.outrrPlan && window.outrrPlan({ reload: true }); } S.spaceDone = false; S.pgS = 'size'; S.pgW = false; return window.pg3Open(false); }   // opened again → which space? asked again
     if (a === 'night') { P3.night = !P3.night; return p3Draw(); }
+    var pv = t.getAttribute('data-p3v'); if (pv) { if (pv === 'turn') { var tt = S.site, L0 = pgLay(), d0 = tsDims(tt, L0), mx = tt.cx + d0[0] / 2, mz = tt.cz + d0[1] / 2, k0 = [tt.cx, tt.cz, tt.rot]; tt.rot = ((+tt.rot || 0) + 90) % 360; var d1 = tsDims(tt, L0); tt.cx = Math.round((mx - d1[0] / 2) * 2) / 2; tt.cz = Math.round((mz - d1[1] / 2) * 2) / 2;
+        if (tsClash(tt, L0)) { tsMoveTo({ cx: tt.cx, cz: tt.cz }, L0); if (tsClash(tt, L0)) { tt.cx = k0[0]; tt.cz = k0[1]; tt.rot = k0[2]; S.tsMsg = 'No room to turn it here — drag it to a clear spot'; } } pgAutoWall(); keepSite(); draw(); return p3Draw(); }
+      P3.top = pv === 'top'; p3Draw(); if (window.Pergola3D && window.Pergola3D.view) window.Pergola3D.view(P3.top ? 'top' : '3d'); return; }
     if (a === 'proj-same' || a === 'proj-new') { S.proj = a === 'proj-new' ? 'new' : 'same'; S.projAsk = null;
       if (S.proj === 'new') { S.site = null; S.pl = null; } else if (!S.site) { var sh2 = sharedSite(); if (sh2) { S.site = sh2; tsCentre(sh2, pgLay()); } }
       draw(); return p3Draw(); }
@@ -2303,12 +2334,15 @@
     var sg = t.getAttribute('data-p3s'); if (sg != null) { if (sg === 'site') { S.pgW = true; S.tsq = 0; } else { if (S.pgW) { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); } S.pgS = PG_ORD.indexOf(sg) >= 0 ? sg : 'size'; S.pq = 0; } p3Draw(); var pn2 = document.getElementById('pg3Pn'); if (pn2) pn2.scrollTop = 0; return; }
     if (a === 'wdone') { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); return p3Draw(); }
     if (t.hasAttribute('data-p3x')) { o.deck = !o.deck; draw(); return p3Draw(); }
+    var dk = t.getAttribute('data-p3dk'); if (dk) { if (dk === 'fit') delete o.dk; else { var ds = deckSize(), kk = dk.split(',')[0]; o.dk = { l: ds.l, w: ds.w }; o.dk[kk] = Math.max(4, Math.min(40, ds[kk] + (+dk.split(',')[1]))); } draw(); return p3Draw(); }
+    var sd = t.getAttribute('data-p3sd'); if (sd) { var an = sd.split('|')[0], side = sd.split('|')[1], ad0 = arr(PRODS[S.id].cz.addons).filter(function (z) { return z.name === an; })[0], n = +(ad0 && ad0.sides) || 1, cur = pgSides(ad0 || {}).slice();
+      var at = cur.indexOf(side); if (at >= 0) { if (cur.length > 1) cur.splice(at, 1); } else { cur.push(side); while (cur.length > n) cur.shift(); } o.aside = Object.assign({}, o.aside); o.aside[an] = cur; draw(); return p3Draw(); }
     if (t.hasAttribute('data-p3f')) { o.furn = t.getAttribute('data-p3f'); return p3Draw(); }
     var ad = t.getAttribute('data-p3a'); if (ad) { o.addons = arr(o.addons).filter(function (z) { return z !== ad; }); if (!t.classList.contains('on')) o.addons.push(ad); draw(); return p3Draw(); }
     if (a === 'done') { pgSnap(); window.pg3Open(false); if (!mtoOk()) { var kid = S.id, ko = S.o, ks = { snap: S.snap, site: S.site, proj: S.proj, pl: S.pl, plFor: S.plFor };   // sign in: the product page opens again — the choices come back, then the proposal
         return window.mtoUnlock(function () { try { openProduct(kid); } catch (er) {} var n = 0; (function w() { if (!S || S.id !== kid || !S.pdp) { if (n++ < 80) return setTimeout(w, 100); return; } S.o = ko; Object.assign(S, ks); draw(); window.mtoProposal(true); })(); }); }
       return window.mtoProposal(true); }
-    var d = t.getAttribute('data-p3d'); if (d) { var k = d.split(',')[0], q = pgOpts(), lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20; o[k] = Math.min(Math.max(q[k] + (+d.split(',')[1]), lo), hi); draw(); return p3Draw(); }
+    var d = t.getAttribute('data-p3d'); if (d) { var k = d.split(',')[0], q = pgOpts(); pgSize(k, q[k] + (+d.split(',')[1])); draw(); return p3Draw(); }
     var mt = t.getAttribute('data-p3m'); if (mt) { o.material = mt; var mm = arr(m.materials).filter(function (y) { return y.name === mt; })[0]; o.colour = (arr(mm && mm.colours)[0] || {}).name || ''; if (o.colour) colPic(o.colour); draw(); return p3Draw(); }
     var c2 = t.getAttribute('data-p3c'); if (c2) { o.colour = c2; colPic(c2); draw(); return p3Draw(); }
     var g = t.getAttribute('data-p3g'); if (g) { o.groups = Object.assign({}, o.groups); o.groups[g] = t.getAttribute('data-v'); if (/height/i.test(g)) { var hv = parseFloat(o.groups[g]); if (hv && arr(m.h && m.h.options).length) o.h = arr(m.h.options).filter(function (z) { return parseFloat(z) === hv; })[0] || o.h; } draw(); return p3Draw(); }
@@ -2664,7 +2698,7 @@
   var CU3 = { m: null, st: 0 };
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o;
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=17').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=18').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
     try { CU3.m.preview(el, its); } catch (e) { if (window.console) console.warn(e); }
