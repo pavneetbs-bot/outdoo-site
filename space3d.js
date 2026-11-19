@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=17';
-import { pergolaModel } from './pergola3d.js?v=9';
+import { cabinModel, plotModel } from './cabin3d.js?v=18';
+import { pergolaModel } from './pergola3d.js?v=10';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -63,6 +63,18 @@ function art() {
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return (M.c_art = new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }));
 }
 function rodA(g, a, b, m) { const v = new THREE.Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]), L = v.length(), r = new THREE.Mesh(new THREE.BoxGeometry(0.2, L, 0.2), m); r.position.set((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2); r.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.normalize()); r.castShadow = true; g.add(r); return r; }
+const PL_HEX = { teak: 0x8B5A2B, walnut: 0x5C3A21, 'ash grey': 0x8E8A84, charcoal: 0x3A3A3A, 'oak wood grain': 0xB08A5A, 'white marble': 0xECEBE6, 'beige marble': 0xD8C8A8, 'black granite': 0x222222,
+  'grey granite': 0x7A7A78, terracotta: 0xC26445, olive: 0x55634A, 'matt white': 0xF2F2EE, 'matt black': 0x1E1E1E, 'marble print': 0xDEDBD4 };
+function planterModel(g, w, d, h, it, K) {   // 199: box / round planter of the customer's size (one piece), cap + kick plinth, soil and plants, optional LED glow
+  const c = it.cfg || {}, code = String(it.cfgId || it.pick).slice(7), round = ['OC', 'RB'].indexOf(code) >= 0, hex = PL_HEX[String(c.colour || '').toLowerCase()] || 0x8B5A2B;
+  const H = Math.max(1, +h || 2), skin = mat('pl_' + hex.toString(16), hex, { roughness: 0.7 }), kick = 0.25, led = /LED/i.test(Object.values(c.groups || {}).join(' '));
+  if (round) { const r = Math.min(w, d) / 2; cyl(g, r * 0.88, r * 0.88, kick, 0, kick / 2, 0, K.dark, 28); cyl(g, r, r * 0.92, H - kick, 0, kick + (H - kick) / 2, 0, skin, 32); cyl(g, r * 0.9, r * 0.9, 0.06, 0, H - 0.05, 0, mat('c_soil', 0x4A3626), 28); }
+  else { box(g, w - 0.2, kick, d - 0.2, 0, kick / 2, 0, K.dark); box(g, w, H - kick - 0.1, d, 0, kick + (H - kick - 0.1) / 2, 0, skin); box(g, w + 0.12, 0.1, d + 0.12, 0, H - 0.05, 0, skin); box(g, w - 0.3, 0.06, d - 0.3, 0, H - 0.08, 0, mat('c_soil', 0x4A3626)); }
+  if (led) { const gl = mat('c_led', 0xFFE2A8, { emissive: 0xFFC870, emissiveIntensity: 1.4 }); if (round) cyl(g, Math.min(w, d) / 2 * 0.9, Math.min(w, d) / 2 * 0.9, 0.04, 0, 0.02, 0, gl, 28); else box(g, w - 0.15, 0.04, d - 0.15, 0, 0.02, 0, gl); }
+  const n = Math.max(1, Math.round(Math.max(w, d) / 1.4)), along = w >= d;   // plants along the long side
+  for (let i = 0; i < n; i++) { const t = (i + 0.5) / n - 0.5, x = along ? t * w : 0, z = along ? 0 : t * d, r = Math.min(Math.min(w, d) * 0.42, 0.9);
+    const f = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), i % 2 ? K.leaf2 : K.leaf); f.position.set(x, H + r * 0.75, z); f.scale.y = 1.25; f.castShadow = true; g.add(f); }
+}
 export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
   if (cat === 'sofa') {   // 193d: a 3-seater along the back, a 2-seater on the right, a coffee table in front
@@ -97,6 +109,8 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'bar') {
     box(g, w, 3.4, d * 0.7, 0, 1.7, -d * 0.15, K.stone); box(g, w + 0.3, 0.15, d * 0.85, 0, 3.5, -d * 0.1, K.wood2); box(g, w - 0.4, 0.1, 0.2, 0, 0.4, d * 0.2 + 0.1, K.frame);
     const n = Math.max(1, Math.floor(w / 2.2)); for (let i = 0; i < n; i++) { const x = -w / 2 + w * (i + 0.5) / n; cyl(g, 0.55, 0.55, 0.15, x, 2.6, d / 2 + 0.6, K.cush2); cyl(g, 0.08, 0.08, 2.5, x, 1.25, d / 2 + 0.6, K.frame, 8); }
+  } else if (cat === 'planter' && it && /^MTO-PL-[A-Z]{2}$/.test(it.cfgId || it.pick || '')) {   // 199: an outrr planter — its own size, finish colour, plinth, plants, LED glow underneath
+    planterModel(g, w, d, h, it, K);
   } else if (cat === 'planter') {
     const r = Math.min(w, d) / 2; cyl(g, r * 0.9, r * 0.7, r * 1.6, 0, r * 0.8, 0, K.pot, 24); const f = new THREE.Mesh(new THREE.IcosahedronGeometry(r * 1.05, 1), K.leaf); f.position.y = r * 2.2; f.scale.y = 1.2; f.castShadow = true; g.add(f);
   } else if (cat === 'water') {

@@ -3301,7 +3301,7 @@ function updBadge(){try{localStorage.setItem('outrr_cart',JSON.stringify(CART))}
 function soon(id){const x=typeof id==='object'?id:PRODS[id]; return !!x&&x.oo===false;}
 // pergolas (outrr designs): priced per sq ft — the card shows the starting rate and opens the 3D customiser
 // 198: every outrr make + install design (not furniture / sculptures / cabins): its starting rate — per sq ft / running ft, or the smallest size
-function pgRate(x){if(!x||!x.cz||!/^MTO-/.test(x.img||'')||/^MTO-PL-/.test(x.img||'')||['furniture','sculptures'].includes(x.col)||x.cz.unit==='cabin')return 0; const u=x.cz.unit; if(u==='fixed') return +x.p||0; const r=(x.cz.materials||[]).map(m=>+m.rate||0).filter(Boolean); return r.length?Math.min(...r):0;}
+function pgRate(x){if(!x||!x.cz||!/^MTO-/.test(x.img||'')||/^MTO-PL-\d/.test(x.img||'')||['furniture','sculptures'].includes(x.col)||x.cz.unit==='cabin')return 0; const u=x.cz.unit; if(u==='fixed'||x.cz.pcs) return +x.p||0; const r=(x.cz.materials||[]).map(m=>+m.rate||0).filter(Boolean); return r.length?Math.min(...r):0;}
 // Made to Order cards: a random photo of the design (day / night / other scenes, not drawings) and a second one on hover
 const _picK={};
 function mtoPics(id){const x=PRODS[id]; if(!x||!x.cz) return null; const all=[...new Set([IMGS[x.img]].concat((window.GAL&&GAL[id])||[]).filter(Boolean))];
@@ -3309,7 +3309,7 @@ function mtoPics(id){const x=PRODS[id]; if(!x||!x.cz) return null; const all=[..
   if(L.length<2) return null; if(_picK[id]==null) _picK[id]=Math.floor(Math.random()*L.length); const a=_picK[id]%L.length; return [L[a],L[(a+1)%L.length]];}
 function cardIm(id,alt){const p=mtoPics(id); if(!p) return `<div class="im"><img src="${IMGS[PRODS[id].img]}" alt="${alt||''}"></div>`;
   return `<div class="im im-sw"><img src="${p[0]}" alt="${alt||''}"><img class="im2" src="${p[1]}" alt="" loading="lazy"></div>`;}
-function pgRateH(x){const u=x.cz.unit; return `<span class="vfrom">From</span> ${inr(pgRate(x))}${u==='fixed'?'':`<span class="vfrom"> / ${u==='length'?'running ft':'sq ft'}</span>`}`;}
+function pgRateH(x){const u=x.cz.unit; return `<span class="vfrom">From</span> ${inr(pgRate(x))}${u==='fixed'||x.cz.pcs?'':`<span class="vfrom"> / ${u==='length'?'running ft':'sq ft'}</span>`}`;}
 function pgCard(id,how){openProduct(id); setTimeout(()=>{try{ if(how==='3d'||(window.mtoOk&&mtoOk())) window.mtoCustomise&&mtoCustomise(); else mtoUnlock(id); }catch(e){}},400);}
 function soonH(){return '<span class="soonb">Coming soon</span>';}
 function ordersClosed(id){const x=PRODS[id]; if(x&&x.oo===false){toast('Coming soon. Save it to your wishlist!');return true;} return false;}
@@ -4575,8 +4575,8 @@ async function shareProduct(){
 <script src="/track.js?v=3"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=9"></script>
-<script src="/mto.js?v=53"></script>
-<script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){var go=function(sd){return import('/planner.js?v=23').then(function(m){m.open(sd&&(sd.item||sd.reload||sd.load||sd.sload||sd.fresh)?sd:null);});};var q=new URLSearchParams(location.search).get('plan')||'';if(!seed&&window.mtoSpaceAsk&&q.length<10&&!(window.ASSIST&&window.ASSIST.name)){window.mtoSpaceAsk('planner',function(r){go(r.plan?(r.plan.local?null:{load:r.plan.id}):{fresh:true,kind:r.kind});});return Promise.resolve();}return go(seed);};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
+<script src="/mto.js?v=54"></script>
+<script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){var go=function(sd){return import('/planner.js?v=24').then(function(m){m.open(sd&&(sd.item||sd.items||sd.reload||sd.load||sd.sload||sd.fresh)?sd:null);});};var q=new URLSearchParams(location.search).get('plan')||'';if(!seed&&window.mtoSpaceAsk&&q.length<10&&!(window.ASSIST&&window.ASSIST.name)){window.mtoSpaceAsk('planner',function(r){go(r.plan?(r.plan.local?null:{load:r.plan.id}):{fresh:true,kind:r.kind});});return Promise.resolve();}return go(seed);};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
 <script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=8" defer></script>
 <script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */
