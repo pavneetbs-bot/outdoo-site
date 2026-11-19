@@ -4,6 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
+import { plotModel } from './cabin3d.js?v=13';   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -200,19 +201,77 @@ function setNight(on) {
   R.night = on; R.scene.background = new THREE.Color(on ? 0x16203a : 0xeef0ea); R.renderer.toneMappingExposure = on ? 0.75 : 1;
   R.hemi.intensity = on ? 0.12 : 0.7; R.sun.intensity = on ? 0.08 : 1.9; mat('led', {}).emissiveIntensity = on ? 2.4 : 0; mat('led', {}).color.set(on ? 0xfff3d0 : 0x3a3a3a);
 }
+// 193f: on a terrace (opts.site: the studio's terrace — cx / cz = the pergola's corner, rot = where its front faces), with an optional deck and furniture to see it
+let FURN = null, FURN_LOADING = false;
+function extras(g, L, W, opts) {   // deck under it (as high as a porta cabin's) + a furniture set, both just to see it; returns the pergola's lift
+  const y0 = opts.deck ? 0.6 : 0;
+  if (opts.deck) { const n = Math.max(1, Math.round(W / 0.5)); for (let k = 0; k < n; k++) box(g, L, 0.6, W / n - 0.03, L / 2, 0.3, W * (k + 0.5) / n, mat(k % 2 ? 'dk1' : 'dk2', { color: k % 2 ? 0x8B6A4A : 0x7A5C40, roughness: 0.85 })); }
+  const f = opts.furn; if (f && FURN) { const set = f === 'dining' ? [['dining', 7, 6, 3]] : f === 'swing' ? [['swing', 6, 4.5, 7]] : [['sofa', Math.min(10, L - 1), Math.min(8, W - 1), 3]];
+    set.forEach(([c, w, d, h]) => { const m = FURN(c, Math.min(w, L - 1), Math.min(d, W - 1), h); m.position.set(L / 2, y0, W / 2); g.add(m); }); }
+  return y0;
+}
+let HANDLER = null; export function onEvent(fn) { HANDLER = fn; }
+function dims(t, L, W) { return (+t.rot || 0) % 180 ? [W, L] : [L, W]; }
+function frame(cx, cz, d, h) { R.controls.target.set(cx, h, cz); R.cam.position.set(cx + d * 0.55, h + d * 0.55, cz + d * 0.75); R.controls.update(); }
 export function show(el, sku, o, opts) {
-  opts = opts || {}; ensure(el);
-  const key = sku + '|' + JSON.stringify(o);
+  opts = opts || {}; ensure(el); ptr();
+  const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
+  if (opts.furn && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=9').then(m => { FURN = m.generic; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
-    const first = !R.group, dims = [o.l, o.w, o.height].join('x'), redo = first || dims !== R.dims;
+    const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
+    const dimsK = [o.l, o.w, o.height, mode, t ? [t.pw, t.pd].join('x') : ''].join('x'), redo = !R.group || dimsK !== R.dims;
     if (R.group) { R.scene.remove(R.group); R.group.traverse(m => { if (m.geometry) m.geometry.dispose(); }); }
-    const b = build(sku, o); R.group = b.g; R.scene.add(b.g); R.key = key; R.dims = dims;
-    R.sun.position.set(b.L * 0.5 + 18, 30, b.W * 0.5 + 14); R.sun.target.position.set(b.L / 2, 0, b.W / 2);
-    if (redo) { const d = Math.max(b.L, b.W, b.H) * 1.9 + 6; R.controls.target.set(b.L / 2, b.H * 0.45, b.W / 2); R.cam.position.set(b.L / 2 + d * 0.62, b.H * 0.9 + d * 0.32, b.W / 2 + d * 0.78); R.controls.update(); }
+    let root, b;
+    if (!t && !opts.deck && !opts.furn) { b = build(sku, o); root = b.g; }
+    else if (!t) {   // a lawn with a deck / furniture: the ground drawn here, the pergola lifted onto the deck
+      b = build(sku, o, true); root = new THREE.Group(); const X = S(), L = b.L, W = b.W; box(root, L + 16, 0.1, W + 16, L / 2, -0.05, W / 2, X.ground);
+      if (/wall/i.test(String(o.layout || ''))) box(root, L + 4, b.H + 3, 0.6, L / 2, (b.H + 3) / 2, -0.45, X.wall);
+      const y0 = extras(root, L, W, opts); b.g.position.y = y0; root.add(b.g); }
+    else {
+      root = new THREE.Group(); const plot = plotModel(t); plot.position.y = 0.6; root.add(plot);   // slab surface at y 0
+      if (!t.place) { b = build(sku, o, true); const [fw, fd] = dims(t, b.L, b.W), hold = new THREE.Group(); hold.userData.pg = 1;
+        hold.position.set(+t.cx + fw / 2, 0, +t.cz + fd / 2); hold.rotation.y = (+t.rot || 0) * Math.PI / 180; root.add(hold);
+        const inner = new THREE.Group(); inner.position.set(-b.L / 2, 0, -b.W / 2); hold.add(inner); const y0 = extras(inner, b.L, b.W, opts); b.g.position.y = y0; inner.add(b.g);
+        const hit = new THREE.Mesh(new THREE.BoxGeometry(b.L, b.H + 1, b.W), new THREE.MeshBasicMaterial({ visible: false })); hit.position.set(b.L / 2, (b.H + 1) / 2, b.W / 2); hit.userData.pghit = 1; inner.add(hit);
+        if (t.clash) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(fw + 0.4, 0.2, fd + 0.4)), new THREE.LineBasicMaterial({ color: 0xE0352B })); ln.position.set(+t.cx + fw / 2, 0.1, +t.cz + fd / 2); root.add(ln); } }
+    }
+    R.group = root; R.scene.add(root); R.key = key; R.dims = dimsK; R.site = t; R.sku = sku; R.o = o; R.b = b;
+    const L = b ? b.L : 12, W = b ? b.W : 10, H = b ? b.H : 8;
+    if (t) { const c = t.place ? [t.pw / 2, t.pd / 2] : [+t.cx + dims(t, L, W)[0] / 2, +t.cz + dims(t, L, W)[1] / 2]; R.sun.position.set(c[0] + 18, 40, c[1] + 14); R.sun.target.position.set(c[0], 0, c[1]);
+      Object.assign(R.sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60 }); R.sun.shadow.camera.updateProjectionMatrix();
+      if (redo) { R.controls.autoRotate = false; if (t.place) frame(c[0], c[1], Math.max(t.pw, t.pd) * 1.15 + 10, 0); else frame(c[0], c[1], Math.max(L, W, H) * 2.2 + 10, H * 0.4); }
+      else if (!t.place && R.pc) { const dx = c[0] - R.pc[0], dz = c[1] - R.pc[1]; R.cam.position.x += dx; R.cam.position.z += dz; R.controls.target.x += dx; R.controls.target.z += dz; R.controls.update(); }   // moved: the view follows it
+      R.pc = t.place ? null : c; }
+    else { R.sun.position.set(L * 0.5 + 18, 30, W * 0.5 + 14); R.sun.target.position.set(L / 2, 0, W / 2);
+      if (redo) { const d = Math.max(L, W, H) * 1.9 + 6; R.controls.target.set(L / 2, H * 0.45, W / 2); R.cam.position.set(L / 2 + d * 0.62, H * 0.9 + d * 0.32, W / 2 + d * 0.78); R.controls.update(); } }
   }
   if (!!opts.night !== R.night) setNight(!!opts.night);
 }
+// dragging on a terrace: the mumty / lift / shafts / AC units while it is set up, the pergola after
+const RAY = new THREE.Raycaster(), FLOOR = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+function cast(e, objs) { const r = R.renderer.domElement.getBoundingClientRect(); RAY.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), R.cam); return objs ? RAY.intersectObjects(objs, true) : null; }
+function floorAt(e) { cast(e); const p = new THREE.Vector3(); return RAY.ray.intersectPlane(FLOOR, p) ? p : null; }
+function ptr() {
+  if (R.ptr) return; R.ptr = 1; const cv = R.renderer.domElement; cv.style.touchAction = 'none';
+  cv.addEventListener('pointerdown', e => {
+    const t = R.site; if (!t || !R.group || (e.pointerType === 'mouse' && e.button !== 0)) return; const hits = cast(e, [R.group]), f = floorAt(e); if (!f || !hits.length) return;
+    if (t.place) { const h = hits.find(x => { let o = x.object; while (o && !o.userData.st) o = o.parent; return o; }); if (!h) return; let o = h.object; while (!o.userData.st) o = o.parent; const bk = (t.blocks || [])[o.userData.st.i]; if (!bk) return;
+      R.drag = { kind: 'blk', obj: o, i: o.userData.st.i, f0: f.clone(), x0: +bk.x, z0: +bk.z, w: +bk.w, d: +bk.d, sx: e.clientX, sy: e.clientY, moved: false }; }
+    else { const h = hits.find(x => x.object.userData.pghit); if (!h) return; let o = h.object; while (o && !o.userData.pg) o = o.parent;
+      R.drag = { kind: 'pg', obj: o, f0: f.clone(), x0: +t.cx, z0: +t.cz, p0: o.position.clone(), sx: e.clientX, sy: e.clientY, moved: false }; }
+    R.controls.enabled = false; e.preventDefault(); e.stopPropagation(); try { cv.setPointerCapture(e.pointerId); } catch (er) {}
+  }, true);
+  cv.addEventListener('pointermove', e => {
+    const d = R.drag; if (!d) return; const f = floorAt(e); if (!f) return; if (!d.moved && Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 5) return; d.moved = true; const t = R.site, dx = f.x - d.f0.x, dz = f.z - d.f0.z;
+    if (d.kind === 'blk') { d.nx = Math.round(Math.max(0.75, Math.min(t.pw - 0.75 - d.w, d.x0 + dx)) * 2) / 2; d.nz = Math.round(Math.max(0.75, Math.min(t.pd - 0.75 - d.d, d.z0 + dz)) * 2) / 2; d.obj.position.set(d.nx - d.x0, 0, d.nz - d.z0); }
+    else { d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2; d.obj.position.set(d.p0.x + dx, 0, d.p0.z + dz); }
+  });
+  const up = () => { const d = R.drag; if (!d) return; R.drag = null; R.controls.enabled = true; if (!d.moved || !HANDLER) return;
+    if (d.kind === 'blk') HANDLER({ t: 'movesite', i: d.i, x: d.nx, z: d.nz }); else HANDLER({ t: 'movecab', cx: d.nx, cz: d.nz }); };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+}
 export function resize() { size(); }
-window.Pergola3D = { show, resize };
+window.Pergola3D = { show, resize, onEvent, _r: () => R };
 export function pergolaModel(sku, o) { return build(sku, o, true); }   // 192: x 0..L, z 0..W, ground at y 0
 export const PERGOLA_SKUS = Object.keys(D);
