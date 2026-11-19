@@ -115,6 +115,8 @@ const PAGES = {
     body: `
 <h2>Pay online at checkout</h2>
 <p>Every ${CO.brand} order is paid online when you place it: UPI, debit or credit card, net banking or wallets. Payments are processed securely by Razorpay; ${CO.brand} never sees or stores your card details. Cash on delivery is not available.</p>
+<h2>Made to Order designs</h2>
+<p>Designs made to your size (pergolas, cabins, planters and more): if the Made to Order part of your order — all its designs with their delivery and installation — is <b>under ₹75,000, you pay it in full when you order</b>. From ₹75,000 you pay 50% when you order and the rest when it is ready, before dispatch; we email you the link. Ready-to-ship items in the same order are always paid in full.</p>
 <h2>If a payment doesn't go through</h2>
 <p>Your order is kept for 24 hours. Pay again from the order page (My account → Orders). If money left your account but the order still shows unpaid, don't pay again: it updates by itself within a few minutes, or the bank returns it.</p>
 <h2>Prices and GST</h2>
@@ -164,7 +166,7 @@ const PAGES = {
 <li>Photos may be styled or AI-assisted to show the product in a setting. Colours, wood grain and finishes can vary slightly; sizes are approximate (about ±2 cm).</li>
 <li>If a price or detail is listed wrongly, we may cancel the order and refund anything paid.</li></ul>
 <h2>Orders and payment</h2>
-<p>An order is confirmed once its payment is received. Payment is made online at checkout. We may cancel orders we can't deliver, suspected fake orders, or bulk orders meant for resale.</p>
+<p>An order is confirmed once its payment is received. Payment is made online at checkout. Made to Order designs: paid in full when ordered if the Made to Order part of the order (with its delivery and installation) is under ₹75,000; otherwise 50% with the order and the rest before dispatch. We may cancel orders we can't deliver, suspected fake orders, or bulk orders meant for resale.</p>
 <h2>Delivery, returns and refunds</h2>
 <p>See <a href="/shipping/">Shipping & Delivery</a> and <a href="/returns/">Returns, Refunds & Cancellations</a>.</p>
 <h2>Use of the site</h2>
