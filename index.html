@@ -4071,7 +4071,7 @@ function openCheckout(){
   const smp=CART.find(c=>PRODS[c.id]&&PRODS[c.id].pv);
   if(smp){toast('Sample products can\'t be ordered yet. Remove them to check out.');if(document.getElementById('cart').style.display!=='block')openCart();return;}
   const go=()=>{ renderCheckout(); showView('checkout'); };
-  if(window.acRequire && !window.ASSIST && (window.OUTRR_SUPA||{}).url) return acRequire(go,'Sign in to check out');   // 186: Sales mode orders for the customer
+  /* Ready to ship: guest checkout, no email code (sign-in stays optional for saved addresses / My account). Made to Order checkout (mto.js) still asks to sign in. */
   go();
 }
 function renderCheckout(){
