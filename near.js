@@ -219,9 +219,9 @@ function open(mode, opt){
   var gate = mode === 'gate', x = opt.id ? PRODS[opt.id] : null;
   ov.innerHTML = '<div class="near-card" role="dialog" aria-modal="true" aria-labelledby="nearT">'
    + '<button class="near-x" aria-label="Close" data-a="skip">×</button><div class="near-ic">📍</div>'
-   + '<h3 id="nearT">' + (gate ? 'Check delivery to your area' : 'Where should we deliver?') + '</h3>'
+   + '<h3 id="nearT">' + (gate ? (x && x.sp === false ? 'Check delivery to your area' : 'Where should we deliver?') : 'Where should we deliver?') + '</h3>'
    + (opt.bad ? '<div class="near-bad">' + opt.bad + '</div>' : '')
-   + '<p>' + (gate ? esc(x ? x.n : 'This product') + ' is delivered by a local seller. Enter your city or pincode to check it reaches you.'
+   + '<p>' + (gate ? (x && x.sp === false ? esc(x.n) + ' is delivered by a local seller. Enter your city or pincode to check it reaches you.' : 'Pick your city or enter your pincode to add this to your cart. We use it for delivery charges and dates.')
      : 'Set your city so we can show you products that deliver to your area, including fast local delivery from sellers near you.') + '</p>'
    + '<div class="near-in"><input id="nearQ" autocomplete="off" placeholder="Your city or 6-digit pincode" value="' + esc(LOC ? (LOC.pincode || (LOC.city ? city(LOC.city).name : '')) : '') + '"><div class="near-sug" id="nearSug" hidden></div></div>'
    + '<button class="near-gps" data-a="gps">◎ Use my current location</button>'
@@ -277,8 +277,8 @@ function pill(){
 /* ---------------------------------------------------------------- add to cart / buy now */
 function gate(id, then){
   var x = PRODS[id]; if (!x || x.pv) return true;                    // sample (pitch) products: the cart handles them
+  if (!LOC) { open('gate', { id: id, then: function () { if (x.sp === false && !shipsTo(x)) blocked(id); else then() } }); return false }   // city / pincode needed before anything goes in the cart
   if (x.sp !== false) return true;                                    // ships across India
-  if (!LOC) { open('gate', { id: id, then: function () { if (shipsTo(x)) then(); else blocked(id) } }); return false }
   if (!shipsTo(x)) { blocked(id); return false }
   return true }
 function blocked(id){ var x = PRODS[id];

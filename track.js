@@ -29,6 +29,12 @@
   }
   var referrer = store('sessionStorage', 'outrr_ref'); if (referrer === '-') referrer = null
   var device = /Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
+  // team / testing visits: kept apart (mkt_events_team) and never sent to Meta / Google.
+  // Not outrr.in (localhost, previews), automated browsers, Sales mode, or a device marked with outrr.in/?team=1 (?team=0 clears it).
+  if (qs.get('team') === '1') store('localStorage', 'outrr_team', '1')
+  if (qs.get('team') === '0') try { localStorage.removeItem('outrr_team') } catch (e) {}
+  var team = !/(^|\.)outrr\.in$/.test(location.hostname) || navigator.webdriver === true || store('localStorage', 'outrr_team') === '1' || qs.has('assist') || /HeadlessChrome|Playwright|Lighthouse|bot|crawl|spider/i.test(navigator.userAgent)
+  window.outrrTeam = function () { return team || !!window.ASSIST }
 
   // ---------------------------------------------------------------- ad tags
   var tags = null, queue = []
@@ -50,7 +56,7 @@
     }
     queue.forEach(function (a) { toTags(a[0], a[1]) }); queue = []
   }
-  var cached = store('sessionStorage', 'outrr_tags')
+  var cached = team ? '{}' : store('sessionStorage', 'outrr_tags')
   if (cached) { try { loadTags(JSON.parse(cached)) } catch (e) { cached = null } }
   if (!cached && S.url && S.anon) {
     fetch(S.url + '/rest/v1/rpc/site_tracking', { method: 'POST', headers: { apikey: S.anon, Authorization: 'Bearer ' + S.anon, 'Content-Type': 'application/json' }, body: '{}' })
@@ -61,6 +67,7 @@
   var FB = { view_item: 'ViewContent', add_to_cart: 'AddToCart', begin_checkout: 'InitiateCheckout', purchase: 'Purchase',
     customise_start: 'CustomizeProduct', price_check: 'Lead' }   // ads: 3D designer opened / a signed-in customer saw a Made to Order price
   function toTags(kind, d) {
+    if (window.outrrTeam()) return
     if (!tags) { queue.push([kind, d]); return }
     var skus = d.skus || (d.sku ? [d.sku] : []), value = +d.value || 0
     if (window.fbq && FB[kind]) fbq('track', FB[kind], { content_ids: skus, content_type: 'product', value: value, currency: 'INR' }, d.ref ? { eventID: d.ref } : undefined)
@@ -81,6 +88,7 @@
       value: d.value != null ? String(Math.round(+d.value || 0)) : null, ref: d.ref || null,
       utm_source: attr.utm_source || null, utm_medium: attr.utm_medium || null, utm_campaign: attr.utm_campaign || null, click_id: attr.click_id || null,
       referrer: referrer, device: device }
+    if (window.outrrTeam()) p.team = true
     try {
       if (kind === 'view_item' && p.sku && window.mtoCrm && localStorage.getItem('outrr_session')) window.mtoCrm('view_item', { sku: p.sku })   // 172: on the customer's CRM lead (if any)
       fetch(S.url + '/rest/v1/rpc/track_event', { method: 'POST', keepalive: true, headers: { apikey: S.anon, Authorization: 'Bearer ' + S.anon, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: p }) }).catch(function () {})
