@@ -1975,9 +1975,9 @@
       '<div class="row2"><span class="rm" onclick="mtoCartEdit(\'' + l.c.k + '\')">Edit design</span><span class="rm" onclick="mtoCartRm(\'' + l.c.k + '\')">Remove</span></div></div></div>';
   }
   function payLine(rts, s) {
-    if (s.full) return 'Pay <b>' + rs(rts + s.now) + '</b> now: Made to Order ' + fullTxt() + ' is paid in full when you order — nothing to pay later.' + (rts > 0 ? ' Ready-to-ship items are dispatched straight away.' : '');   // 206
-    return 'Pay <b>' + rs(rts + s.now) + '</b> now (' + (rts > 0 ? 'ready-to-ship items in full + ' : '') + PCT + '% of ' + (s.n > 1 ? 'each design' : 'the design') + '). The rest, <b>' + rs(s.later) + '</b>' + (s.inst ? ' with installation' : '') +
-      ', is paid before ' + (s.n > 1 ? 'the designs are' : 'it is') + ' dispatched: we email you the link.' + (rts > 0 ? ' Ready-to-ship items are dispatched straight away.' : '');
+    if (s.full) return 'Pay <b>' + rs(rts + s.now) + '</b> now: Made to Order ' + fullTxt() + ' is paid in full when you order — nothing to pay later.' + (CART.some(function (c) { return !c.mto; }) ? ' Ready-to-ship items are dispatched straight away.' : '');   // 206
+    return 'Pay <b>' + rs(rts + s.now) + '</b> now (' + (CART.some(function (c) { return !c.mto; }) ? 'ready-to-ship items in full + ' : '') + PCT + '% of ' + (s.n > 1 ? 'each design' : 'the design') + '). The rest, <b>' + rs(s.later) + '</b>' + (s.inst ? ' with installation' : '') +
+      ', is paid before ' + (s.n > 1 ? 'the designs are' : 'it is') + ' dispatched: we email you the link.' + (CART.some(function (c) { return !c.mto; }) ? ' Ready-to-ship items are dispatched straight away.' : '');
   }
   var amt = function (el) { return +String(el ? el.textContent : '').replace(/[^\d.]/g, '') || 0; };
 
@@ -1986,6 +1986,14 @@
   window.updBadge = function () { _ub.apply(this, arguments); var n = CART.reduce(function (a, c) { return a + c.q; }, 0) + MC.length; ['cartn', 'cartn2'].forEach(function (id) { var e = document.getElementById(id); if (e) e.textContent = n; }); };
   try { window.updBadge(); } catch (e) {}
 
+  // 215: the designs' own price (order offer) and the combo: a design whose category goes with a ready-to-ship item in the cart
+  window.mtoCartIds = function () { return MC.map(function (c) { return c.id; }); };
+  window.mtoCartVal = function () {
+    var L = mLive(); if (!L.length) return { product: 0, combo: 0 };
+    var cols = CART.filter(function (c) { return !c.mto && PRODS[c.id]; }).map(function (c) { return PRODS[c.id].col; }), s = mSum(), p = 0, cb = 0;
+    s.lines.forEach(function (l) { if (!l.q.ok) return; var g = +l.q.product || 0; p += g; if (window.comboOk && comboOk(cols, l.x.col)) cb += Math.round(g * (+(window.OFFER || {}).combo || 0) / 100); });
+    return { product: p, combo: cb };
+  };
   // cart page: the designs on top, their price in the summary
   var _rcart = window.renderCart;
   window.renderCart = function () {
@@ -1995,12 +2003,13 @@
     var cnt = document.getElementById('cartCnt'); if (cnt) cnt.textContent = (CART.reduce(function (a, c) { return a + c.q; }, 0) + s.n) + ' items';
     var row = '<div class="r"><span>Made to Order (' + s.n + (s.n > 1 ? ' designs' : ' design') + ')</span><span>' + (s.ok || s.total ? rs(s.total) : '—') + '</span></div>';
     if (!CART.length) {
-      body.innerHTML = '<div class="cartwrap"><div>' + html + '</div><div class="csum">' + row + '<div class="r tot"><span>Total</span><span>' + rs(s.total) + '</span></div>' +
-        '<div class="secline" style="margin-top:6px">' + payLine(0, s) + '</div><div class="cartcta"><button class="btn" onclick="openCheckout()">Proceed to Checkout</button></div></div></div>';
+      var f = window.cartOffers ? cartOffers(0) : { offer: 0, combo: 0 }, ft = s.total - f.offer;   // 214
+      body.innerHTML = '<div class="cartwrap"><div>' + (window.offerBar ? offerBar(f) : '') + html + '</div><div class="csum">' + row + (window.offerRows ? offerRows(f) : '') + '<div class="r tot"><span>Total</span><span>' + rs(ft) + '</span></div>' +
+        '<div class="secline" style="margin-top:6px">' + payLine(-f.offer, s) + '</div><div class="cartcta"><button class="btn" onclick="openCheckout()">Proceed to Checkout</button></div></div></div>';
       return;
     }
     var left = body.querySelector('.cartwrap > div'), pg = left && left.querySelector('.cprog'); if (pg) pg.insertAdjacentHTML('afterend', html); else if (left) left.insertAdjacentHTML('afterbegin', html);
-    var tot = body.querySelector('.csum .r.tot'); if (!tot) return; var rts = amt(tot.lastElementChild);
+    var tot = body.querySelector('.csum .r.tot'); if (!tot) return; var rts = window.CART_NET != null ? +window.CART_NET : amt(tot.lastElementChild);   // 215: can be below 0 with the offers
     tot.insertAdjacentHTML('beforebegin', row); tot.lastElementChild.textContent = rs(rts + s.total);
     tot.insertAdjacentHTML('afterend', '<div class="secline" style="margin-top:6px">' + payLine(rts, s) + '</div>');
   };
@@ -2010,7 +2019,8 @@
   function retail(f) { var keep = CART; if (keep.some(function (c) { return c.mto; })) CART = keep.filter(function (c) { return !c.mto; }); try { return f(); } finally { CART = keep; } }
   window.coTotals = function () {
     var t = retail(function () { return _ct(); }); if (!mLive().length) return t;
-    var s = mSum(); t.m = s; t.rts = CART.length ? t.total : 0; t.total = t.rts + s.total; t.payNow = t.rts + s.now; t.items = (CART.length ? t.items : 0) + s.n; return t;
+    var s = mSum(); t.m = s; t.rts = t.total;   // 215: with no retail lines this is −(order offer)
+    t.total = t.rts + s.total; t.payNow = t.rts + s.now; t.items = (CART.length ? t.items : 0) + s.n; return t;
   };
   window.nearBlocked = function () { return retail(function () { return CART.length && _nb ? _nb() : false; }); };
   window.coSplitHTML = function (t) { if (!t.m) return _csh(t); var s = t.m;
@@ -2050,6 +2060,7 @@
       if (o.install || o.lift) h += q.install && (q.install.available || q.install.pending || q.install.parts) ? instRows(q, 'r') : R(o.install ? '· Installation' : '· Lifting', /^\d{6}$/.test(o.pin) ? 'Not available here' : 'Enter pincode');
       return h; }).join('');
     var tot = document.getElementById('coTot'); if (tot) tot.textContent = s.ok || s.total ? rs(t.total) : '—';
+    if (window.offPaint) offPaint(t);   // 214
     var sp = document.getElementById('coSplit'); if (sp) sp.innerHTML = window.coSplitHTML(t);
     var bt = document.getElementById('coPlace'); if (bt && !bt.disabled) bt.textContent = window.coPayLabel(t);
   }

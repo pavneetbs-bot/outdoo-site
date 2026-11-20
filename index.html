@@ -354,6 +354,7 @@ body.flt-open .wafab{display:none}
 .cprog{background:var(--olive-soft);border-radius:11px;padding:11px 13px;font-size:11.5px;color:#3a3632;margin-bottom:12px}
 .cprog .tr{height:6px;background:#fff;border-radius:99px;overflow:hidden;margin-top:7px}
 .cprog .fl{height:100%;background:var(--olive);border-radius:99px;transition:width .3s}
+.mpc .xs-off{font-size:10.5px;font-weight:600;color:#a14f33;margin-bottom:3px}.mpc .xs-cu{padding:6px 10px;font-size:12px;margin-top:6px;width:100%}
 .csum{background:#fff;border:1px solid var(--line);border-radius:13px;padding:14px;margin-top:14px}
 .csum .r{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;color:#4b473f}
 .csum .r.tot{border-top:1px solid var(--sand-soft);margin-top:6px;padding-top:11px;font-size:15px;font-weight:800;color:var(--char)}
@@ -3338,10 +3339,8 @@ function renderCart(){
  const mrp=CART.reduce((a,c)=>a+(M0(c.id)>P0(c.id)?M0(c.id):P0(c.id))*c.q,0)+(sub-sub0);
  const save=mrp-sub;
  const bc=bestOff(), coup=bc.amt;   // 127: never on bundles · 180: or today's deals
- const total=sub-coup;
- const th=200000, pct=Math.min(100,Math.round(total/th*100));
- const progTxt = total>=th? '🎉 <b>Room package pricing unlocked</b> — best bundle rate applied to this order'
-   : 'Add <b>'+inr(th-total)+'</b> more to unlock <b>room package pricing</b> - our best bundle rate';
+ const off=cartOffers(sub0);   // 215: real order offer + design combo (the old "room package pricing" bar was not a real offer)
+ const total=sub-coup-off.offer-off.combo; window.CART_NET=total;   // mto.js adds the designs to this
  const line=c=>{const x=PRODS[c.id];
   return `<div class="cline"><div class="im"><img src="${IMGS[x.img]}" alt=""></div>
    <div class="inf"><div class="nm">${x.n}</div>${vLabel(x)?`<div class="vlab">${_esc(vLabel(x))}</div>`:''}${x.bun?`<div class="vlab">Bundle · ${x.bun.items.map(i=>_esc((PRODS[i.sku]||{}).n||i.name)+(i.qty>1?' ×'+i.qty:'')).join(' · ')}</div>`:''}
@@ -3349,20 +3348,15 @@ function renderCart(){
    <div class="row2"><div class="qty"><button onclick="cartQty('${c.id}',-1)">−</button><span>${c.q}</span><button onclick="cartQty('${c.id}',1)">+</button></div>
    <span class="rm" onclick="cartRm('${c.id}')">Remove</span></div></div></div>`;};
  const grp=cartGroups(), lines=grp?grp.map(e=>grpHead(e)+e.l.map(line).join('')).join(''):CART.map(line).join('');
- // cross-sell: add-ons under 15K from cols not fully in cart
- const inCart=new Set(CART.map(c=>c.id));
- const xs=Object.keys(PRODS).filter(i=>!inCart.has(i)&&!soon(i)&&PRODS[i].p<=15000).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,8);
- const xsHtml=xs.length?`<div class="sec-head" style="margin-top:18px"><h2 style="font-size:15px">Complete your setup</h2></div>
-   <div class="hstrip">${xs.map(i=>{const x=PRODS[i];
-    return `<div class="mpc"><div class="im" onclick="openProduct('${i}')"><img src="${IMGS[x.img]}" alt=""></div>
-    <div class="bd"><div class="nm">${x.n}</div><div class="pr">${inr(x.p)}</div>${tbHTML(i)}</div></div>`;}).join('')}</div>`:'';
+ const xsHtml=cartXsell();
  body.innerHTML=`<div class="cartwrap"><div>
-   <div class="cprog">${progTxt}<div class="tr"><div class="fl" style="width:${pct}%"></div></div></div>
+   ${offerBar(off)}
    ${lines}${xsHtml}</div>
    <div class="csum">
     <div class="r"><span>Price (${CART.reduce((a,c)=>a+c.q,0)} items, incl. delivery)</span><span>${inr(sub)}</span></div>
     ${save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(save)}</span></div>`:''}
     ${bc.code?`<div class="r"><span>${offLabel(bc.code)} <span class="grn">(auto-applied)</span></span><span class="grn">− ${inr(coup)}</span></div>`:''}
+    ${offerRows(off)}
     ${shipRow(ship)}
     <div class="r tot"><span>Total</span><span>${inr(total)}</span></div>
     <div class="secline" style="margin-top:6px">Inclusive of all taxes · GST invoice available</div>
@@ -3371,6 +3365,32 @@ function renderCart(){
    </div></div>`;
 }
 
+
+// 215: "Complete your setup" — only things that go with what is in the cart: related ready-to-ship categories (one per sub-category),
+// soil / fertiliser only when a pot is in the cart, + up to 2 Made to Order designs that earn the combo offer
+const XS_REL={'fire-pits':['furniture','lighting','furnishings'],furniture:['furnishings','lighting','planters','fire-pits'],lighting:['furniture','planters'],
+  planters:['planters','lighting'],furnishings:['furniture','lighting'],art:['lighting','planters'],'vertical-gardens':['planters','lighting'],'water-features':['lighting','planters']};
+const isCons=x=>/potting|soil|fertil|plant food|compost|seed/i.test((x.sb||'')+' '+(x.n||''));
+function cartXsell(){
+ const inCart=new Set(CART.map(c=>c.id)), cols=[...new Set(CART.map(c=>PRODS[c.id]&&PRODS[c.id].col).filter(Boolean))];
+ const pot=CART.some(c=>{const x=PRODS[c.id];return x&&x.col==='planters'&&!isCons(x);});
+ const rel=[]; cols.forEach(c=>(XS_REL[c]||[c]).forEach(r=>{if(rel.indexOf(r)<0)rel.push(r);}));
+ const top=Math.max(15000,...CART.map(c=>(PRODS[c.id]||{}).p||0).map(p=>p*0.5)), seen=new Set(), xs=[];
+ Object.keys(PRODS).filter(i=>{const x=PRODS[i];return !inCart.has(i)&&!x.cz&&!x.bun&&!x.pv&&!soon(i)&&x.p>0&&x.p<=top&&rel.indexOf(x.col)>=0&&(!isCons(x)||pot)&&(!window.IMGS||IMGS[x.img]);})
+  .sort((a,b)=>rel.indexOf(PRODS[a].col)-rel.indexOf(PRODS[b].col)||PRODS[a].p-PRODS[b].p)
+  .forEach(i=>{const x=PRODS[i],k=x.col+'|'+(x.sb||x.ty||'');if(seen.has(k)||xs.length>=8||xs.filter(j=>PRODS[j].col===x.col).length>=2)return;seen.add(k);xs.push(i);});
+ const mc=new Set((window.mtoCartIds?mtoCartIds():[])), dcols=[], ds=[];
+ cols.forEach(c=>(OFFER.map[c]||[]).forEach(d=>{if(dcols.indexOf(d)<0)dcols.push(d);}));
+ if(OFFER.combo>0) dcols.forEach(dc=>{if(ds.length>=2)return;const id=Object.keys(PRODS).find(i=>{const x=PRODS[i];return x.cz&&x.col===dc&&!mc.has(i)&&!soon(i)&&(!window.IMGS||IMGS[x.img]);});if(id)ds.push(id);});
+ if(!xs.length&&!ds.length) return '';
+ const card=i=>{const x=PRODS[i];return `<div class="mpc"><div class="im" onclick="openProduct('${i}')"><img src="${IMGS[x.img]}" alt=""></div>
+    <div class="bd"><div class="nm">${x.n}</div><div class="pr">${inr(x.p)}</div>${tbHTML(i)}</div></div>`;};
+ const dcard=i=>{const x=PRODS[i];return `<div class="mpc"><div class="im" onclick="openProduct('${i}')"><img src="${IMGS[x.img]}" alt=""></div>
+    <div class="bd"><div class="xs-off">${OFFER.combo}% extra off with this order</div><div class="nm">${x.n}</div><div class="pr">${pgRate(x)?pgRateH(x):window.mtoOk&&!mtoOk()?'<span class="vfrom">Check price</span>':'<span class="vfrom">From</span> '+inr(x.p)}</div>
+    <button class="btn xs-cu" onclick="${pgRate(x)?`pgCard('${i}','3d')`:`openProduct('${i}')`}">Customise</button></div></div>`;};
+ return `<div class="sec-head" style="margin-top:18px"><h2 style="font-size:15px">Complete your setup</h2></div>
+   <div class="hstrip">${ds.map(dcard).join('')}${xs.map(card).join('')}</div>`;
+}
 
 // ---- mini cart drawer ----
 function miniCart(open){document.getElementById('mcart').classList.toggle('open',open);
@@ -3414,6 +3434,28 @@ function dealSave(id){ var d=DEALS[id], x=PRODS[id]; if(!d||!x||x.bun) return 0;
 function bestOff(){ var bc=bestCoupon(nbSub()), dd=CART.reduce(function(a,c){return a+dealSave(c.id)*c.q},0);
   return dd>bc.amt?{code:'DEAL',amt:dd,coupon:bc.code}:Object.assign({coupon:bc.code},bc); }
 const offLabel=c=>c==='DEAL'?"Today's deal":'Coupon '+c;
+// 215: real cart offers (215, company_settings via company_public; these defaults = the database defaults)
+//  order offer: 10% off, capped per step, on top of a coupon / deal · design combo: 5% off a Made to Order design ordered with a ready-to-ship item of a matching category
+var OFFER={steps:[{min:25000,pct:10,max:250},{min:50000,pct:10,max:500},{min:100000,pct:10,max:1000}],combo:5,
+  map:{'fire-pits':['shade','furniture','decking','privacy-screens','planters','bar-counters'],lighting:['shade','privacy-screens','planters','feature-walls','furniture'],planters:['planters','privacy-screens','vertical-gardens','shade'],art:['feature-walls','planters','shade','sculptures'],furnishings:['furniture','shade'],furniture:['shade','decking','planters','privacy-screens']}};
+(function(){try{var S=window.OUTRR_SUPA||{};if(!S.url)return;fetch(S.url+'/rest/v1/rpc/company_public',{method:'POST',headers:{apikey:S.anon,'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json()}).then(function(j){
+  if(!j)return; if(Array.isArray(j.order_offer))OFFER.steps=j.order_offer.map(function(x){return{min:+x.min,pct:+x.pct,max:+x.max}}); if(j.mto_combo_pct!=null)OFFER.combo=+j.mto_combo_pct; if(j.combo_map&&typeof j.combo_map==='object')OFFER.map=j.combo_map;
+  try{if(document.getElementById('cart').style.display==='block')renderCart();}catch(e){} }).catch(function(){});}catch(e){}})();
+function offerStep(v){return OFFER.steps.filter(function(x){return v>=x.min}).sort(function(a,b){return b.min-a.min})[0]||null;}
+function offerOf(v){var st=offerStep(v);return st?Math.min(Math.round(v*st.pct/100),st.max):0;}
+function offerNext(v){return OFFER.steps.filter(function(x){return x.min>v}).sort(function(a,b){return a.min-b.min})[0]||null;}
+function comboOk(cols,col){return cols.some(function(r){return (OFFER.map[r]||[]).indexOf(col)>=0});}
+// base = own prices of ready-to-ship lines (as the server counts them); designs (mto.js mtoCartVal) add their price + combo
+function cartOffers(base){var d=window.mtoCartVal?mtoCartVal():{product:0,combo:0};var v=base+d.product,o=offerOf(v);return{value:v,offer:o,combo:d.combo||0,next:offerNext(v),step:offerStep(v)};}
+function offerBar(f){
+  var n=f.next, st=f.step;
+  if(!n&&!st) return '';
+  var t=n?'Add <b>'+inr(n.min-f.value)+'</b> more to get <b>'+n.pct+'% off</b> (up to '+inr(n.max)+')'+(st?' — now <b>'+inr(f.offer)+' off</b>':''):'🎉 <b>'+st.pct+'% off applied</b> — you save '+inr(f.offer);
+  var pct=n?Math.min(100,Math.round(f.value/n.min*100)):100;
+  return '<div class="cprog">'+t+'<div class="tr"><div class="fl" style="width:'+pct+'%"></div></div></div>';
+}
+function offerRows(f,ids){return (f.offer?'<div class="r"'+(ids?' id="coOffR"':'')+'><span>Order offer ('+f.step.pct+'% off, up to '+inr(f.step.max)+')</span><span class="grn">− '+inr(f.offer)+'</span></div>':(ids?'<div id="coOffR" hidden></div>':''))+
+  (f.combo?'<div class="r"'+(ids?' id="coComR"':'')+'><span>Design + item combo ('+OFFER.combo+'% off the design)</span><span class="grn">− '+inr(f.combo)+'</span></div>':(ids?'<div id="coComR" hidden></div>':''));}
 // 180: deal of the day = today's AI pick (deals_public); none → the section stays hidden
 function dealDayPaint(){
   const card=document.getElementById('dealCard'), sec=card&&card.closest('.sec2'); if(!card) return;
@@ -4037,8 +4079,11 @@ function coTotals(){
   // 178: delivery folded into the price (sub); total = own prices − coupon + delivery, same as the server
   const sub0=CART.reduce((a,c)=>a+P0(c.id)*c.q,0), sub=ship===null?CART.reduce((a,c)=>a+PRODS[c.id].p*c.q,0):sub0+ship;
   const mrp=CART.reduce((a,c)=>a+(M0(c.id)>P0(c.id)?M0(c.id):P0(c.id))*c.q,0)+(sub-sub0);
-  return {sub,mrp,save:mrp-sub,coup,code:bc.code,coupon:bc.coupon,ship,loc,total:sub-coup,items:CART.reduce((a,c)=>a+c.q,0)};
+  const off=cartOffers(sub0);   // 214
+  return {sub,mrp,save:mrp-sub,coup,code:bc.code,coupon:bc.coupon,ship,loc,off,total:sub-coup-off.offer-off.combo,items:CART.reduce((a,c)=>a+c.q,0)};
 }
+function offPaint(t){ if(!t||!t.off) return; const a=document.getElementById('coOffR'), b=document.getElementById('coComR'); if(!a||!b) return;
+  const h=document.createElement('div'); h.innerHTML=offerRows(t.off,1); a.replaceWith(h.children[0]); b.replaceWith(h.children[0]); }
 // "Delivery" row: amount for the place, FREE, or "enter pincode"
 function shipRow(ship,loc,id){
   const w=window.nearWhere?nearWhere(loc):'';
@@ -4051,6 +4096,7 @@ function coShipPaint(){
   const t=coTotals(), r=document.getElementById('coShipR'), tot=document.getElementById('coTot'), b=document.getElementById('coPlace'), dv=document.getElementById('coDlvTxt');
   if(r) r.outerHTML=shipRow(t.ship,t.loc,'coShipR');
   if(tot) tot.textContent=inr(t.total);
+  offPaint(t);
   const cs=document.getElementById('coSub'); if(cs) cs.textContent=inr(t.sub);
   const sp=document.getElementById('coSplit'); if(sp) sp.innerHTML=coSplitHTML(t);
   if(b && !coBusy) b.textContent=coPayLabel(t);
@@ -4111,6 +4157,7 @@ function renderCheckout(){
         <div class="r"><span>Price (incl. delivery)</span><span id="coSub">${inr(t.sub)}</span></div>
         ${t.save>0?`<div class="r"><span>Catalogue savings</span><span class="grn">− ${inr(t.save)}</span></div>`:''}
         ${t.code?`<div class="r"><span>${offLabel(t.code)}</span><span class="grn">− ${inr(t.coup)}</span></div>`:''}
+        ${offerRows(t.off,1)}
         ${shipRow(t.ship,t.loc,'coShipR')}
         <div class="r tot"><span>Total payable</span><span id="coTot">${inr(t.total)}</span></div>
       </div>
@@ -4609,7 +4656,7 @@ async function shareProduct(){
 <script src="/track.js?v=4"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=10"></script>
-<script src="/mto.js?v=64"></script>
+<script src="/mto.js?v=65"></script>
 <script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){var go=function(sd){return import('/planner.js?v=29').then(function(m){m.open(sd&&(sd.item||sd.items||sd.reload||sd.load||sd.sload||sd.fresh)?sd:null);});};var q=new URLSearchParams(location.search).get('plan')||'';if(!seed&&window.mtoSpaceAsk&&q.length<10&&!(window.ASSIST&&window.ASSIST.name)){window.mtoSpaceAsk('planner',function(r){go(r.plan?(r.plan.local?null:{load:r.plan.id}):{fresh:true,kind:r.kind});});return Promise.resolve();}return go(seed);};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
 <script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=8" defer></script>
