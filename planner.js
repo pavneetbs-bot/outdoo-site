@@ -44,6 +44,7 @@ const SETUPS = [
   { k: 'party', t: 'Party terrace', e: '🎉', d: 'Bar counter, pergola, sofa, dining', items: ['bar', 'pergola', 'sofa', 'dining', 'planter', 'planter'] },
   { k: 'work', t: 'Work + relax', e: '💻', d: 'Cabin, deck, sofa, green wall', items: ['cabin', 'deck', 'sofa', 'vgarden', 'planter', 'planter'] },
   { k: 'green', t: 'Green retreat', e: '🌿', d: 'Green walls, planters, bench, water', items: ['vgarden', 'vgarden', 'planter', 'planter', 'planter', 'bench', 'water', 'privacy'] },
+  { k: 'yoga', t: 'Yoga & wellness', e: '🧘', d: 'Deck, pergola, water, green wall, screens', items: ['deck', 'pergola', 'water', 'vgarden', 'planter', 'planter', 'privacy'] },
   { k: 'family', t: 'Family lawn', e: '🌳', d: 'Pergola, dining, bench, water, sculpture', items: ['pergola', 'dining', 'bench', 'water', 'sculpture', 'planter'], lawn: true },
 ];
 const CAT = Object.fromEntries(CATS.map(c => [c.k, c]));
@@ -404,7 +405,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:8px 0}#plOv .pl-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px}#plOv .pl-n input{width:76px;height:36px;border:1px solid #D9CDBB;border-radius:8px;padding:0 8px;font:inherit}
 #plOv .pl-etabs{display:flex;gap:4px;background:#F3EDE4;border-radius:12px;padding:4px;margin:8px 0 10px}#plOv .pl-etabs button{flex:1;border:0;background:none;border-radius:9px;padding:8px 6px;font:600 12.5px inherit;font-family:inherit;color:#6A6258;cursor:pointer}#plOv .pl-etabs button.on{background:#fff;color:#2E2E2E;box-shadow:0 1px 3px rgba(0,0,0,.08)}#plOv .pl-epane{min-height:60px}
 #plOv .pl-qh{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:11.5px;color:#7A7268;font-weight:600}#plOv .pl-qh i{display:flex;gap:4px;flex:1}#plOv .pl-qh i b{width:18px;height:4px;border-radius:2px;background:#E2D6C4}#plOv .pl-qh i b.on{background:#C26445}#plOv .pl-qh i b.dn{background:#B9C4AE}#plOv .pl-qh .pl-tsq{margin:0}#plOv .pl-col{flex-direction:column;align-items:stretch}#plOv .pl-col button,#plOv .pl-big button{text-align:left;padding:12px 14px;font-size:14px}
-#plOv .pl-tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0}#plOv .pl-tpl{display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 6px;cursor:pointer;font-family:inherit;text-align:center}#plOv .pl-tpl svg{max-width:100%;height:auto}#plOv .pl-tpl b{font-size:12.5px;color:#2E2E2E}#plOv .pl-tpl small{font-size:11px;color:#7A7268}#plOv .pl-tpl.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533;background:#FFF8F3}#plOv .pl-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}#plOv .pl-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}#plOv .pl-tsq{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:10px 0 0}
+#plOv .pl-setg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}#plOv .pl-setg button{flex:none}#plOv .pl-els{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#plOv .pl-els button{display:flex;flex-direction:column;align-items:center;gap:1px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 4px;cursor:pointer;font-family:inherit}#plOv .pl-els i{font-style:normal;font-size:20px}#plOv .pl-els b{font-size:12px;color:#2E2E2E}#plOv .pl-els small{font-size:10.5px;color:#7A7268}#plOv .pl-els button.on{border-color:#C26445;background:#FFF8F3;box-shadow:0 0 0 2px #C2644533}#plOv .pl-set button.on{border-color:#C26445;background:#FFF8F3;box-shadow:0 0 0 2px #C2644533}#plOv .pl-tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0}#plOv .pl-tpl{display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 6px;cursor:pointer;font-family:inherit;text-align:center}#plOv .pl-tpl svg{max-width:100%;height:auto}#plOv .pl-tpl b{font-size:12.5px;color:#2E2E2E}#plOv .pl-tpl small{font-size:11px;color:#7A7268}#plOv .pl-tpl.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533;background:#FFF8F3}#plOv .pl-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}#plOv .pl-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}#plOv .pl-tsq{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:10px 0 0}
 #plOv .pl-blk{border:1px solid #E7DDCF;border-radius:12px;padding:10px;margin:0 0 8px;background:#FFFCF8;display:flex;align-items:center;gap:8px;flex-wrap:wrap}#plOv .pl-blk b{flex:1;font-size:13.5px}
 #plOv .pl-xx{border:0;background:none;color:#B3261E;font-size:16px;cursor:pointer}
 #plOv .pl-pal{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}#plOv .pl-pal button{border:1px solid #E2D6C4;background:#fff;border-radius:12px;padding:10px;text-align:left;cursor:pointer;font:inherit;display:flex;gap:8px;align-items:center}
@@ -450,6 +451,7 @@ function siteSecs() {
   const t = S.site, terr = t.kind === 'terrace', full = window.tsFull ? window.tsFull() : true, sm = s0 => `<small style="font-weight:400;color:#7A7268">${s0}</small>`, L = [];
   const kind = '<div class="pl-tabs pl-big pl-col">' + btn('data-pl="kind:terrace"', terr, '🏙 Terrace / rooftop') + btn('data-pl="kind:ground"', !terr, '🌳 Lawn / garden') + '</div>';
   L.push(['Terrace or lawn?', 'Where you are planning', kind]);
+  if (terr) L.push(['How do you want to start?', 'Your terrace first — then what goes on it', '<div class="pl-tabs pl-big pl-col">' + btn('data-pl="start:tpl"', t.start !== 'own', '🏢 From a real terrace like mine<small style="display:block;font-weight:500;color:#7A7268;margin-top:2px">Answer a few questions — we show the closest of 70+ terraces we have built on, fitted to yours</small>') + btn('data-pl="start:own"', t.start === 'own', '✏️ Set it up myself<small style="display:block;font-weight:500;color:#7A7268;margin-top:2px">Plot size, road, staircase room and the rest, step by step</small>') + '</div>']);
   L.push(['Measure in', 'How you know your plot size', '<div class="pl-tabs pl-col">' + btn('data-pl="unit:yd"', AU() === 'yd', 'Square yards (gaj)') + btn('data-pl="unit:m"', AU() === 'm', 'Square metres') + '</div>']);
   L.push([terr ? 'How big is the plot?' : 'How big is the lawn?', full || !terr ? 'Pick one, or type the exact width and depth' : 'Roughly — close is enough', '<div class="pl-tabs">' + PLOTS.map(p => btn(`data-pl="plot:${p[0]}"`, t.plot === p[0], plotLab(p[0]))).join('') + '</div>' + (!terr || full ? '<div class="pl-row">' + nIn('pw', t.pw, 'Width (ft)', 12, 150) + nIn('pd', t.pd, 'Depth (ft)', 12, 200) + '</div>' : '')]);
   if (!terr) return L;
@@ -458,7 +460,7 @@ function siteSecs() {
     L.push(['Where is the road?', 'The side facing the road is the front', '<div class="pl-tabs pl-col">' + [['front', 'In front'], ['left', 'Front + left (corner plot)'], ['right', 'Front + right (corner plot)'], ['back', 'Front + back']].map(([k, l]) => btn(`data-pl="qroad:${k}"`, rq === k, l)).join('') + '</div>']);
     L.push(['Staircase room (mumty)?', 'Standing at the road, looking in', '<div class="pl-tabs pl-col">' + [['left', 'On the left'], ['right', 'On the right'], ['back', 'At the back'], ['none', 'None on the roof']].map(([k, l]) => btn(`data-pl="qmumty:${k}"`, k === 'none' ? !mu : mu && mu.side === k, l)).join('') + '</div>' +
       '<p class="pl-sub" style="margin:14px 0 8px">We add the usual lift room, water tanks and 3 ft boundary wall — next you can set their sizes.</p>']);
-    L.push(tplSec());
+    if (t.start !== 'own') L.push(tplSec());
     if (t.blocks.length) L.push(['Sizes of the rooms', 'Roughly — width × length × height in feet', t.blocks.map((b, i) => b.type === 'ac' ? '' : `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30)}</div>`).join('') +
       '<button type="button" class="pl-full" style="margin-top:12px" data-pl="tsmode:full">⚙ Detailed setup<small>more rooms, shafts, corner cuts, walls, exact plot size</small></button>']);
     else L[L.length - 1][2] += '<button type="button" class="pl-full" style="margin-top:12px" data-pl="tsmode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>';
@@ -471,7 +473,7 @@ function siteSecs() {
   L.push(['Corners cut?', 'Front = the road side', CUTS.map(([k, lbl]) => { const c = C[k] || {}, on = c.type === 'notch' || c.type === 'slant';
     return `<div class="pl-blk"><b>${lbl}</b><div class="pl-tabs" style="gap:5px">${btn(`data-pl="cut:${k}:"`, !on, 'No cut')}${btn(`data-pl="cut:${k}:notch"`, c.type === 'notch', '⌐ Straight')}${btn(`data-pl="cut:${k}:slant"`, c.type === 'slant', '◸ Slant')}</div>` +
       (on ? `<div class="pl-row" style="width:100%;margin:2px 0 0">${nIn('ca:' + k, c.a, 'Across (ft)', 1, t.pw - 4)}${nIn('cb:' + k, c.b, 'Deep (ft)', 1, t.pd - 4)}</div>` : '') + '</div>'; }).join('')]);
-  L.push(tplSec());
+  if (t.start !== 'own') L.push(tplSec());
   L.push(['Already on the roof', 'Drag them on the 3D — a wall picked keeps them on it', t.blocks.map((b, i) => `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${b.type !== 'ac' ? nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30) : ''}<button type="button" class="pl-xx" data-pl="bdel:${i}" aria-label="Remove">✕</button><div class="pl-tabs" style="width:100%;gap:5px;margin:0">${[['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']].map(([k2, l2]) => btn(`data-pl="bside:${i}:${k2}"`, (b.side || 'free') === k2, l2)).join('')}${btn(`data-pl="block:${i}"`, !!b.lock, b.lock ? '🔒 Locked' : '🔓 Lock')}</div></div>`).join('') +
     '<div class="pl-tabs">' + Object.keys(BLK).map(k => `<button type="button" data-pl="badd:${k}">+ ${esc(BLK[k][0].replace(/ \(.*\)/, '').replace('AC outdoor unit', 'AC unit'))}</button>`).join('') + '</div>']);
   return L;
@@ -530,6 +532,7 @@ function stepPlace() {
     '<button type="button" data-pl="pmode:part"><b>As a partition</b><small>A free-standing screen to split the space — drag it where you want</small></button>' +
     (mumtyTanks() ? '<button type="button" data-pl="pmode:tank"><b>Hide the water tanks</b><small>A screen round the tanks on the mumty roof</small></button>' : '') +
     '</div><div class="pl-act"><button type="button" data-pl="askx">Cancel</button></div></div>';
+  if (!S.items.length && !S.bskip) return builder();
   h += '<h4>Add things</h4><p class="pl-sub">Tap to add, then drag on the 3D. You\'ll pick the exact design of each at the end — here one model stands for all designs of that kind.</p>';
   if (lock) h += '<button type="button" class="pl-lock" data-pl="unlock">🔒 Sign in to see prices</button>';
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
@@ -540,6 +543,20 @@ function stepPlace() {
     return `<button type="button" data-pl="add:${c.k}"><i>${c.e}</i><span><b>${esc(c.t)}</b><small>${fp.price != null ? (lock ? fp.n + ' designs' : 'from ' + lakh(fp.price)) : fp.soon ? 'Coming soon' : fp.n + ' designs'}</small></span></button>`; }).join('') + '</div>';
   if (lwOk()) h = lwCard() + h;
   if (S.items.length) h += '<p class="pl-h">On your plan</p>' + S.items.map((it, i) => { const fp = fromPrice(it); return `<div class="pl-it" data-pl="sel:${i}"><i>${CAT[it.cat].e}</i><span>${esc(it.label || CAT[it.cat].t)}${CAT[it.cat].size && CAT[it.cat].size !== 'fixed' ? ' <em>· ' + it.w + (CAT[it.cat].size === 'wh' ? ' × ' + it.h : CAT[it.cat].size === 'wd' ? ' × ' + it.d : '') + ' ft</em>' : ''}</span><em>${fp && fp.price != null && !lock ? 'from ' + rs(fp.price) : ''}</em></div>`; }).join('');
+  return h;
+}
+// 217: first time in step 2 — what the space is for (a theme ticks its things) + every thing with its icon → "Build my setup" places them all
+function builder() {
+  const terr = S.site.kind === 'terrace', B = S.bsel || {}, lock = !priceOk();
+  const sets = SETUPS.filter(x => !x.lawn || !terr), cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr));
+  let h = '<h4>What is this space for?</h4><p class="pl-sub">Pick a mood — we tick what usually goes in it. Change the ticks as you like.</p>';
+  h += '<div class="pl-set pl-setg">' + sets.map(x => `<button type="button" class="${S.bth === x.k ? 'on' : ''}" data-pl="theme:${x.k}" aria-pressed="${S.bth === x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div>';
+  h += '<p class="pl-h">What do you want in it?</p><div class="pl-els">' + cats.map(c => { const n = B[c.k] || 0, fp = lock ? null : fromPrice(Object.assign({ cat: c.k, w: c.w || 4, d: c.d || 4, h: c.h || 3 }, c.k === 'cabin' ? { sku: (cabinSkus().find(z => /PORTA/.test(z)) || cabinSkus()[0]) } : {}));
+    return `<button type="button" class="${n ? 'on' : ''}" data-pl="bel:${c.k}" aria-pressed="${!!n}"><i>${c.e}</i><b>${esc(c.t)}${n > 1 ? ' ×' + n : ''}</b>${fp && fp.price != null ? `<small>from ${lakh(fp.price)}</small>` : ''}</button>`; }).join('') + '</div>';
+  const n = Object.values(B).reduce((p, q) => p + q, 0);
+  h += `<button type="button" class="pl-go" style="width:100%;margin-top:14px" data-pl="build"${n ? '' : ' disabled'}>✨ Build my setup${n ? ' (' + n + ' thing' + (n > 1 ? 's' : '') + ')' : ''}</button>`;
+  h += '<button type="button" class="pl-tsq" style="margin-top:12px" data-pl="bskip">Skip — I\'ll add things one by one</button>';
+  if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   return h;
 }
 function stepPick() {
@@ -633,6 +650,14 @@ function act(a) {   // one button's action on S; true = draw again
     case 'cut': { t.cuts = t.cuts || {}; if (!a[2]) delete t.cuts[a[1]]; else t.cuts[a[1]] = Object.assign({ a: Math.min(8, Math.round(t.pw / 4)), b: Math.min(8, Math.round(t.pd / 6)) }, t.cuts[a[1]] || {}, { type: a[2] }); afterCut(); break; }
     case 'corner': t.corner = a[1] || ''; break;
     case 'etab': S.edTab = a[1]; break;
+    case 'start': t.start = a[1] === 'own' ? 'own' : 'tpl'; S.tsq = (S.tsq || 0) + 1; ev('plan_start', { ref: t.start }); break;
+    case 'theme': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; S.bth = S.bth === x.k ? null : x.k; S.bsel = {}; if (S.bth) x.items.forEach(k => { if (CAT[k] && designs(CAT[k]).length) S.bsel[k] = (S.bsel[k] || 0) + 1; }); break; }
+    case 'bel': { S.bsel = S.bsel || {}; if (S.bsel[a[1]]) delete S.bsel[a[1]]; else S.bsel[a[1]] = 1; break; }
+    case 'bskip': S.bskip = true; break;
+    case 'build': { const B = S.bsel || {}, ks = Object.keys(B); if (!ks.length) { S.msg = 'Tick at least one thing'; break; } let n = 0, miss = 0;
+      const order = ['cabin', 'deck', 'pergola', 'bar', 'sofa', 'dining', 'swing', 'water', 'vgarden', 'privacy'];   // big things first, small ones fill round them
+      ks.sort((p, q) => (order.indexOf(p) < 0 ? 99 : order.indexOf(p)) - (order.indexOf(q) < 0 ? 99 : order.indexOf(q))).forEach(k => { for (let j = 0; j < B[k]; j++) { const before = S.items.length; addItem(k); if (S.items.length > before) n++; else miss++; } });
+      ev('plan_build', { ref: S.bth || 'own', n }); S.sel = null; S.bskip = true; S.msg = miss ? `${miss} thing${miss > 1 ? 's' : ''} didn't fit — make them smaller or move things` : ''; break; }
     case 'tlift': S.tplLift = a[1] === '' ? null : a[1] === '1'; break;
     case 'tpl': if (!a[1]) { if (t.tpl) { S.site = Object.assign({}, S.tplBase || t); delete S.site.tpl; if (!S.tplBase) defBlocks(S.site); S.tplBase = null; } }
       else { const tp = TM.get(a[1]); if (tp) { if (!t.tpl) S.tplBase = JSON.parse(JSON.stringify(t)); S.site = TM.fit(tp, a[2] === '1', t); ev('plan_tpl', { ref: S.site.tpl }); } }
