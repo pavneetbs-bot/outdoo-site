@@ -98,6 +98,7 @@
     try {
       keep({ ...(await auth('verify', { type: 'email', email, token: code })), user: { email } })
       if (pendingNext) { const n = pendingNext; pendingNext = null; pendingWhy = ''; return n() }
+      if (window.outrrResume && window.outrrResume()) return   // 218: a plan was waiting for this sign-in (page reloaded meanwhile)
       acOpen('orders')
     }
     catch (e) { signIn(email, true, /expired|invalid/i.test(e.message) ? 'That code is wrong or has expired. Try again or send a new code.' : e.message) }

@@ -755,7 +755,9 @@ function on3d(ev) {
 }
 function unlock() {
   if (EL) EL.style.display = 'none'; document.body.style.overflow = '';   // the sign-in sheet opens under the planner otherwise
-  if (window.mtoUnlock) window.mtoUnlock(() => { Object.keys(PC).forEach(k => delete PC[k]); S.gate = false; open(); draw(false); cloudSoon({}); });
+  save(); try { localStorage.setItem('outrr_resume', JSON.stringify({ k: 'plan', t: Date.now() })); } catch (e) {}   // 218: the page may reload while the customer fetches the email code (mobile) — index.html outrrResume() reopens the plan after sign-in
+  if (window.mtoUnlock) window.mtoUnlock(() => { try { localStorage.removeItem('outrr_resume'); } catch (e) {} if (typeof window.showHome === 'function' && document.getElementById('account') && document.getElementById('account').style.display !== 'none') { try { window.showHome(); } catch (e) {} }
+    Object.keys(PC).forEach(k => delete PC[k]); S.gate = false; open(); draw(false); cloudSoon({}); });
 }
 // ---------------------------------------------------------------- phase 3: share link, PDF, LifeWall for big projects
 const b64 = t => btoa(unescape(encodeURIComponent(t))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -834,7 +836,7 @@ export function open(seed) {
     S.items = S.items.filter((o, i) => i === 0 || settle(o, i));   // things already planned move off it
     S.step = 1; S.sel = 0; S.msg = ''; if (!S.pid) S.source = seed.item.cat === 'cabin' ? 'cabin' : seed.item.cat === 'pergola' ? 'pergola' : 'planner';
   } EL.style.display = 'flex'; document.body.style.overflow = 'hidden';
-  draw(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60); ev('plan_open', { ref: seed && seed.item ? seed.item.cat : '' }); gateWatch(); if (priceOk()) cloudSoon();
+  draw(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60); ev('plan_open', { ref: seed && seed.item ? seed.item.cat : '' }); gateWatch(); if (priceOk()) cloudSoon(seed && seed.reload ? {} : undefined);   // 218: back from signing in → saved to the account at once
 }
 async function openSaved(id, sales) {   // My account → Saved plans → Open; CRM → lead → Plans (Sales mode)
   try { const v = sales ? await anonRpc('sales_plan_get', { p_token: assistTok(), p_id: id }) : await rpc('plan_get', { p_id: id }); if (!v) throw new Error('Plan not found');
