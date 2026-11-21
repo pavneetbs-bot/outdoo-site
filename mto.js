@@ -382,6 +382,7 @@
     '.ts-h{margin:16px 0 8px;font-size:13px;font-weight:700;color:#2E2E2E}.ts-h span{font-weight:400;color:#7A7268;font-size:12px}.ts-lb{margin:0 0 6px;font-size:12px;color:#6A6258}.ts-big{margin:2px 0 4px!important}.ts-big button{padding:10px 16px!important;font-size:14px!important}.ts-sm button{padding:5px 10px!important;font-size:12px!important}.ts-add{margin-top:6px!important}.ts-add button{border-style:dashed!important}'+
     '.ts-qh{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:11.5px;color:#7A7268;font-weight:600}.ts-qh i{display:flex;gap:4px;flex:1}.ts-qh i b{width:18px;height:4px;border-radius:2px;background:#E2D6C4}.ts-qh i b.on{background:#C26445}.ts-qh i b.dn{background:#B9C4AE}.ts-qh .ts-back{margin:0}.ts-col{flex-direction:column;align-items:stretch}.ts-col button,.ts-big button{text-align:left!important;padding:12px 14px!important;font-size:14px!important}' +
     '.cq-one>.wz-lbl:first-child{font-size:16px!important;font-weight:700!important;color:#2E2E2E!important;margin-top:4px!important}' +
+    '.ts-tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0}.ts-tpl{display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 6px;cursor:pointer;font-family:inherit;text-align:center}.ts-tpl svg{max-width:100%;height:auto}.ts-tpl b{font-size:12.5px;color:#2E2E2E}.ts-tpl small{font-size:11px;color:#7A7268}.ts-tpl.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533;background:#FFF8F3}' +
     '.ts-q{font-size:12.5px;color:#6A6258;margin:12px 0 8px}.ts-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}.ts-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}.ts-back{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:6px 0 2px}' +
     '.ts-lk{border:1px solid #D9CDBB;background:#fff;border-radius:999px;padding:4px 10px;font:600 11.5px inherit;font-family:inherit;cursor:pointer;margin-right:6px;color:#4A4640}.ts-lk.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}' +
     '.ts-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin:8px 0}.ts-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px;position:relative}.ts-n input{width:80px;height:38px;border:1px solid #D9CDBB;border-radius:10px;padding:0 24px 0 10px;font:600 14px Inter,sans-serif;box-sizing:border-box}.ts-n i{position:absolute;right:9px;bottom:11px;font-style:normal;font-size:12px;color:#8A8276}.ts-x{width:32px;height:32px;border-radius:8px;border:1px solid #E2D6C4;background:#fff;cursor:pointer;flex:none}.ts-c{height:38px;padding:0 12px;border-radius:10px;border:1px solid #2E2E2E;background:#fff;font-weight:600;font-size:12.5px;cursor:pointer}'+
@@ -754,6 +755,20 @@
   }
   function tsOpts() { var t = S.site; if (!t || t.kind !== 'terrace') return null; keepSite(); if (!AR.st) arLoad(); var o2 = JSON.parse(JSON.stringify(t)); o2.clash = !!tsClash(t, tsLay()); o2.place = isPg(S.id) ? !!S.pgW : !!S.siteEd; o2.whole = !!S.whole; var ar = arAround(); if (ar) { o2.around = ar.list; o2.asel = ar.sel; } return o2; }
   // 202: the terrace one kind of question at a time — Quick: Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof
+  // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
+  var TMM = null, TMP = null;
+  function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=1').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
+  function tsTpl() {
+    var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
+    var body = '<p class="ts-h">Lift room on the roof?</p><div class="wz-tabs">' + btn('data-ts="tlift:1"', S.tplLift === true, 'Yes') + btn('data-ts="tlift:0"', S.tplLift === false, 'No') + btn('data-ts="tlift:"', S.tplLift == null, 'Not sure') + '</div>';
+    if (!M) body += '<p class="ts-q">Loading real terraces… <button type="button" class="ts-back" data-ts="tsq:0">Show</button></p>';
+    else { var ms = M.mumtySide(t), A = { pw: t.pw, pd: t.pd, mumty: ms === 'mid' || ms === 'front' ? 'back' : ms, lift: S.tplLift == null ? null : S.tplLift };
+      body += '<div class="ts-tpls">' + M.match(A, 4).map(function (m) { var f = M.fit(m.t, m.mir, t), id = m.t.id + (m.mir ? 'm' : ''), on = t.tpl === id;
+        return '<button type="button" class="ts-tpl' + (on ? ' on' : '') + '" data-ts="tpl:' + m.t.id + ':' + (m.mir ? 1 : 0) + '" aria-pressed="' + on + '">' + M.svg(f, 150, 118) + '<b>' + esc(m.t.city || 'Real terrace') + '</b><small>' + (on ? '✓ Using this' : 'Was ' + Math.round(m.t.site.pw) + ' × ' + Math.round(m.t.site.pd) + ' ft' + (m.mir ? ', mirrored' : '')) + '</small></button>'; }).join('') + '</div>' +
+        '<p class="ts-q" style="margin:8px 0 0">' + M.LEGEND + '</p><p class="ts-q" style="margin:6px 0 0">Real terraces we have built on, fitted to your ' + Math.round(t.pw) + ' × ' + Math.round(t.pd) + ' ft plot. Pick the one closest to yours — you can move or resize everything after. Or skip and keep your own.</p>' +
+        (t.tpl ? btn('data-ts="tpl:"', false, '↺ Back to my own setup') : ''); }
+    return ['Closest real terraces', 'Like yours? Start from it', body];
+  }
   function tsSecs(lay) {
     var t = S.site || { kind: 'ground' }, on = t.kind === 'terrace', L = [];
     var btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -772,6 +787,7 @@
       L.push(['Where is the road?', 'The side facing the road is the front', (sec('Where is the road?', 'the side facing the road is the front') + '<div class="wz-tabs">' + [['front', 'In front'], ['left', 'Front + left (corner plot)'], ['right', 'Front + right (corner plot)'], ['back', 'Front + back']].map(function (r0) { return btn('data-ts="qroad:' + r0[0] + '"', rq === r0[0], r0[1]); }).join('') + '</div>').replace(sec('Where is the road?', 'the side facing the road is the front'), '').replace('"wz-tabs"', '"wz-tabs ts-col"')]);
       L.push(['Staircase room (mumty)?', 'Standing at the road, looking in', (sec('Staircase room (mumty) on the roof?', 'standing at the road, looking in') + '<div class="wz-tabs">' + [['left', 'On the left'], ['right', 'On the right'], ['back', 'At the back'], ['none', 'None']].map(function (r0) { return btn('data-ts="qmumty:' + r0[0] + '"', r0[0] === 'none' ? !mu : mu && mu.side === r0[0], r0[1]); }).join('') + '</div>').replace(sec('Staircase room (mumty) on the roof?', 'standing at the road, looking in'), '').replace('"wz-tabs"', '"wz-tabs ts-col"') +
         '<p class="ts-q">We add the usual lift room, water tanks and 3 ft boundary wall — next you can set their sizes.</p>']);
+      L.push(tsTpl());
       if (arr(t.blocks).length) L.push(['Sizes of the rooms', 'Roughly — width × length × height in feet', ROOMS +
         '<p class="ts-q">We add the usual lift room, water tanks and 3 ft boundary wall — close is enough, it only sets the scene and never changes the price.</p><button type="button" class="ts-full" data-ts="mode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>']);
       return L;
@@ -793,6 +809,7 @@
           (b.type === 'mumty' ? '<label class="ts-ck"><input type="checkbox" data-ts="tanks"' + (t.tanks !== false ? ' checked' : '') + '> Water tanks on top</label>' : '') + '</div>';
       }).join('');
       blk += '<div class="wz-tabs ts-add">' + ['mumty', 'lift', 'shaft', 'room', 'ac'].map(function (k) { return '<button type="button" data-ts="add:' + k + '">+ ' + TS_KIND[k][1] + '</button>'; }).join('') + '</div>';
+    L.push(tsTpl());
     L.push(['Already on the roof', 'Drag them on the 3D — a wall picked keeps them on it', blk]);
     return L;
   }
@@ -828,7 +845,10 @@
     if (a[0] === 'tsq') { S.tsq = Math.max(0, (S.tsq || 0) + (+a[1] || 0)); return true; }
     if (a[0] === 'mode') { S.tsq = 0; try { localStorage.setItem('outrr_ts_mode', a[1] === 'full' ? 'full' : 'quick'); } catch (e) {} return true; }
     if (a[0] === 'qroad') { x.road_front = true; x.road_back = a[1] === 'back'; x.corner = a[1] === 'left' || a[1] === 'right' ? a[1] : ''; x.high = x.high || {}; if (x.corner) x.high[x.corner] = false; if (x.road_back) x.high.back = false; return true; }
-    if (a[0] === 'qmumty') { var mi = x.blocks.map(function (b0) { return b0.type; }).indexOf('mumty'), li = x.blocks.map(function (b0) { return b0.type; }).indexOf('lift');
+    if (a[0] === 'tlift') { S.tplLift = a[1] === '' ? null : a[1] === '1'; return true; }
+    if (a[0] === 'tpl') { if (!a[1]) { if (x.tpl && S.tplBase) { S.site = S.tplBase; S.tplBase = null; } else delete x.tpl; return true; }
+      var tp = TMM && TMM.get(a[1]); if (!tp) return true; if (!x.tpl) S.tplBase = JSON.parse(JSON.stringify(x)); S.site = TMM.fit(tp, a[2] === '1', x); tsCentre(S.site, lay); try { if (window.otrack) window.otrack('plan_tpl', { ref: S.site.tpl }); } catch (e) {} return true; }
+    if (a[0] === 'qmumty') { delete x.tpl; var mi = x.blocks.map(function (b0) { return b0.type; }).indexOf('mumty'), li = x.blocks.map(function (b0) { return b0.type; }).indexOf('lift');
       if (a[1] === 'none') { if (mi >= 0) x.blocks.splice(mi, 1); return true; }
       if (mi < 0) { var sm = x.pw <= 25; if (!tsAdd(x, 'mumty', a[1], sm ? 8 : 10, sm ? 16 : 18)) S.tsMsg = 'No free room for it on that side'; return true; }
       var mb = x.blocks[mi], mk = JSON.stringify(mb); if (a[1] === 'back' && mb.side !== 'back') { var tw = mb.w; mb.w = mb.d; mb.d = tw; } else if (a[1] !== 'back' && mb.side === 'back') { var tw2 = mb.w; mb.w = mb.d; mb.d = tw2; }   // its long side along the wall
@@ -836,7 +856,7 @@
       if (li >= 0) { var lb = x.blocks[li]; tsWall(x, lb, a[1]); if (!tsFree(x, li)) tsFree(x, li); }   // the lift room goes along with it
       return true; }
     if (a[0] === 'unit') { try { localStorage.setItem('outrr_area_unit', a[1] === 'm' ? 'm' : 'yd'); } catch (e) {} return true; }
-    if (a[0] === 'plot') { var p = TS_PLOTS.filter(function (z) { return z[0] === a[1]; })[0]; x.plot = a[1]; tsPlot(x, p[1], p[2], lay); }
+    if (a[0] === 'plot') { delete x.tpl; var p = TS_PLOTS.filter(function (z) { return z[0] === a[1]; })[0]; x.plot = a[1]; tsPlot(x, p[1], p[2], lay); }
     else if (a[0] === 'corner') { x.corner = a[1] || ''; if (x.high && x.corner) x.high[x.corner] = false; }
     else if (a[0] === 'par') x.par = +a[1];
     else if (a[0] === 'rfront') x.road_front = x.road_front === false;
@@ -1864,7 +1884,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=29').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=30').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {

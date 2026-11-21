@@ -6,6 +6,7 @@
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
 import * as S3 from './space3d.js?v=19';
 import { cutHit } from './cabin3d.js?v=21';
+import * as TM from './terrace-match.js?v=1';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
@@ -403,7 +404,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:8px 0}#plOv .pl-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px}#plOv .pl-n input{width:76px;height:36px;border:1px solid #D9CDBB;border-radius:8px;padding:0 8px;font:inherit}
 #plOv .pl-etabs{display:flex;gap:4px;background:#F3EDE4;border-radius:12px;padding:4px;margin:8px 0 10px}#plOv .pl-etabs button{flex:1;border:0;background:none;border-radius:9px;padding:8px 6px;font:600 12.5px inherit;font-family:inherit;color:#6A6258;cursor:pointer}#plOv .pl-etabs button.on{background:#fff;color:#2E2E2E;box-shadow:0 1px 3px rgba(0,0,0,.08)}#plOv .pl-epane{min-height:60px}
 #plOv .pl-qh{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:11.5px;color:#7A7268;font-weight:600}#plOv .pl-qh i{display:flex;gap:4px;flex:1}#plOv .pl-qh i b{width:18px;height:4px;border-radius:2px;background:#E2D6C4}#plOv .pl-qh i b.on{background:#C26445}#plOv .pl-qh i b.dn{background:#B9C4AE}#plOv .pl-qh .pl-tsq{margin:0}#plOv .pl-col{flex-direction:column;align-items:stretch}#plOv .pl-col button,#plOv .pl-big button{text-align:left;padding:12px 14px;font-size:14px}
-#plOv .pl-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}#plOv .pl-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}#plOv .pl-tsq{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:10px 0 0}
+#plOv .pl-tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0}#plOv .pl-tpl{display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 6px;cursor:pointer;font-family:inherit;text-align:center}#plOv .pl-tpl svg{max-width:100%;height:auto}#plOv .pl-tpl b{font-size:12.5px;color:#2E2E2E}#plOv .pl-tpl small{font-size:11px;color:#7A7268}#plOv .pl-tpl.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533;background:#FFF8F3}#plOv .pl-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}#plOv .pl-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}#plOv .pl-tsq{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:10px 0 0}
 #plOv .pl-blk{border:1px solid #E7DDCF;border-radius:12px;padding:10px;margin:0 0 8px;background:#FFFCF8;display:flex;align-items:center;gap:8px;flex-wrap:wrap}#plOv .pl-blk b{flex:1;font-size:13.5px}
 #plOv .pl-xx{border:0;background:none;color:#B3261E;font-size:16px;cursor:pointer}
 #plOv .pl-pal{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}#plOv .pl-pal button{border:1px solid #E2D6C4;background:#fff;border-radius:12px;padding:10px;text-align:left;cursor:pointer;font:inherit;display:flex;gap:8px;align-items:center}
@@ -457,6 +458,7 @@ function siteSecs() {
     L.push(['Where is the road?', 'The side facing the road is the front', '<div class="pl-tabs pl-col">' + [['front', 'In front'], ['left', 'Front + left (corner plot)'], ['right', 'Front + right (corner plot)'], ['back', 'Front + back']].map(([k, l]) => btn(`data-pl="qroad:${k}"`, rq === k, l)).join('') + '</div>']);
     L.push(['Staircase room (mumty)?', 'Standing at the road, looking in', '<div class="pl-tabs pl-col">' + [['left', 'On the left'], ['right', 'On the right'], ['back', 'At the back'], ['none', 'None on the roof']].map(([k, l]) => btn(`data-pl="qmumty:${k}"`, k === 'none' ? !mu : mu && mu.side === k, l)).join('') + '</div>' +
       '<p class="pl-sub" style="margin:14px 0 8px">We add the usual lift room, water tanks and 3 ft boundary wall — next you can set their sizes.</p>']);
+    L.push(tplSec());
     if (t.blocks.length) L.push(['Sizes of the rooms', 'Roughly — width × length × height in feet', t.blocks.map((b, i) => b.type === 'ac' ? '' : `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30)}</div>`).join('') +
       '<button type="button" class="pl-full" style="margin-top:12px" data-pl="tsmode:full">⚙ Detailed setup<small>more rooms, shafts, corner cuts, walls, exact plot size</small></button>']);
     else L[L.length - 1][2] += '<button type="button" class="pl-full" style="margin-top:12px" data-pl="tsmode:full">⚙ Detailed setup<small>lift, shafts, heights, corner cuts, exact sizes</small></button>';
@@ -469,9 +471,23 @@ function siteSecs() {
   L.push(['Corners cut?', 'Front = the road side', CUTS.map(([k, lbl]) => { const c = C[k] || {}, on = c.type === 'notch' || c.type === 'slant';
     return `<div class="pl-blk"><b>${lbl}</b><div class="pl-tabs" style="gap:5px">${btn(`data-pl="cut:${k}:"`, !on, 'No cut')}${btn(`data-pl="cut:${k}:notch"`, c.type === 'notch', '⌐ Straight')}${btn(`data-pl="cut:${k}:slant"`, c.type === 'slant', '◸ Slant')}</div>` +
       (on ? `<div class="pl-row" style="width:100%;margin:2px 0 0">${nIn('ca:' + k, c.a, 'Across (ft)', 1, t.pw - 4)}${nIn('cb:' + k, c.b, 'Deep (ft)', 1, t.pd - 4)}</div>` : '') + '</div>'; }).join('')]);
+  L.push(tplSec());
   L.push(['Already on the roof', 'Drag them on the 3D — a wall picked keeps them on it', t.blocks.map((b, i) => `<div class="pl-blk"><b>${esc((BLK[b.type] || BLK.room)[0])}</b>${nIn('bw:' + i, b.w, 'Width', 1, 40)}${nIn('bd:' + i, b.d, 'Length', 1, 40)}${b.type !== 'ac' ? nIn('bh:' + i, +b.h || BHD[b.type] || 9, 'Height', 2, 30) : ''}<button type="button" class="pl-xx" data-pl="bdel:${i}" aria-label="Remove">✕</button><div class="pl-tabs" style="width:100%;gap:5px;margin:0">${[['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']].map(([k2, l2]) => btn(`data-pl="bside:${i}:${k2}"`, (b.side || 'free') === k2, l2)).join('')}${btn(`data-pl="block:${i}"`, !!b.lock, b.lock ? '🔒 Locked' : '🔓 Lock')}</div></div>`).join('') +
     '<div class="pl-tabs">' + Object.keys(BLK).map(k => `<button type="button" data-pl="badd:${k}">+ ${esc(BLK[k][0].replace(/ \(.*\)/, '').replace('AC outdoor unit', 'AC unit'))}</button>`).join('') + '</div>']);
   return L;
+}
+// 216: the closest real terraces (as built, LifeWall zoning plans) for the answers so far — fitted live to the plot size and the staircase side
+function tplSec() {
+  const t = S.site, ms = TM.mumtySide(t), a = { pw: t.pw, pd: t.pd, mumty: ms === 'mid' || ms === 'front' ? 'back' : ms, lift: S.tplLift == null ? null : S.tplLift };
+  let body = '<p class="pl-h">Lift room on the roof?</p><div class="pl-tabs">' + btn('data-pl="tlift:1"', S.tplLift === true, 'Yes') + btn('data-pl="tlift:0"', S.tplLift === false, 'No') + btn('data-pl="tlift:"', S.tplLift == null, 'Not sure') + '</div>';
+  if (!TM.ready()) body += '<p class="pl-sub" style="margin-top:12px">Loading real terraces…</p>';
+  else { const M = TM.match(a, 4);
+    body += '<div class="pl-tpls">' + M.map(m => { const f = TM.fit(m.t, m.mir, t), id = m.t.id + (m.mir ? 'm' : ''), on = t.tpl === id;
+      return `<button type="button" class="pl-tpl${on ? ' on' : ''}" data-pl="tpl:${m.t.id}:${m.mir ? 1 : 0}" aria-pressed="${on}">${TM.svg(f, 150, 118)}<b>${esc(m.t.city || 'Real terrace')}</b><small>${on ? '✓ Using this' : 'Was ' + Math.round(m.t.site.pw) + ' × ' + Math.round(m.t.site.pd) + ' ft' + (m.mir ? ', mirrored' : '')}</small></button>`; }).join('') + '</div>' +
+      `<p class="pl-sub" style="margin:8px 0 0">${TM.LEGEND}</p><p class="pl-sub" style="margin:6px 0 0">Real terraces we have built on, fitted to your ${Math.round(t.pw)} × ${Math.round(t.pd)} ft plot. Pick the one closest to yours — you can move or resize everything after. Or skip and keep your own.</p>`;
+    if (t.tpl) body += btn('data-pl="tpl:"', false, '↺ Back to my own setup');
+  }
+  return ['Closest real terraces', 'Like yours? Start from it', body];
 }
 function siteLast() { return (S.tsq || 0) >= siteSecs().length - 1; }
 function stepSite() {
@@ -612,15 +628,19 @@ function act(a) {   // one button's action on S; true = draw again
     case 'step': if (S.step !== +a[1]) ev('plan_step', { ref: a[1] }); S.step = +a[1]; S.sel = null; S.ask = null; S.cust = null; for (const k in PC) delete PC[k]; if (S.step >= 1 && S.pend) { putPieces(S.pend); S.pend = null; } break;
     case 'kind': if (t.kind !== a[1]) { t.kind = a[1]; if (a[1] === 'terrace' && !t.blocks.length) defBlocks(t); S.items = S.items.filter((x, i) => !(CAT[x.cat].lawn && a[1] === 'terrace') && settle(x, i)); } break;
     case 'unit': try { localStorage.setItem('outrr_area_unit', a[1] === 'm' ? 'm' : 'yd'); } catch (e) {} break;
-    case 'plot': { const p = PLOTS.find(z => z[0] === a[1]); t.plot = a[1]; setPlot(p[1], p[2]); break; }
+    case 'plot': { delete t.tpl; const p = PLOTS.find(z => z[0] === a[1]); t.plot = a[1]; setPlot(p[1], p[2]); break; }
     case 'par': t.par = +a[1]; break;
     case 'cut': { t.cuts = t.cuts || {}; if (!a[2]) delete t.cuts[a[1]]; else t.cuts[a[1]] = Object.assign({ a: Math.min(8, Math.round(t.pw / 4)), b: Math.min(8, Math.round(t.pd / 6)) }, t.cuts[a[1]] || {}, { type: a[2] }); afterCut(); break; }
     case 'corner': t.corner = a[1] || ''; break;
     case 'etab': S.edTab = a[1]; break;
+    case 'tlift': S.tplLift = a[1] === '' ? null : a[1] === '1'; break;
+    case 'tpl': if (!a[1]) { if (t.tpl) { S.site = Object.assign({}, S.tplBase || t); delete S.site.tpl; if (!S.tplBase) defBlocks(S.site); S.tplBase = null; } }
+      else { const tp = TM.get(a[1]); if (tp) { if (!t.tpl) S.tplBase = JSON.parse(JSON.stringify(t)); S.site = TM.fit(tp, a[2] === '1', t); ev('plan_tpl', { ref: S.site.tpl }); } }
+      S.items = S.items.filter((x, j) => settle(x, j)); break;
     case 'tsq': S.tsq = Math.max(0, (S.tsq || 0) + (+a[1] || 0)); { const pn = document.getElementById('plPn'); if (pn) pn.scrollTop = 0; } break;
     case 'tsmode': S.tsq = 0; try { localStorage.setItem('outrr_ts_mode', a[1] === 'full' ? 'full' : 'quick'); } catch (e) {} break;
     case 'qroad': t.road_front = true; t.road_back = a[1] === 'back'; t.corner = a[1] === 'left' || a[1] === 'right' ? a[1] : ''; t.high = t.high || {}; if (t.corner) t.high[t.corner] = false; if (t.road_back) t.high.back = false; break;
-    case 'qmumty': { const mi = t.blocks.findIndex(b => b.type === 'mumty'), li = t.blocks.findIndex(b => b.type === 'lift');
+    case 'qmumty': { delete t.tpl; const mi = t.blocks.findIndex(b => b.type === 'mumty'), li = t.blocks.findIndex(b => b.type === 'lift');
       if (a[1] === 'none') { if (mi >= 0) t.blocks.splice(mi, 1); S.items = S.items.filter((x, j) => settle(x, j)); break; }
       if (mi < 0) { const sm = t.pw <= 25; if (!addBlock(t, 'mumty', sm ? 8 : 10, sm ? 16 : 18, a[1])) S.msg = 'No free room for it on that side'; S.items = S.items.filter((x, j) => settle(x, j)); break; }
       const mb = t.blocks[mi], keep = JSON.stringify(mb); if ((a[1] === 'back') !== (mb.side === 'back')) { const w0 = mb.w; mb.w = mb.d; mb.d = w0; }   // its long side along the wall
@@ -769,7 +789,7 @@ function putPieces(list) {   // 199: each piece takes a placeholder's spot (same
 export function open(seed) {
   if (seed && seed.load) return openSaved(seed.load);
   if (seed && seed.sload) return openSaved(seed.sload, true);
-  for (const k in PC) delete PC[k]; shell(); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
+  for (const k in PC) delete PC[k]; shell(); TM.load().then(() => { try { if (EL && EL.style.display !== 'none' && S && S.step === 0) draw(); } catch (e) {} }); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
   S.items.forEach(it => { if (it.cat === 'cabin' && it.bcx != null && cabinCfg(it)) { cabinFoot(it); it.x = r2(it.bcx - foot(it)[0] / 2); it.z = r2(it.bcz - foot(it)[1] / 2); delete it.bcx; delete it.bcz; } });   // 193g: back from the studio
   S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
   let q = null; try { q = new URLSearchParams(location.search).get('plan'); } catch (e) {}
