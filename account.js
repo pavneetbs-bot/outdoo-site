@@ -198,11 +198,12 @@
             <div class="mut sm">${(p.kinds || []).map(k => CATN[k] || k).join(', ')}</div>
             <div class="mut sm">Saved ${d8(p.updated_at, true)}${p.carted_at ? ' · <b>in your cart ' + d8(p.carted_at, true) + '</b>' : ''}</div></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPlanOpen('${p.id}')">Open</button>
-            <button class="btn ghost" style="padding:8px 12px" onclick="acPlanRename('${p.id}')">Rename</button><button class="btn ghost" style="padding:8px 12px" onclick="acPlanDel('${p.id}')">Delete</button></div>
+            <button class="btn ghost" style="padding:8px 12px" onclick="acPlanRename('${p.id}')">Rename</button><button class="btn ghost" style="padding:8px 12px" onclick="acPlanDup('${p.id}')">Duplicate</button><button class="btn ghost" style="padding:8px 12px" onclick="acPlanDel('${p.id}')">Delete</button></div>
         </div></div>`).join('') : '<div class="ac-empty"><p>No plans yet.</p><p class="mut sm">Set up your terrace or lawn, place a cabin, a pergola, seating, planters… and see it in 3D with prices.</p></div>')
   }
   window.acPlanOpen = id => { if (window.outrrPlan) outrrPlan({ load: id }) }
   window.acPlanRename = async id => { const nm = prompt('Name this plan'); if (!nm || !nm.trim()) return; try { await rpc('plan_rename', { p_id: id, p_name: nm.trim() }); drawPlans() } catch (e) { say(e.message) } }
+  window.acPlanDup = async id => { try { await rpc('plan_duplicate', { p_id: id }); drawPlans(); say('Copy made — change it without touching the first one') } catch (e) { say(e.message) } }   // 216
   window.acPlanDel = async id => { if (!confirm('Delete this plan?')) return; try { await rpc('plan_delete', { p_id: id }); drawPlans() } catch (e) { say(e.message) } }
 
   // ---------------------------------------------------------------- orders
