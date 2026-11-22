@@ -7,7 +7,7 @@
 import * as S3 from './space3d.js?v=29';
 import * as P2 from './plan2d.js?v=3';
 import { cutHit } from './cabin3d.js?v=30';
-import * as TM from './terrace-match.js?v=4';
+import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
@@ -435,7 +435,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-subig{display:flex;flex-wrap:wrap;gap:10px}#plOv .pl-subig button{flex:1;min-width:120px;border:1.5px solid #E2D6C4;background:#fff;border-radius:14px;padding:16px 10px;font:600 15px inherit;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}#plOv .pl-subig button b{font-size:22px}#plOv .pl-subig small{color:#7A7268;font-size:12px}#plOv .pl-subig button.on{border-color:#C26445;background:#FFF8F2}
 #plOv .pl-sw{display:block;width:44px;height:30px;border-radius:6px;border:1px solid #D4CEC4}#plOv .pl-sw-p{background:#EFEBE4 repeating-linear-gradient(0deg,transparent 0 14px,#D4CEC4 14px 15px),repeating-linear-gradient(90deg,transparent 0 14px,#D4CEC4 14px 15px)}#plOv .pl-sw-m{background:radial-gradient(circle at 50% 50%,#2F6F7E 0 5px,transparent 6px) 0 0/15px 15px,#F3EEE6}
 #plOv .pl-sun{position:relative;margin:28px auto 34px;max-width:70%;max-height:42vh;background:#EADCC8;border:4px solid #9B8E7E;border-radius:6px}#plOv .pl-sun span{position:absolute;bottom:-26px;left:0;right:0;text-align:center;font:700 12px inherit;color:#8a3a1f}#plOv .pl-sn{position:absolute;width:42px;height:42px;border-radius:50%;border:2px dashed #9B8E7E;background:#fff;font-weight:800;cursor:pointer}#plOv .pl-sn.on{background:#C26445;color:#fff;border:2px solid #C26445}#plOv .pl-sn-back{top:-22px;left:calc(50% - 21px)}#plOv .pl-sn-front{bottom:-22px;left:calc(50% - 21px)}#plOv .pl-sn-left{left:-22px;top:calc(50% - 21px)}#plOv .pl-sn-right{right:-22px;top:calc(50% - 21px)}
-#plOv .pl-su2d{height:min(62vh,640px);margin:4px 0 10px;touch-action:none}#plOv .pl-sued{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:8px 10px;margin:0 0 10px}#plOv .pl-sued b{font-size:13px;margin-right:4px}#plOv .pl-sued span{font-size:12px;color:#7A7268}#plOv .pl-sued em{font-style:normal;font-weight:700;min-width:22px;text-align:center}#plOv .pl-sued button{width:36px;height:36px;border-radius:50%;border:1.5px solid #E2D6C4;background:#fff;font-size:16px;cursor:pointer}
+#plOv .pl-lays{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}#plOv .pl-lays button{border:1.5px solid #E3DCD2;background:#fff;border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;cursor:pointer}#plOv .pl-lays button.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533}#plOv .pl-lays span{display:block;width:100%;height:120px}#plOv .pl-lays svg{width:100%;height:100%;pointer-events:none}#plOv .pl-lays b{font-size:13px}#plOv .pl-lays small{font-size:10.5px;color:#7A7268;text-align:center;line-height:1.2}#plOv .pl-su2d{height:min(62vh,640px);margin:4px 0 10px;touch-action:none}#plOv .pl-sued{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:8px 10px;margin:0 0 10px}#plOv .pl-sued b{font-size:13px;margin-right:4px}#plOv .pl-sued span{font-size:12px;color:#7A7268}#plOv .pl-sued em{font-style:normal;font-weight:700;min-width:22px;text-align:center}#plOv .pl-sued button{width:36px;height:36px;border-radius:50%;border:1.5px solid #E2D6C4;background:#fff;font-size:16px;cursor:pointer}
 #plOv .pl-sucs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}#plOv .pl-sucs button{border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 12px;font:600 13px inherit;font-family:inherit;cursor:pointer}#plOv .pl-sucs button.on{border-color:#C26445;background:#FFF8F2}#plOv .pl-sunext{width:100%;margin-top:14px;padding:14px}#plOv .pl-sucs{flex-wrap:wrap}
 #plOv .pl-moods{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 0 4px;scrollbar-width:none}#plOv .pl-moods button{flex:none;display:flex;align-items:center;gap:6px;border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;white-space:nowrap}#plOv .pl-moods button.on{border-color:#C26445;background:#C26445;color:#fff}#plOv .pl-moods i{font-style:normal}
 #plOv .pl-els2 button{position:relative;padding:12px 4px 10px}#plOv .pl-els2 i{font-size:26px}#plOv .pl-els2 em{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;font-weight:700;color:#C26445}
@@ -657,8 +657,13 @@ function suCompose() {   // a fresh setup from the answers
   const su = S.su; S.items = []; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; S.bsel.feature = S.bsel.feature || 1; delete S.bsel.lights; delete S.bsel.planter;
   if (su.turf === true) S.bsel.turf = 1; else if (su.turf === false) delete S.bsel.turf;
   S.site.floor = { tile: (THEME_T[su.theme] || THEME_T.natural)[1], pebble: true }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls || 'none'; S.site.tankScreen = su.tankHas === true && !su.tankScr ? 'existing' : '';
-  compose();
-  if (su.tankScr && mumtyTanks() && !S.items.some(o => o.mode === 'tank')) { const it2 = { cat: 'privacy', mode: 'tank', label: 'Tank screen', h: 4.5, w: 0, d: 0.3, x: 0, z: 0, rot: 0 }; S.items.push(it2); attach(it2, S.items.length - 1); if (!it2.w) S.items.pop(); } su.dirty = false; S.bskip = true; ev('plan_build', { ref: S.bth || 'own', n: S.items.length }); draw(true); }
+  // 240: three setups, each from one of LifeWall's real terraces closest to this one (stairs at the same spot, same shape / size) — the customer picks
+  const B = S.bsel, want = k => ({ cabin: B.cabin, pergola: B.pergola, turf: B.turf, deck: B.deck, seating: B.sofa || B.fbench || B.dining, fbench: B.fbench || B.sofa, bar: B.bar, counter: B.counter || B.bar, jacuzzi: B.jacuzzi, water: B.water })[k];
+  let lays = []; try { lays = (TM.layout ? TM.layout(S.site, 14) : []).map((L, r) => ({ L, n: L.els.filter(e => e.length > 3 && want(e[0])).length, r })).filter(z => z.n).sort((a, b) => b.n - a.n || a.r - b.r).slice(0, 3).map(z => z.L); } catch (e) { lays = []; }
+  if (!lays.length) lays = [null];
+  const tank = () => { if (su.tankScr && mumtyTanks() && !S.items.some(o => o.mode === 'tank')) { const it2 = { cat: 'privacy', mode: 'tank', label: 'Tank screen', h: 4.5, w: 0, d: 0.3, x: 0, z: 0, rot: 0 }; S.items.push(it2); attach(it2, S.items.length - 1); if (!it2.w) S.items.pop(); } };
+  su.opts = lays.map(L => { S.items = []; compose(L ? { lay: L } : null); tank(); return { id: L ? L.id : '', city: L ? L.city : '', items: JSON.parse(JSON.stringify(S.items)), note: S.bnote }; });
+  su.pick = 0; S.items = JSON.parse(JSON.stringify(su.opts[0].items)); S.bnote = su.opts[0].note; su.dirty = false; S.bskip = true; ev('plan_build', { ref: S.bth || 'own', n: S.items.length }); draw(true); }
 function suPlan() { const su = S.su, t = S.site, rd = ['front'].concat(t.road_back ? ['back'] : [], t.corner ? [t.corner] : []).filter(x => t.road_front !== false || x !== 'front');
   return P2.svg(t, { items: S.items, measure: !!su.meas, sel: S.sel != null ? { k: 'it', i: S.sel } : null, north: su.north, road: rd }); }
 function suPaint() {
@@ -690,7 +695,9 @@ function suPaint() {
       `<div class="pl-sun" style="aspect-ratio:${t.pw}/${t.pd}">${['back', 'left', 'right', 'front'].map(sd => `<button type="button" data-su="north:${sd}" class="pl-sn pl-sn-${sd}${su.north === sd ? ' on' : ''}">N</button>`).join('')}<span>▼ road</span></div>` +
       '<div class="pl-subig">' + chip('north:', false, 'Not sure') + '</div>'; }
   else { const it = S.sel != null ? S.items[S.sel] : null;
-    h += '<h2>Your setup</h2><p class="pl-sub">Drag to move · tap to resize</p>' + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d">${suPlan()}</div>`;
+    h += '<h2>Your setup</h2>';
+    if ((su.opts || []).length > 1) { const rd = ['front'].concat(S.site.road_back ? ['back'] : []); h += '<p class="pl-sub" style="margin-bottom:8px">Pick a layout — each one from a real LifeWall terrace like yours</p><div class="pl-lays">' + su.opts.map((o, i) => `<button type="button" data-su="lay:${i}" class="${su.pick === i ? 'on' : ''}" aria-pressed="${su.pick === i}"><span>${P2.svg(S.site, { items: o.items, labels: false, road: rd })}</span><b>Layout ${i + 1}</b>${o.city ? `<small>like a terrace in ${esc(o.city)}</small>` : ''}</button>`).join('') + '</div>'; }
+    h += '<p class="pl-sub">Drag to move · tap to resize</p>' + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d">${suPlan()}</div>`;
     if (it) { const c = CAT[it.cat] || {}; h += `<div class="pl-sued"><b>${c.e || ''} ${esc(it.label || c.t || '')}</b>` + (c.size && c.size !== 'fixed' ? `<span>W</span><button type="button" data-su="rs:w:-1">−</button><em>${it.w}</em><button type="button" data-su="rs:w:1">+</button>` + (c.size === 'wd' ? `<span>L</span><button type="button" data-su="rs:d:-1">−</button><em>${it.d}</em><button type="button" data-su="rs:d:1">+</button>` : '') : '') +
       (c.kind === 'free' || c.kind === 'floor' ? '<button type="button" data-su="rot" aria-label="Turn">↻</button>' : '') + '<button type="button" data-su="del" aria-label="Remove">🗑</button><button type="button" data-su="unsel" aria-label="Done">✓</button></div>'; }
     h += '<div class="pl-sucs">' + chip('meas', !!su.meas, '📏 Measurements') + chip('again', false, '↺ Set up again') + chip('roof', false, '✎ Change the roof') + '</div>' +
@@ -721,6 +728,7 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'turf': su.turf = a[1] === '1'; adv(); break;
     case 'north': su.north = a[1]; adv(); toPlan(); break;
     case 'meas': su.meas = !su.meas; break;
+    case 'lay': { const o = (su.opts || [])[+a[1]]; if (o) { su.pick = +a[1]; S.items = JSON.parse(JSON.stringify(o.items)); S.bnote = o.note; S.sel = null; ev('plan_step', { ref: 'layout' + (+a[1] + 1) }); draw(true); } break; }
     case 'again': suCompose(); break;
     case 'roof': return suRoof();
     case 'unsel': S.sel = null; break;
@@ -752,7 +760,7 @@ function spotBest(it, i, score, rots, dz) {   // dz: the space in front of the s
       const sc = score(it.x + f[0] / 2, it.z + f[1] / 2, f, rot); if (!best || sc > best[0]) best = [sc, it.x, it.z, rot]; } }
   if (!best) { Object.assign(it, keep); return false; } it.x = best[1]; it.z = best[2]; it.rot = best[3]; return true;
 }
-function compose() {   // 239: big things first (cabin in a corner / at the back), then the pathway that reaches them, seats facing the garden, built-in seating in an L, plants last and spread out
+function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (things at its drawn spots and sizes); 239: big things first (cabin in a corner / at the back), then the pathway that reaches them, seats facing the garden, built-in seating in an L, plants last and spread out
   const g = geo(), t = g.t, P = g.P, B = S.bsel || {}, WH = S.bwh || {}, M = g.M, wh = k => WH[k] || whereOpts(k, g)[0][0];
   const ppl = (S.su || {}).pg || (S.su || {}).people || '5-8', SZ = { '2-4': { sofa: [8, 7], dining: [5, 5], pergola: [10, 9], L: [8, 5] }, '5-8': { sofa: [10, 8], dining: [7, 6], pergola: [12, 10], L: [10, 6] }, '9-12': { sofa: [12, 9], dining: [10, 6], pergola: [16, 12], L: [12, 8] }, '12+': { sofa: [14, 10], dining: [12, 7], pergola: [18, 13], L: [14, 10] } }[ppl] || {};
   const sun = (cx, cz, k) => g.sw ? k * ((cx - t.pw / 2) * g.sw[0] + (cz - t.pd / 2) * g.sw[1]) : 0;   // + toward the afternoon sun (south-west)
@@ -770,8 +778,13 @@ function compose() {   // 239: big things first (cabin in a corner / at the back
   const backness = cz => backZ > 0 ? 1 - cz / t.pd : cz / t.pd;
   let miss = 0; const notes = [];
   // 236: the closest real terraces (stairs at the same spot, same shape / size) say where each thing goes — their spots are the targets, the rules only break ties
-  const LAY = (() => { try { return TM.layout ? TM.layout(t, 6) : []; } catch (e) { return []; } })(), LMAP = { sofa: 'seating', dining: 'seating', fbench: 'seating', swing: 'swing', counter: 'bar' }, used = {};
-  const learned = k => { const ty = LMAP[k] || k, pts = []; LAY.forEach(L => L.els.forEach(e => { if (e[0] === ty) pts.push([e[1], e[2]]); })); const n = used[k] || 0; used[k] = n + 1; return pts[n] || null; };
+  const LAY = opt && opt.lay ? [opt.lay] : (() => { try { return TM.layout ? TM.layout(t, 6) : []; } catch (e) { return []; } })(), LMAP = { sofa: ['seating', 'fbench'], dining: ['seating'], fbench: ['fbench', 'seating'], swing: ['swing'], counter: ['counter', 'bar'] }, used = {};
+  const learned = k => { const tys = LMAP[k] || [k], pts = []; tys.forEach(ty => LAY.forEach(L => L.els.forEach(e => { if (e[0] === ty) pts.push([e[1], e[2]]); }))); const n = used[k] || 0; used[k] = n + 1; return pts[n] || null; };
+  const RECT = {}; if (opt && opt.lay) opt.lay.els.forEach(e => { if (e.length > 3) (RECT[e[0]] = RECT[e[0]] || []).push(e); });   // 240: as drawn — [type, cx, cz, w, d fitted, w, d drawn]
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v)), takeR = k => (RECT[k] || []).shift(), rsz = e => [r2(e[5] * cl(e[3] / e[5], 0.85, 1.15)), r2(e[6] * cl(e[4] / e[6], 0.85, 1.15))];
+  const ctr = [t.pw / 2, t.pd / 2];
+  const frontClear = (cx, cz, f, rot) => { const v = FACE[+rot % 360] || [0, 1], r = { x: cx - f[0] / 2, z: cz - f[1] / 2, w: f[0], d: f[1] }, D = 5, sr = v[1] > 0 ? { x: r.x, z: r.z + r.d, w: r.w, d: D } : v[1] < 0 ? { x: r.x, z: r.z - D, w: r.w, d: D } : v[0] > 0 ? { x: r.x + r.w, z: r.z, w: D, d: r.d } : { x: r.x - D, z: r.z, w: D, d: r.d };
+    return !inside(sr) || (t.kind === 'terrace' ? t.blocks : []).some(b => hit(sr, b)) || S.items.some(o => !att(o) && o.cat !== 'pathway' && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && !UMB.has(o.cat) && hit(sr, rectI(o))) ? -30 : 0; };   // the cabin's glass front keeps 5 ft open
   const LEARNED = new Set(['pergola', 'bar', 'water', 'jacuzzi', 'turf']);
   const SHRINK = { pergola: [8, 8], deck: [6, 6], turf: [6, 5], sofa: [6, 5], dining: [4, 4], jacuzzi: [6, 6], counter: [4, 2.5] };
   const put = (k, score, opt) => { opt = opt || {}; const it = newItem(k); if (!it) return null; Object.assign(it, opt.set || {}); if (opt.pre) try { opt.pre(it); } catch (e) {} if (k === 'cabin' || k === 'pergola') it.label = it.label || CAT[k].t; const i = S.items.length; S.items.push(it);
@@ -784,9 +797,11 @@ function compose() {   // 239: big things first (cabin in a corner / at the back
   const mumtyFace = () => { if (!M) return [t.pw / 2, P + 2]; return g.door === 'right' ? [M.x + M.w, M.z + M.d / 2] : g.door === 'left' ? [M.x, M.z + M.d / 2] : g.door === 'front' ? [M.x + M.w / 2, M.z + M.d + 1.5] : [M.x + M.w / 2, M.z - 1.5]; };
   // 1) the cabin: in a corner (two walls — parapet, the stairs room or another cabin), at the back, away from the road (owner: "mostly in corners or at the back or joining the pergola")
   if (B.cabin) { const w = wh('cabin'), CS = { '1-2': [10, 8], '3-4': [12, 10], '5-8': [16, 10] }[(S.su || {}).cs], cabs = (S.su || {}).cab || [];
-    for (let ci = 0; ci < Math.min(3, B.cabin || 1); ci++) { const lt = learned('cabin');
-      put('cabin', (cx, cz, f) => { const c = tch(cx, cz, f); return (c.n === 2 ? 40 : c.n * 12) + 16 * (w === 'front' ? 1 - backness(cz) : backness(cz)) + (w === 'far' ? -0.4 * Math.abs(cx - farX(f[0])) : 0) - (lt ? 0.12 * d2(cx, cz, lt[0], lt[1]) : 0) - ((backZ > 0 ? c.F : c.Bk) && g.road.length ? 8 : 0); },
-        { rots: [0], keepRule: true, pre: CS ? o => cabinSize(o, CS[0], CS[1]) : null }); }
+    for (let ci = 0; ci < Math.min(3, B.cabin || 1); ci++) { const rc = takeR('cabin'), lt = rc ? [rc[1], rc[2]] : learned('cabin');
+      if (rc) { const sz = rsz(rc), wide = sz[0] >= sz[1], Lc = Math.max(sz[0], sz[1]) - 0.6, Wc = Math.min(sz[0], sz[1]) - 0.6;   // 240: where and how big LifeWall drew it; the glass front looks at the terrace
+        put('cabin', (cx, cz, f, rot) => { const c = tch(cx, cz, f); return -1.2 * d2(cx, cz, lt[0], lt[1]) + 12 * faceTo(cx, cz, rot, ctr[0], ctr[1]) + frontClear(cx, cz, f, rot) + (c.n === 2 ? 26 : c.n * 12); }, { rots: wide ? [0, 180] : [90, 270], keepRule: true, pre: o => cabinSize(o, CS ? CS[0] : cl(Lc, 10, 20), CS ? CS[1] : cl(Wc, 8, 14)) }); continue; }
+      put('cabin', (cx, cz, f, rot) => { const c = tch(cx, cz, f); return (c.n === 2 ? 40 : c.n * 12) + 16 * (w === 'front' ? 1 - backness(cz) : backness(cz)) + (w === 'far' ? -0.4 * Math.abs(cx - farX(f[0])) : 0) - (lt ? 0.12 * d2(cx, cz, lt[0], lt[1]) : 0) - ((backZ > 0 ? c.F : c.Bk) && g.road.length ? 8 : 0) + 14 * faceTo(cx, cz, rot, ctr[0], ctr[1]) + frontClear(cx, cz, f, rot); },
+        { rots: [0, 90, 180, 270], keepRule: true, pre: CS ? o => cabinSize(o, CS[0], CS[1]) : null }); }
     S.items.forEach(o => { if (o.cat !== 'cabin') return; const k = all('cabin').indexOf(o), c = cabs[k] || {};
       o.purpose = (c.use || []).slice(); o.inside = { pantry: !!c.pantry, wash: !!c.wash }; if (o.purpose.length) o.label = 'Cabin · ' + o.purpose.join(', ');
       if (c.pantry || c.wash) try { const lay = JSON.parse(JSON.stringify(cabinLay(o))), L = +lay.L || 12, pl = (lay.places || []).filter(p => !['toilet', 'wc', 'pantry'].includes(p.key));
@@ -794,22 +809,27 @@ function compose() {   // 239: big things first (cabin in a corner / at the back
     const cb0 = by('cabin'); if (cb0) { const r = rectI(cb0), c = tch(r.x + r.w / 2, r.z + r.d / 2, [r.w, r.d]); notes.push('Cabin ' + (c.n === 2 ? 'in the corner' : 'against the wall') + (backness(r.z + r.d / 2) > 0.6 ? ' at the back' : '')); } }
   const cab = by('cabin'), cr = cab ? rectI(cab) : null;
   // 2) the pergola (+ deck under it)
-  if (B.pergola) { const w = wh('pergola');
+  const rp = B.pergola ? takeR('pergola') : null;
+  if (rp) { const sz = rsz(rp); put('pergola', (cx, cz, f) => -1.5 * d2(cx, cz, rp[1], rp[2]) + 9 * tch(cx, cz, f).n, { set: { w: cl(sz[0], 8, 30), d: cl(sz[1], 8, 30) }, rots: [0], keepRule: true }); if (by('pergola')) notes.push('Pergola where LifeWall placed it'); }
+  if (B.pergola && !by('pergola')) { const w = wh('pergola');
     put('pergola', (cx, cz, f) => sun(cx, cz, 0.35) + (w === 'cabin' && cr ? -d2(cx, cz, cr.x + cr.w / 2, cr.z + cr.d + f[1] / 2) : w === 'back' ? -d2(cx, cz, farX(f[0]), P + f[1] / 2) : -d2(cx, cz, farX(f[0]), t.pd - P - f[1] / 2) + wallBonus(f, cx, cz, g.far) + wallBonus(f, cx, cz, 'front')), { set: SZ.pergola ? { w: SZ.pergola[0], d: SZ.pergola[1] } : {}, keepRule: w === 'cabin', bonus: (cx, cz, f) => { const c = tch(cx, cz, f); return c.n * 14; } });   // 239: against a wall / in a corner, not floating in the middle
     if (by('pergola')) notes.push(w === 'cabin' ? 'Pergola joined to the cabin' : 'Pergola on the ' + g.far + (w === 'back' ? ', at the back' : ', at the front')); }
   const pg = by('pergola'), pr = pg ? rectI(pg) : null;
-  if (B.deck) { const w = wh('deck');
+  const rdk = B.deck && wh('deck') !== 'pergola' ? takeR('deck') : null; if (rdk) { const sz = rsz(rdk); put('deck', (cx, cz) => -3 * d2(cx, cz, rdk[1], rdk[2]), { set: { w: sz[0], d: sz[1] }, rots: [0], keepRule: true }); }
+  if (B.deck && !by('deck')) { const w = wh('deck');
     if (w === 'pergola' && pr) { const it = newItem('deck'); Object.assign(it, { x: pr.x, z: pr.z, w: pr.w, d: pr.d, rot: 0 }); S.items.push(it); if (clashes(it, S.items.length - 1)) S.items.pop(); }
     else if (w === 'cabin' && cr) { const it = newItem('deck'); Object.assign(it, { x: cr.x, z: cr.z + cr.d, w: Math.min(cr.w, 14), d: 6, rot: 0 }); S.items.push(it); if (clashes(it, S.items.length - 1)) { S.items.pop(); put('deck', (cx, cz) => -d2(cx, cz, cr.x + cr.w / 2, cr.z + cr.d + 3)); } }
     else put('deck', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.5)); }
   if (B.jacuzzi) put('jacuzzi', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.35) + wallBonus(f, cx, cz, g.far) - sun(cx, cz, 0.2));
   if (B.bar) { const w = wh('bar'), mf = mumtyFace();
-    put('bar', (cx, cz, f, rot) => (w === 'pergola' && pr ? -d2(cx, cz, pr.x + pr.w / 2, pr.z + 1.5) + (inR(cx, cz, pr) ? 8 : 0) : w === 'far' ? -d2(cx, cz, farX(f[0]), t.pd * 0.4) : -d2(cx, cz, mf[0] + (g.side === 'left' ? 5 : g.side === 'right' ? -5 : 0), mf[1] + (g.side === 'centre' ? 5 : 0)))
+    const lb = opt && opt.lay ? learned('bar') : null;
+    put('bar', (cx, cz, f, rot) => (lb ? -1.2 * d2(cx, cz, lb[0], lb[1]) + (backTo(cx, cz, f, rot) ? 25 : 0) : 0) + (lb ? 0 : 1) * (w === 'pergola' && pr ? -d2(cx, cz, pr.x + pr.w / 2, pr.z + 1.5) + (inR(cx, cz, pr) ? 8 : 0) : w === 'far' ? -d2(cx, cz, farX(f[0]), t.pd * 0.4) : -d2(cx, cz, mf[0] + (g.side === 'left' ? 5 : g.side === 'right' ? -5 : 0), mf[1] + (g.side === 'centre' ? 5 : 0)))
       + (backTo(cx, cz, f, rot) ? 5 : 0), { rots: [0, 90, 180, 270] });
     if (by('bar') && w === 'mumty') notes.push('Bar beside the stairs'); }
   // 3) the pathway: from the stairs door to the cabin and the pergola — only as far as it needs to go
   if (B.pathway) pathTo(g, M && g.door === 'front' ? [M.x + M.w / 2, M.z + M.d] : M && g.door === 'back' ? [M.x + M.w / 2, M.z] : mumtyFace(), [cab, pg, by('jacuzzi'), by('bar')].filter(Boolean), notes) || miss++;
-  if (B.turf) { const w = wh('turf'); for (const sz of [[14, 12], [12, 10], [10, 8], [8, 6], [6, 5]]) { const it = newItem('turf'); it.w = Math.min(sz[0], t.pw - 2 * P - 4); it.d = sz[1]; const i = S.items.length; S.items.push(it);
+  const rtf = B.turf ? takeR('turf') : null; if (rtf) { const sz = rsz(rtf); put('turf', (cx, cz) => -3 * d2(cx, cz, rtf[1], rtf[2]), { set: { w: cl(sz[0], 4, t.pw - 2 * P - 4), d: cl(sz[1], 4, t.pd - 2 * P - 4) }, rots: [0], keepRule: true }); }
+  if (B.turf && !by('turf')) { const w = wh('turf'); for (const sz of [[14, 12], [12, 10], [10, 8], [8, 6], [6, 5]]) { const it = newItem('turf'); it.w = Math.min(sz[0], t.pw - 2 * P - 4); it.d = sz[1]; const i = S.items.length; S.items.push(it);
       const ok = spotBest(it, i, (cx, cz, f) => -d2(cx, cz, g.far === 'right' ? t.pw * 0.6 : t.pw * 0.4, w === 'mid' ? t.pd / 2 : t.pd - P - f[1] / 2) - S.items.filter((o, j) => j !== i && !att(o) && CAT[o.cat].kind !== 'floor' && hit(rectI(it), rectI(o))).length * 6, [0]);
       if (ok) break; S.items.pop(); } if (!by('turf')) miss++; }
   const tf = by('turf'), gc = tf ? [rectI(tf).x + rectI(tf).w / 2, rectI(tf).z + rectI(tf).d / 2] : [t.pw / 2, t.pd / 2];   // "the garden" seats look at
@@ -875,10 +895,11 @@ function compose() {   // 239: big things first (cabin in a corner / at the back
 // 239: the pathway reaches the stairs door and the big things (cabin, pergola…) — a spine through the middle, only as long as it needs, + short stubs to each
 function pathTo(g, door, tgs, notes) {   // a 3 ft path routed on a ½-ft grid round what stands there (fewest turns), from the stairs door to each big thing's edge
   const t = S.site, P = g.P, W = 3, H = W / 2, q = 0.5, NX = Math.floor(t.pw / q), NZ = Math.floor(t.pd / q), occ = new Uint8Array(NX * NZ);
-  const obs = (t.kind === 'terrace' ? t.blocks : []).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d })).concat(S.items.filter(o => !att(o) && CAT[o.cat] && (CAT[o.cat].kind !== 'floor' || o.cat === 'deck' || o.cat === 'turf')).map(rectI));
+  const obs = (t.kind === 'terrace' ? t.blocks : []).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d })).concat(S.items.filter(o => !att(o) && CAT[o.cat] && !['pergola', 'deck'].includes(o.cat) && (CAT[o.cat].kind !== 'floor' || o.cat === 'turf')).map(rectI)), soft = S.items.filter(o => o.cat === 'pergola' || o.cat === 'deck').map(rectI);   // you walk through a pergola / over a deck: passable, not paved
   for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const x = (i + 0.5) * q, z = (j + 0.5) * q, r = { x: x - q / 2 + 0.01, z: z - q / 2 + 0.01, w: q - 0.02, d: q - 0.02 };
     occ[j * NX + i] = !inside(r) || obs.some(o => x > o.x && x < o.x + o.w && z > o.z && z < o.z + o.d) ? 1 : 0; }
   const ps = new Int32Array((NX + 1) * (NZ + 1)); for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) ps[(j + 1) * (NX + 1) + i + 1] = occ[j * NX + i] + ps[j * (NX + 1) + i + 1] + ps[(j + 1) * (NX + 1) + i] - ps[j * (NX + 1) + i];
+  const SO = new Uint8Array((NX + 1) * (NZ + 1)); for (let j = 0; j <= NZ; j++) for (let i = 0; i <= NX; i++) { const x = i * q, z = j * q; if (soft.some(o => x > o.x - H && x < o.x + o.w + H && z > o.z - H && z < o.z + o.d + H)) SO[j * (NX + 1) + i] = 1; }
   const k = H / q, free = (i, j) => { const i0 = i - k, j0 = j - k, i1 = i + k, j1 = j + k; if (i0 < 0 || j0 < 0 || i1 > NX || j1 > NZ) return false; return ps[j1 * (NX + 1) + i1] - ps[j0 * (NX + 1) + i1] - ps[j1 * (NX + 1) + i0] + ps[j0 * (NX + 1) + i0] === 0; };   // the 3 × 3 ft square round grid point (i, j) is clear
   const pt = (x, z) => [Math.round(x / q), Math.round(z / q)], id = (i, j) => j * (NX + 1) + i;
   const tree = new Set(), segs = [];
@@ -888,7 +909,7 @@ function pathTo(g, door, tgs, notes) {   // a 3 ft path routed on a ½-ft grid r
     const D = [[1, 0], [-1, 0], [0, 1], [0, -1]]; starts.forEach(([i, j, c0]) => { if (!free(i, j)) return; for (let h = 0; h < 4; h++) { dist[id(i, j) * 4 + h] = c0 || 0; push(c0 || 0, id(i, j) * 4 + h); } });
     while (hp.length) { const [c, v] = pop(); if (c > dist[v]) continue; const n = v >> 2, h = v & 3, i = n % (NX + 1), j = (n / (NX + 1)) | 0;
       if (goal(i, j)) { const out = []; let u = v; while (u >= 0) { const nn = u >> 2; out.push([nn % (NX + 1), (nn / (NX + 1)) | 0]); u = prev[u]; } return out.reverse(); }
-      for (let h2 = 0; h2 < 4; h2++) { const i2 = i + D[h2][0], j2 = j + D[h2][1]; if (i2 < 0 || j2 < 0 || i2 > NX || j2 > NZ || !free(i2, j2)) continue; const v2 = id(i2, j2) * 4 + h2, c2 = c + q + (h2 === h ? 0 : 6);
+      for (let h2 = 0; h2 < 4; h2++) { const i2 = i + D[h2][0], j2 = j + D[h2][1]; if (i2 < 0 || j2 < 0 || i2 > NX || j2 > NZ || !free(i2, j2)) continue; const v2 = id(i2, j2) * 4 + h2, c2 = c + q * (SO[id(i2, j2)] ? 3 : 1) + (h2 === h ? 0 : 6);
         if (c2 < dist[v2]) { dist[v2] = c2; prev[v2] = v; push(c2, v2); } } }
     return null; };
   // start: just outside the stairs door
@@ -908,7 +929,11 @@ function pathTo(g, door, tgs, notes) {   // a 3 ft path routed on a ½-ft grid r
   if (S0 && !S0[2]) { const f0 = S0, fx = f0[0] * q, fz = f0[1] * q;   // the door end: from the door face to the first point (nothing inside the stairs room)
     if (Math.abs(fx - door[0]) > Math.abs(fz - door[1])) rects.push({ x0: Math.min(door[0], fx - H), x1: Math.max(door[0], fx + H), z0: fz - H, z1: fz + H }); else rects.push({ x0: fx - H, x1: fx + H, z0: Math.min(door[1], fz - H), z1: Math.max(door[1], fz + H) }); }
   segs.forEach(([A, Bp]) => rects.push({ x0: Math.min(A[0], Bp[0]) * q - H, x1: Math.max(A[0], Bp[0]) * q + H, z0: Math.min(A[1], Bp[1]) * q - H, z1: Math.max(A[1], Bp[1]) * q + H }));
-  rects.forEach(({ x0, x1, z0, z1 }) => { if (x1 - x0 < 0.9 || z1 - z0 < 0.9) return;
+  const cut = (r, o) => { if (!(r.x0 < o.x + o.w && r.x1 > o.x && r.z0 < o.z + o.d && r.z1 > o.z)) return [r]; const out = [];   // the paving stops at a pergola / deck
+    if (r.x1 - r.x0 >= r.z1 - r.z0) { if (r.x0 < o.x) out.push(Object.assign({}, r, { x1: o.x })); if (r.x1 > o.x + o.w) out.push(Object.assign({}, r, { x0: o.x + o.w })); }
+    else { if (r.z0 < o.z) out.push(Object.assign({}, r, { z1: o.z })); if (r.z1 > o.z + o.d) out.push(Object.assign({}, r, { z0: o.z + o.d })); } return out; };
+  let pv = rects; soft.forEach(o => { pv = pv.flatMap(r => cut(r, o)); });
+  pv.forEach(({ x0, x1, z0, z1 }) => { if (x1 - x0 < 0.9 || z1 - z0 < 0.9) return;
     const it = newItem('pathway'); Object.assign(it, { x: Math.max(P, x0), z: Math.max(P, z0), w: Math.min(t.pw - P, x1) - Math.max(P, x0), d: Math.min(t.pd - P, z1) - Math.max(P, z0), rot: 0 }); S.items.push(it); });
   notes.push('Pathway from the stairs to ' + (tgs.some(o => o.cat === 'cabin') ? 'the cabin' : 'the seating')); return true;
 }

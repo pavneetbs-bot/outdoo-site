@@ -6,7 +6,7 @@ const PAR = 0.75;
 let LIST = null, LOADING = null;
 export function load() {
   if (LIST) return Promise.resolve(LIST);
-  if (!LOADING) LOADING = fetch('/terrace-templates.json?v=3', { cache: 'no-cache' }).then(r => r.json()).then(j => (LIST = (j.templates || []).filter(t => t.site && t.site.pw && t.site.pd))).catch(() => (LIST = []));
+  if (!LOADING) LOADING = fetch('/terrace-templates.json?v=4', { cache: 'no-cache' }).then(r => r.json()).then(j => (LIST = (j.templates || []).filter(t => t.site && t.site.pw && t.site.pd))).catch(() => (LIST = []));
   return LOADING;
 }
 export const ready = () => !!LIST;
@@ -156,7 +156,7 @@ export function layout(site, n) {
   for (const t of LIST) { const s = t.site; if (!t.els || !t.els.length) continue; const tm = (s.blocks || []).find(b => b.type === 'mumty');
     for (const mir of [false, true]) { let sc = 3 * Math.abs(Math.log((s.pw / s.pd) / (pw / pd))) + 1.2 * Math.abs(Math.log((s.pw * s.pd) / (pw * pd)));
       if (m && tm) { const tx = (tm.x + tm.w / 2) / s.pw, tz = (tm.z + tm.d / 2) / s.pd; sc += 4 * Math.hypot((mir ? 1 - tx : tx) - mx, tz - mz); } else if (!!m !== !!tm) sc += 2;
-      sc += hasLift(s) === lift ? 0 : 0.5; out.push({ id: t.id, sc, els: t.els.map(e => [e[0], (mir ? 1 - e[1] : e[1]) * pw, e[2] * pd]) }); } }
+      sc += hasLift(s) === lift ? 0 : 0.5; out.push({ id: t.id, city: t.city || '', sc, mir, els: t.els.map(e => e.length > 3 ? [e[0], (mir ? 1 - e[1] : e[1]) * pw, e[2] * pd, e[3] * pw, e[4] * pd, e[3] * s.pw, e[4] * s.pd] : [e[0], (mir ? 1 - e[1] : e[1]) * pw, e[2] * pd]) }); } }   // 240: [type, cx, cz (ft here), w, d (fitted), w, d (as drawn, ft)]
   out.sort((p, q) => p.sc - q.sc); const seen = new Set(), res = [];
   for (const o of out) { if (seen.has(o.id)) continue; seen.add(o.id); res.push(o); if (res.length >= (n || 5)) break; }
   return res;

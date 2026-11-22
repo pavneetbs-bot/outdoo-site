@@ -758,7 +758,7 @@
   // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
   var TMM = null, TMP = null;
   var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=3').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
-  function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=4').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
+  function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=5').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
   function tsTpl() {
     var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
     var body = '<p class="ts-h">Lift room on the roof?</p><div class="wz-tabs">' + btn('data-ts="tlift:1"', S.tplLift === true, 'Yes') + btn('data-ts="tlift:0"', S.tplLift === false, 'No') + btn('data-ts="tlift:"', S.tplLift == null, 'Not sure') + '</div>';
@@ -1892,7 +1892,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=46').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=47').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
