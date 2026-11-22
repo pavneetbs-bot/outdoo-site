@@ -757,7 +757,7 @@
   // 202: the terrace one kind of question at a time — Quick: Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof
   // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
   var TMM = null, TMP = null;
-  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=2').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
+  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=3').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
   function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=4').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
   function tsTpl() {
     var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -1892,7 +1892,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=45').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=46').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2752,7 +2752,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=28').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=29').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -2934,7 +2934,16 @@
         if (c.type !== 'slant') return true; var px = k[1] === 'l' ? b.x : t.pw - (b.x + b.w), pz = k[0] === 'b' ? b.z : t.pd - (b.z + b.d); return px / c.a + pz / c.b < 1 - 0.01; })) return 'That corner is cut — it can\'t go there'; return ''; };
     var twSnap = function (t, b) { var P = 0.75; if (b.side === 'left') b.x = P; else if (b.side === 'right') b.x = t.pw - P - b.w; else if (b.side === 'back') b.z = P; else if (b.side === 'front') b.z = t.pd - P - b.d;
       b.x = Math.max(P, Math.min(t.pw - P - b.w, b.x)); b.z = Math.max(P, Math.min(t.pd - P - b.d, b.z)); };
-    var twTry = function (j, f) { var t = st.site, b = t.blocks[j]; if (!b) return; var keep = JSON.stringify(b); f(b); twSnap(t, b); var e = twHit(t, b, j); if (e) { Object.assign(b, JSON.parse(keep)); st.msg = e; } else st.msg = ''; };
+    // 239: a block dropped / turned / resized within 1 ft of the parapet or another block sits flush against it (no ½-ft gaps); a small overlap is pushed out instead of refused
+    var twMag = function (t, b, j) { var P = 0.75, M1 = 1.05, os = t.blocks.filter(function (o, k) { return k !== j; }), ov = function (a0, a1, b0, b1) { return a0 < b1 - 0.01 && a1 > b0 + 0.01; };
+      var ax = function (pos, len, lim, edges) { var c = [[P, Math.abs(pos - P)], [lim - P - len, Math.abs(pos - (lim - P - len))]].concat(edges.map(function (v) { return [v, Math.abs(pos - v)]; })).filter(function (q) { return q[1] <= M1; }).sort(function (a, c2) { return a[1] - c2[1]; })[0]; return c ? c[0] : pos; };
+      if (b.side !== 'left' && b.side !== 'right') b.x = ax(b.x, b.w, t.pw, os.filter(function (o) { return ov(b.z, b.z + b.d, o.z, o.z + o.d); }).reduce(function (a, o) { return a.concat([o.x + o.w, o.x - b.w]); }, []));
+      if (b.side !== 'back' && b.side !== 'front') b.z = ax(b.z, b.d, t.pd, os.filter(function (o) { return ov(b.x, b.x + b.w, o.x, o.x + o.w); }).reduce(function (a, o) { return a.concat([o.z + o.d, o.z - b.d]); }, []));
+      os.forEach(function (o) { if (!(ov(b.x, b.x + b.w, o.x, o.x + o.w) && ov(b.z, b.z + b.d, o.z, o.z + o.d))) return;   // still overlapping a little → out the shortest way
+        var px = [o.x + o.w - b.x, o.x - (b.x + b.w)], pz = [o.z + o.d - b.z, o.z - (b.z + b.d)], mx = Math.abs(px[0]) < Math.abs(px[1]) ? px[0] : px[1], mz = Math.abs(pz[0]) < Math.abs(pz[1]) ? pz[0] : pz[1];
+        if (Math.min(Math.abs(mx), Math.abs(mz)) > 2.5) return; if (Math.abs(mx) <= Math.abs(mz)) b.x += mx; else b.z += mz; });
+      b.x = Math.round(b.x * 100) / 100; b.z = Math.round(b.z * 100) / 100; };
+    var twTry = function (j, f) { var t = st.site, b = t.blocks[j]; if (!b) return; var keep = JSON.stringify(b); f(b); twSnap(t, b); twMag(t, b, j); var e = twHit(t, b, j); if (e) { Object.assign(b, JSON.parse(keep)); st.msg = e; } else st.msg = ''; };
     var twEv = function (ev) { var t = st.site; if (!t) return;
       if (ev.t === 'bsel') st.sel = ev.i;
       else if (ev.t === 'block') { var b = t.blocks[ev.i]; if (!b) return; st.sel = ev.i; if (b.lock) st.msg = 'It is locked — unlock it to move'; else twTry(ev.i, function (q) { q.x = ev.x; q.z = ev.z; }); }
@@ -2983,7 +2992,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=28').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=29').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };

@@ -7,7 +7,7 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel } from './cabin3d.js?v=30';
 import { pergolaModel } from './pergola3d.js?v=22';
-import { outline } from './plan2d.js?v=2';
+import { outline } from './plan2d.js?v=3';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -289,6 +289,11 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'chair') {
     box(g, w * 0.8, 0.3, d * 0.8, 0, 1.4, 0, K.cush); box(g, w * 0.8, 1.8, 0.3, 0, 2.4, -d * 0.4 + 0.15, K.frame);
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 1.3, 0.15, a * w * 0.35, 0.65, b * d * 0.35, K.frame)); box(g, 0.15, 0.6, d * 0.8, -w * 0.4, 1.9, 0, K.frame); box(g, 0.15, 0.6, d * 0.8, w * 0.4, 1.9, 0, K.frame);
+  } else if (cat === 'fbench') {   // 239: built-in seating — a masonry seat with a cushion and a backrest against the wall (back = −z)
+    box(g, w, 1.4, d - 0.3, 0, 0.7, 0.15, K.stone); box(g, w - 0.1, 0.25, d - 0.5, 0, 1.52, 0.2, K.cush); box(g, w, 1.5, 0.3, 0, 2.15, -d / 2 + 0.15, K.stone); box(g, w - 0.2, 1.0, 0.25, 0, 2.15, -d / 2 + 0.45, K.cush2);
+  } else if (cat === 'counter') {   // 239: food / buffet counter — base, stone top, a cooktop and a sink on it (back = −z, against the wall)
+    box(g, w, 2.9, d * 0.9, 0, 1.45, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, K.stone); box(g, Math.min(2, w / 3), 0.06, 1.4, -w / 4, 3.07, 0, K.dark); box(g, 1.6, 0.06, 1.2, w / 4, 3.07, 0, mat('c_sink', 0xB8BCC0, { metalness: 0.7, roughness: 0.3 }));
+    box(g, w, 1.6, 0.15, 0, 3.8, -d / 2 + 0.08, K.stone);
   } else if (cat === 'bench') {
     box(g, w, 0.2, d * 0.8, 0, 1.5, 0, K.wood); [-w / 2 + 0.4, w / 2 - 0.4].forEach(x => box(g, 0.25, 1.4, d * 0.7, x, 0.7, 0, K.frame));
   } else if (cat === 'table') {
@@ -369,7 +374,7 @@ function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 
 function build(P) {
-  const g = new THREE.Group(), t = P.site || {}, terr = t.kind === 'terrace';
+  if (R) R.nl = []; const g = new THREE.Group(), t = P.site || {}, terr = t.kind === 'terrace';
   if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; if (t.floor) try { floorFin(g, t); } catch (e) {} } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   drawItems(items, R.holders, P);
@@ -402,7 +407,18 @@ function measures(P) {
 }
 
 // 235: night view — the lights show
-function night(on) { if (!R || R.night === on) return; R.night = on; R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.12 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
+function night(on) { if (!R || R.night === on) return; R.night = on; (R.nl || []).forEach(m => { m.visible = on; }); R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.12 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
+// 239: flowering creepers climbing each pergola post (bougainvillea-like: leaves + magenta flowers)
+function creepers(hd) { hd.updateMatrixWorld(true); const posts = []; hd.traverse(o => { if (o.isMesh && o.userData.post) posts.push(o); }); if (!posts.length) return;
+  const lg = new THREE.IcosahedronGeometry(0.26, 0), fg = new THREE.IcosahedronGeometry(0.15, 0), n = posts.length * 34, LM = new THREE.InstancedMesh(lg, mat('c_leaf', 0x3F7D3A, { roughness: 0.9 }), n), FM = new THREE.InstancedMesh(fg, mat('c_bloom', 0xC2187A, { roughness: 0.7 }), n);
+  const inv = new THREE.Matrix4().copy(hd.matrixWorld).invert(), q = new THREE.Matrix4(), bx = new THREE.Box3(); let li = 0, fi = 0;
+  posts.forEach((o, pi) => { bx.setFromObject(o).applyMatrix4(inv); const cx = (bx.min.x + bx.max.x) / 2, cz = (bx.min.z + bx.max.z) / 2, r = Math.max(bx.max.x - bx.min.x, bx.max.z - bx.min.z) / 2 + 0.12, y0 = bx.min.y + 0.2, y1 = bx.max.y;
+    for (let k = 0; k < 34 && li < n; k++) { const a = k * 1.9 + pi, y = y0 + (y1 - y0) * k / 33, s = 0.8 + ((k * 7 + pi) % 5) * 0.12; q.makeScale(s, s, s).setPosition(cx + Math.cos(a) * r, y, cz + Math.sin(a) * r); LM.setMatrixAt(li++, q);
+      if (k % 2 && k > 6) { q.makeScale(1, 1, 1).setPosition(cx + Math.cos(a + 0.8) * (r + 0.12), y + 0.1, cz + Math.sin(a + 0.8) * (r + 0.12)); FM.setMatrixAt(fi++, q); } } });
+  LM.count = li; FM.count = fi; LM.castShadow = true; hd.add(LM, FM); }
+// 239: a soft cone of light under a down light — seen only in the night view
+function downGlow(par, x, y, z, H) { if (!R) return; const h = Math.min(H, 6), m = new THREE.Mesh(new THREE.ConeGeometry(h * 0.32, h, 14, 1, true), mat('g_cone', 0xFFC46B, { emissive: 0xFFC46B, emissiveIntensity: 1, transparent: true, opacity: 0.13, depthWrite: false, side: THREE.DoubleSide }));
+  m.position.set(x, y - h / 2, z); m.visible = !!R.night; m.userData.nightOnly = 1; par.add(m); (R.nl || (R.nl = [])).push(m); }
 const glow = c => mat('g_' + c.toString(16), c, { emissive: c, emissiveIntensity: 2.2, roughness: 1 });
 // wall lights on the structures and the parapet (full lighting)
 function wallLights(g, t) { const W = 0xFFC46B, gm = glow(W), E = 0.75, add = (x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.45), gm); m.position.set(x, y, z); g.add(m); const l = new THREE.PointLight(W, 1.6, 9, 2); l.position.set(x, y, z); g.add(l); };
@@ -450,7 +466,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
         const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
         if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.2, (+it.h || 3) + 0.2, 0.6)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = (+it.h || 3) / 2; p.add(ln); }
         if (!k && P.labels !== false) { const tg = tag(it.label || 'Privacy screen'); tg.position.y = (+it.h || 3) + 1.4; p.add(tg); }
-        if ((P.site || {}).light === 'full') { const gm = glow(0xFFC46B); for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 10), gm); m.position.set(u, (+it.h || 3) - 0.1, 0.25); p.add(m); } } });
+        if ((P.site || {}).light !== '' ) { const gm = glow(0xFFC46B), hh = +it.h || 3; for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 10), gm); m.position.set(u, hh - 0.1, 0.25); p.add(m); downGlow(p, u, hh - 0.15, 0.3, sg.y + hh); } } });   // 239: one-way down lights on every screen by default
       return;
     }
     const [fw, fd] = foot(it), hd = new THREE.Group(); hd.userData.it = i; hd.position.set(+it.x + fw / 2, 0, +it.z + fd / 2); hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);
@@ -467,6 +483,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
       const top = (+it.h || 8) + (it.deck ? 0.6 : 0), fm = mat('c_ledger', 0x2E2E2E, { metalness: 0.4, roughness: 0.5 });
       it.att.forEach(z => { const b = box(items, z.w, 0.6, z.d, z.x + z.w / 2, top - 0.3, z.z + z.d / 2, fm); b.userData.it = i; });
     }
+    if (it.cat === 'pergola') try { creepers(hd); } catch (e) {}
     H[i] = hd;
   });
 }

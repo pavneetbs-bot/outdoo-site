@@ -4,8 +4,8 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=28';
-import * as P2 from './plan2d.js?v=2';
+import * as S3 from './space3d.js?v=29';
+import * as P2 from './plan2d.js?v=3';
 import { cutHit } from './cabin3d.js?v=30';
 import * as TM from './terrace-match.js?v=4';
 
@@ -39,6 +39,8 @@ const CATS = [
   { k: 'accover', t: 'AC cover', e: '❄️', col: 'ac-covers', sb: /floor|terrace/i, kind: 'free', w: 3.6, d: 1.8, h: 2.9, size: 'fixed' },
   { k: 'pathway', t: 'Pathway', e: '🪨', col: 'pathways', kind: 'floor', w: 3, d: 20, h: 0.15, min: [2, 3], max: [6, 150], size: 'wd', always: true, nolabel: true },   // 224: layout elements (priced by our team until designs are listed)
   { k: 'turf', t: 'Artificial grass', e: '🟩', col: 'turf', kind: 'floor', w: 12, d: 10, h: 0.1, min: [4, 4], max: [80, 80], size: 'wd', always: true, nolabel: true },
+  { k: 'fbench', t: 'Fixed seating', e: '💺', col: 'benches', kind: 'free', w: 8, d: 2, h: 1.6, min: [3, 2], max: [30, 2], size: 'w', always: true },   // 239: built-in (civil / MS) seating, L-shaped on the walls
+  { k: 'counter', t: 'Food counter', e: '🍳', col: 'bar-counters', kind: 'free', w: 8, d: 2.5, h: 3, min: [4, 2.5], max: [20, 2.5], size: 'w', always: true },   // 239: buffet / cooking counter
   { k: 'firepit', t: 'Fire pit', e: '🔥', col: 'fire-pits', kind: 'free', w: 3.5, d: 3.5, h: 1.5, size: 'fixed', always: true },
   { k: 'jacuzzi', t: 'Jacuzzi', e: '🛁', col: 'jacuzzi', kind: 'free', w: 7, d: 7, h: 3, size: 'fixed', always: true },
   { k: 'lights', t: 'Garden lights', e: '💡', col: 'lighting', kind: 'free', w: 0.8, d: 0.8, h: 3, size: 'fixed', always: true, nolabel: true },
@@ -48,9 +50,9 @@ const CATS = [
 // 193 phase 3: ready-made setups — added to what's already there, each thing at the nearest free spot
 const SETUPS = [
   { k: 'chill', t: 'Chill corner', e: '☕', d: 'Pergola with a sofa on a deck, water, planters, lights', items: ['pergola', 'deck', 'sofa', 'water', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter', 'planter'] },
-  { k: 'party', t: 'Party terrace', e: '🎉', d: 'Bar by the stairs, pergola lounge, dining, fire pit, grass', items: ['bar', 'pergola', 'sofa', 'dining', 'firepit', 'turf', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter'] },
+  { k: 'party', t: 'Party terrace', e: '🎉', d: 'Bar by the stairs, pergola lounge, dining, fire pit, grass', items: ['bar', 'pergola', 'fbench', 'dining', 'counter', 'firepit', 'turf', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter'] },
   { k: 'work', t: 'Work + relax', e: '💻', d: 'Cabin at the back, deck, sofa, green wall', items: ['cabin', 'deck', 'pergola', 'sofa', 'vgarden', 'pathway', 'privacy', 'planter', 'planter', 'planter'] },
-  { k: 'green', t: 'Green retreat', e: '🌿', d: 'Grass, green walls, planters, bench, water', items: ['turf', 'vgarden', 'feature', 'water', 'bench', 'pathway', 'privacy', 'planter', 'planter', 'planter', 'planter', 'planter', 'planter'] },
+  { k: 'green', t: 'Green retreat', e: '🌿', d: 'Grass, green walls, planters, bench, water', items: ['turf', 'vgarden', 'feature', 'water', 'fbench', 'pathway', 'privacy', 'planter', 'planter', 'planter', 'planter', 'planter', 'planter'] },
   { k: 'yoga', t: 'Yoga & wellness', e: '🧘', d: 'Deck under a pergola, water, green wall, screens', items: ['deck', 'pergola', 'water', 'vgarden', 'turf', 'privacy', 'planter', 'planter', 'planter', 'planter'] },
   { k: 'spa', t: 'Spa & lounge', e: '🛁', d: 'Jacuzzi, pergola lounge, feature wall, lights', items: ['jacuzzi', 'pergola', 'deck', 'sofa', 'feature', 'water', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter', 'planter'] },
   { k: 'family', t: 'Family lawn', e: '🌳', d: 'Pergola, dining, bench, water, sculpture', items: ['pergola', 'dining', 'bench', 'water', 'sculpture', 'planter'], lawn: true },
@@ -174,12 +176,17 @@ function mumtyTanks() { const t = S.site; if (t.kind !== 'terrace' || t.tanks ==
   return { y: (+b.h > 0 ? +b.h : 9) + 0.35, pts: [[x0, z0], [x1, z0], [x1, z1], [x0, z1]] }; }
 function attach(it, i) {   // lay a parapet / tank screen out again (things around it may have moved)
   if (it.mode === 'par') { const segs = []; (it.sides || []).forEach(sd => parRuns(sd, i, SCREEN_STOP).forEach(([u0, u1]) => { const a = parLine(sd, u0), b = parLine(sd, u1); segs.push({ x0: a[0], z0: a[1], x1: b[0], z1: b[1], y: parTop(), side: sd }); })); it.segs = segs; }
-  else if (it.mode === 'tank') { const m = mumtyTanks(); it.segs = m ? m.pts.map((a, k) => { const b = m.pts[(k + 1) % 4]; return { x0: a[0], z0: a[1], x1: b[0], z1: b[1], y: m.y }; }) : []; }
+  else if (it.mode === 'tank') { const m = mumtyTanks(), sk = tankBack(); it.segs = m ? m.pts.map((a, k) => { const b = m.pts[(k + 1) % 4]; return { x0: a[0], z0: a[1], x1: b[0], z1: b[1], y: m.y, k }; }).filter(sg => !sk.includes(sg.k)) : []; }   // 239: no screen on the back (the side to the parapet / away from the terrace)
   else if (it.mode === 'ac') { const b = (S.site.kind === 'terrace' ? S.site.blocks : []).find(x => x.id === it.bid); delete it.segs;
     it.box = b ? { x: b.x - 0.3, z: b.z - 0.3, w: b.w + 0.6, d: b.d + 0.6, h: 2.9 } : null; if (b) { it.x = it.box.x; it.z = it.box.z; it.w = it.box.w; it.d = it.box.d; it.h = 2.9; } return; }
   else { delete it.segs; return; }
   it.w = Math.round(it.segs.reduce((a, g) => a + Math.hypot(g.x1 - g.x0, g.z1 - g.z0), 0) * 2) / 2; it.d = 0.3; it.x = 0; it.z = 0; it.rot = 0;
 }
+function tankBack() {   // 239: sides of the tank screen nobody sees: 0 back (z min), 1 right, 2 front, 3 left — those against the parapet, else the one facing away from the terrace
+  const t = S.site, b = t.kind === 'terrace' && t.blocks.find(x => x.type === 'mumty'); if (!b) return []; const p = P0(), e = 1.5;
+  const near = [b.z - p < e ? 0 : -1, t.pw - p - (b.x + b.w) < e ? 1 : -1, t.pd - p - (b.z + b.d) < e ? 2 : -1, b.x - p < e ? 3 : -1].filter(k => k >= 0);
+  if (near.length) return near.slice(0, 2);
+  const dx = t.pw / 2 - (b.x + b.w / 2), dz = t.pd / 2 - (b.z + b.d / 2); return [Math.abs(dx) / t.pw > Math.abs(dz) / t.pd ? (dx > 0 ? 3 : 1) : (dz > 0 ? 0 : 2)]; }
 function coverAC() {   // one cover over each AC unit that has none yet
   const t = S.site; if (t.kind !== 'terrace') return 0; t.blocks.forEach(b => { if (!b.id) b.id = 'b' + Math.random().toString(36).slice(2, 8); });
   let n = 0; t.blocks.filter(b => b.type === 'ac' && !S.items.some(o => o.mode === 'ac' && o.bid === b.id)).forEach(b => { const it = { cat: 'accover', mode: 'ac', bid: b.id, label: 'AC cover', rot: 0 }; S.items.push(it); attach(it, S.items.length - 1); n++; });
@@ -549,9 +556,12 @@ function stepPlace() {
     if (sel.cat === 'graffiti') T.size += `<label class="pl-ck" style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="gfit"${sel.fit !== false ? ' checked' : ''}> Fit the whole wall it's on${sel.open ? ' (door left open)' : ''}</label>`;
     if (!att(sel) && c.kind !== 'edge' && !sel.lock) T.place += '<p class="pl-h" style="margin-top:6px">Against a wall? <small style="font-weight:400;color:#7A7268">it stays on it when moved</small></p><div class="pl-tabs">' + [['free', 'Free'], ['left', 'Left'], ['right', 'Right'], ['back', 'Back'], ['front', 'Front']].map(([k2, l2]) => btn(`data-pl="wside:${k2}"`, (sel.wside || 'free') === k2, l2)).join('') + '</div>';
     T.design += `<p style="margin:10px 0 0;font-size:14px">${fp && fp.price != null ? (lock ? '🔒 Price after sign-in' : 'From <b>' + rs(fp.price) + '</b>') : fp && fp.soon ? 'Coming soon' : 'Our team will price it'} <small style="color:#7A7268">· ${fp ? fp.n : 0} designs</small></p>`;
+    const look = !!(S.su && S.su.done && S.site.kind === 'terrace');   // 239: after the setup the 3D only shows — sizes and places change on the 2D plan
+    if (look) { T.size = ''; T.place = ''; T.design = '<p class="pl-sub" style="margin:0 0 8px">Sizes and places change on the 2D plan.</p>' + T.design; }
     { const tabs = [['size', 'Size'], ['place', 'Place'], ['design', 'Design & price']].filter(([k]) => T[k]); if (!T[S.edTab]) S.edTab = tabs.length ? tabs[0][0] : 'size';
       if (tabs.length > 1) h += '<div class="pl-etabs">' + tabs.map(([k, l]) => btn(`data-pl="etab:${k}"`, S.edTab === k, l)).join('') + '</div>'; h += '<div class="pl-epane">' + (T[S.edTab] || '') + '</div>'; }
-    h += '<div class="pl-act">' + (att(sel) ? '' : `<button type="button" data-pl="lock">${sel.lock ? '🔓 Unlock' : '🔒 Lock'}</button>`) + (!sel.lock && (c.kind === 'free' || c.kind === 'floor') && sel.mode !== 'ac' ? '<button type="button" data-pl="rot">↻ Turn</button>' : '') + (att(sel) || sel.lock ? '' : '<button type="button" data-pl="dup">⧉ Copy</button>') + (sel.lock ? '' : '<button type="button" data-pl="del">🗑 Remove</button>') + '<button type="button" data-pl="done" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Done</button></div></div>';
+    if (look) h += '<div class="pl-act"><button type="button" data-pl="plan2d">📐 Change on the 2D plan</button><button type="button" data-pl="done" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Done</button></div></div>';
+    else h += '<div class="pl-act">' + (att(sel) ? '' : `<button type="button" data-pl="lock">${sel.lock ? '🔓 Unlock' : '🔒 Lock'}</button>`) + (!sel.lock && (c.kind === 'free' || c.kind === 'floor') && sel.mode !== 'ac' ? '<button type="button" data-pl="rot">↻ Turn</button>' : '') + (att(sel) || sel.lock ? '' : '<button type="button" data-pl="dup">⧉ Copy</button>') + (sel.lock ? '' : '<button type="button" data-pl="del">🗑 Remove</button>') + '<button type="button" data-pl="done" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Done</button></div></div>';
     if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
     return h;
   }
@@ -644,7 +654,7 @@ function suSkip(q) { const B = S.bsel || {};
 function suStep(d) { const su = S.su; let q = su.q + d; while (q > 0 && q < SUQ.length - 1 && suSkip(SUQ[q])) q += d; su.q = Math.max(0, Math.min(SUQ.length - 1, q)); }
 function suCab() { const su = S.su, n = (S.bsel || {}).cabin || 0; su.cab = (su.cab || []).slice(0, n); while (su.cab.length < n) su.cab.push({ use: [], pantry: false, wash: false }); return su.cab; }
 function suCompose() {   // a fresh setup from the answers
-  const su = S.su; S.items = []; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; S.bsel.feature = S.bsel.feature || 1; delete S.bsel.lights; delete S.bsel.planter; delete S.bsel.vgarden;
+  const su = S.su; S.items = []; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; S.bsel.feature = S.bsel.feature || 1; delete S.bsel.lights; delete S.bsel.planter;
   if (su.turf === true) S.bsel.turf = 1; else if (su.turf === false) delete S.bsel.turf;
   S.site.floor = { tile: (THEME_T[su.theme] || THEME_T.natural)[1], pebble: true }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls || 'none'; S.site.tankScreen = su.tankHas === true && !su.tankScr ? 'existing' : '';
   compose();
@@ -656,7 +666,7 @@ function suPaint() {
   const big = (k, on, e, t, sm) => chip(k, on, `<i>${e}</i><b>${t}</b>${sm ? `<small>${sm}</small>` : ''}`), next = (tx, dis) => `<div class="pl-subar"><button type="button" class="pl-go" data-su="next"${dis ? ' disabled' : ''}>${tx || 'Next →'}</button></div>`;
   let h = `<div class="pl-suh"><button type="button" data-su="back" aria-label="Back">←</button><b>Set up your terrace</b><button type="button" data-su="x" aria-label="Close">✕</button></div><div class="pl-sub2"><div class="pl-dots">${SUQ.filter(z => !suSkip(z)).map(z => `<i class="${SUQ.indexOf(z) <= su.q ? 'on' : ''}"></i>`).join('')}</div>`;
   if (q === 'mood') h += '<h2>What is it for?</h2><div class="pl-sumood">' + SETUPS.filter(x => !x.lawn || !terr).map(x => `<button type="button" data-su="mood:${x.k}" class="${S.bth === x.k ? 'on' : ''}"><i>${x.e}</i><b>${esc(x.t)}</b></button>`).join('') + `<button type="button" data-su="mood:"><i>✋</i><b>I'll choose</b></button></div>`;
-  else if (q === 'want') { const cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'chair', 'table', 'graffiti', 'bench', 'sculpture', 'pathway', 'turf', 'lights', 'planter', 'vgarden'].includes(c.k));
+  else if (q === 'want') { const cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'chair', 'table', 'graffiti', 'bench', 'sculpture', 'pathway', 'turf', 'lights', 'planter'].includes(c.k));
     h += '<h2>What do you want?</h2><div class="pl-els pl-els2">' + cats.map(c => { const v = B[c.k] || 0; return `<button type="button" data-su="bel:${c.k}" class="${v ? 'on' : ''}"><i>${c.e}</i><b>${esc(c.t)}</b>${v ? '<em>✓</em>' : ''}</button>`; }).join('') + '</div><p class="pl-sub" style="margin-top:12px">Plants and lights come next.</p>' + next('', !Object.keys(B).length); }
   else if (q === 'cabin') { const cb = suCab(); h += '<h2>Your cabin' + (cb.length > 1 ? 's' : '') + '</h2><div class="pl-cnts"><span>🏠 How many cabins</span><button type="button" data-su="ncab:-1">−</button><b>' + cb.length + '</b><button type="button" data-su="ncab:1">+</button></div>';
     cb.forEach((c, i) => { h += `<div class="pl-cab"><b>Cabin ${cb.length > 1 ? i + 1 : ''} — what for?</b><div class="pl-sucs">` + CAB_USE.map(u => chip(`cuse:${i}:${u}`, c.use.includes(u), esc(u))).join('') + `</div><b>Inside it</b><div class="pl-sucs">` + chip(`cin:${i}:pantry`, c.pantry, '🍳 Pantry') + chip(`cin:${i}:wash`, c.wash, '🚿 Washroom') + '</div></div>'; });
@@ -742,49 +752,51 @@ function spotBest(it, i, score, rots, dz) {   // dz: the space in front of the s
       const sc = score(it.x + f[0] / 2, it.z + f[1] / 2, f, rot); if (!best || sc > best[0]) best = [sc, it.x, it.z, rot]; } }
   if (!best) { Object.assign(it, keep); return false; } it.x = best[1]; it.z = best[2]; it.rot = best[3]; return true;
 }
-function compose() {
+function compose() {   // 239: big things first (cabin in a corner / at the back), then the pathway that reaches them, seats facing the garden, built-in seating in an L, plants last and spread out
   const g = geo(), t = g.t, P = g.P, B = S.bsel || {}, WH = S.bwh || {}, M = g.M, wh = k => WH[k] || whereOpts(k, g)[0][0];
-  const ppl = (S.su || {}).pg || (S.su || {}).people || '5-8', SZ = { '2-4': { sofa: [8, 7], dining: [5, 5], pergola: [10, 9] }, '5-8': { sofa: [10, 8], dining: [7, 6], pergola: [12, 10] }, '9-12': { sofa: [12, 9], dining: [10, 6], pergola: [16, 12] }, '12+': { sofa: [14, 10], dining: [12, 7], pergola: [18, 13] } }[ppl] || {};
+  const ppl = (S.su || {}).pg || (S.su || {}).people || '5-8', SZ = { '2-4': { sofa: [8, 7], dining: [5, 5], pergola: [10, 9], L: [8, 5] }, '5-8': { sofa: [10, 8], dining: [7, 6], pergola: [12, 10], L: [10, 6] }, '9-12': { sofa: [12, 9], dining: [10, 6], pergola: [16, 12], L: [12, 8] }, '12+': { sofa: [14, 10], dining: [12, 7], pergola: [18, 13], L: [14, 10] } }[ppl] || {};
   const sun = (cx, cz, k) => g.sw ? k * ((cx - t.pw / 2) * g.sw[0] + (cz - t.pd / 2) * g.sw[1]) : 0;   // + toward the afternoon sun (south-west)
-  const farX = w => g.far === 'right' ? t.pw - P - w / 2 : P + w / 2, by = k => S.items.find(o => o.cat === k);
+  const farX = w => g.far === 'right' ? t.pw - P - w / 2 : P + w / 2, by = k => S.items.find(o => o.cat === k), all = k => S.items.filter(o => o.cat === k);
   const d2 = (x, z, X, Z) => Math.hypot(x - X, z - Z), wallBonus = (f, cx, cz, sd) => { const e = { left: cx - f[0] / 2 - P, right: t.pw - P - cx - f[0] / 2, back: cz - f[1] / 2 - P, front: t.pd - P - cz - f[1] / 2 }[sd]; return e < 0.6 ? 6 : 0; };
   const inR = (cx, cz, r) => r && cx > r.x && cx < r.x + r.w && cz > r.z && cz < r.z + r.d;
+  const ov = (a0, a1, b0, b1) => a0 < b1 - 0.5 && a1 > b0 + 0.5;
+  const tch = (cx, cz, f) => { const r = { x: cx - f[0] / 2, z: cz - f[1] / 2, w: f[0], d: f[1] }, e = 0.6, ob = (t.kind === 'terrace' ? t.blocks.filter(b => b.type !== 'ac') : []).concat(all('cabin').map(rectI)).filter(o => !(Math.abs(o.x - r.x) < 0.01 && Math.abs(o.z - r.z) < 0.01));
+    const L = r.x - P < e || ob.some(o => Math.abs(o.x + o.w - r.x) < e && ov(r.z, r.z + r.d, o.z, o.z + o.d)), R = t.pw - P - (r.x + r.w) < e || ob.some(o => Math.abs(o.x - (r.x + r.w)) < e && ov(r.z, r.z + r.d, o.z, o.z + o.d));
+    const Bk = r.z - P < e || ob.some(o => Math.abs(o.z + o.d - r.z) < e && ov(r.x, r.x + r.w, o.x, o.x + o.w)), F = t.pd - P - (r.z + r.d) < e || ob.some(o => Math.abs(o.z - (r.z + r.d)) < e && ov(r.x, r.x + r.w, o.x, o.x + o.w));
+    return { L, R, Bk, F, n: (L || R ? 1 : 0) + (Bk || F ? 1 : 0) }; };
+  const backTo = (cx, cz, f, rot) => { const c = tch(cx, cz, f); return [c.Bk, c.L, c.F, c.R][[0, 270, 180, 90].indexOf(+rot % 360)] || false; };   // its back (−z of the model) against a wall
+  const FACE = { 0: [0, 1], 90: [-1, 0], 180: [0, -1], 270: [1, 0] }, faceTo = (cx, cz, rot, X, Z) => { const v = FACE[+rot % 360] || [0, 1], dx = X - cx, dz = Z - cz, n = Math.hypot(dx, dz) || 1; return (v[0] * dx + v[1] * dz) / n; };
+  const backZ = g.road.includes('front') && !g.road.includes('back') ? 1 : g.road.includes('back') && !g.road.includes('front') ? -1 : 1;   // the back = away from the road
+  const backness = cz => backZ > 0 ? 1 - cz / t.pd : cz / t.pd;
   let miss = 0; const notes = [];
   // 236: the closest real terraces (stairs at the same spot, same shape / size) say where each thing goes — their spots are the targets, the rules only break ties
-  const LAY = (() => { try { return TM.layout ? TM.layout(t, 6) : []; } catch (e) { return []; } })(), LMAP = { sofa: 'seating', dining: 'seating', swing: 'swing' }, used = {};
+  const LAY = (() => { try { return TM.layout ? TM.layout(t, 6) : []; } catch (e) { return []; } })(), LMAP = { sofa: 'seating', dining: 'seating', fbench: 'seating', swing: 'swing', counter: 'bar' }, used = {};
   const learned = k => { const ty = LMAP[k] || k, pts = []; LAY.forEach(L => L.els.forEach(e => { if (e[0] === ty) pts.push([e[1], e[2]]); })); const n = used[k] || 0; used[k] = n + 1; return pts[n] || null; };
-  const LEARNED = new Set(['cabin', 'pergola', 'bar', 'water', 'jacuzzi', 'turf']);
-  const SHRINK = { pergola: [8, 8], deck: [6, 6], turf: [6, 5], sofa: [6, 5], dining: [4, 4], jacuzzi: [6, 6] };
-  const put = (k, score, opt) => { opt = opt || {}; const it = newItem(k); if (!it) return null; Object.assign(it, opt.set || {}); if (k === 'cabin' || k === 'pergola') it.label = it.label || CAT[k].t; const i = S.items.length; S.items.push(it);
-    const tg = LEARNED.has(k) && !opt.keepRule ? learned(k) : null, sc = tg && score ? (cx, cz, f, rot) => -1.6 * d2(cx, cz, tg[0], tg[1]) + 0.25 * score(cx, cz, f, rot) : score;
+  const LEARNED = new Set(['pergola', 'bar', 'water', 'jacuzzi', 'turf']);
+  const SHRINK = { pergola: [8, 8], deck: [6, 6], turf: [6, 5], sofa: [6, 5], dining: [4, 4], jacuzzi: [6, 6], counter: [4, 2.5] };
+  const put = (k, score, opt) => { opt = opt || {}; const it = newItem(k); if (!it) return null; Object.assign(it, opt.set || {}); if (opt.pre) try { opt.pre(it); } catch (e) {} if (k === 'cabin' || k === 'pergola') it.label = it.label || CAT[k].t; const i = S.items.length; S.items.push(it);
+    const tg = LEARNED.has(k) && !opt.keepRule ? learned(k) : null, sc0 = tg && score ? (cx, cz, f, rot) => -1.6 * d2(cx, cz, tg[0], tg[1]) + 0.25 * score(cx, cz, f, rot) : score, sc = opt.bonus && sc0 ? (cx, cz, f, rot) => sc0(cx, cz, f, rot) + opt.bonus(cx, cz, f, rot) : sc0;
     if (CAT[k].kind === 'wall') { it.x = r2(opt.at[0] - it.w / 2); it.z = r2(opt.at[1]); it.rot = opt.rot; if (!settle(it, i, [it.x, it.z])) { S.items.pop(); miss++; return null; } return it; }
     const dz = g.dz && Object.assign({ fr: g.fr }, g.dz); let ok = spotBest(it, i, sc, opt.rots, dz);
     for (let tr = 0; !ok && tr < 5 && SHRINK[k]; tr++) { it.w = Math.max(SHRINK[k][0], r2(it.w * 0.85)); it.d = Math.max(SHRINK[k][1], r2(it.d * 0.85)); ok = spotBest(it, i, sc, opt.rots, dz); if (it.w === SHRINK[k][0] && it.d === SHRINK[k][1]) break; }   // too big → a little smaller, not left out
     if (!ok && k === 'cabin') { try { cabinSize(it, 10, 8); } catch (e) {} ok = spotBest(it, i, sc, opt.rots, dz); }
-    if (!ok) { S.items.pop(); miss++; return null; } flush(it, i); if (opt.wside) it.wside = opt.wside; if (tg) it.learned = true; return it; };
+    if (!ok) { S.items.pop(); miss++; return null; } if (!opt.noFlush) flush(it, i); if (opt.wside) it.wside = opt.wside; if (tg) it.learned = true; return it; };
   const mumtyFace = () => { if (!M) return [t.pw / 2, P + 2]; return g.door === 'right' ? [M.x + M.w, M.z + M.d / 2] : g.door === 'left' ? [M.x, M.z + M.d / 2] : g.door === 'front' ? [M.x + M.w / 2, M.z + M.d + 1.5] : [M.x + M.w / 2, M.z - 1.5]; };
-  // the cabin first (it is the biggest), then the pathway from the stairs, so nothing else sits on it
-  if (B.cabin) { const w = wh('cabin'), mf = mumtyFace();
-    put('cabin', (cx, cz, f) => w === 'front' ? -d2(cx, cz, t.pw / 2, t.pd) : w === 'far' ? -d2(cx, cz, farX(f[0]), t.pd * 0.4) : -d2(cx, cz, M && g.side !== 'centre' ? (g.side === 'left' ? M.x + M.w + f[0] / 2 + 3.5 : M.x - f[0] / 2 - 3.5) : farX(f[0]), P + f[1] / 2) + wallBonus(f, cx, cz, 'back'), { rots: [0] });
-    const CS = { '1-2': [10, 8], '3-4': [12, 10], '5-8': [16, 10] }[(S.su || {}).cs], cabs = (S.su || {}).cab || [];   // 235: size by people, purpose + pantry / washroom per cabin
-    for (let ci = 1; ci < Math.min(3, B.cabin || 1); ci++) put('cabin', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * (0.35 + ci * 0.2)), { rots: [0] });
-    S.items.forEach((o, oi) => { if (o.cat !== 'cabin') return; const k = S.items.filter(z => z.cat === 'cabin').indexOf(o), c = cabs[k] || {};
-      if (CS) try { cabinSize(o, CS[0], CS[1]); } catch (e) {}
+  // 1) the cabin: in a corner (two walls — parapet, the stairs room or another cabin), at the back, away from the road (owner: "mostly in corners or at the back or joining the pergola")
+  if (B.cabin) { const w = wh('cabin'), CS = { '1-2': [10, 8], '3-4': [12, 10], '5-8': [16, 10] }[(S.su || {}).cs], cabs = (S.su || {}).cab || [];
+    for (let ci = 0; ci < Math.min(3, B.cabin || 1); ci++) { const lt = learned('cabin');
+      put('cabin', (cx, cz, f) => { const c = tch(cx, cz, f); return (c.n === 2 ? 40 : c.n * 12) + 16 * (w === 'front' ? 1 - backness(cz) : backness(cz)) + (w === 'far' ? -0.4 * Math.abs(cx - farX(f[0])) : 0) - (lt ? 0.12 * d2(cx, cz, lt[0], lt[1]) : 0) - ((backZ > 0 ? c.F : c.Bk) && g.road.length ? 8 : 0); },
+        { rots: [0], keepRule: true, pre: CS ? o => cabinSize(o, CS[0], CS[1]) : null }); }
+    S.items.forEach(o => { if (o.cat !== 'cabin') return; const k = all('cabin').indexOf(o), c = cabs[k] || {};
       o.purpose = (c.use || []).slice(); o.inside = { pantry: !!c.pantry, wash: !!c.wash }; if (o.purpose.length) o.label = 'Cabin · ' + o.purpose.join(', ');
       if (c.pantry || c.wash) try { const lay = JSON.parse(JSON.stringify(cabinLay(o))), L = +lay.L || 12, pl = (lay.places || []).filter(p => !['toilet', 'wc', 'pantry'].includes(p.key));
         if (c.wash) pl.push({ key: 'toilet', x: 0, y: 0, rot: 0, len: null }); if (c.pantry) pl.push({ key: 'pantry', x: Math.max(c.wash ? 4.5 : 0, L - 6), y: 0, rot: 0, len: null }); lay.places = pl; o.layout = lay; o.lsku = o.sku; } catch (e) {} });
-    const cb0 = by('cabin'); if (cb0) { const cz = cb0.z + rectI(cb0).d / 2, dep = cz < t.pd / 3 ? 'at the back' : cz < t.pd * 2 / 3 ? 'in the middle' : 'at the front'; notes.push('Cabin ' + dep + (w === 'back' && g.side !== 'centre' && dep === 'at the back' ? ', beside the stairs (54% of ours)' : '')); } }
+    const cb0 = by('cabin'); if (cb0) { const r = rectI(cb0), c = tch(r.x + r.w / 2, r.z + r.d / 2, [r.w, r.d]); notes.push('Cabin ' + (c.n === 2 ? 'in the corner' : 'against the wall') + (backness(r.z + r.d / 2) > 0.6 ? ' at the back' : '')); } }
   const cab = by('cabin'), cr = cab ? rectI(cab) : null;
-  if (B.pathway) { const mf = mumtyFace(), cx0 = g.side === 'left' ? Math.min(t.pw - P - 3, Math.max(mf[0] + 2, t.pw / 2 - 1.5)) : g.side === 'right' ? Math.max(P, Math.min(mf[0] - 5, t.pw / 2 - 1.5)) : r2(t.pw / 2 - 1.5);
-    const z0 = r2(g.side === 'centre' ? (M.z + M.d / 2 < t.pd / 2 ? M.z + M.d : P) : Math.max(P, cr ? cr.z + cr.d : Math.min(mf[1] - 1.5, P + 4))), z1 = g.side === 'centre' && M.z + M.d / 2 >= t.pd / 2 ? M.z : t.pd - P;
-    const mk = (x, z, w, d) => { const it = newItem('pathway'); const fl2 = v => Math.floor(v * 2) / 2; Object.assign(it, { x: r2(x), z: r2(z), w: fl2(w), d: fl2(d), rot: 0 }); const i = S.items.length; S.items.push(it); const cl = clashes(it, i); if (cl) { S.items.pop(); return null; } return it; };
-    let pth = null;   // from where the door is to the front; if something stands in the way, start after it / shift a little
-    for (let dx = 0; !pth && dx < 8; dx += 0.5) for (let zs = z0; !pth && z1 - zs >= 8; zs += 0.5) pth = mk(cx0 + dx, zs, 3, z1 - zs) || (dx ? mk(cx0 - dx, zs, 3, z1 - zs) : null);
-    if (pth && M) { const ns = g.door === 'front' || g.door === 'back', dpx = mf[0], a = dpx < pth.x ? (ns ? dpx - 1.5 : dpx) : pth.x + 3, b = dpx < pth.x ? pth.x : (ns ? dpx + 1.5 : dpx); if (b - a > 0.5 && (dpx < pth.x || dpx > pth.x + 3)) mk(a, r2(mf[1] - 1.5), b - a, 3); }
-    if (pth) notes.push('Pathway from the stairs through the middle'); else miss++; }
+  // 2) the pergola (+ deck under it)
   if (B.pergola) { const w = wh('pergola');
-    put('pergola', (cx, cz, f) => sun(cx, cz, 0.35) + ( w === 'cabin' && cr ? -d2(cx, cz, cr.x + cr.w / 2, cr.z + cr.d + f[1] / 2) : w === 'back' ? -d2(cx, cz, farX(f[0]), P + f[1] / 2) : -d2(cx, cz, farX(f[0]), t.pd - P - f[1] / 2) + wallBonus(f, cx, cz, g.far) + wallBonus(f, cx, cz, 'front')), { set: SZ.pergola ? { w: SZ.pergola[0], d: SZ.pergola[1] } : {} });
-    if (by('pergola')) notes.push(w === 'cabin' ? 'Pergola joined to the cabin' : 'Pergola on the ' + g.far + (w === 'back' ? ', at the back' : ', at the front') + ' (like 87% of ours)'); }
+    put('pergola', (cx, cz, f) => sun(cx, cz, 0.35) + (w === 'cabin' && cr ? -d2(cx, cz, cr.x + cr.w / 2, cr.z + cr.d + f[1] / 2) : w === 'back' ? -d2(cx, cz, farX(f[0]), P + f[1] / 2) : -d2(cx, cz, farX(f[0]), t.pd - P - f[1] / 2) + wallBonus(f, cx, cz, g.far) + wallBonus(f, cx, cz, 'front')), { set: SZ.pergola ? { w: SZ.pergola[0], d: SZ.pergola[1] } : {}, keepRule: w === 'cabin', bonus: (cx, cz, f) => { const c = tch(cx, cz, f); return c.n * 14; } });   // 239: against a wall / in a corner, not floating in the middle
+    if (by('pergola')) notes.push(w === 'cabin' ? 'Pergola joined to the cabin' : 'Pergola on the ' + g.far + (w === 'back' ? ', at the back' : ', at the front')); }
   const pg = by('pergola'), pr = pg ? rectI(pg) : null;
   if (B.deck) { const w = wh('deck');
     if (w === 'pergola' && pr) { const it = newItem('deck'); Object.assign(it, { x: pr.x, z: pr.z, w: pr.w, d: pr.d, rot: 0 }); S.items.push(it); if (clashes(it, S.items.length - 1)) S.items.pop(); }
@@ -793,49 +805,48 @@ function compose() {
   if (B.jacuzzi) put('jacuzzi', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.35) + wallBonus(f, cx, cz, g.far) - sun(cx, cz, 0.2));
   if (B.bar) { const w = wh('bar'), mf = mumtyFace();
     put('bar', (cx, cz, f, rot) => (w === 'pergola' && pr ? -d2(cx, cz, pr.x + pr.w / 2, pr.z + 1.5) + (inR(cx, cz, pr) ? 8 : 0) : w === 'far' ? -d2(cx, cz, farX(f[0]), t.pd * 0.4) : -d2(cx, cz, mf[0] + (g.side === 'left' ? 5 : g.side === 'right' ? -5 : 0), mf[1] + (g.side === 'centre' ? 5 : 0)))
-      + ((g.side === 'centre' ? rot === 0 : rot === 90) ? 2 : 0));
-    if (by('bar') && w === 'mumty') notes.push('Bar beside the stairs (64% of ours)'); }
-  const seat = (k, wk) => { const w = wh(k), zz = SZ[k]; put(k, (cx, cz, f) => w === 'pergola' && pr ? -d2(cx, cz, pr.x + pr.w / 2, pr.z + pr.d / 2) + (inR(cx, cz, pr) && inR(cx - f[0] / 2 + 0.3, cz - f[1] / 2 + 0.3, pr) && inR(cx + f[0] / 2 - 0.3, cz + f[1] / 2 - 0.3, pr) ? 20 : 0)
-    : w === 'bar' && by('bar') ? -d2(cx, cz, rectI(by('bar')).x + rectI(by('bar')).w / 2, rectI(by('bar')).z + rectI(by('bar')).d / 2 + 5) : -d2(cx, cz, farX(f[0]), t.pd * (wk || 0.55)), { set: zz ? { w: zz[0], d: zz[1] } : {} }); };
-  if (B.sofa) { seat('sofa'); if (by('sofa') && wh('sofa') === 'pergola') notes.push('Sofa under the pergola'); }
-  if (B.dining) seat('dining', 0.7);
-  if (B.swing) seat('swing', 0.3);
-  if (B.bench) put('bench', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.25) + wallBonus(f, cx, cz, g.far));
+      + (backTo(cx, cz, f, rot) ? 5 : 0), { rots: [0, 90, 180, 270] });
+    if (by('bar') && w === 'mumty') notes.push('Bar beside the stairs'); }
+  // 3) the pathway: from the stairs door to the cabin and the pergola — only as far as it needs to go
+  if (B.pathway) pathTo(g, M && g.door === 'front' ? [M.x + M.w / 2, M.z + M.d] : M && g.door === 'back' ? [M.x + M.w / 2, M.z] : mumtyFace(), [cab, pg, by('jacuzzi'), by('bar')].filter(Boolean), notes) || miss++;
   if (B.turf) { const w = wh('turf'); for (const sz of [[14, 12], [12, 10], [10, 8], [8, 6], [6, 5]]) { const it = newItem('turf'); it.w = Math.min(sz[0], t.pw - 2 * P - 4); it.d = sz[1]; const i = S.items.length; S.items.push(it);
       const ok = spotBest(it, i, (cx, cz, f) => -d2(cx, cz, g.far === 'right' ? t.pw * 0.6 : t.pw * 0.4, w === 'mid' ? t.pd / 2 : t.pd - P - f[1] / 2) - S.items.filter((o, j) => j !== i && !att(o) && CAT[o.cat].kind !== 'floor' && hit(rectI(it), rectI(o))).length * 6, [0]);
       if (ok) break; S.items.pop(); } if (!by('turf')) miss++; }
+  const tf = by('turf'), gc = tf ? [rectI(tf).x + rectI(tf).w / 2, rectI(tf).z + rectI(tf).d / 2] : [t.pw / 2, t.pd / 2];   // "the garden" seats look at
+  // 4) seats — under the pergola they face the garden, never the parapet
+  const seat = (k, wk) => { const w = wh(k), zz = SZ[k], face = k === 'sofa' || k === 'swing';
+    put(k, (cx, cz, f, rot) => (w === 'pergola' && pr ? -d2(cx, cz, pr.x + pr.w / 2, pr.z + pr.d / 2) + (inR(cx, cz, pr) && inR(cx - f[0] / 2 + 0.3, cz - f[1] / 2 + 0.3, pr) && inR(cx + f[0] / 2 - 0.3, cz + f[1] / 2 - 0.3, pr) ? 20 : 0)
+      : w === 'bar' && by('bar') ? -d2(cx, cz, rectI(by('bar')).x + rectI(by('bar')).w / 2, rectI(by('bar')).z + rectI(by('bar')).d / 2 + 5) : -d2(cx, cz, farX(f[0]), t.pd * (wk || 0.55)))
+      + (face ? 9 * faceTo(cx, cz, rot, gc[0], gc[1]) : 0), { set: zz ? { w: zz[0], d: zz[1] } : {}, rots: face ? [0, 90, 180, 270] : [0, 90] }); };
+  if (B.sofa) { seat('sofa'); if (by('sofa') && wh('sofa') === 'pergola') notes.push('Sofa under the pergola, facing the garden'); }
+  if (B.fbench) lSeat(g, SZ.L || [10, 6], learned('fbench'), pr, notes) || miss++;
+  if (B.dining) seat('dining', 0.7);
+  if (B.swing) seat('swing', 0.3);
+  if (B.bench) put('bench', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.25) + wallBonus(f, cx, cz, g.far));
+  if (B.counter) { const nr = by('dining') || pg || by('fbench'), lt = learned('counter');   // food counter: its back to a wall, near where people eat
+    put('counter', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : 0) - (nr ? 0.8 * d2(cx, cz, rectI(nr).x + rectI(nr).w / 2, rectI(nr).z + rectI(nr).d / 2) : lt ? 0.5 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270] });
+    if (by('counter')) notes.push('Food counter against the wall, near the seating'); }
   // walls: the feature wall faces the stairs, the water feature stands in front of it
   const wallAt = (sd, u, k) => { const it = newItem(k), w = it.w, run = sd === 'back' || sd === 'front' ? t.pw : t.pd, uu = Math.max(P, Math.min(run - P - w, u - w / 2));
     return sd === 'back' ? { at: [uu + w / 2, P], rot: 0 } : sd === 'front' ? { at: [uu + w / 2, t.pd - P - it.d], rot: 180 } : sd === 'left' ? { at: [P + w / 2, uu], rot: 270 } : { at: [t.pw - P - it.d + w / 2, uu], rot: 90 }; };
   const mU = M ? (g.facing === 'back' || g.facing === 'front' ? M.x + M.w / 2 : M.z + M.d / 2) : t.pd / 2;
   if (B.feature) { const w = wh('feature');
     if (w === 'mumty' && M) put('feature', null, Object.assign(wallAt(g.side === 'left' ? 'right' : 'left', 0, 'feature'), { at: [g.side === 'left' ? M.x + M.w + 0.6 : M.x - 0.6, M.z + 1], rot: g.side === 'left' ? 90 : 270 }));
-    else { const tf = learned('feature'); if (tf) { const ds = [['back', tf[1]], ['left', tf[0]], ['right', t.pw - tf[0]], ['front', t.pd - tf[1]]].filter(z => !g.road.includes(z[0])).sort((p, q) => p[1] - q[1])[0];
-        put('feature', null, wallAt(ds[0], ds[0] === 'back' || ds[0] === 'front' ? tf[0] : tf[1], 'feature')); } if (!by('feature')) put('feature', null, wallAt(g.facing, mU, 'feature')); }
+    else { const tf2 = learned('feature'); if (tf2) { const ds = [['back', tf2[1]], ['left', tf2[0]], ['right', t.pw - tf2[0]], ['front', t.pd - tf2[1]]].filter(z => !g.road.includes(z[0])).sort((p, q) => p[1] - q[1])[0];
+        put('feature', null, wallAt(ds[0], ds[0] === 'back' || ds[0] === 'front' ? tf2[0] : tf2[1], 'feature')); } if (!by('feature')) put('feature', null, wallAt(g.facing, mU, 'feature')); }
     if (by('feature')) notes.push('Feature wall on the wall facing the stairs'); }
   if (B.water) { const w = wh('water'), fw = by('feature');
     put('water', (cx, cz, f) => w === 'seat' && (by('sofa') || pr) ? -d2(cx, cz, rectI(by('sofa') || pg).x + rectI(by('sofa') || pg).w + 3, rectI(by('sofa') || pg).z + 3)
       : fw ? -d2(cx, cz, rectI(fw).x + rectI(fw).w / 2 + (g.facing === 'right' ? -3 : g.facing === 'left' ? 3 : 0), rectI(fw).z + rectI(fw).d / 2 + (g.facing === 'back' ? 3 : g.facing === 'front' ? -3 : 0))
       : -d2(cx, cz, g.facing === 'right' ? t.pw - P - 3 : g.facing === 'left' ? P + 3 : t.pw / 2, g.facing === 'back' ? P + 3 : g.facing === 'front' ? t.pd - P - 3 : mU));
-    if (by('water')) notes.push('Water feature facing the stairs (58% of ours)'); }
-  if (S.su && S.su.green) { const lv = S.su.green, quiet = (k, tg, o) => { const m0 = miss; put(k, (cx, cz) => -d2(cx, cz, tg[0], tg[1]), Object.assign({ rots: [0] }, o || {})); miss = m0; }, C1 = P + 1.2;   // 235: plants in the corners and the empty spaces
-    [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]].forEach(tg => quiet('planter', tg));
-    { const pts = []; LAY.slice(0, lv === 'lush' ? 3 : lv === 'balanced' ? 2 : 1).forEach(L => L.els.forEach(e => { if (e[0] === 'planter') pts.push([e[1], e[2]]); })); pts.slice(0, lv === 'lush' ? 12 : lv === 'balanced' ? 6 : 2).forEach(tg => quiet('planter', tg)); }
-    if (lv !== 'light') { const fx = g.far === 'right' ? t.pw - C1 : C1, step = lv === 'lush' ? 5 : 9; for (let z = P + 6; z < t.pd - 6; z += step) quiet('planter', [fx, z]);
-      P2.freeRects(t, S.items, lv === 'lush' ? 4 : 2).forEach(b => { quiet('planter', [b.x + 1, b.z + 1]); if (lv === 'lush') quiet('planter', [b.x + b.w - 1, b.z + b.d - 1]); });
-      const vg = lv === 'lush' ? 2 : 1; for (let k = 0; k < vg; k++) { const sd = k ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd, m0 = miss; put('vgarden', null, wallAt(sd, run * (k ? 0.5 : 0.35), 'vgarden')); miss = m0; } }
-    if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; for (let z = P + 6; z < t.pd - 6; z += 6) quiet('planter', [nx, z]); const pg2 = by('pergola'); if (pg2) { const r = rectI(pg2); [[r.x - 1, r.z - 1], [r.x + r.w + 1, r.z - 1], [r.x - 1, r.z + r.d + 1], [r.x + r.w + 1, r.z + r.d + 1]].forEach(tg => quiet('planter', tg)); } }
-    notes.push('Plants in the corners and the empty spaces'); }
-  for (let k = 0; k < (S.su && S.su.green ? 0 : B.vgarden || 0); k++) { const w = wh('vgarden'), sd = w === 'back' ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd; put('vgarden', null, wallAt(sd, run * (k + 1) / ((B.vgarden || 1) + 1), 'vgarden')); }
-  if (B.firepit) { const so = by('sofa') || pg; put('firepit', (cx, cz) => so ? -d2(cx, cz, rectI(so).x + rectI(so).w / 2 + (g.far === 'right' ? -1 : 1) * (rectI(so).w / 2 + 2.5), rectI(so).z + rectI(so).d / 2) : -d2(cx, cz, t.pw / 2, t.pd * 0.6)); }
-  if (B.umbrella) { const tf = by('turf'); put('umbrella', (cx, cz) => tf ? -d2(cx, cz, rectI(tf).x + rectI(tf).w / 2, rectI(tf).z + rectI(tf).d / 2) : -d2(cx, cz, t.pw / 2, t.pd * 0.7)); }
+    if (by('water')) notes.push('Water feature facing the stairs'); }
+  for (let k = 0; k < (B.vgarden || 0); k++) { const w = wh('vgarden'), sd = w === 'back' ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd; put('vgarden', null, wallAt(sd, run * (k + 1) / ((B.vgarden || 1) + 1), 'vgarden')); }   // 239: only when picked
+  if (B.firepit) { const fb = all('fbench'), so = by('sofa') || pg;   // in the middle of the L seating, else in front of the sofa
+    const tg = fb.length === 2 ? (() => { const a = rectI(fb[0]), b = rectI(fb[1]), cx = (Math.min(a.x, b.x) + Math.max(a.x + a.w, b.x + b.w)) / 2, cz = (Math.min(a.z, b.z) + Math.max(a.z + a.d, b.z + b.d)) / 2; return [cx, cz]; })()
+      : fb.length ? [rectI(fb[0]).x + rectI(fb[0]).w / 2, rectI(fb[0]).z + rectI(fb[0]).d / 2] : so ? [rectI(so).x + rectI(so).w / 2 + (g.far === 'right' ? -1 : 1) * (rectI(so).w / 2 + 2.5), rectI(so).z + rectI(so).d / 2] : [t.pw / 2, t.pd * 0.6];
+    put('firepit', (cx, cz) => -d2(cx, cz, tg[0], tg[1])); }
+  if (B.umbrella) { put('umbrella', (cx, cz) => -d2(cx, cz, gc[0], gc[1])); }
   if (B.sculpture) { const pa = by('pathway'); put('sculpture', (cx, cz) => pa ? -d2(cx, cz, pa.x + 4.5, pa.z + pa.d - 1.5) : -d2(cx, cz, t.pw / 2, t.pd - 3)); }
-  // planters: along the far wall (74% of ours), round the edges, or both sides of the pathway
-  if (B.planter && !(S.su && S.su.green)) { const w = wh('planter'), n = B.planter, pa = by('pathway');
-    for (let k = 0; k < n; k++) { const u = (k + 0.5) / n;
-      const tgt = w === 'path' && pa ? [pa.x + (k % 2 ? 4 : -1), pa.z + pa.d * ((Math.floor(k / 2) + 0.5) / Math.ceil(n / 2))] : w === 'edges' ? (u < 0.34 ? [P + 1 + (t.pw - 2) * u * 3, P + 1] : u < 0.67 ? [g.far === 'right' ? t.pw - P - 1 : P + 1, t.pd * (u - 0.34) * 3] : [P + 1 + (t.pw - 2) * (u - 0.67) * 3, t.pd - P - 1]) : [g.far === 'right' ? t.pw - P - 1 : P + 1, P + 1 + (t.pd - 2 * P - 2) * u];
-      put('planter', (cx, cz) => -d2(cx, cz, tgt[0], tgt[1]), { rots: [0] }); }
-    if (by('planter') && w === 'far') notes.push(n + ' planters along the ' + g.far + ' wall (74% of ours)'); }
   if (B.lights && !(S.su && S.su.light)) { const pa = by('pathway'), n = B.lights;
     for (let k = 0; k < n; k++) { const tgt = pa ? [k % 2 ? pa.x + pa.w + 0.6 : pa.x - 0.6, pa.z + pa.d * ((Math.floor(k / 2) + 0.5) / Math.ceil(n / 2))] : [P + 1 + (t.pw - 2) * ((k + 0.5) / n), t.pd - P - 1]; put('lights', (cx, cz) => -d2(cx, cz, tgt[0], tgt[1]), { rots: [0] }); } }
   if (B.privacy) { const w = wh('privacy');
@@ -843,9 +854,80 @@ function compose() {
     else { const it2 = { cat: 'privacy', mode: 'par', label: 'Screen on the parapet', sides: g.open.slice(), h: 3, w: 0, d: 0.3, x: 0, z: 0, rot: 0 }; S.items.push(it2); attach(it2, S.items.length - 1); if (!it2.w) { S.items.pop(); miss++; } else notes.push('Privacy screens on the ' + g.open.join(', ') + ' parapet'); } }
   if (B.accover && t.kind === 'terrace') coverAC();
   ['chair', 'table', 'graffiti', 'railing', 'gate'].forEach(k => { for (let j = 0; j < (B[k] || 0); j++) { const before = S.items.length; addItem(k); if (S.items.length === before) miss++; } });
+  // 5) plants LAST, once the big things stand — one in each free corner, then along the walls and round the pergola, never bunched (4 ft apart at least)
+  const plants = (lv, n0) => { const C1 = P + 1.2, gap = lv === 'lush' ? 4 : 6;
+    const quiet = (tg, far) => { const it = newItem('planter'); if (!it) return; const i = S.items.length; S.items.push(it); const near = (x, z) => S.items.some((o, j) => j !== i && o.cat === 'planter' && d2(x, z, o.x + 1, o.z + 1) < gap);
+      const ok = spotBest(it, i, (cx, cz) => -d2(cx, cz, tg[0], tg[1]) - (near(cx, cz) ? 50 : 0), [0], g.dz && Object.assign({ fr: g.fr }, g.dz));
+      if (!ok || near(it.x + 1, it.z + 1) || d2(it.x + 1, it.z + 1, tg[0], tg[1]) > (far || 4) || all('pergola').some(o => hit(rectI(it), rectI(o)))) { S.items.pop(); return; } flush(it, i); };   // never under the pergola
+    [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]].forEach(tg => quiet(tg));
+    if (n0 != null) { for (let k = 0, u = 0; k < n0; k++, u++) { const s2 = [P + 1, P + 1 + (t.pd - 2 * P - 2) * (u + 0.5) / n0]; quiet(g.far === 'right' ? [t.pw - P - 1, s2[1]] : s2, 5); } return; }
+    if (lv === 'light') return;
+    { const pts = []; LAY.slice(0, lv === 'lush' ? 3 : 2).forEach(L => L.els.forEach(e => { if (e[0] === 'planter') pts.push([e[1], e[2]]); })); pts.slice(0, lv === 'lush' ? 10 : 5).forEach(tg => quiet(tg, 5)); }
+    const step = lv === 'lush' ? 7 : 11, fx = g.far === 'right' ? t.pw - C1 : C1; for (let z = P + 6; z < t.pd - 6; z += step) quiet([fx, z], 3);
+    if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; for (let z = P + 8; z < t.pd - 6; z += 9) quiet([nx, z], 3); for (let x = P + 8; x < t.pw - 6; x += 9) { quiet([x, C1], 3); quiet([x, t.pd - C1], 3); } }
+    if (pr) { const r = pr; [[r.x - 1, r.z - 1], [r.x + r.w + 1, r.z - 1], [r.x - 1, r.z + r.d + 1], [r.x + r.w + 1, r.z + r.d + 1]].forEach(tg => quiet(tg, 2.5)); }
+    const cbs = all('cabin'); cbs.forEach(c => { const r = rectI(c); quiet([r.x - 1.2, r.z + r.d + 1], 2.5); quiet([r.x + r.w + 1.2, r.z + r.d + 1], 2.5); }); };
+  if (S.su && S.su.green) { plants(S.su.green); notes.push('Plants in the corners and along the walls, spaced out'); }
+  else if (B.planter) plants('light', B.planter);
   S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); });
   S.bnote = notes; return miss;
 }
+// 239: the pathway reaches the stairs door and the big things (cabin, pergola…) — a spine through the middle, only as long as it needs, + short stubs to each
+function pathTo(g, door, tgs, notes) {   // a 3 ft path routed on a ½-ft grid round what stands there (fewest turns), from the stairs door to each big thing's edge
+  const t = S.site, P = g.P, W = 3, H = W / 2, q = 0.5, NX = Math.floor(t.pw / q), NZ = Math.floor(t.pd / q), occ = new Uint8Array(NX * NZ);
+  const obs = (t.kind === 'terrace' ? t.blocks : []).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d })).concat(S.items.filter(o => !att(o) && CAT[o.cat] && (CAT[o.cat].kind !== 'floor' || o.cat === 'deck' || o.cat === 'turf')).map(rectI));
+  for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) { const x = (i + 0.5) * q, z = (j + 0.5) * q, r = { x: x - q / 2 + 0.01, z: z - q / 2 + 0.01, w: q - 0.02, d: q - 0.02 };
+    occ[j * NX + i] = !inside(r) || obs.some(o => x > o.x && x < o.x + o.w && z > o.z && z < o.z + o.d) ? 1 : 0; }
+  const ps = new Int32Array((NX + 1) * (NZ + 1)); for (let j = 0; j < NZ; j++) for (let i = 0; i < NX; i++) ps[(j + 1) * (NX + 1) + i + 1] = occ[j * NX + i] + ps[j * (NX + 1) + i + 1] + ps[(j + 1) * (NX + 1) + i] - ps[j * (NX + 1) + i];
+  const k = H / q, free = (i, j) => { const i0 = i - k, j0 = j - k, i1 = i + k, j1 = j + k; if (i0 < 0 || j0 < 0 || i1 > NX || j1 > NZ) return false; return ps[j1 * (NX + 1) + i1] - ps[j0 * (NX + 1) + i1] - ps[j1 * (NX + 1) + i0] + ps[j0 * (NX + 1) + i0] === 0; };   // the 3 × 3 ft square round grid point (i, j) is clear
+  const pt = (x, z) => [Math.round(x / q), Math.round(z / q)], id = (i, j) => j * (NX + 1) + i;
+  const tree = new Set(), segs = [];
+  const route = (starts, goal) => {   // Dijkstra over (point, heading); a turn costs 6 ft
+    const N = (NX + 1) * (NZ + 1), dist = new Float64Array(N * 4).fill(1e9), prev = new Int32Array(N * 4).fill(-1), hp = [], push = (c, v) => { hp.push([c, v]); let n = hp.length - 1; while (n) { const pp = (n - 1) >> 1; if (hp[pp][0] <= hp[n][0]) break; [hp[pp], hp[n]] = [hp[n], hp[pp]]; n = pp; } },
+      pop = () => { const top = hp[0], last = hp.pop(); if (hp.length) { hp[0] = last; let n = 0; for (;;) { const l = 2 * n + 1, r = l + 1; let m = n; if (l < hp.length && hp[l][0] < hp[m][0]) m = l; if (r < hp.length && hp[r][0] < hp[m][0]) m = r; if (m === n) break; [hp[m], hp[n]] = [hp[n], hp[m]]; n = m; } } return top; };
+    const D = [[1, 0], [-1, 0], [0, 1], [0, -1]]; starts.forEach(([i, j, c0]) => { if (!free(i, j)) return; for (let h = 0; h < 4; h++) { dist[id(i, j) * 4 + h] = c0 || 0; push(c0 || 0, id(i, j) * 4 + h); } });
+    while (hp.length) { const [c, v] = pop(); if (c > dist[v]) continue; const n = v >> 2, h = v & 3, i = n % (NX + 1), j = (n / (NX + 1)) | 0;
+      if (goal(i, j)) { const out = []; let u = v; while (u >= 0) { const nn = u >> 2; out.push([nn % (NX + 1), (nn / (NX + 1)) | 0]); u = prev[u]; } return out.reverse(); }
+      for (let h2 = 0; h2 < 4; h2++) { const i2 = i + D[h2][0], j2 = j + D[h2][1]; if (i2 < 0 || j2 < 0 || i2 > NX || j2 > NZ || !free(i2, j2)) continue; const v2 = id(i2, j2) * 4 + h2, c2 = c + q + (h2 === h ? 0 : 6);
+        if (c2 < dist[v2]) { dist[v2] = c2; prev[v2] = v; push(c2, v2); } } }
+    return null; };
+  // start: just outside the stairs door
+  const st = []; { const [di, dj] = pt(door[0], door[1]); for (let r = k; r <= k + 4; r++) for (const [a2, b2] of [[0, r], [0, -r], [r, 0], [-r, 0]]) if (free(di + a2, dj + b2)) st.push([di + a2, dj + b2]); st.splice(4);
+    const M = g.M; if (M) { const out = [];   // a door that opens into a dead end: the path may also start at another face of the stairs room (costs more)
+      for (let x = M.x + H; x <= M.x + M.w - H; x += 1) { out.push([x, M.z - H - 0.1], [x, M.z + M.d + H + 0.1]); } for (let z = M.z + H; z <= M.z + M.d - H; z += 1) { out.push([M.x - H - 0.1, z], [M.x + M.w + H + 0.1, z]); }
+      out.forEach(([x, z]) => { const [i, j] = pt(x, z); if (free(i, j)) st.push([i, j, 25 + Math.hypot(x - door[0], z - door[1])]); }); }
+    if (!st.length) { notes.push('No room for a pathway from the stairs — add one on the plan'); return false; } }
+  let n = 0, S0 = null; const R = tgs.map(rectI).sort((a2, b2) => Math.hypot(a2.x + a2.w / 2 - door[0], a2.z + a2.d / 2 - door[1]) - Math.hypot(b2.x + b2.w / 2 - door[0], b2.z + b2.d / 2 - door[1]));
+  R.forEach(r => { const touch = (i, j) => { const x = i * q, z = j * q; return (x > r.x + 0.5 && x < r.x + r.w - 0.5 && (Math.abs(z + H - r.z) < 0.3 || Math.abs(z - H - (r.z + r.d)) < 0.3)) || (z > r.z + 0.5 && z < r.z + r.d - 0.5 && (Math.abs(x + H - r.x) < 0.3 || Math.abs(x - H - (r.x + r.w)) < 0.3)); };
+    const from = tree.size ? [...tree].map(v => [v % (NX + 1), (v / (NX + 1)) | 0]) : st, path = route(from, touch); if (!path) return; n++; if (!S0) S0 = st.find(z => z[0] === path[0][0] && z[1] === path[0][1]) || path[0];
+    path.forEach(([i, j]) => tree.add(id(i, j)));
+    const cn = [path[0]]; for (let m = 1; m < path.length - 1; m++) { const A = path[m - 1], Bq = path[m], Cq = path[m + 1]; if ((Bq[0] - A[0]) !== (Cq[0] - Bq[0]) || (Bq[1] - A[1]) !== (Cq[1] - Bq[1])) cn.push(Bq); } cn.push(path[path.length - 1]);
+    for (let m = 1; m < cn.length; m++) segs.push([cn[m - 1], cn[m]]); });
+    if (!n) { notes.push('No room for a pathway — add one on the plan'); return false; }
+  const rects = [];
+  if (S0 && !S0[2]) { const f0 = S0, fx = f0[0] * q, fz = f0[1] * q;   // the door end: from the door face to the first point (nothing inside the stairs room)
+    if (Math.abs(fx - door[0]) > Math.abs(fz - door[1])) rects.push({ x0: Math.min(door[0], fx - H), x1: Math.max(door[0], fx + H), z0: fz - H, z1: fz + H }); else rects.push({ x0: fx - H, x1: fx + H, z0: Math.min(door[1], fz - H), z1: Math.max(door[1], fz + H) }); }
+  segs.forEach(([A, Bp]) => rects.push({ x0: Math.min(A[0], Bp[0]) * q - H, x1: Math.max(A[0], Bp[0]) * q + H, z0: Math.min(A[1], Bp[1]) * q - H, z1: Math.max(A[1], Bp[1]) * q + H }));
+  rects.forEach(({ x0, x1, z0, z1 }) => { if (x1 - x0 < 0.9 || z1 - z0 < 0.9) return;
+    const it = newItem('pathway'); Object.assign(it, { x: Math.max(P, x0), z: Math.max(P, z0), w: Math.min(t.pw - P, x1) - Math.max(P, x0), d: Math.min(t.pd - P, z1) - Math.max(P, z0), rot: 0 }); S.items.push(it); });
+  notes.push('Pathway from the stairs to ' + (tgs.some(o => o.cat === 'cabin') ? 'the cabin' : 'the seating')); return true;
+}
+// 239: built-in seating as an L in a corner of two walls (parapet / the stairs room) — under the pergola when it stands in a corner
+function lSeat(g, sz, lt, pr, notes) {
+  const t = S.site, P = g.P, D = 2, cn = [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]];
+  let best = null;
+  for (const [k, X, Z] of cn) { const left = k[1] === 'l', back = k[0] === 'b';
+    for (let s0 = 0; s0 < 4; s0++) { const La = Math.max(4, sz[0] - s0 * 2), Lb = Math.max(3, sz[1] - s0 * 1.5);
+      const A = { cat: 'fbench', w: La, d: D, h: 1.6, rot: back ? 0 : 180, x: left ? X : X - La, z: back ? Z : Z - D, label: 'Fixed seating' };
+      const Bb = { cat: 'fbench', w: Lb, d: D, h: 1.6, rot: left ? 270 : 90, x: left ? X : X - D, z: back ? Z + D : Z - D - Lb, label: 'Fixed seating' };
+      S.items.push(A); const okA = !clashes(A, S.items.length - 1); S.items.push(Bb); const okB = okA && !clashes(Bb, S.items.length - 1); S.items.pop(); S.items.pop();
+      if (!okB) continue;
+      const cx = left ? X + La / 3 : X - La / 3, cz = back ? Z + Lb / 3 : Z - Lb / 3, roadSide = g.road.includes(back ? 'back' : 'front') ? 1 : 0;
+      const sc = (pr && inR2(cx, cz, pr) ? 25 : 0) - (lt ? 0.4 * Math.hypot(cx - lt[0], cz - lt[1]) : 0) - (g.dz ? (Math.hypot(cx - (g.dz.x + g.dz.w / 2), cz - (g.dz.z + g.dz.d / 2)) < 10 ? 12 : 0) : 0) - roadSide * 2 - s0 * 3;
+      if (!best || sc > best[0]) best = [sc, A, Bb]; break; } }
+  if (!best) return false; S.items.push(best[1], best[2]); notes.push('Built-in seating in an L on the walls'); return true;
+}
+const inR2 = (cx, cz, r) => cx > r.x - 1 && cx < r.x + r.w + 1 && cz > r.z - 1 && cz < r.z + r.d + 1;
 function stepPick() {
   if (!S.items.length) return '<h4>Pick designs</h4><p class="pl-sub">Add something to your space first.</p>';
   if (!priceOk()) return '<h4>Pick designs</h4><p class="pl-sub">Sign in to see the designs at your sizes and their prices.</p><button type="button" class="pl-lock" data-pl="unlock">🔒 Sign in to see prices</button>';
