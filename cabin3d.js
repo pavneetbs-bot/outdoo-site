@@ -347,13 +347,15 @@ function drawPlot(tg, t) {
       const DD = { front: [0, 1], back: [0, -1], left: [-1, 0], right: [1, 0] }[bk.door], dx = DD ? DD[0] * pw : pw / 2 - x, dz = DD ? DD[1] * pd : pd / 2 - z, door = P('t_door', 0x6B4A2F);   // 221: bk.door = the side the door opens to (asked in the wizard)
       const dh = Math.min(7, h - 1); if (dh >= 4) if (Math.abs(dx) / pw > Math.abs(dz) / pd) box(bg, 0.1, dh, Math.min(3.2, bk.d - 1), x + Math.sign(dx) * (bk.w / 2 + 0.05), Y + dh / 2, z, door); else box(bg, Math.min(3.2, bk.w - 1), dh, 0.1, x, Y + dh / 2, z + Math.sign(dz) * (bk.d / 2 + 0.05), door);
     }
+    if (bk.type === 'mumty' && t.tanks !== false && t.tankScreen === 'existing') { const sm = P('t_tscr', 0x9C8F80), H = 4.5, y = Y + h + 0.35 + H / 2, ins = 0.4;   // 238: the screen already round the tanks (kept)
+      box(bg, bk.w - ins * 2, H, 0.15, x, y, z - bk.d / 2 + ins, sm); box(bg, bk.w - ins * 2, H, 0.15, x, y, z + bk.d / 2 - ins, sm); box(bg, 0.15, H, bk.d - ins * 2, x - bk.w / 2 + ins, y, z, sm); box(bg, 0.15, H, bk.d - ins * 2, x + bk.w / 2 - ins, y, z, sm); }
     if (bk.type === 'mumty' && t.tanks !== false) { const n = Math.max(bk.w, bk.d) >= 12 ? 2 : 1, along = bk.d >= bk.w; for (let j = 0; j < n; j++) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 4, 20), P('t_tank', 0x1F2224)); const o = n > 1 ? (j ? 3 : -3) : 0; tk.position.set(x + (along ? 0 : o), Y + h + 2.35, z + (along ? o : 0)); tk.castShadow = true; bg.add(tk); } }
   });
 }
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=27').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=28').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }

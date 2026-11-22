@@ -4,9 +4,9 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=27';
+import * as S3 from './space3d.js?v=28';
 import * as P2 from './plan2d.js?v=2';
-import { cutHit } from './cabin3d.js?v=29';
+import { cutHit } from './cabin3d.js?v=30';
 import * as TM from './terrace-match.js?v=4';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -635,7 +635,7 @@ const THEME_T = { modern: ['Modern', 'grey'], natural: ['Natural', 'stone'], mor
 const CAB_USE = ['Lounge', 'WFH office', 'Gym', 'Bedroom', 'Guest room', 'Home theatre', 'Yoga studio', 'Kids\' play', 'Bar lounge', 'Store room'];
 let SUEL = null;
 function suNeed() { return S.step === 1 && S.site.kind === 'terrace' && !S.items.length && !S.bskip && !(S.su && S.su.done); }
-function suOpen(q) { S.su = Object.assign({ q: 0, pg: '5-8', cs: '3-4', north: '', turf: null, green: 'balanced', light: 'soft', stairs: 'keep', roomRef: null, cab: [], theme: 'natural', walls: 'paint', tankScr: true }, S.su || {}); if (q != null) S.su.q = q; S.su.on = true;
+function suOpen(q) { S.su = Object.assign({ q: 0, pg: '5-8', cs: '3-4', north: '', turf: null, green: 'balanced', light: 'soft', stairs: 'keep', roomRef: null, cab: [], theme: 'natural', walls: 'paint', tankHas: null, tankScr: true }, S.su || {}); if (q != null) S.su.q = q; S.su.on = true;
   if (!SUEL) { SUEL = document.createElement('div'); SUEL.className = 'pl-su'; EL.appendChild(SUEL); SUEL.addEventListener('click', suClick); SUEL.addEventListener('pointerdown', suDown); SUEL.addEventListener('pointermove', suMove); SUEL.addEventListener('pointerup', suUp); SUEL.addEventListener('pointercancel', suUp); }
   SUEL.style.display = 'block'; suPaint(); }
 function suClose() { if (SUEL) SUEL.style.display = 'none'; if (S.su) S.su.on = false; draw(false); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 60); }
@@ -646,7 +646,7 @@ function suCab() { const su = S.su, n = (S.bsel || {}).cabin || 0; su.cab = (su.
 function suCompose() {   // a fresh setup from the answers
   const su = S.su; S.items = []; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; S.bsel.feature = S.bsel.feature || 1; delete S.bsel.lights; delete S.bsel.planter; delete S.bsel.vgarden;
   if (su.turf === true) S.bsel.turf = 1; else if (su.turf === false) delete S.bsel.turf;
-  S.site.floor = { tile: (THEME_T[su.theme] || THEME_T.natural)[1], pebble: true }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls || 'none';
+  S.site.floor = { tile: (THEME_T[su.theme] || THEME_T.natural)[1], pebble: true }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls || 'none'; S.site.tankScreen = su.tankHas === true && !su.tankScr ? 'existing' : '';
   compose();
   if (su.tankScr && mumtyTanks() && !S.items.some(o => o.mode === 'tank')) { const it2 = { cat: 'privacy', mode: 'tank', label: 'Tank screen', h: 4.5, w: 0, d: 0.3, x: 0, z: 0, rot: 0 }; S.items.push(it2); attach(it2, S.items.length - 1); if (!it2.w) S.items.pop(); } su.dirty = false; S.bskip = true; ev('plan_build', { ref: S.bth || 'own', n: S.items.length }); draw(true); }
 function suPlan() { const su = S.su, t = S.site, rd = ['front'].concat(t.road_back ? ['back'] : [], t.corner ? [t.corner] : []).filter(x => t.road_front !== false || x !== 'front');
@@ -667,7 +667,9 @@ function suPaint() {
     h += next(); }
   else if (q === 'existing') { const bl = S.site.blocks || [];
     h += '<h2>What is already there</h2><p class="pl-h">The walls — stairs room, parapet and the rest</p><div class="pl-subig">' + big('walls:paint', su.walls === 'paint', '🎨', 'Paint') + big('walls:tiles', su.walls === 'tiles', '🧱', 'Tiles / cladding') + big('walls:none', su.walls === 'none', '✓', 'Nothing') + '</div>';
-    if (bl.some(b => b.type === 'mumty') && S.site.tanks !== false) h += '<p class="pl-h">A screen round the water tanks on the stairs room?</p><div class="pl-subig">' + chip('tscr:1', su.tankScr === true, 'Yes, hide them') + chip('tscr:0', su.tankScr === false, 'No') + '</div>';
+    if (bl.some(b => b.type === 'mumty') && S.site.tanks !== false) { h += '<p class="pl-h">Is there a screen round the water tanks now?</p><div class="pl-subig">' + chip('thas:0', su.tankHas === false, 'No screen') + chip('thas:1', su.tankHas === true, 'Yes, there is one') + '</div>';   // 238
+      if (su.tankHas === false) h += '<p class="pl-h">Add a screen to hide them?</p><div class="pl-subig">' + chip('tscr:1', su.tankScr === true, 'Yes, add one') + chip('tscr:0', su.tankScr === false, 'No') + '</div>';
+      else if (su.tankHas === true) h += '<p class="pl-h">Change it?</p><div class="pl-subig">' + chip('tscr:0', su.tankScr === false, 'Keep it') + chip('tscr:1', su.tankScr === true, 'Replace with a new one') + '</div>'; }
     if (bl.some(b => b.type === 'mumty')) h += '<p class="pl-h">The staircase room</p><div class="pl-subig">' + big('stairs:keep', su.stairs === 'keep', '✓', 'Keep as is') + big('stairs:door', su.stairs === 'door', '🚪', 'New door') + big('stairs:refurb', su.stairs === 'refurb', '🎨', 'Refurbish', 'door, cladding, paint') + '</div>';
     if (bl.some(b => b.type === 'room')) h += '<p class="pl-h">The room / washroom on the roof — refurbish it?</p><div class="pl-subig">' + chip('rref:1', su.roomRef === true, 'Yes, refurbish') + chip('rref:0', su.roomRef === false, 'No, keep it') + '</div>';
     h += next(); }
@@ -703,6 +705,7 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'rref': su.roomRef = a[1] === '1'; su.dirty = true; break;
     case 'walls': su.walls = a[1]; su.dirty = true; break;
     case 'tscr': su.tankScr = a[1] === '1'; su.dirty = true; break;
+    case 'thas': su.tankHas = a[1] === '1'; su.tankScr = !su.tankHas; su.dirty = true; break;
     case 'green': su.green = a[1]; su.dirty = true; break;
     case 'light': su.light = a[1]; su.dirty = true; break;
     case 'turf': su.turf = a[1] === '1'; adv(); break;
