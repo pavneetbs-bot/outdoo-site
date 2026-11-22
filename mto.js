@@ -632,8 +632,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=25').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=25'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=26').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=26'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1891,7 +1891,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=39').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=40').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2343,7 +2343,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=17').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=18').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -2751,7 +2751,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=23').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=24').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -2897,6 +2897,7 @@
       twSync(); [['rl', 'room', 'rw', 'rd'], ['sl', 'shaft', 'sw', 'sd']].forEach(function (z) { var cs = S[z[1]].cells; (a[z[0]] || []).forEach(function (r, i) { if (!r.t) r.pos = cs[i] ? cs[i][0] : 'auto'; if (!r.ts) { r.w = a[z[2]]; r.d = a[z[3]]; } }); }); };
     var twHint = function (ty) { var S = st.sug, X = S && S[ty]; if (!X) return ''; var cc = X.cells[0], W = { b: 'back', m: 'middle', f: 'front' }, C = { l: 'left', c: 'centre', r: 'right' };
       return '<p class="tw-lrn">★ ' + X.pct + '% of the ' + S.similar + ' terraces we built with the stairs here have ' + (ty === 'lift' ? 'a lift' : ty === 'room' ? 'a room' : 'a shaft') + (ty !== 'lift' && X.n > 1 ? ' (usually ' + X.n + ')' : '') + (X.w ? ' · about ' + X.w + ' × ' + X.d + ' ft' : '') + (cc ? ' · mostly ' + (W[cc[0][0]] + ' ' + C[cc[0][2]]).replace('middle centre', 'in the middle') + ' (' + cc[1] + '%)' : '') + '. Filled in for you — change only what is different.</p>'; };
+    var twDoor = function (t, b) { if (b.door) return b.door; var dx = t.pw / 2 - (b.x + b.w / 2), dz = t.pd / 2 - (b.z + b.d / 2); return Math.abs(dx) / t.pw > Math.abs(dz) / t.pd ? (dx > 0 ? 'right' : 'left') : (dz > 0 ? 'front' : 'back'); };   // = cabin3d: faces the middle unless set
     var twClip = function (t) {   // 229: the plot's outline with its corner cuts (straight = a notch, slant = a diagonal)
       var C = t.cuts || {}, X = function (v) { return (v / t.pw * 100).toFixed(2) + '%'; }, Z = function (v) { return (v / t.pd * 100).toFixed(2) + '%'; }, pw = t.pw, pd = t.pd, P = [];
       var c = function (k) { var q = C[k]; return q && (q.type === 'notch' || q.type === 'slant') ? q : null; }, q;
@@ -2980,8 +2981,8 @@
       B.forEach(function (q) { var L = q.x <= P + 0.3, R = q.x + q.w >= pw - P - 0.3, Bk = q.z <= P + 0.3, F = q.z + q.d >= pd - P - 0.3; if (q.type === 'ac') { if (q.side !== 'back') q.side = q.x + q.w / 2 < pw / 2 ? 'left' : 'right'; return; } q.side = (L || R) && !Bk && !F ? (L ? 'left' : 'right') : Bk && !L && !R ? 'back' : F && !L && !R ? 'front' : 'free'; });
       return t;
     };
-    var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [] }, { view: '3d', place: true, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=23').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+    var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=24').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
@@ -3033,22 +3034,27 @@
         h += '<h2>Your roof</h2><p class="sp-sub">Drag to move · tap to resize · ✂ corner cut · 🧱 higher wall next door</p>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
           '<div class="tw-plw" style="aspect-ratio:' + t.pw + '/' + t.pd + ';height:min(50vh,' + Math.round(330 * t.pd / t.pw) + 'px)">' + TS_CUTS.map(function (ck) { var on = t.cuts && t.cuts[ck[0]]; return '<button type="button" class="tw-ck tw-ck-' + ck[0] + (on ? ' cut' : '') + (st.csel === ck[0] ? ' on' : '') + '" data-sp="w:csel:' + ck[0] + '" aria-label="' + ck[1] + ' corner">✂</button>'; }).join('') +
           ['back', 'left', 'right'].filter(function (sd) { return twRoads().indexOf(sd) < 0; }).map(function (sd) { var on = !!(t.high || {})[sd];   // 230: tap a wall → the neighbour's wall there is higher
-            return '<i class="tw-hw tw-hw-' + sd + (on ? ' on' : '') + '"></i><button type="button" class="tw-hb tw-hb-' + sd + (on ? ' on' : '') + '" data-sp="w:phigh:' + sd + '" aria-pressed="' + on + '">🧱' + (on ? ' High' : '') + '</button>'; }).join('') +
+            var hl = ((t.hw || {})[sd] || {}).l, full = sd === 'back' ? t.pw : t.pd, pc = Math.min(100, (hl || full) / full * 100);
+            return '<i class="tw-hw tw-hw-' + sd + (on ? ' on' : '') + '" style="' + (sd === 'back' ? 'right:auto;width:' + pc + '%' : 'bottom:auto;height:' + pc + '%') + '"></i><button type="button" class="tw-hb tw-hb-' + sd + (on ? ' on' : '') + '" data-sp="w:phigh:' + sd + '" aria-pressed="' + on + '">🧱' + (on ? ' High' : '') + '</button>'; }).join('') +
           '<div class="tw-pl" style="clip-path:' + twClip(t) + '">' + t.blocks.map(function (b, i) {
-            return '<div data-blk="' + i + '" class="tw-b tw-' + b.type + (i === st.sel ? ' on' : '') + '" style="left:' + (b.x / t.pw * 100) + '%;top:' + (b.z / t.pd * 100) + '%;width:' + (b.w / t.pw * 100) + '%;height:' + (b.d / t.pd * 100) + '%"><span>' + (IC[b.type] || b.type) + '</span></div>'; }).join('') +
+            return '<div data-blk="' + i + '" class="tw-b tw-' + b.type + (i === st.sel ? ' on' : '') + '" style="left:' + (b.x / t.pw * 100) + '%;top:' + (b.z / t.pd * 100) + '%;width:' + (b.w / t.pw * 100) + '%;height:' + (b.d / t.pd * 100) + '%"><span>' + (IC[b.type] || b.type) + '</span>' + (b.type === 'mumty' || b.type === 'room' || b.type === 'lift' ? '<i class="tw-door tw-door-' + twDoor(t, b) + '"></i>' : '') + '</div>'; }).join('') +
           '</div><i class="tw-rd">▼ road</i>' + (a.road === 'cl' ? '<i class="tw-rd tw-rl">road ◀</i>' : a.road === 'cr' ? '<i class="tw-rd tw-rr">▶ road</i>' : a.road === 'both' ? '<i class="tw-rd tw-rb">▲ road</i>' : '') + '</div>';
+        if (st.hsel && (t.high || {})[st.hsel]) { var ho = (t.hw || {})[st.hsel] || {}, hf = st.hsel === 'back' ? t.pw : t.pd;
+          h += '<div class="tw-ed"><b>🧱 ' + ({ left: 'Left', right: 'Right', back: 'Back' })[st.hsel] + ' neighbour wall</b><span>Height</span><button type="button" data-sp="w:phz:h:-">−</button><em>' + (+ho.h || 12) + '</em><button type="button" data-sp="w:phz:h:+">+</button><span>Length</span><button type="button" data-sp="w:phz:l:-">−</button><em>' + Math.min(+ho.l || hf, hf) + '</em><button type="button" data-sp="w:phz:l:+">+</button>' +
+            '<div class="tw-chips tw-sm2" style="width:100%"><span style="align-self:center;font-size:12px;color:#7A7268">ft · length from the ' + (st.hsel === 'back' ? 'left' : 'back') + '</span>' + chip('phoff:' + st.hsel, false, 'Not higher') + '</div><button type="button" data-sp="w:phigh:' + st.hsel + '" aria-label="Done">✓</button></div>'; }
         if (st.csel) { var cc = (t.cuts || {})[st.csel] || {}, cn = (TS_CUTS.filter(function (z) { return z[0] === st.csel; })[0] || [0, ''])[1];
           h += '<div class="tw-ed"><b>✂ ' + cn + '</b><div class="tw-chips tw-sm2">' + chip('pcut:' + st.csel + ':', !cc.type, 'No cut') + chip('pcut:' + st.csel + ':notch', cc.type === 'notch', '⌐ Straight') + chip('pcut:' + st.csel + ':slant', cc.type === 'slant', '◸ Slant') + '</div>' +
             (cc.type ? '<span>Across</span><button type="button" data-sp="w:pcz:a:-">−</button><em>' + cc.a + '</em><button type="button" data-sp="w:pcz:a:+">+</button><span>Deep</span><button type="button" data-sp="w:pcz:b:-">−</button><em>' + cc.b + '</em><button type="button" data-sp="w:pcz:b:+">+</button>' : '') +
             '<button type="button" data-sp="w:csel:' + st.csel + '" aria-label="Done">✓</button></div>'; }
         if (sb) h += '<div class="tw-ed"><b>' + (IC[sb.type] || '') + '</b>' + (sb.type === 'ac' ? '<span>Units</span><button type="button" data-sp="w:bz:n:-">−</button><em>' + Math.max(1, Math.round(sb.d / 3)) + '</em><button type="button" data-sp="w:bz:n:+">+</button>'
           : '<span>W</span><button type="button" data-sp="w:bz:w:-">−</button><em>' + sb.w + '</em><button type="button" data-sp="w:bz:w:+">+</button><span>L</span><button type="button" data-sp="w:bz:d:-">−</button><em>' + sb.d + '</em><button type="button" data-sp="w:bz:d:+">+</button>') +
+          (sb.type === 'mumty' || sb.type === 'room' || sb.type === 'lift' ? '<div class="tw-chips tw-sm2" style="width:100%;margin:4px 0"><span style="align-self:center;font-size:12px;color:#7A7268">Door</span>' + [['back', '⬆'], ['left', '⬅'], ['right', '➡'], ['front', '⬇ road side']].map(function (z) { return chip('pdoor:' + z[0], twDoor(t, sb) === z[0], z[1]); }).join('') + '</div>' : '') +
           '<button type="button" data-sp="w:brot" aria-label="Turn">↻</button><button type="button" data-sp="w:bdel" aria-label="Remove">🗑</button><button type="button" data-sp="w:bx" aria-label="Done">✓</button></div>';
         h += '<div class="tw-chips tw-sm2 tw-add">' + ['mumty', 'lift', 'room', 'shaft', 'ac'].map(function (k) { return chip('badd:' + k, false, '+ ' + IC[k]); }).join('') + '</div>' +
           '<div class="tw-chips tw-sm2 tw-add">' + chip('ptank', t.tanks, '💧 Tanks on stairs') + [['3', 'Wall 3 ft'], ['4', 'Wall 4 ft+'], ['rail', 'Railing']].map(function (z) { return chip('ppar:' + z[0], a.par === z[0], z[1]); }).join('') + '</div>';
       }
       else { if (!st.site) st.site = twSite();
-        h += '<h2>Your terrace</h2><div id="tw3d" class="tw3d"></div>';
+        h += '<h2>Your terrace</h2><div id="tw3d" class="tw3d"></div><div class="tw-chips tw-sm2">' + chip('meas', !!st.meas, '📏 Show measurements') + '</div>';
       }
       h += '<div class="tw-ft' + (q === 'view' ? ' tw-fs' : '') + '"><button type="button" class="tw-next" data-sp="w:next">' + (q === 'view' ? '✓ Looks right →' : q === 'plan' ? 'See it in 3D →' : 'Next →') + '</button></div>';
       return h;
@@ -3056,10 +3062,15 @@
     var twDone = function (site) { close(); try { if (window.otrack) window.otrack('plan_tpl', { ref: 'wizard' }); } catch (e) {} cb({ kind: 'terrace', site: site, had: list.length > 0 }); };
     var twGo = function (k) {
       var a = st.a, p = k.split(':'), t = st.site, bi = st.sel;
-      if (p[0] === 'phigh' && t) { t.high = t.high || {}; t.high[p[1]] = !t.high[p[1]]; a.high = JSON.parse(JSON.stringify(t.high)); return paint(); }
-      if (p[0] === 'csel') { st.csel = st.csel === p[1] ? null : p[1]; st.sel = null; return paint(); }
+      if (p[0] === 'phigh' && t) { t.high = t.high || {}; if (!t.high[p[1]]) { t.high[p[1]] = true; st.hsel = p[1]; } else st.hsel = st.hsel === p[1] ? null : p[1]; st.sel = null; st.csel = null; a.high = JSON.parse(JSON.stringify(t.high)); return paint(); }
+      if (p[0] === 'phoff' && t) { t.high = t.high || {}; t.high[p[1]] = false; st.hsel = null; a.high = JSON.parse(JSON.stringify(t.high)); return paint(); }
+      if (p[0] === 'phz' && t && st.hsel) { t.hw = t.hw || {}; var hs = st.hsel, full = hs === 'back' ? t.pw : t.pd, o = t.hw[hs] = t.hw[hs] || { h: 12, l: full }; o.l = Math.min(o.l || full, full);
+        if (p[1] === 'h') o.h = Math.max(4, Math.min(40, (+o.h || 12) + (p[2] === '+' ? 1 : -1))); else o.l = Math.max(2, Math.min(full, (+o.l || full) + (p[2] === '+' ? 1 : -1))); return paint(); }
+      if (p[0] === 'pdoor' && t && t.blocks[bi]) { t.blocks[bi].door = p[1]; return paint(); }
+      if (p[0] === 'csel') { st.csel = st.csel === p[1] ? null : p[1]; st.sel = null; st.hsel = null; return paint(); }
       if (p[0] === 'pcut' && t) { t.cuts = t.cuts || {}; if (!p[2]) delete t.cuts[p[1]]; else { var c1 = t.cuts[p[1]] || { a: Math.round(t.pw * 0.3), b: Math.round(t.pd * 0.2) }; c1.type = p[2]; t.cuts[p[1]] = c1; } twCutFix(); return paint(); }
       if (p[0] === 'pcz' && t && st.csel && t.cuts && t.cuts[st.csel]) { var c2 = t.cuts[st.csel], lim = p[1] === 'a' ? t.pw - 4 : t.pd - 4; c2[p[1]] = Math.max(2, Math.min(lim, c2[p[1]] + (p[2] === '+' ? 1 : -1))); twCutFix(); return paint(); }
+      if (p[0] === 'meas') { st.meas = !st.meas; paint(); return tw3d(); }
       if (p[0] === 'ptank' && t) { t.tanks = a.tanks = !t.tanks; return paint(); }
       if (p[0] === 'ppar' && t) { a.par = p[1]; t.par = p[1] === '4' ? 4 : 3; t.rail = p[1] === 'rail'; return paint(); }
       if (p[0] === 'brot' && t && t.blocks[bi]) { twTry(bi, function (q) { var w0 = q.w; q.w = q.d; q.d = w0; q.side = 'free'; }); return paint(); }
@@ -3081,7 +3092,7 @@
       if (TWQ[st.q] === 'place' && p[0] === 'next' && (st.pi || 0) < twList().length - 1) { st.pi = (st.pi || 0) + 1; paint(); d.querySelector('.sp-bd').scrollTop = 0; return; }
       if (TWQ[st.q] === 'place' && p[0] === 'prev' && (st.pi || 0) > 0) { st.pi--; paint(); return; }
       if (p[0] === 'prev') { if (st.q > 0) st.q--; else st.step = 'kind'; }
-      else if (p[0] === 'next') { if (TWQ[st.q] === 'view') { var fs = JSON.parse(JSON.stringify(st.site || twSite())); return twDone(fs); } st.q = st.back ? TWQ.length - 1 : Math.min(TWQ.length - 1, st.q + 1); if (TWQ[st.q] === 'view') st.back = false; }
+      else if (p[0] === 'next') { if (TWQ[st.q] === 'view') { var fs = JSON.parse(JSON.stringify(st.site || twSite())); fs.blocks.forEach(function (b) { b.lock = true; b.door = twDoor(fs, b); }); return twDone(fs); } st.q = st.back ? TWQ.length - 1 : Math.min(TWQ.length - 1, st.q + 1); if (TWQ[st.q] === 'view') st.back = false; }
       else if (p[0] === 'go') { st.q = +p[1]; st.back = true; }
       else if (p[0] === 'plot') { var pp = TWP.filter(function (x) { return x[0] === p[1]; })[0]; if (pp) { a.plot = pp[0]; a.pw = pp[2]; a.pd = pp[3]; a.la = Math.round(pp[2] * 0.4); a.lb = Math.round(pp[3] * 0.3); } }
       else if (p[0] === 'shape') a.shape = p[1];
@@ -3164,6 +3175,7 @@
   (function () { try { var st = document.createElement('style'); st.textContent =
     '.cu3d{position:absolute;inset:0;z-index:1}.cu-st.photo .cu3d{display:none}.cu-st:not(.photo) #cuImg{visibility:hidden}.cu-vw{position:absolute;top:12px;left:12px;z-index:3;display:flex;background:#fff;border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.12)}.cu-vw button{border:0;background:none;border-radius:999px;padding:7px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.cu-vw button.on{background:#2E2E2E;color:#fff}.cu-st .pg3-cap{z-index:3}'+
     '#cuOv .pg3-pn{padding-bottom:150px}.cu-pcs{display:flex;align-items:center;gap:10px;margin-top:4px}.cu-pcs button{width:36px;height:36px;border-radius:50%;border:1px solid #ccc;background:#fff;font-size:18px;cursor:pointer}.cu-pcs button:disabled{opacity:.4}.cu-pcs b{min-width:24px;text-align:center;font-size:16px}.pg3-ft .cu-sp{background:#fff!important;color:#2E2E2E!important;border:1.5px solid #2E2E2E!important;margin-bottom:8px}' +
+    '.tw-door{position:absolute;background:#8B5A2B;border-radius:2px;pointer-events:none}.tw-door-front{bottom:-2px;left:35%;width:30%;height:5px}.tw-door-back{top:-2px;left:35%;width:30%;height:5px}.tw-door-left{left:-2px;top:35%;height:30%;width:5px}.tw-door-right{right:-2px;top:35%;height:30%;width:5px}' +
     '.tw-hb{position:absolute;z-index:4;border:1.5px dashed #9B8E7E;background:#fff;border-radius:999px;padding:3px 8px;font:600 11px Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}.tw-hb.on{border:1.5px solid #55634A;background:#55634A;color:#fff}.tw-hb-back{top:-15px;left:50%;transform:translateX(-50%)}.tw-hb-left{left:-14px;top:50%;transform:translate(-50%,-50%)}.tw-hb-right{right:-14px;top:50%;transform:translate(50%,-50%)}' +
     '.tw-hw{position:absolute;z-index:2;background:#55634A;display:none}.tw-hw.on{display:block}.tw-hw-back{left:0;right:0;top:-7px;height:7px}.tw-hw-left{top:0;bottom:0;left:-7px;width:7px}.tw-hw-right{top:0;bottom:0;right:-7px;width:7px}' +
     '.tw-plw{position:relative;margin:14px auto 30px;max-width:100%}.tw-plw .tw-pl{position:absolute;inset:0;margin:0}.tw-ck{position:absolute;z-index:3;width:28px;height:28px;border-radius:50%;border:1.5px dashed #9B8E7E;background:#fff;font-size:13px;cursor:pointer;padding:0;line-height:1}.tw-ck.cut{border-style:solid;border-color:#C26445;color:#C26445}.tw-ck.on{background:#C26445;color:#fff;border-color:#C26445}.tw-ck-bl{left:-14px;top:-14px}.tw-ck-br{right:-14px;top:-14px}.tw-ck-fl{left:-14px;bottom:-14px}.tw-ck-fr{right:-14px;bottom:-14px}' +

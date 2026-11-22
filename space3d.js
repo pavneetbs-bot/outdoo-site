@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=25';
-import { pergolaModel } from './pergola3d.js?v=17';
+import { cabinModel, plotModel } from './cabin3d.js?v=26';
+import { pergolaModel } from './pergola3d.js?v=18';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -368,6 +368,30 @@ function build(P) {
   if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   drawItems(items, R.holders, P);
+  if (P.measure && terr) { try { g.add(measures(P)); } catch (e) {} }
+  return g;
+}
+// 233: sizes of the roof, every structure and thing, and the biggest free spaces left (1 ft grid, largest empty rectangles first)
+function measures(P) {
+  const g = new THREE.Group(), t = P.site, pw = +t.pw, pd = +t.pd, E = 0.75, W = Math.floor(pw), D = Math.floor(pd), occ = [], f1 = v => Math.round(v * 2) / 2;
+  const K = Math.max(1.2, Math.max(pw, pd) / 22), lab = (txt, x, y, z, s) => { const tg = tag(txt); tg.position.set(x, y, z); tg.scale.multiplyScalar((s || 1) * K); g.add(tg); };
+  for (let z = 0; z < D; z++) { occ.push([]); for (let x = 0; x < W; x++) occ[z].push(x < E || z < E || x + 1 > pw - E || z + 1 > pd - E ? 1 : 0); }
+  const mark = (r, v) => { for (let z = Math.max(0, Math.floor(r.z)); z < Math.min(D, Math.ceil(r.z + r.d)); z++) for (let x = Math.max(0, Math.floor(r.x)); x < Math.min(W, Math.ceil(r.x + r.w)); x++) occ[z][x] = v; };
+  const C = t.cuts || {}; Object.keys(C).forEach(k => { const c = C[k]; if (!c || !c.type) return; for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) { const px = k[1] === 'l' ? x + 0.5 : pw - x - 0.5, pz = k[0] === 'b' ? z + 0.5 : pd - z - 0.5;
+    if (px < c.a && pz < c.b && (c.type !== 'slant' || px / c.a + pz / c.b < 1)) occ[z][x] = 1; } });
+  (t.blocks || []).forEach(b => { mark(b, 1); lab(f1(b.w) + ' × ' + f1(b.d) + ' ft', b.x + b.w / 2, (+b.h || 9) + 2.2, b.z + b.d / 2, 0.8); });
+  (P.items || []).forEach(it => { if (!it || it.segs || it.box) return; const f = foot(it), r = { x: +it.x, z: +it.z, w: f[0], d: f[1] };
+    if (!['deck', 'turf'].includes(it.cat)) mark(r, 1); lab(f1(it.w) + ' × ' + f1(it.d) + ' ft', r.x + r.w / 2, Math.max(+it.h || 3, 3) + (it.cat === 'pergola' ? 9 : 3.2), r.z + r.d / 2, 0.7); });
+  lab('Terrace ' + f1(pw) + ' × ' + f1(pd) + ' ft', pw / 2, 4.5, pd + 2.5, 1.1);
+  const best = () => { let b = null; const hgt = new Array(W).fill(0);   // largest empty rectangle (histogram method)
+    for (let z = 0; z < D; z++) { for (let x = 0; x < W; x++) hgt[x] = occ[z][x] ? 0 : hgt[x] + 1; const st = [];
+      for (let x = 0; x <= W; x++) { const h = x < W ? hgt[x] : 0; let s0 = x; while (st.length && st[st.length - 1][1] >= h) { const [sx, sh] = st.pop(); const w = x - sx; if (sh >= 3 && w >= 3 && (!b || sh * w > b.a)) b = { a: sh * w, x: sx, z: z - sh + 1, w, d: sh }; s0 = sx; } st.push([s0, h]); } }
+    return b; };
+  const fm = new THREE.MeshBasicMaterial({ color: 0x55A05A, transparent: true, opacity: 0.18, depthWrite: false }), lm = new THREE.LineBasicMaterial({ color: 0x3D7A44 });
+  for (let k = 0; k < 5; k++) { const b = best(); if (!b || b.a < 25) break; mark(b, 2);
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(b.w - 0.2, b.d - 0.2), fm); m.rotation.x = -Math.PI / 2; m.position.set(b.x + b.w / 2, 0.66, b.z + b.d / 2); g.add(m);
+    const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(b.w - 0.2, b.d - 0.2)), lm); ln.rotation.x = -Math.PI / 2; ln.position.copy(m.position); g.add(ln);
+    lab('Free ' + b.w + ' × ' + b.d + ' ft', b.x + b.w / 2, 1.6, b.z + b.d / 2, 0.85); }
   return g;
 }
 
@@ -419,7 +443,7 @@ function camHome(t, view) {
 }
 export function show(el, P, opts) {
   opts = opts || {}; ensure(el); R.P = P; R.place = !!opts.place; R.on = opts.on || null;   // 223: a screen may take the 3D's events for itself (the terrace wizard)
-  const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels]), dims = [t.kind, t.pw, t.pd].join('x');
+  const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels, P.measure]), dims = [t.kind, t.pw, t.pd].join('x');
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     R.group = build(P); R.scene.add(R.group); R.key = key;

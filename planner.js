@@ -4,8 +4,8 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=23';
-import { cutHit } from './cabin3d.js?v=25';
+import * as S3 from './space3d.js?v=24';
+import { cutHit } from './cabin3d.js?v=26';
 import * as TM from './terrace-match.js?v=3';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -764,8 +764,8 @@ function draw(rec) {
     : S.step === 2 ? (lock || !S.items.length ? '' : `<div class="pl-tot"><b>${E.n ? lakh(E.t) : '—'}</b><small>${E.n} design${E.n === 1 ? '' : 's'} · before delivery & installation (added at checkout)</small></div><button type="button" class="pl-go" data-pl="cart"${E.n ? '' : ' disabled'}>Add all to cart</button>`)
     : `<div class="pl-tot">${S.items.length ? (lock ? '<b>🔒</b><small>Sign in to see the estimate</small>' : (T.n ? `<b>${lakh(T.t)}+</b><small>${S.items.length} thing${S.items.length > 1 ? 's' : ''} · starting price${T.n < S.items.length ? ' of ' + T.n : ''}, before delivery & installation</small>` : `<b>—</b><small>Prices open soon for these</small>`)) : '<b>—</b><small>Add something to see the estimate</small>'}</div>` + (S.items.length ? '<button type="button" class="pl-go" data-pl="step:2">Pick designs →</button>' : '');
   document.getElementById('plZ').innerHTML = `<button type="button" data-pl="undo" aria-label="Undo" title="Undo (Ctrl+Z)"${S.hi > 0 ? '' : ' disabled'}>↶</button><button type="button" data-pl="redo" aria-label="Redo" title="Redo (Ctrl+Y)"${S.hi < S.hist.length - 1 ? '' : ' disabled'}>↷</button>` +
-    `<button type="button" data-pl="view" class="${S.view === 'top' ? 'on' : ''}" aria-label="${S.view === 'top' ? '3D view' : 'Top view'}" title="${S.view === 'top' ? '3D view' : 'Top view'}">${S.view === 'top' ? '🧊' : '▦'}</button><button type="button" data-pl="zin" aria-label="Zoom in">+</button><button type="button" data-pl="zout" aria-label="Zoom out">−</button><button type="button" data-pl="home" aria-label="Whole space" title="Whole space">⌖</button>` + (S.items.length ? '<button type="button" data-pl="share" aria-label="Share this plan" title="Share this plan">🔗</button><button type="button" data-pl="pdf" aria-label="Save as PDF" title="Save as PDF">⎙</button>' : '');
-  try { S3.show(document.getElementById('pl3d'), { site: S.site, items: S.items, sel: S.step === 1 ? S.sel : null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW' }, { place: S.step === 0, view: S.view }); } catch (e) { if (window.console) console.warn(e); }
+    `<button type="button" data-pl="view" class="${S.view === 'top' ? 'on' : ''}" aria-label="${S.view === 'top' ? '3D view' : 'Top view'}" title="${S.view === 'top' ? '3D view' : 'Top view'}">${S.view === 'top' ? '🧊' : '▦'}</button><button type="button" data-pl="zin" aria-label="Zoom in">+</button><button type="button" data-pl="zout" aria-label="Zoom out">−</button><button type="button" data-pl="home" aria-label="Whole space" title="Whole space">⌖</button><button type="button" data-pl="measure" class="${S.measure ? 'on' : ''}" aria-pressed="${!!S.measure}" aria-label="Show measurements" title="Show measurements">📏</button>` + (S.items.length ? '<button type="button" data-pl="share" aria-label="Share this plan" title="Share this plan">🔗</button><button type="button" data-pl="pdf" aria-label="Save as PDF" title="Save as PDF">⎙</button>' : '');
+  try { S3.show(document.getElementById('pl3d'), { site: S.site, items: S.items, sel: S.step === 1 ? S.sel : null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW', measure: !!S.measure, labels: S.measure ? false : undefined }, { place: S.step === 0, view: S.view }); } catch (e) { if (window.console) console.warn(e); }
 }
 
 function onClick(e) {
@@ -780,6 +780,7 @@ function act(a) {   // one button's action on S; true = draw again
     case 'zin': return S3.zoom(0.8);
     case 'zout': return S3.zoom(1.25);
     case 'home': return S3.home();
+    case 'measure': S.measure = !S.measure; if (S.measure) S.view = 'top'; return draw(false);
     case 'view': S.view = S.view === 'top' ? '3d' : 'top'; return draw(false);
     case 'step': if (S.step !== +a[1]) ev('plan_step', { ref: a[1] }); S.step = +a[1]; S.sel = null; S.ask = null; S.cust = null; for (const k in PC) delete PC[k]; if (S.step >= 1 && S.pend) { putPieces(S.pend); S.pend = null; } break;
     case 'kind': if (t.kind !== a[1]) { t.kind = a[1]; if (a[1] === 'terrace' && !t.blocks.length) defBlocks(t); S.items = S.items.filter((x, i) => !(CAT[x.cat].lawn && a[1] === 'terrace') && settle(x, i)); } break;
