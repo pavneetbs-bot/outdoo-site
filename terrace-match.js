@@ -121,3 +121,29 @@ export function fitAnswers(t, mir, a, base) {
   return site;
 }
 function cutIn(site, b) { for (const k in (site.cuts || {})) { const c = site.cuts[k], x0 = k[1] === 'l' ? 0 : site.pw - c.a, z0 = k[0] === 'b' ? 0 : site.pd - c.b; if (b.x < x0 + c.a && x0 < b.x + b.w && b.z < z0 + c.b && z0 < b.z + b.d) return true; } return false; }
+
+// 227: what the real terraces say for the wizard — with the staircase room in this cell (3×3, 'b-l' … 'f-r'), how often there is a lift /
+// rooms / shafts, how many, their usual size, and the cells they usually stand in (mirrored to this side). pct = share of the terraces looked at.
+const cellOf = (b, s) => 'bmf'[Math.min(2, Math.floor((b.z + b.d / 2) / s.pd * 3))] + '-' + 'lcr'[Math.min(2, Math.floor((b.x + b.w / 2) / s.pw * 3))];
+const mirC = c => c[0] + '-' + ({ l: 'r', r: 'l', c: 'c' })[c[2]];
+const med = a => { if (!a.length) return null; const s = a.slice().sort((p, q) => p - q); return s[Math.floor(s.length / 2)]; };
+export function suggest(mcell) {
+  if (!LIST) return null;
+  const all = LIST.map(t => { const s = t.site, m = (s.blocks || []).find(b => b.type === 'mumty'); return m ? { s, mc: cellOf(m, s) } : null; }).filter(Boolean);
+  const mumty = {}; all.forEach(r => { mumty[r.mc] = (mumty[r.mc] || 0) + 1; });
+  const top = Object.keys(mumty).sort((p, q) => mumty[q] - mumty[p])[0], out = { n: all.length, mumty: { cell: top, pct: Math.round(mumty[top] / all.length * 100) } };
+  if (!mcell || mcell === 'none') return out;
+  const flip = mcell[2] === 'r', norm = c => (flip ? mirC(c) : c), want = norm(mcell);
+  const nrm = r => (r.mc[2] === 'r' ? mirC(r.mc) : r.mc), mir = r => r.mc[2] === 'r';
+  let pool = all.filter(r => nrm(r) === want); if (pool.length < 6) pool = all.filter(r => (nrm(r)[2] === 'c') === (want[2] === 'c'));   // too few → same kind (side / middle)
+  out.similar = pool.length;
+  ['lift', 'room', 'shaft'].forEach(ty => {
+    let has = 0; const cnt = [], ws = [], ds = [], cells = {};
+    pool.forEach(r => { const bs = (r.s.blocks || []).filter(b => b.type === ty); if (bs.length) has++; cnt.push(bs.length);
+      bs.forEach(b => { ws.push(b.w); ds.push(b.d); let c = cellOf(b, r.s); if (mir(r)) c = mirC(c); c = norm(c); if (c !== mcell) cells[c] = (cells[c] || 0) + 1; }); });
+    const tot = Object.values(cells).reduce((p, q) => p + q, 0) || 1;
+    out[ty] = { pct: Math.round(has / pool.length * 100), n: Math.max(1, med(cnt.filter(x => x > 0)) || 1), w: Math.round((med(ws) || 0) * 2) / 2, d: Math.round((med(ds) || 0) * 2) / 2,
+      cells: Object.keys(cells).sort((p, q) => cells[q] - cells[p]).map(c => [c, Math.round(cells[c] / tot * 100)]) };
+  });
+  return out;
+}

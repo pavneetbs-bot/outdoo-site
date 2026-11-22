@@ -6,7 +6,7 @@
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
 import * as S3 from './space3d.js?v=23';
 import { cutHit } from './cabin3d.js?v=25';
-import * as TM from './terrace-match.js?v=2';
+import * as TM from './terrace-match.js?v=3';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
