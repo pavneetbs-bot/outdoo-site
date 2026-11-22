@@ -284,14 +284,19 @@ function terrace(g, L, W, t) {
     const pl = new THREE.Mesh(new THREE.BoxGeometry(L + 0.8, 0.06, W + 0.8), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, depthWrite: false })); pl.position.set(L / 2, Y + 0.1, W / 2); g.add(pl); }
 }
 // the terrace itself in plot coords (slab surface at y = -0.6): slab, parapet, building below, neighbours, roads, blocks on the roof
+let CLAD = null;
+function cladMat() { if (CLAD) return CLAD; const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256; const x = cv.getContext('2d'); x.fillStyle = '#8E8174'; x.fillRect(0, 0, 256, 256);
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 4; c++) { const off = r % 2 ? 32 : 0, sh = 150 + ((r * 7 + c * 13) % 40); x.fillStyle = `rgb(${sh + 20},${sh + 8},${sh - 10})`; x.fillRect(c * 64 + off - 64 + 3, r * 32 + 3, 58, 26); x.fillRect(c * 64 + off + 3, r * 32 + 3, 58, 26); }
+  const tx = new THREE.CanvasTexture(cv); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.repeat.set(3, 2); tx.colorSpace = THREE.SRGBColorSpace; return (CLAD = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.9 })); }
 function drawPlot(tg, t) {
   const pw = +t.pw || 30, pd = +t.pd || 60, Y = -0.6, par = +t.par || 3, PT = 0.75, BH = 50, hi = t.high || {};
   const P = (n, col) => M[n] || (M[n] = new THREE.MeshStandardMaterial({ color: col, roughness: 0.95 }));
   const plaster = P('t_pl', 0xEAE5DC), tile = P('t_tile', 0xC4BDB1), side2 = P('t_side', 0xDCD3C4), dark = P('t_dark', 0x2F3437), road = P('t_road', 0x6E6C68), win = P('t_win', 0x55626B);
+  const wallm = t.wallFin === 'tiles' ? cladMat() : t.wallFin === 'paint' ? P('t_paint', 0xF7F2EA) : plaster;   // 237: the stairs room, parapet and other walls — paint / tiles / as they are
   const OL = plotOutline(t), shaped = OL.length > 4;
   if (!shaped) {
     box(tg, pw, 0.5, pd, pw / 2, Y - 0.25, pd / 2, tile).userData.under = 1;
-    [[pw / 2, PT / 2, pw, PT], [pw / 2, pd - PT / 2, pw, PT], [PT / 2, pd / 2, PT, pd], [pw - PT / 2, pd / 2, PT, pd]].forEach(([x, z, w, d]) => { box(tg, w, par, d, x, Y + par / 2, z, plaster); box(tg, w + 0.1, 0.15, d + 0.1, x, Y + par + 0.07, z, side2); });
+    [[pw / 2, PT / 2, pw, PT], [pw / 2, pd - PT / 2, pw, PT], [PT / 2, pd / 2, PT, pd], [pw - PT / 2, pd / 2, PT, pd]].forEach(([x, z, w, d]) => { box(tg, w, par, d, x, Y + par / 2, z, wallm); box(tg, w + 0.1, 0.15, d + 0.1, x, Y + par + 0.07, z, side2); });
     box(tg, pw, BH, pd, pw / 2, Y - 0.5 - BH / 2, pd / 2, plaster, false).userData.under = 1;
   } else {   // 193: corners cut — slab + building follow the outline, a parapet along every edge
     const sh = new THREE.Shape(); OL.forEach(([x, z], i) => i ? sh.lineTo(x, z) : sh.moveTo(x, z)); sh.closePath();
@@ -299,7 +304,7 @@ function drawPlot(tg, t) {
     prism(0.5, Y, tile); prism(BH, Y - 0.5, plaster);
     OL.forEach((p0, i) => { const p1 = OL[(i + 1) % OL.length], dx = p1[0] - p0[0], dz = p1[1] - p0[1], L = Math.hypot(dx, dz); if (L < 0.05) return;
       const nx = -dz / L, nz = dx / L, ang = -Math.atan2(dz, dx), mx = (p0[0] + p1[0]) / 2 + nx * PT / 2, mz = (p0[1] + p1[1]) / 2 + nz * PT / 2;
-      box(tg, L + PT, par, PT, mx, Y + par / 2, mz, plaster).rotation.y = ang; box(tg, L + PT + 0.1, 0.15, PT + 0.1, mx, Y + par + 0.07, mz, side2).rotation.y = ang; });
+      box(tg, L + PT, par, PT, mx, Y + par / 2, mz, wallm).rotation.y = ang; box(tg, L + PT + 0.1, 0.15, PT + 0.1, mx, Y + par + 0.07, mz, side2).rotation.y = ang; });
   }
   for (let f = 0; f < 4; f++) { const yb = Y - 0.5 - 10 * f - 5.5; box(tg, pw * 0.7, 4, 0.1, pw / 2, yb, pd + 0.05, win, false); box(tg, pw, 0.4, 3, pw / 2, yb - 2.6, pd + 1.5, side2, false); }
   const gy = Y - 0.5 - BH; const gr = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), P('t_gnd', 0xA9A296)); gr.rotation.x = -Math.PI / 2; gr.position.set(pw / 2, gy, pd / 2); tg.add(gr);
@@ -337,7 +342,7 @@ function drawPlot(tg, t) {
     }
     if (bk.type === 'shaft') { const th = 0.33; box(bg, bk.w, h, th, x, Y + h / 2, z - bk.d / 2 + th / 2, plaster); box(bg, bk.w, h, th, x, Y + h / 2, z + bk.d / 2 - th / 2, plaster);
       box(bg, th, h, bk.d, x - bk.w / 2 + th / 2, Y + h / 2, z, plaster); box(bg, th, h, bk.d, x + bk.w / 2 - th / 2, Y + h / 2, z, plaster); box(bg, bk.w - 0.6, 0.05, bk.d - 0.6, x, Y + 0.3, z, dark, false); return; }
-    box(bg, bk.w, h, bk.d, x, Y + h / 2, z, plaster); box(bg, bk.w + 0.6, 0.35, bk.d + 0.6, x, Y + h + 0.17, z, side2);
+    box(bg, bk.w, h, bk.d, x, Y + h / 2, z, wallm); box(bg, bk.w + 0.6, 0.35, bk.d + 0.6, x, Y + h + 0.17, z, side2);
     if (bk.type !== 'lift') {   // a door on the side that faces the open terrace
       const DD = { front: [0, 1], back: [0, -1], left: [-1, 0], right: [1, 0] }[bk.door], dx = DD ? DD[0] * pw : pw / 2 - x, dz = DD ? DD[1] * pd : pd / 2 - z, door = P('t_door', 0x6B4A2F);   // 221: bk.door = the side the door opens to (asked in the wizard)
       const dh = Math.min(7, h - 1); if (dh >= 4) if (Math.abs(dx) / pw > Math.abs(dz) / pd) box(bg, 0.1, dh, Math.min(3.2, bk.d - 1), x + Math.sign(dx) * (bk.w / 2 + 0.05), Y + dh / 2, z, door); else box(bg, Math.min(3.2, bk.w - 1), dh, 0.1, x, Y + dh / 2, z + Math.sign(dz) * (bk.d / 2 + 0.05), door);
@@ -348,7 +353,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=26').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=27').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
