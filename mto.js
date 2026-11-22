@@ -2881,7 +2881,15 @@
       mk('rl', a.room, a.rn, function () { return { w: +a.rw || 8, d: +a.rd || 12, pos: 'auto' }; });
       mk('sl', a.shaft, a.sn, function () { return { w: +a.sw || 4, d: +a.sd || 6, pos: 'auto' }; });
       mk('al', a.ac, 1, function () { return { n: +a.acn || 2, side: 'auto' }; }); if (a.al[0]) a.al[0].n = Math.max(1, +a.acn || a.al[0].n || 1); };
-    var twAny = function () { var a = st.a; return a.lift || a.room || a.shaft || a.ac; };
+    var twList = function () { var a = st.a, L = []; twSync(); (a.rl || []).forEach(function (r, i) { L.push(['rl', i]); }); (a.sl || []).forEach(function (r, i) { L.push(['sl', i]); }); if (a.ac) L.push(['al', 0]); return L; };   // 226: one screen each
+    var twNm = function (k, i) { var a = st.a, n = { rl: a.rl, sl: a.sl }[k]; return k === 'lift' ? 'Lift room' : k === 'al' ? 'AC units' : (k === 'rl' ? 'Room' : 'Shaft') + (n && n.length > 1 ? ' ' + (i + 1) : ''); };
+    var twBig = function (key, i, pos, autoT) {   // the same plan as the staircase room's, with what is already placed on it
+      var a = st.a, occ = {}, add = function (c, t) { if (c && c !== 'auto' && c !== 'none') (occ[c] = occ[c] || []).push(t); };
+      add(a.mpos, 'Stairs'); if (key !== 'lift' && a.lift) add(a.lpos, 'Lift'); (a.rl || []).forEach(function (r, j) { if (!(key === 'rl' && j === i)) add(r.pos, twNm('rl', j)); }); (a.sl || []).forEach(function (r, j) { if (!(key === 'sl' && j === i)) add(r.pos, twNm('sl', j)); }); if (key !== 'al' && a.ac && a.al && a.al[0]) add(a.al[0].pos, 'AC');
+      return '<div class="tw-grid">' + ['b', 'm', 'f'].map(function (r) { return ['l', 'c', 'r'].map(function (c) { var k = r + '-' + c, o = occ[k];
+        return '<button type="button" data-sp="w:ip:' + key + ':' + i + ':' + k + '" class="' + (pos === k ? 'on' : '') + (o && pos !== k ? ' mu' : '') + '" aria-label="' + ({ b: 'Back', m: 'Middle', f: 'Front' })[r] + ' ' + ({ l: 'left', c: 'centre', r: 'right' })[c] + '">' + (pos === k ? '▣' : '') + (o ? '<small>' + esc(o.join(', ')) + '</small>' : '') + '</button>'; }).join(''); }).join('') + '<span class="tw-road">▼ road</span></div>' +
+        '<div class="tw-chips" style="margin-top:10px">' + chip('ip:' + key + ':' + i + ':auto', pos === 'auto', autoT) + '</div>'; };
+    var twAny = function () { var a = st.a; return a.room || a.shaft || a.ac; };
     var twCell = function (key, i, pos, autoT) {   // a small plan: tap where it is (the staircase room shown), or let us place it
       var a = st.a; return '<div class="tw-mini"><div class="tw-grid tw-g2">' + ['b', 'm', 'f'].map(function (r) { return ['l', 'c', 'r'].map(function (c) { var k = r + '-' + c, mu = a.mpos === k;
         return '<button type="button" data-sp="w:ip:' + key + ':' + i + ':' + k + '" class="' + (pos === k ? 'on' : '') + (mu ? ' mu' : '') + '" aria-label="' + ({ b: 'Back', m: 'Middle', f: 'Front' })[r] + ' ' + ({ l: 'left', c: 'centre', r: 'right' })[c] + '">' + (pos === k ? '■' : mu ? '<small>stairs</small>' : '') + '</button>'; }).join(''); }).join('') + '<span class="tw-road">▼ road</span></div>' +
@@ -2933,8 +2941,9 @@
       order.forEach(function (o) { var r = o[1], bw = +r.w || 4, bd = +r.d || 6;
         if (o[0] === 'shaft') return put({ id: id(), type: 'shaft', w: bw, d: bd, h: 3, side: 'free' }, spots(r.pos, { w: bw, d: bd }, nextTo({ w: bw, d: bd }).concat([[P, pd * 0.5], [pw - P - bw, pd * 0.5], [pw / 2, P]])));
         var rw = bw, rd = bd, farR = !m || m.x + m.w / 2 < pw / 2; put({ id: id(), type: 'room', w: rw, d: rd, h: 9, side: 'free' }, spots(r.pos, { w: rw, d: rd }, [[farR ? pw - P - rw : P, P], [farR ? P : pw - P - rw, P]].concat(nextTo({ w: rw, d: rd }), [[farR ? pw - P - rw : P, P + rd], [farR ? P : pw - P - rw, P + rd]]))); });
-      if (a.ac && a.al[0] && a.al[0].side !== 'auto') { var AS = a.al[0].side, an = Math.max(1, +a.acn || 2), aL = Math.min((AS === 'back' ? pw : pd) * 0.6, an * 3), bk = AS === 'back';
-        put({ id: id(), type: 'ac', w: bk ? aL : 1.2, d: bk ? 1.2 : aL, h: 2.5, side: AS }, [0.5, 0.3, 0.7, 0.15, 0.85, 0.05].map(function (f) { return bk ? [(pw - aL) * f, P] : [AS === 'right' ? pw - P - 1.2 : P, (pd - aL) * f]; })); }
+      if (a.ac && a.al[0] && a.al[0].side !== 'auto') { var AS = a.al[0].side, an = Math.max(1, +a.acn || 2), aL = Math.min((AS === 'back' || AS === 'front' ? pw : pd) * 0.6, an * 3), bk = AS === 'back';
+        var fr0 = AS === 'front', ap = a.al[0].pos || '', f0 = bk || fr0 ? ({ l: 0.1, c: 0.5, r: 0.9 })[ap[2]] : ({ b: 0.1, m: 0.5, f: 0.9 })[ap[0]]; if (f0 == null) f0 = 0.5; bk = bk || fr0;
+        put({ id: id(), type: 'ac', w: bk ? aL : 1.2, d: bk ? 1.2 : aL, h: 2.5, side: AS }, [f0, f0 - 0.15, f0 + 0.15, f0 - 0.3, f0 + 0.3, 0.5, 0.05, 0.95].map(function (f) { f = Math.max(0, Math.min(1, f)); return bk ? [(pw - aL) * f, fr0 ? pd - P - 1.2 : P] : [AS === 'right' ? pw - P - 1.2 : P, (pd - aL) * f]; })); }
       else if (a.ac) { var n = Math.max(1, +a.acn || 2), al = Math.min(pd * 0.6, n * 3), sideR = m ? m.x + m.w / 2 < pw / 2 : true, aw = 1.2; put({ id: id(), type: 'ac', w: aw, d: al, h: 2.5, side: sideR ? 'right' : 'left' }, [0.3, 0.55, 0.15, 0.7, 0.42, 0.85, 0.05].map(function (f) { return [sideR ? pw - P - aw : P, pd * f]; }).concat([0.3, 0.55, 0.15, 0.7, 0.85].map(function (f) { return [sideR ? P : pw - P - aw, pd * f]; }))); }
       var CU = a.cuts || {}; Object.keys(CU).forEach(function (k) { var c = CU[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return; t.cuts = t.cuts || {}; t.cuts[k] = { type: c.type, a: Math.round(+c.a * 2) / 2, b: Math.round(+c.b * 2) / 2 };   // 223: any corner, straight or slant
         var cx = k[1] === 'l' ? 0 : pw - c.a, cz = k[0] === 'b' ? 0 : pd - c.b; for (var i = B.length - 1; i >= 0; i--) { var q = B[i]; if (q.x < cx + +c.a && cx < q.x + q.w && q.z < cz + +c.b && cz < q.z + q.d) B.splice(i, 1); } });
@@ -2950,7 +2959,7 @@
         [0, 'Terrace', a.pw + ' × ' + a.pd + ' ft' + (a.plot ? ' (' + a.plot + ' gaj)' : '')],
         [1, 'Road', ({ front: 'In front', both: 'Front and back', cl: 'Corner — front + left', cr: 'Corner — front + right' })[a.road]],
         [2, 'Staircase room', a.mpos === 'none' ? 'None' : (G[a.mpos[0]] + ' ' + C[a.mpos[2]]).replace('middle centre', 'in the middle') + ' · ' + a.mw + ' × ' + a.md + ' ft · door to the ' + ({ front: 'road side', back: 'back', left: 'left', right: 'right' })[a.door || 'front']],
-        [a.lift ? 5 : 3, 'Lift room', tc('lift') || 'No'],
+        [3, 'Lift room', tc('lift') || 'No'],
         [4, 'Water tanks', a.tanks ? 'Yes, on the mumty' : 'No'],
         [a.room ? 5 : 4, 'Rooms / washrooms', tc('room') || 'No'],
         [a.shaft ? 5 : 4, 'Shafts / ducts', tc('shaft') || 'No'],
@@ -2971,18 +2980,16 @@
         if (a.mpos !== 'none') h += '<p class="tw-h">Its size</p><div class="tw-chips">' + TWM.map(function (z) { return chip('msz:' + z[0], +a.mw === z[2] && +a.md === z[3], z[1] + '<small>' + z[2] + ' × ' + z[3] + ' ft</small>'); }).join('') + '</div>' + num2('mw', a.mw, 'md', a.md, 'Width', 'Length') +
           '<p class="tw-h">Its door opens towards</p><div class="tw-chips">' + [['front', '⬇ The road side'], ['back', '⬆ The back'], ['left', '⬅ Left'], ['right', '➡ Right']].map(function (z) { return chip('door:' + z[0], a.door === z[0], z[1]); }).join('') + '</div>';
       }
-      else if (q === 'lift') h += '<h2>Is there a lift room?</h2><p class="sp-sub">In 37% of the terraces we have designed, the lift comes up next to the staircase.</p>' + yn('lift', a.lift, 'Lift room on the terrace') + (a.lift ? '<p class="tw-h">Lift room size</p>' + num2('lw', a.lw, 'ld', a.ld) : '');
+      else if (q === 'lift') h += '<h2>Is there a lift room?</h2><p class="sp-sub">In 37% of the terraces we have designed, the lift comes up next to the staircase.</p>' + yn('lift', a.lift, 'Lift room on the terrace') + (a.lift ? '<p class="tw-h">Where is it? Tap its spot</p>' + twBig('lift', 0, a.lpos || 'auto', 'Next to the stairs (usual)') + '<p class="tw-h">Its size</p>' + num2('lw', a.lw, 'ld', a.ld) : '');
       else if (q === 'built') h += '<h2>What else is already built?</h2><p class="sp-sub">With sizes, so the design keeps space for them.</p>' +
         yn('tanks', a.tanks, 'Water tanks (on the mumty)') +
         yn('room', a.room, 'Rooms / washrooms on the terrace') + (a.room ? twCnt('rn', a.rn) : '') +
         yn('shaft', a.shaft, 'Shafts or ducts') + (a.shaft ? twCnt('sn', a.sn) : '') +
         yn('ac', a.ac, 'AC outdoor units') + (a.ac ? twCnt('acn', a.acn) : '') + '<p class="sp-sub" style="margin-top:14px">Next: the size and place of each one.</p>';
-      else if (q === 'place') { twSync(); var n0 = 0, card = function (t0, body) { return '<div class="tw-it"><b>' + t0 + '</b>' + body + '</div>'; };
-        h += '<h2>Where is each one, and how big?</h2><p class="sp-sub">Tap its spot on the plan (standing on the road, looking at the terrace). Not sure? Let us place it the usual way.</p>';
-        if (a.lift) h += card('Lift room', num2('lw', a.lw, 'ld', a.ld) + twCell('lift', 0, a.lpos || 'auto', 'Next to the stairs (usual)'));
-        a.rl.forEach(function (r, i) { h += card('Room / washroom' + (a.rl.length > 1 ? ' ' + (i + 1) : ''), num2('rl.' + i + '.w', r.w, 'rl.' + i + '.d', r.d) + twCell('rl', i, r.pos, 'We place it (a back corner)')); });
-        a.sl.forEach(function (r, i) { h += card('Shaft / duct' + (a.sl.length > 1 ? ' ' + (i + 1) : ''), num2('sl.' + i + '.w', r.w, 'sl.' + i + '.d', r.d) + twCell('sl', i, r.pos, 'Next to the stairs (usual)')); });
-        if (a.ac) { var A = a.al[0]; h += card('AC outdoor units (' + a.acn + ')', '<p class="tw-h" style="margin-top:6px">Along which wall?</p><div class="tw-chips tw-sm2">' + [['auto', 'We decide'], ['left', '⬅ Left wall'], ['back', '⬆ Back wall'], ['right', '➡ Right wall']].map(function (z) { return chip('ip:al:0:' + z[0], A.side === z[0], z[1]); }).join('') + '</div>'); } }
+      else if (q === 'place') { var PL = twList(), cur = PL[Math.min(st.pi || 0, PL.length - 1)] || ['rl', 0], k0 = cur[0], i9 = cur[1], it0 = (a[k0] || [])[i9] || {};
+        h += '<p class="tw-h" style="margin:0 0 4px;color:#7A7268">' + ((st.pi || 0) + 1) + ' of ' + PL.length + '</p><h2>Where is ' + (k0 === 'al' ? 'the AC outdoor units' : 'is the ' + twNm(k0, i9).toLowerCase()) + '?</h2><p class="sp-sub">Tap its spot — standing on the road, looking at the terrace. What you placed already is shown.</p>' +
+          twBig(k0, i9, k0 === 'al' ? (it0.pos || 'auto') : it0.pos, k0 === 'rl' ? 'Not sure — we place it (a back corner)' : k0 === 'al' ? 'Not sure — we place them' : 'Not sure — next to the stairs (usual)') +
+          (k0 === 'al' ? '<p class="sp-sub" style="margin-top:14px">' + a.acn + ' unit' + (a.acn > 1 ? 's' : '') + ' — they stand along the wall nearest that spot.</p>' : '<p class="tw-h">Its size</p>' + num2(k0 + '.' + i9 + '.w', it0.w, k0 + '.' + i9 + '.d', it0.d)); }
       else if (q === 'walls') { var rs = twRoads(); h += '<h2>Neighbours and corners</h2><p class="sp-sub">A higher wall next door already gives privacy on that side.</p><p class="tw-h">Neighbour\'s wall higher than yours?</p><div class="tw-chips">' +
           [['left', '⬅ Left'], ['back', '⬆ Back'], ['right', '➡ Right']].filter(function (z) { return rs.indexOf(z[0]) < 0; }).map(function (z) { return chip('high:' + z[0], !!(a.high || {})[z[0]], ((a.high || {})[z[0]] ? '✓ ' : '') + z[1]); }).join('') + chip('high:none', !Object.keys(a.high || {}).some(function (k) { return a.high[k]; }), 'No, none') + '</div>' +
           '<p class="tw-h">Is a corner cut off? (L-shape, a slanted corner)</p><p class="sp-sub" style="margin:-4px 0 8px">Front = the road side.</p>' + TS_CUTS.map(function (ck) { var c = (a.cuts || {})[ck[0]] || {}, on = c.type === 'notch' || c.type === 'slant';
@@ -3013,7 +3020,9 @@
           else if (p[0] === 'bz') twTry(bi, function (q) { var s = p[2] === '+' ? 1 : -1; if (p[1] === 'n') q.d = Math.max(1, Math.round(q.d / 3) + s) * 3; else if (p[1] === 'h') q.h = Math.max(2, Math.min(30, (+q.h || TS_BH[q.type] || 9) + s * 0.5)); else q[p[1]] = Math.max(1, Math.min(60, q[p[1]] + s * 0.5)); }); }
         return twRef(); }
       if (['plot', 'road', 'mpos', 'msz', 'door', 'par', 'high', 'cut', 'lift', 'tanks', 'room', 'shaft', 'ac', 'ip'].indexOf(p[0]) >= 0) { st.site = null; st.sel = null; }
-      if (p[0] === 'ip') { twSync(); if (p[1] === 'lift') a.lpos = p[3]; else if (p[1] === 'al') { if (a.al[0]) a.al[0].side = p[3]; } else if (a[p[1]] && a[p[1]][+p[2]]) a[p[1]][+p[2]].pos = p[3]; paint(); return; }   // an answer changed → the terrace is made again from the answers
+      if (p[0] === 'ip') { twSync(); if (p[1] === 'lift') a.lpos = p[3]; else if (p[1] === 'al') { if (a.al[0]) { a.al[0].pos = p[3]; a.al[0].side = p[3] === 'auto' ? 'auto' : p[3][2] === 'l' ? 'left' : p[3][2] === 'r' ? 'right' : p[3][0] === 'f' ? 'front' : 'back'; } } else if (a[p[1]] && a[p[1]][+p[2]]) a[p[1]][+p[2]].pos = p[3]; paint(); return; }   // an answer changed → the terrace is made again from the answers
+      if (TWQ[st.q] === 'place' && p[0] === 'next' && (st.pi || 0) < twList().length - 1) { st.pi = (st.pi || 0) + 1; paint(); d.querySelector('.sp-bd').scrollTop = 0; return; }
+      if (TWQ[st.q] === 'place' && p[0] === 'prev' && (st.pi || 0) > 0) { st.pi--; paint(); return; }
       if (p[0] === 'prev') { if (st.q > 0) st.q--; else st.step = 'kind'; }
       else if (p[0] === 'next') { if (TWQ[st.q] === 'view') { var fs = JSON.parse(JSON.stringify(st.site || twSite())); return twDone(fs); } st.q = st.back ? TWQ.length - 1 : Math.min(TWQ.length - 1, st.q + 1); if (TWQ[st.q] === 'view') st.back = false; }
       else if (p[0] === 'go') { st.q = +p[1]; st.back = true; }
@@ -3028,6 +3037,7 @@
       else if (p[0] === 'cut') { a.cuts = a.cuts || {}; if (!p[2]) delete a.cuts[p[1]]; else { var c0 = a.cuts[p[1]] || { a: Math.round(a.pw * 0.4), b: Math.round(a.pd * 0.3) }; c0.type = p[2]; a.cuts[p[1]] = c0; } }
       else if (['lift', 'tanks', 'room', 'shaft', 'ac'].indexOf(p[0]) >= 0) a[p[0]] = p[1] === '1';
       if (TWQ[st.q] === 'place' && !twAny()) st.q += p[0] === 'prev' ? -1 : 1;   // nothing built → no place step
+      if (TWQ[st.q] === 'place') st.pi = p[0] === 'prev' ? Math.max(0, twList().length - 1) : 0;
       paint(); if (TWQ[st.q] === 'view') tw3d();
     };
     if (!d.dataset.twi) { d.dataset.twi = 1; d.addEventListener('input', function (e) { if (d._twin) d._twin(e); }); }
@@ -3082,6 +3092,7 @@
   (function () { try { var st = document.createElement('style'); st.textContent =
     '.cu3d{position:absolute;inset:0;z-index:1}.cu-st.photo .cu3d{display:none}.cu-st:not(.photo) #cuImg{visibility:hidden}.cu-vw{position:absolute;top:12px;left:12px;z-index:3;display:flex;background:#fff;border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.12)}.cu-vw button{border:0;background:none;border-radius:999px;padding:7px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.cu-vw button.on{background:#2E2E2E;color:#fff}.cu-st .pg3-cap{z-index:3}'+
     '#cuOv .pg3-pn{padding-bottom:150px}.cu-pcs{display:flex;align-items:center;gap:10px;margin-top:4px}.cu-pcs button{width:36px;height:36px;border-radius:50%;border:1px solid #ccc;background:#fff;font-size:18px;cursor:pointer}.cu-pcs button:disabled{opacity:.4}.cu-pcs b{min-width:24px;text-align:center;font-size:16px}.pg3-ft .cu-sp{background:#fff!important;color:#2E2E2E!important;border:1.5px solid #2E2E2E!important;margin-bottom:8px}' +
+    '.tw-grid button small{display:block;font-size:10.5px;line-height:1.15;color:#6A6258;font-weight:600}.tw-grid button.mu{background:#D6D2C7;border-style:solid;border-color:#B9B2A5}.tw-grid button.on small{color:#fff}' +
     '.tw-it{background:#fff;border:1px solid #E7DFD3;border-radius:14px;padding:12px;margin:0 0 12px}.tw-it>b{font-size:15px}.tw-it .tw-wd{margin-top:8px}.tw-mini{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-top:12px}.tw-grid.tw-g2{width:120px;margin:0 0 20px;gap:4px;padding:4px;border-width:2px}.tw-grid.tw-g2 button{font-size:16px;min-height:0;padding:0}.tw-grid.tw-g2 button.mu{background:#D6D2C7;border-style:solid;border-color:#B9B2A5;color:#6A6258}.tw-grid.tw-g2 button.mu small{font-size:9.5px}.tw-grid.tw-g2 .tw-road{font-size:10.5px;bottom:-18px}.tw-mini .tw-chips{flex:1;min-width:140px}' +
     '.tw-ft.tw-fs{position:static;background:none;padding:6px 0 30px}.tw-on{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}.tw-on span{font-size:12.5px;color:#7A7268;margin-right:4px}.tw-on button{border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:6px 12px;font:600 13px inherit;font-family:inherit;cursor:pointer}.tw-on button.on{border-color:#C26445;background:#FBEDE7;color:#8a3a1f}' +
     '.tw-sel{background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:12px;margin:0 0 10px}.tw-selh{display:flex;align-items:center;gap:8px;margin-bottom:6px}.tw-selh b{flex:1;font-size:15px}.tw-selh button{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:6px 10px;font:600 12.5px inherit;font-family:inherit;cursor:pointer}.tw-selh button.on{background:#2E2E2E;color:#fff;border-color:#2E2E2E}' +
