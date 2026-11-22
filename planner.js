@@ -416,6 +416,9 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-qh{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:11.5px;color:#7A7268;font-weight:600}#plOv .pl-qh i{display:flex;gap:4px;flex:1}#plOv .pl-qh i b{width:18px;height:4px;border-radius:2px;background:#E2D6C4}#plOv .pl-qh i b.on{background:#C26445}#plOv .pl-qh i b.dn{background:#B9C4AE}#plOv .pl-qh .pl-tsq{margin:0}#plOv .pl-col{flex-direction:column;align-items:stretch}#plOv .pl-col button,#plOv .pl-big button{text-align:left;padding:12px 14px;font-size:14px}
 #plOv .pl-rq{border:1.5px solid #E7DDCF;border-radius:14px;margin:0 0 8px;background:#fff}#plOv .pl-rq.on{border-color:#C26445;background:#FFF8F2}#plOv .pl-rqh{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:10px 12px;text-align:left;cursor:pointer;font-family:inherit}#plOv .pl-rqh i{font-style:normal;font-size:22px}#plOv .pl-rqh span{flex:1}#plOv .pl-rqh b{display:block;font-size:14px;color:#2E2E2E}#plOv .pl-rqh small{color:#7A7268;font-size:11.5px}#plOv .pl-rqh em{font-style:normal;font-weight:700;color:#C26445;font-size:18px}
 #plOv .pl-rq .pl-pm{padding:0 12px}#plOv .pl-wh{display:flex;flex-direction:column;gap:6px;padding:0 12px 12px}#plOv .pl-wh button{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 10px;text-align:left;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}#plOv .pl-wh button.on{border:2px solid #C26445}#plOv .pl-wh small{display:block;font-weight:500;color:#55634A;font-size:11.5px}#plOv .pl-bgo{position:sticky;bottom:-16px;background:#fff;padding:10px 0;display:flex;gap:10px;align-items:center}#plOv .pl-bgo .pl-tsq{margin:0}
+#plOv .pl-moods{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 0 4px;scrollbar-width:none}#plOv .pl-moods button{flex:none;display:flex;align-items:center;gap:6px;border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;white-space:nowrap}#plOv .pl-moods button.on{border-color:#C26445;background:#C26445;color:#fff}#plOv .pl-moods i{font-style:normal}
+#plOv .pl-els2 button{position:relative;padding:12px 4px 10px}#plOv .pl-els2 i{font-size:26px}#plOv .pl-els2 em{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;font-weight:700;color:#C26445}
+#plOv .pl-cnts{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:6px 8px;margin:12px 0 0;font-size:13px}#plOv .pl-cnts button{width:34px;height:34px;border-radius:50%;border:1px solid #C9BBA6;background:#fff;font-size:17px;cursor:pointer}#plOv .pl-cnts b{min-width:22px;text-align:center}
 #plOv .pl-setg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}#plOv .pl-setg button{flex:none}#plOv .pl-els{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#plOv .pl-els button{display:flex;flex-direction:column;align-items:center;gap:1px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 4px;cursor:pointer;font-family:inherit}#plOv .pl-els i{font-style:normal;font-size:20px}#plOv .pl-els b{font-size:12px;color:#2E2E2E}#plOv .pl-els small{font-size:10.5px;color:#7A7268}#plOv .pl-els button.on{border-color:#C26445;background:#FFF8F3;box-shadow:0 0 0 2px #C2644533}#plOv .pl-set button.on{border-color:#C26445;background:#FFF8F3;box-shadow:0 0 0 2px #C2644533}#plOv .pl-tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0}#plOv .pl-tpl{display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 6px;cursor:pointer;font-family:inherit;text-align:center}#plOv .pl-tpl svg{max-width:100%;height:auto}#plOv .pl-tpl b{font-size:12.5px;color:#2E2E2E}#plOv .pl-tpl small{font-size:11px;color:#7A7268}#plOv .pl-tpl.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533;background:#FFF8F3}#plOv .pl-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}#plOv .pl-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}#plOv .pl-tsq{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:10px 0 0}
 #plOv .pl-blk{border:1px solid #E7DDCF;border-radius:12px;padding:10px;margin:0 0 8px;background:#FFFCF8;display:flex;align-items:center;gap:8px;flex-wrap:wrap}#plOv .pl-blk b{flex:1;font-size:13.5px}
 #plOv .pl-xx{border:0;background:none;color:#B3261E;font-size:16px;cursor:pointer}
@@ -544,12 +547,12 @@ function stepPlace() {
     (mumtyTanks() ? '<button type="button" data-pl="pmode:tank"><b>Hide the water tanks</b><small>A screen round the tanks on the mumty roof</small></button>' : '') +
     '</div><div class="pl-act"><button type="button" data-pl="askx">Cancel</button></div></div>';
   if (!S.items.length && !S.bskip) return builder();
-  if (S.bnote && S.bnote.length) h += '<div class="pl-note"><b>Set up the way our terraces are</b><br>' + S.bnote.map(esc).join(' · ') + '<br><small>Drag anything to move it, tap it to change it.</small></div>';
-  h += '<h4>Add things</h4><p class="pl-sub">Tap to add, then drag on the 3D. You\'ll pick the exact design of each at the end — here one model stands for all designs of that kind.</p>';
+  if (S.bnote) h += '<div class="pl-note">✓ Placed where our terraces have them — drag anything to move it.</div>';
+  h += '<h4>Add more</h4><p class="pl-sub">Tap to add · drag it in the 3D · tap it to change it</p>';
   if (lock) h += '<button type="button" class="pl-lock" data-pl="unlock">🔒 Sign in to see prices</button>';
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   const sets = SETUPS.filter(x => !x.lawn || S.site.kind !== 'terrace');
-  h += '<p class="pl-h">Start from a setup</p><div class="pl-set">' + sets.map(x => `<button type="button" data-pl="setup:${x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div><p class="pl-h">Or add one by one</p>';
+  if (!S.items.length) h += '<p class="pl-h">Start from a setup</p><div class="pl-set">' + sets.map(x => `<button type="button" data-pl="setup:${x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div><p class="pl-h">Or add one by one</p>';
   h += '<div class="pl-pal">' + CATS.filter(c => (!c.lawn || S.site.kind !== 'terrace') && (designs(c).length || c.always) && (c.k !== 'accover' || S.site.kind === 'terrace')).map(c => {
     const fp = fromPrice(Object.assign({ cat: c.k, w: c.w || 4, d: c.d || 4, h: c.h || 3 }, c.k === 'cabin' ? { sku: (cabinSkus().find(s => /PORTA/.test(s)) || cabinSkus()[0]) } : {}));
     return `<button type="button" data-pl="add:${c.k}"><i>${c.e}</i><span><b>${esc(c.t)}</b><small>${fp.price != null ? (lock ? fp.n + ' designs' : 'from ' + lakh(fp.price)) : fp.soon ? 'Coming soon' : fp.n + ' designs'}</small></span></button>`; }).join('') + '</div>';
@@ -596,27 +599,16 @@ function whereOpts(k, g) {   // [key, text, note] — the first is what most of 
   }[k];
   return (o || [['auto', 'We place it', '']]).filter(Boolean);
 }
-function builder() {
-  const terr = S.site.kind === 'terrace', B = S.bsel || {}, lock = !priceOk(), g = geo();
-  const sets = SETUPS.filter(x => !x.lawn || !terr), cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'chair', 'table', 'graffiti'].includes(c.k));
-  const n = Object.values(B).reduce((p, q) => p + q, 0);
-  if (!S.bq) {   // 1 of 2: what is it for
-    let h = '<div class="pl-qh"><i><b class="on"></b><b></b></i>1 of 2</div><h4>What is this space for?</h4><p class="pl-sub">Pick a mood — we tick what usually goes in it. Next you choose what and where.</p>';
-    h += '<div class="pl-set pl-setg">' + sets.map(x => `<button type="button" class="${S.bth === x.k ? 'on' : ''}" data-pl="theme:${x.k}" aria-pressed="${S.bth === x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div>';
-    h += `<button type="button" class="pl-go" style="width:100%;margin-top:14px" data-pl="bq:1">${S.bth ? 'Next — what and where →' : 'I\'ll choose things myself →'}</button>`;
-    h += '<button type="button" class="pl-tsq" style="margin-top:12px" data-pl="bskip">Skip — I\'ll add things one by one</button>';
-    return h;
-  }
-  // 2 of 2: what, how many and where — the usual spot first, with how often our terraces have it
-  let h = '<div class="pl-qh"><i><b class="dn"></b><b class="on"></b></i>2 of 2</div><h4>What do you want, and where?</h4><p class="pl-sub">' + (g.M ? 'Your staircase room is on the ' + (g.side === 'centre' ? 'middle' : g.side) + ' — ' : '') + 'the first choice under each is where it stood on most of the 70 terraces we built.</p>';
-  const rows = cats.slice().sort((a, b) => (B[b.k] ? 1 : 0) - (B[a.k] ? 1 : 0) || (LEARN[b.k] || 0) - (LEARN[a.k] || 0));
-  h += rows.map(c => { const on = B[c.k] || 0, fp = lock || !on ? null : fromPrice(Object.assign({ cat: c.k, w: c.w || 4, d: c.d || 4, h: c.h || 3 }, c.k === 'cabin' ? { sku: (cabinSkus().find(z => /PORTA/.test(z)) || cabinSkus()[0]) } : {})), many = ['planter', 'lights', 'privacy', 'vgarden'].includes(c.k) || c.k === 'chair';
-    let r = `<div class="pl-rq${on ? ' on' : ''}"><button type="button" class="pl-rqh" data-pl="bel:${c.k}" aria-pressed="${!!on}"><i>${c.e}</i><span><b>${esc(c.t)}</b><small>${LEARN[c.k] ? LEARN[c.k] + '% of our terraces have one' : c.always ? 'Planned with you by our team' : ''}${fp && fp.price != null ? ' · from ' + lakh(fp.price) : ''}</small></span><em>${on ? '✓' : '+'}</em></button>`;
-    if (on) { const W = whereOpts(c.k, g), cur = (S.bwh || {})[c.k] || W[0][0];
-      if (many && c.k !== 'privacy') r += `<div class="pl-pm"><span>How many</span><button type="button" data-pl="bcnt:${c.k}:-1">−</button><b>${on}</b><button type="button" data-pl="bcnt:${c.k}:1">+</button></div>`;
-      if (W.length > 1 || W[0][0] !== 'auto') r += '<div class="pl-wh">' + W.map((w, j) => `<button type="button" class="${cur === w[0] ? 'on' : ''}" data-pl="bwh:${c.k}:${w[0]}" aria-pressed="${cur === w[0]}">${j === 0 ? '★ ' : ''}${esc(w[1])}${w[2] ? `<small>${esc(w[2])}</small>` : ''}</button>`).join('') + '</div>'; }
-    return r + '</div>'; }).join('');
-  h += `<div class="pl-bgo"><button type="button" class="pl-tsq" data-pl="bq:0">← Mood</button><button type="button" class="pl-go" data-pl="build"${n ? '' : ' disabled'}>✨ Set it all up${n ? ' (' + n + ')' : ''}</button></div>`;
+function builder() {   // 231: one screen — a mood ticks things, tap tiles to change, "Set it up" places them where our terraces have them
+  const terr = S.site.kind === 'terrace', B = S.bsel || {};
+  const sets = SETUPS.filter(x => !x.lawn || !terr), cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'chair', 'table', 'graffiti', 'bench', 'sculpture'].includes(c.k));
+  const n = Object.values(B).reduce((p, q) => p + q, 0), many = k => k === 'planter' || k === 'lights';
+  let h = '<h4>What do you want on it?</h4>';
+  h += '<div class="pl-moods">' + sets.map(x => `<button type="button" class="${S.bth === x.k ? 'on' : ''}" data-pl="theme:${x.k}" aria-pressed="${S.bth === x.k}"><i>${x.e}</i>${esc(x.t)}</button>`).join('') + '</div>';
+  h += '<div class="pl-els pl-els2">' + cats.map(c => { const v = B[c.k] || 0;
+    return `<button type="button" class="${v ? 'on' : ''}" data-pl="bel:${c.k}" aria-pressed="${!!v}"><i>${c.e}</i><b>${esc(c.t)}</b>${v ? `<em>✓${many(c.k) ? ' ' + v : ''}</em>` : ''}</button>`; }).join('') + '</div>';
+  const mk = Object.keys(B).filter(many); if (mk.length) h += '<div class="pl-cnts">' + mk.map(k => `<span>${CAT[k].e} ${esc(CAT[k].t)}</span><button type="button" data-pl="bcnt:${k}:-1">−</button><b>${B[k]}</b><button type="button" data-pl="bcnt:${k}:1">+</button>`).join('') + '</div>';
+  h += `<div class="pl-bgo"><button type="button" class="pl-tsq" data-pl="bskip">Skip</button><button type="button" class="pl-go" data-pl="build"${n ? '' : ' disabled'}>✨ Set it up${n ? ' (' + n + ')' : ''}</button></div>`;
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   return h;
 }
