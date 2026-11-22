@@ -6,7 +6,7 @@
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
 import * as S3 from './space3d.js?v=19';
 import { cutHit } from './cabin3d.js?v=21';
-import * as TM from './terrace-match.js?v=1';
+import * as TM from './terrace-match.js?v=2';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
@@ -821,7 +821,9 @@ export function open(seed) {
   S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
   let q = null; try { q = new URLSearchParams(location.search).get('plan'); } catch (e) {}
   if (q && q.length > 10 && !S.linkDone) { S.linkDone = true; fromLink(q); }
-  if (seed && seed.fresh) { const v = S && S.view; S = fresh(); S.hist = []; S.hi = -1; S.pid = null; S.pname = ''; if (v) S.view = v; if (seed.kind === 'ground') S.site.kind = 'ground'; }   // 197: "another project" from the pergola designer — a new plan (the old one stays in the account)
+  if (seed && seed.fresh) { const v = S && S.view; S = fresh(); S.hist = []; S.hi = -1; S.pid = null; S.pname = ''; if (v) S.view = v; if (seed.kind === 'ground') S.site.kind = 'ground';
+    if (seed.site && seed.site.kind === 'terrace' && +seed.site.pw > 0) { S.site = Object.assign({ plot: '', par: 3, corner: '', high: {}, road_front: true, road_back: false, tanks: false, blocks: [] }, JSON.parse(JSON.stringify(seed.site)), { start: 'tpl' }); S.step = 1; S.tsDone = true; }   // 220: set up on the blank screen (wizard + closest real terrace) — straight to what goes on it
+  }   // 197: "another project" from the pergola designer — a new plan (the old one stays in the account)
   if (seed && Array.isArray(seed.items) && seed.items.length) {   // 199: pieces of a design set up on its page (planters…) — the space is set up first when it is new
     if (seed.fresh && S.step === 0) S.pend = seed.items; else { S.step = 1; putPieces(seed.items); }
     if (!S.pid) S.source = 'planner';

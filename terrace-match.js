@@ -38,6 +38,8 @@ export function match(a, n) {
       sc += 1.2 * Math.abs(Math.log((s.pw * s.pd) / (a.pw * a.pd)));               // size
       if (a.mumty) { if (a.mumty === 'none') sc += ms === 'none' ? 0 : 2.5; else sc += side === a.mumty ? 0 : ms === 'none' ? 2 : (side === 'mid' || side === 'front') && a.mumty === 'back' ? 0.8 : 1.6; }
       if (a.lift === true || a.lift === false) sc += hasLift(s) === a.lift ? 0 : 0.9;
+      for (const ty of ['room', 'shaft']) if (a[ty] === true || a[ty] === false) sc += (s.blocks || []).some(b => b.type === ty) === a[ty] ? 0 : 0.5;
+      if (a.shape === 'L') sc += s.cuts && Object.keys(s.cuts).length ? 0 : 0.8; else if (a.shape === 'rect') sc += s.cuts && Object.keys(s.cuts).length ? 0.4 : 0;
       sc += mir ? 0.02 : 0;
       out.push({ t, mir, sc });
     }
@@ -95,3 +97,27 @@ export function svg(site, W, H) {
   return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Top view, road at the bottom">${h}</svg>`;
 }
 export const LEGEND = '<span style="color:#C26445">■</span> staircase &nbsp;<span style="color:#55634A">■</span> lift &nbsp;<span style="color:#8E6BB0">■</span> room &nbsp;<span style="color:#8C8C8C">■</span> shaft';
+
+// 220: how close, as a percentage (for the cards)
+export const pct = sc => Math.max(40, Math.min(99, Math.round(100 * Math.exp(-sc / 3.2))));
+
+// 220: the template fitted to the size AND then changed to the answers — lift / tanks / rooms / shaft / AC added or taken out, L-shape cut, corner road
+export function fitAnswers(t, mir, a, base) {
+  const site = fit(t, mir, Object.assign({ kind: 'terrace', road_front: true, road_back: false, corner: '', high: {}, par: 3 }, base || {}, { pw: a.pw, pd: a.pd }));
+  const pw = site.pw, pd = site.pd, B = site.blocks, id = () => 'b' + Math.random().toString(36).slice(2, 8);
+  const m = B.find(b => b.type === 'mumty');
+  const free = nb => nb.x >= PAR - 0.01 && nb.z >= PAR - 0.01 && nb.x + nb.w <= pw - PAR + 0.01 && nb.z + nb.d <= pd - PAR + 0.01 && !B.some(o => hit(o, nb)) && !cutIn(site, nb);
+  const tryPut = (nb, spots) => { for (const [x, z] of spots) { const c = Object.assign({}, nb, { x: r2(x), z: r2(z) }); if (free(c)) { B.push(c); return true; } } return false; };
+  const near = (w, d) => m ? [[m.x + m.w, m.z], [m.x - w, m.z], [m.x, m.z + m.d], [m.x + m.w, m.z + m.d - d], [m.x - w, m.z + m.d - d], [m.x, m.z - d]] : [[PAR, PAR], [pw - PAR - w, PAR]];
+  const drop = ty => { for (let i = B.length - 1; i >= 0; i--) if (B[i].type === ty) B.splice(i, 1); };
+  if (a.lift === false) drop('lift'); else if (a.lift === true && !B.some(b => b.type === 'lift')) tryPut({ id: id(), type: 'lift', w: 6, d: 7, h: 11, side: 'free' }, near(6, 7));
+  if (a.room === false) drop('room'); else if (a.room === true && !B.some(b => b.type === 'room')) { const w = Math.min(12, r2(pw * 0.3)), d = 10, far = m && (m.x + m.w / 2) < pw / 2; tryPut({ id: id(), type: 'room', w, d, h: 9, side: 'back' }, [[far ? pw - PAR - w : PAR, PAR], [far ? PAR : pw - PAR - w, PAR]].concat(near(w, d))); }
+  if (a.shaft === false) drop('shaft'); else if (a.shaft === true && !B.some(b => b.type === 'shaft')) tryPut({ id: id(), type: 'shaft', w: 4, d: 4, h: 3, side: 'free' }, near(4, 4));
+  if (a.ac === false) drop('ac'); else if (a.ac === true && !B.some(b => b.type === 'ac')) { const sd = m && (m.x + m.w / 2) < pw / 2 ? 'right' : 'left'; tryPut({ id: id(), type: 'ac', w: 3, d: 8, h: 3, side: sd }, [[sd === 'left' ? PAR : pw - PAR - 3, r2(pd * 0.25)], [sd === 'left' ? PAR : pw - PAR - 3, r2(pd * 0.5)]]); }
+  site.tanks = a.tanks === false ? false : a.tanks === true ? true : !!site.tanks;
+  if (a.shape === 'rect') delete site.cuts;
+  else if (a.shape === 'L' && !(site.cuts && Object.keys(site.cuts).length)) { const k = m && (m.x + m.w / 2) < pw / 2 ? 'fr' : 'fl'; site.cuts = { [k]: { type: 'notch', a: r2(pw * 0.4), b: r2(pd * 0.3) } }; for (let i = B.length - 1; i >= 0; i--) if (cutIn(site, B[i])) B.splice(i, 1); }
+  site.road_front = true; site.road_back = a.road === 'both'; site.corner = a.road === 'cl' ? 'left' : a.road === 'cr' ? 'right' : '';
+  return site;
+}
+function cutIn(site, b) { for (const k in (site.cuts || {})) { const c = site.cuts[k], x0 = k[1] === 'l' ? 0 : site.pw - c.a, z0 = k[0] === 'b' ? 0 : site.pd - c.b; if (b.x < x0 + c.a && x0 < b.x + b.w && b.z < z0 + c.b && z0 < b.z + b.d) return true; } return false; }
