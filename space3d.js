@@ -5,8 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=26';
-import { pergolaModel } from './pergola3d.js?v=18';
+import { cabinModel, plotModel } from './cabin3d.js?v=27';
+import { pergolaModel } from './pergola3d.js?v=19';
+import { outline } from './plan2d.js?v=1';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -365,7 +366,7 @@ const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 
 function build(P) {
   const g = new THREE.Group(), t = P.site || {}, terr = t.kind === 'terrace';
-  if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; } else { lawn(g, t); R.plot = null; }
+  if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; if (t.floor) try { floorFin(g, t); } catch (e) {} } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   drawItems(items, R.holders, P);
   if (P.measure && terr) { try { g.add(measures(P)); } catch (e) {} }
@@ -395,6 +396,24 @@ function measures(P) {
   return g;
 }
 
+// 234: floor finishes — tiles (plain / Moroccan) over the whole roof, a pebble border along the parapet
+const TEX = {};
+function finTex(k) { if (TEX[k]) return TEX[k]; const cv = document.createElement('canvas'); cv.width = cv.height = 256; const x = cv.getContext('2d');
+  if (k === 'plain') { x.fillStyle = '#EFEBE4'; x.fillRect(0, 0, 256, 256); x.strokeStyle = '#CFC8BD'; x.lineWidth = 4; x.strokeRect(0, 0, 256, 256); }
+  else if (k === 'moroccan') { x.fillStyle = '#F3EEE6'; x.fillRect(0, 0, 256, 256); x.fillStyle = '#2F6F7E'; x.globalAlpha = 0.75; const c = 128, r = 90;
+    x.beginPath(); x.moveTo(c, c - r); x.quadraticCurveTo(c + 60, c - 60, c + r, c); x.quadraticCurveTo(c + 60, c + 60, c, c + r); x.quadraticCurveTo(c - 60, c + 60, c - r, c); x.quadraticCurveTo(c - 60, c - 60, c, c - r); x.fill();
+    x.globalAlpha = 1; x.fillStyle = '#F3EEE6'; x.beginPath(); x.arc(c, c, 26, 0, 7); x.fill(); x.strokeStyle = '#C9C1B4'; x.lineWidth = 3; x.strokeRect(0, 0, 256, 256); }
+  else { x.fillStyle = '#D9D3C8'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 260; i++) { x.fillStyle = ['#B8B0A3', '#A9A194', '#C7BFB2', '#9E968A'][i % 4]; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 6 + Math.random() * 7, 5 + Math.random() * 5, Math.random() * 3, 0, 7); x.fill(); } }
+  const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return (TEX[k] = t); }
+function floorFin(g, t) {
+  const f = t.floor || {}, pw = +t.pw, pd = +t.pd, E = 0.75;
+  if (f.tile === 'plain' || f.tile === 'moroccan') { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
+    const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const per = f.tile === 'plain' ? 2 : 3; tx.repeat.set(1 / per, 1 / per);
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
+  if (f.pebble) { const b = 1.25, pm = new THREE.MeshStandardMaterial({ map: finTex('pebble'), roughness: 1 });
+    [[E, E, pw - 2 * E, b], [E, pd - E - b, pw - 2 * E, b], [E, E + b, b, pd - 2 * E - 2 * b], [pw - E - b, E + b, b, pd - 2 * E - 2 * b]].forEach(([x, z, w, d]) => { const tx = pm.map.clone(); tx.needsUpdate = true; tx.repeat.set(w / 2, d / 2);
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04, z + d / 2); m.receiveShadow = true; g.add(m); }); }
+}
 function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (also drawn by the cabin / pergola designers)
   (P.items || []).forEach((it, i) => { if (!it) return;
     if (it.box) {   // 193d: an AC cover sitting over its unit
@@ -471,7 +490,7 @@ function pDown(e) {
   if (R.place) return;
   const hits = ray.intersectObjects(R.holders.filter(Boolean), true), h = hits.find(z => z.object.userData.hit != null) || hits[0];
   let i = null; if (h) { let o = h.object; while (o && o.userData.it == null) o = o.parent; if (o) i = o.userData.it; }
-  if (i != null && f) { const it = R.P.items[i]; R.drag = { kind: 'item', i, obj: R.holders[i], f0: f.clone(), x0: +it.x, z0: +it.z, moved: false, fixed: !!(it.segs || it.box || it.lock), pos0: R.holders[i].position.clone() }; R.controls.enabled = false; e.preventDefault(); }
+  if (i != null && f) { const it = R.P.items[i]; R.drag = { kind: 'item', i, obj: R.holders[i], f0: f.clone(), x0: +it.x, z0: +it.z, moved: false, fixed: !!(it.segs || it.box || it.lock || R.P.noDrag), pos0: R.holders[i].position.clone() }; R.controls.enabled = false; e.preventDefault(); }
   else R.tapEmpty = true;
 }
 function pMove(e) {
