@@ -338,10 +338,11 @@ function rateOf(x, z){ var c = x.ch || {}, l = num(c.l), s = num(c.s), i = num(c
 function hasCh(x){ var c = (x && x.ch) || {}; return [c.pk, c.l, c.s, c.i].some(function (v) { return num(v) > 0 }) }
 // per piece: { zone, pack, ship, fee }; without a place: the lowest it can be (from: true)
 function charge(x, loc){ var pk = num((x.ch || {}).pk) || 0;
-  if (!loc) { var lo = Math.min(rateOf(x, 'local'), rateOf(x, 'state'), rateOf(x, 'india')); return { zone: null, pack: pk, ship: lo, fee: pk + lo, from: true } }
+  // 219: no place yet → the highest it can be (was the lowest: the price went up once the city was set and carts were left)
+  if (!loc) { var lo = Math.max.apply(null, ['local', 'state', 'india'].map(function (z) { return rateOf(x, z) }).filter(function (v) { return isFinite(v) }).concat([0])); return { zone: null, pack: pk, ship: lo, fee: pk + lo, from: true } }
   var z = zoneOf(x, loc), sh = rateOf(x, z); return { zone: z, pack: pk, ship: sh, fee: pk + sh } }
 /* 178: prices shown everywhere include packaging + delivery to the visitor's pincode (no separate delivery line).
-   x._p0 / x._m0 = the product's own price / MRP; x.p / x.m = delivered price for LOC (no place yet: the lowest it can be). */
+   x._p0 / x._m0 = the product's own price / MRP; x.p / x.m = delivered price for LOC (no place yet: the highest it can be — 219). */
 function baseP(x){ if (!x) return 0; if (x._pd == null || x.p !== x._pd) { x._p0 = x.p; x._m0 = x.m } return x._p0 }
 function baseM(x){ baseP(x); return x._m0 }
 function applyDelivered(){ if (typeof PRODS !== 'object' || !PRODS) return;
@@ -460,7 +461,8 @@ document.head.appendChild(css3);
 pill();
 var skipped = null; try { skipped = localStorage.getItem(DK) } catch (e) {}
 var quiet = /[?&](preview|pitch)=/.test(location.search) || /^#(review|track)=/.test(location.hash);
-if (!LOC && !skipped && !quiet) setTimeout(function () { var off = document.getElementById('offpop'); if (!LOC && !ov && !(off && off.classList.contains('open'))) open('welcome') }, 3000);
+// 219: no popup on arrival any more (ad visitors bounced) — the city is asked only on Add to cart (gate) or from the 📍 pill
+if (false && !LOC && !skipped && !quiet) setTimeout(function () { var off = document.getElementById('offpop'); if (!LOC && !ov && !(off && off.classList.contains('open'))) open('welcome') }, 3000);
 setTimeout(refresh, 0);   // 178: delivered prices even before a place is picked
 window.addEventListener('outrr-catalog', refresh);
 })();

@@ -151,11 +151,11 @@
       var C = G('COLS') && COLS[hero] || {}, line = a.cols[0] === hero && a.em ? a.h + ' ' + a.em : '';
       return '<div class="ad ad-w ad-hero" data-slot="C1" data-ad="' + esc(a.id) + '" ' + style + '>' + sp + '<div class="ad-tx"><span class="ad-eye">' + esc(a.eye) + '</span><h2 class="ad-h" id="colTitleH">' + esc(C.t || a.h) + '</h2>'
         + (line ? '<b class="ad-line">' + esc(line) + '</b>' : '') + '<p>' + esc(line ? a.p : (C.tag || a.p)) + '</p></div><div class="ad-ims">'
-        + ims.slice(0, 3).map(function(u){ return '<img src="' + u + '" alt="" fetchpriority="high">'; }).join('') + '</div></div>';
+        + ims.slice(0, 3).map(function(u){ return '<img loading="lazy" src="' + u + '" alt="" fetchpriority="high">'; }).join('') + '</div></div>';
     }
-    if(cls === 'ad-w') body = '<div class="ad-tx">' + tx + '<p>' + esc(a.p) + '</p><span class="ad-btn">' + esc(a.btn) + ' →</span></div><div class="ad-ims">' + ims.slice(0, slot === 'C1' ? 3 : 2).map(function(u){ return '<img src="' + u + '" alt="" loading="lazy">'; }).join('') + '</div>';
-    else if(cls === 'ad-strip') body = (ims[0] ? '<img src="' + ims[0] + '" alt="" loading="lazy">' : '') + '<div class="ad-tx">' + tx + '<p>' + esc(a.p) + '</p></div><span class="ad-arr">→</span>';
-    else body = (ims[0] ? '<img src="' + ims[0] + '" alt="" loading="lazy">' : '') + '<div class="ad-tx">' + tx + (cls === 'ad-card' ? '' : '<p>' + esc(a.p) + '</p>') + '<span class="ad-btn">' + esc(a.btn) + ' →</span></div>';
+    if(cls === 'ad-w') body = '<div class="ad-tx">' + tx + '<p>' + esc(a.p) + '</p><span class="ad-btn">' + esc(a.btn) + ' →</span></div><div class="ad-ims">' + ims.slice(0, slot === 'C1' ? 3 : 2).map(function(u){ return '<img loading="lazy" src="' + u + '" alt="" loading="lazy">'; }).join('') + '</div>';
+    else if(cls === 'ad-strip') body = (ims[0] ? '<img loading="lazy" src="' + ims[0] + '" alt="" loading="lazy">' : '') + '<div class="ad-tx">' + tx + '<p>' + esc(a.p) + '</p></div><span class="ad-arr">→</span>';
+    else body = (ims[0] ? '<img loading="lazy" src="' + ims[0] + '" alt="" loading="lazy">' : '') + '<div class="ad-tx">' + tx + (cls === 'ad-card' ? '' : '<p>' + esc(a.p) + '</p>') + '<span class="ad-btn">' + esc(a.btn) + ' →</span></div>';
     return '<div class="ad ' + cls + '" data-slot="' + slot + '" data-ad="' + esc(a.id) + '" data-act="' + esc(a.act) + '" role="link" tabindex="0" ' + style + ' aria-label="' + esc(a.h + ' ' + (a.em || '') + '. ' + a.btn) + '">' + sp + body + '</div>';
   }
   function fill(el, slot, col, n){ if(!el) return; var list = pick(slot, col, n); el.innerHTML = list.map(function(a){ return html(a, slot, slot === 'C1' ? col : ''); }).join(''); el.hidden = !list.length; }
