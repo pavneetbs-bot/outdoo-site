@@ -1860,6 +1860,13 @@
     window.outrrPlan(seed);
   };
   // from the planner: open this cabin / pergola's designer on the plan's terrace, where it stands; "Save to my plan" brings it back
+  window.mtoStudio = function (k) {   // 232: bottom nav "Design studio" → a porta cabin / pergola designer (space first), straight from anywhere
+    var ids = Object.keys(PRODS || {}).filter(function (id) { var x = PRODS[id]; return x && x.cz && (k === 'cabin' ? x.cz.unit === 'cabin' : isPg(id)); });
+    var id = (k === 'cabin' ? ids.filter(function (z) { return /PORTA/i.test(z + ' ' + (PRODS[z].n || '')); })[0] : ids.filter(function (z) { return z === 'MTO-PG-TW'; })[0]) || ids[0]; if (!id) return false;
+    try { openProduct(id); } catch (e) { return false; }
+    var n = 0; (function wait() { if (!S || S.id !== id || !S.o) { if (n++ < 80) return setTimeout(wait, 100); return; } window.mtoCustomise(); })();
+    return true;
+  };
   window.mtoFromPlan = function (idx, it, site) {
     var id = it.cat === 'cabin' ? it.sku : (it.cfgId || it.pick); if (!id || !PRODS[id]) return false;
     try { openProduct(id); } catch (e) { return false; }
