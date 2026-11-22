@@ -4,9 +4,9 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=25';
-import * as P2 from './plan2d.js?v=1';
-import { cutHit } from './cabin3d.js?v=27';
+import * as S3 from './space3d.js?v=26';
+import * as P2 from './plan2d.js?v=2';
+import { cutHit } from './cabin3d.js?v=28';
 import * as TM from './terrace-match.js?v=3';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -417,6 +417,11 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-qh{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:11.5px;color:#7A7268;font-weight:600}#plOv .pl-qh i{display:flex;gap:4px;flex:1}#plOv .pl-qh i b{width:18px;height:4px;border-radius:2px;background:#E2D6C4}#plOv .pl-qh i b.on{background:#C26445}#plOv .pl-qh i b.dn{background:#B9C4AE}#plOv .pl-qh .pl-tsq{margin:0}#plOv .pl-col{flex-direction:column;align-items:stretch}#plOv .pl-col button,#plOv .pl-big button{text-align:left;padding:12px 14px;font-size:14px}
 #plOv .pl-rq{border:1.5px solid #E7DDCF;border-radius:14px;margin:0 0 8px;background:#fff}#plOv .pl-rq.on{border-color:#C26445;background:#FFF8F2}#plOv .pl-rqh{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:10px 12px;text-align:left;cursor:pointer;font-family:inherit}#plOv .pl-rqh i{font-style:normal;font-size:22px}#plOv .pl-rqh span{flex:1}#plOv .pl-rqh b{display:block;font-size:14px;color:#2E2E2E}#plOv .pl-rqh small{color:#7A7268;font-size:11.5px}#plOv .pl-rqh em{font-style:normal;font-weight:700;color:#C26445;font-size:18px}
 #plOv .pl-rq .pl-pm{padding:0 12px}#plOv .pl-wh{display:flex;flex-direction:column;gap:6px;padding:0 12px 12px}#plOv .pl-wh button{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 10px;text-align:left;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}#plOv .pl-wh button.on{border:2px solid #C26445}#plOv .pl-wh small{display:block;font-weight:500;color:#55634A;font-size:11.5px}#plOv .pl-bgo{position:sticky;bottom:-16px;background:#fff;padding:10px 0;display:flex;gap:10px;align-items:center}#plOv .pl-bgo .pl-tsq{margin:0}
+#plOv .pl-subar{position:sticky;bottom:0;z-index:3;background:linear-gradient(transparent,#F7F3EC 35%);padding:16px 0 calc(8px + env(safe-area-inset-bottom));margin-top:10px}#plOv .pl-subar .pl-go{width:100%;padding:15px;margin:0}
+#plOv .pl-subig button i{font-style:normal;font-size:28px}#plOv .pl-col3{flex-direction:column}#plOv .pl-col3 button{flex-direction:row;justify-content:flex-start;gap:14px;text-align:left;padding:14px}#plOv .pl-col3 button b{font-size:16px}#plOv .pl-col3 button small{display:block}
+#plOv .pl-cab{background:#fff;border:1px solid #E7DDCF;border-radius:14px;padding:12px;margin:12px 0}#plOv .pl-cab>b{display:block;font-size:14px;margin:4px 0 8px}
+#plOv .pl-looks{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 12px}#plOv .pl-looks button{border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:6px 2px 8px;font:600 11.5px inherit;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}#plOv .pl-looks button.on{border-color:#C26445;background:#FFF8F2}#plOv .pl-lk{display:block;width:100%;height:28px;border-radius:8px}
+#plOv .pl-lk-modern{background:linear-gradient(90deg,#2E2E2E 0 30%,#B9B8B4 30% 75%,#3A4A5A 75%)}#plOv .pl-lk-natural{background:linear-gradient(90deg,#A8784C 0 30%,#D8C9A8 30% 75%,#8A9A5B 75%)}#plOv .pl-lk-moroccan{background:radial-gradient(circle,#1F6F7E 0 4px,transparent 5px) 0 0/10px 10px,#F2E2C8}#plOv .pl-lk-tropical{background:linear-gradient(90deg,#F1EDE4 0 30%,#C98B63 30% 75%,#2E7D5B 75%)}
 #plOv .pl-su{position:absolute;inset:0;z-index:20;background:#F7F3EC;overflow:auto;display:none}#plOv .pl-suh{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border-bottom:1px solid #E2D6C4}#plOv .pl-suh b{flex:1;font-size:15px}#plOv .pl-suh button{border:1px solid #ddd;background:#fff;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer}
 #plOv .pl-sub2{max-width:640px;margin:0 auto;padding:18px 16px 40px}#plOv .pl-sub2 h2{font-size:24px;margin:6px 0 14px}#plOv .pl-dots{display:flex;gap:5px;margin-bottom:8px}#plOv .pl-dots i{flex:1;height:4px;border-radius:4px;background:#E2D6C4}#plOv .pl-dots i.on{background:#C26445}
 #plOv .pl-sumood{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#plOv .pl-sumood button{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #E2D6C4;background:#fff;border-radius:16px;padding:18px 8px;cursor:pointer;font-family:inherit}#plOv .pl-sumood i{font-style:normal;font-size:34px}#plOv .pl-sumood b{font-size:14px}#plOv .pl-sumood button.on{border-color:#C26445;background:#FFF8F2}
@@ -424,7 +429,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-sw{display:block;width:44px;height:30px;border-radius:6px;border:1px solid #D4CEC4}#plOv .pl-sw-p{background:#EFEBE4 repeating-linear-gradient(0deg,transparent 0 14px,#D4CEC4 14px 15px),repeating-linear-gradient(90deg,transparent 0 14px,#D4CEC4 14px 15px)}#plOv .pl-sw-m{background:radial-gradient(circle at 50% 50%,#2F6F7E 0 5px,transparent 6px) 0 0/15px 15px,#F3EEE6}
 #plOv .pl-sun{position:relative;margin:28px auto 34px;max-width:70%;max-height:42vh;background:#EADCC8;border:4px solid #9B8E7E;border-radius:6px}#plOv .pl-sun span{position:absolute;bottom:-26px;left:0;right:0;text-align:center;font:700 12px inherit;color:#8a3a1f}#plOv .pl-sn{position:absolute;width:42px;height:42px;border-radius:50%;border:2px dashed #9B8E7E;background:#fff;font-weight:800;cursor:pointer}#plOv .pl-sn.on{background:#C26445;color:#fff;border:2px solid #C26445}#plOv .pl-sn-back{top:-22px;left:calc(50% - 21px)}#plOv .pl-sn-front{bottom:-22px;left:calc(50% - 21px)}#plOv .pl-sn-left{left:-22px;top:calc(50% - 21px)}#plOv .pl-sn-right{right:-22px;top:calc(50% - 21px)}
 #plOv .pl-su2d{height:min(62vh,640px);margin:4px 0 10px;touch-action:none}#plOv .pl-sued{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:8px 10px;margin:0 0 10px}#plOv .pl-sued b{font-size:13px;margin-right:4px}#plOv .pl-sued span{font-size:12px;color:#7A7268}#plOv .pl-sued em{font-style:normal;font-weight:700;min-width:22px;text-align:center}#plOv .pl-sued button{width:36px;height:36px;border-radius:50%;border:1.5px solid #E2D6C4;background:#fff;font-size:16px;cursor:pointer}
-#plOv .pl-sucs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}#plOv .pl-sucs button{border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 12px;font:600 13px inherit;font-family:inherit;cursor:pointer}#plOv .pl-sucs button.on{border-color:#C26445;background:#FFF8F2}#plOv .pl-sunext{width:100%;margin-top:14px;padding:14px}
+#plOv .pl-sucs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}#plOv .pl-sucs button{border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 12px;font:600 13px inherit;font-family:inherit;cursor:pointer}#plOv .pl-sucs button.on{border-color:#C26445;background:#FFF8F2}#plOv .pl-sunext{width:100%;margin-top:14px;padding:14px}#plOv .pl-sucs{flex-wrap:wrap}
 #plOv .pl-moods{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 0 4px;scrollbar-width:none}#plOv .pl-moods button{flex:none;display:flex;align-items:center;gap:6px;border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;white-space:nowrap}#plOv .pl-moods button.on{border-color:#C26445;background:#C26445;color:#fff}#plOv .pl-moods i{font-style:normal}
 #plOv .pl-els2 button{position:relative;padding:12px 4px 10px}#plOv .pl-els2 i{font-size:26px}#plOv .pl-els2 em{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;font-weight:700;color:#C26445}
 #plOv .pl-cnts{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:6px 8px;margin:12px 0 0;font-size:13px}#plOv .pl-cnts button{width:34px;height:34px;border-radius:50%;border:1px solid #C9BBA6;background:#fff;font-size:17px;cursor:pointer}#plOv .pl-cnts b{min-width:22px;text-align:center}
@@ -556,7 +561,7 @@ function stepPlace() {
     (mumtyTanks() ? '<button type="button" data-pl="pmode:tank"><b>Hide the water tanks</b><small>A screen round the tanks on the mumty roof</small></button>' : '') +
     '</div><div class="pl-act"><button type="button" data-pl="askx">Cancel</button></div></div>';
   if (!S.items.length && !S.bskip) return builder();
-  if (S.su && S.su.done && S.site.kind === 'terrace') h += '<button type="button" class="pl-design" data-pl="plan2d">📐 Change the layout<small>Move, resize or remove things on the 2D plan — or answer the questions again</small></button>';
+  if (S.su && S.su.done && S.site.kind === 'terrace') h += '<p class="pl-h" style="margin-top:0">The look</p><div class="pl-looks">' + Object.keys(THEME_T).map(k => `<button type="button" data-pl="look:${k}" class="${(S.su.theme || 'natural') === k ? 'on' : ''}"><i class="pl-lk pl-lk-${k}"></i>${THEME_T[k][0]}</button>`).join('') + '</div>' + '<button type="button" class="pl-design" data-pl="plan2d">📐 Change the layout<small>Move, resize or remove things on the 2D plan — or answer the questions again</small></button>';
   else if (S.bnote) h += '<div class="pl-note">✓ Placed where our terraces have them — drag anything to move it.</div>';
   h += '<h4>Add more</h4><p class="pl-sub">Tap to add · move things on the 2D plan (📐)</p>';
   if (lock) h += '<button type="button" class="pl-lock" data-pl="unlock">🔒 Sign in to see prices</button>';
@@ -625,54 +630,79 @@ function builder() {   // 231: one screen — a mood ticks things, tap tiles to 
 }
 // 234: terrace setup on a blank screen — mood → what → how many people → north → floor (grass / tiles) → the 2D plan (drag, size, 📏) → See it in 3D.
 // Structures stay locked; things move only on the 2D plan (the 3D only shows). Changing an answer sets it all up again.
-const SUQ = ['mood', 'want', 'people', 'north', 'floor', 'plan'];
+const SUQ = ['mood', 'want', 'cabin', 'seats', 'existing', 'green', 'lights', 'floor', 'north', 'plan'];   // 235
+const THEME_T = { modern: ['Modern', 'grey'], natural: ['Natural', 'stone'], moroccan: ['Moroccan', 'moroccan'], tropical: ['Tropical', 'terracotta'] };
+const CAB_USE = ['Lounge', 'WFH office', 'Gym', 'Bedroom', 'Guest room', 'Home theatre', 'Yoga studio', 'Kids\' play', 'Bar lounge', 'Store room'];
 let SUEL = null;
 function suNeed() { return S.step === 1 && S.site.kind === 'terrace' && !S.items.length && !S.bskip && !(S.su && S.su.done); }
-function suOpen(q) { S.su = Object.assign({ q: 0, people: '5-8', north: '', turf: null, tile: 'plain' }, S.su || {}); if (q != null) S.su.q = q; S.su.on = true;
+function suOpen(q) { S.su = Object.assign({ q: 0, pg: '5-8', cs: '3-4', north: '', turf: null, green: 'balanced', light: 'soft', stairs: 'keep', roomRef: null, cab: [], theme: 'natural' }, S.su || {}); if (q != null) S.su.q = q; S.su.on = true;
   if (!SUEL) { SUEL = document.createElement('div'); SUEL.className = 'pl-su'; EL.appendChild(SUEL); SUEL.addEventListener('click', suClick); SUEL.addEventListener('pointerdown', suDown); SUEL.addEventListener('pointermove', suMove); SUEL.addEventListener('pointerup', suUp); SUEL.addEventListener('pointercancel', suUp); }
   SUEL.style.display = 'block'; suPaint(); }
 function suClose() { if (SUEL) SUEL.style.display = 'none'; if (S.su) S.su.on = false; draw(false); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 60); }
+function suSkip(q) { const B = S.bsel || {}, bl = S.site.blocks || [];
+  return (q === 'cabin' && !B.cabin) || (q === 'seats' && !B.cabin && !B.pergola) || (q === 'existing' && !bl.some(b => b.type === 'mumty' || b.type === 'room')); }
+function suStep(d) { const su = S.su; let q = su.q + d; while (q > 0 && q < SUQ.length - 1 && suSkip(SUQ[q])) q += d; su.q = Math.max(0, Math.min(SUQ.length - 1, q)); }
+function suCab() { const su = S.su, n = (S.bsel || {}).cabin || 0; su.cab = (su.cab || []).slice(0, n); while (su.cab.length < n) su.cab.push({ use: [], pantry: false, wash: false }); return su.cab; }
 function suCompose() {   // a fresh setup from the answers
-  const su = S.su; S.items = []; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; if (su.turf === true) S.bsel.turf = 1; else if (su.turf === false) delete S.bsel.turf;
-  S.site.floor = su.tile ? { tile: su.tile, pebble: true } : { pebble: true };
+  const su = S.su; S.items = []; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; S.bsel.feature = S.bsel.feature || 1; delete S.bsel.lights; delete S.bsel.planter; delete S.bsel.vgarden;
+  if (su.turf === true) S.bsel.turf = 1; else if (su.turf === false) delete S.bsel.turf;
+  S.site.floor = { tile: (THEME_T[su.theme] || THEME_T.natural)[1], pebble: true }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef };
   compose(); su.dirty = false; S.bskip = true; ev('plan_build', { ref: S.bth || 'own', n: S.items.length }); draw(true); }
 function suPlan() { const su = S.su, t = S.site, rd = ['front'].concat(t.road_back ? ['back'] : [], t.corner ? [t.corner] : []).filter(x => t.road_front !== false || x !== 'front');
   return P2.svg(t, { items: S.items, measure: !!su.meas, sel: S.sel != null ? { k: 'it', i: S.sel } : null, north: su.north, road: rd }); }
 function suPaint() {
   const su = S.su, q = SUQ[su.q], B = S.bsel || {}, terr = S.site.kind === 'terrace', chip = (k, on, tx) => `<button type="button" data-su="${k}" class="${on ? 'on' : ''}" aria-pressed="${!!on}">${tx}</button>`;
-  let h = `<div class="pl-suh"><button type="button" data-su="back" aria-label="Back">←</button><b>Set up your terrace</b><button type="button" data-su="x" aria-label="Close">✕</button></div><div class="pl-sub2"><div class="pl-dots">${SUQ.map((z, i) => `<i class="${i <= su.q ? 'on' : ''}"></i>`).join('')}</div>`;
+  const big = (k, on, e, t, sm) => chip(k, on, `<i>${e}</i><b>${t}</b>${sm ? `<small>${sm}</small>` : ''}`), next = (tx, dis) => `<div class="pl-subar"><button type="button" class="pl-go" data-su="next"${dis ? ' disabled' : ''}>${tx || 'Next →'}</button></div>`;
+  let h = `<div class="pl-suh"><button type="button" data-su="back" aria-label="Back">←</button><b>Set up your terrace</b><button type="button" data-su="x" aria-label="Close">✕</button></div><div class="pl-sub2"><div class="pl-dots">${SUQ.filter(z => !suSkip(z)).map(z => `<i class="${SUQ.indexOf(z) <= su.q ? 'on' : ''}"></i>`).join('')}</div>`;
   if (q === 'mood') h += '<h2>What is it for?</h2><div class="pl-sumood">' + SETUPS.filter(x => !x.lawn || !terr).map(x => `<button type="button" data-su="mood:${x.k}" class="${S.bth === x.k ? 'on' : ''}"><i>${x.e}</i><b>${esc(x.t)}</b></button>`).join('') + `<button type="button" data-su="mood:"><i>✋</i><b>I'll choose</b></button></div>`;
-  else if (q === 'want') { const cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'chair', 'table', 'graffiti', 'bench', 'sculpture', 'pathway', 'turf'].includes(c.k)), many = k => k === 'planter' || k === 'lights';
-    h += '<h2>What do you want?</h2><div class="pl-els pl-els2">' + cats.map(c => { const v = B[c.k] || 0; return `<button type="button" data-su="bel:${c.k}" class="${v ? 'on' : ''}"><i>${c.e}</i><b>${esc(c.t)}</b>${v ? `<em>✓${many(c.k) ? ' ' + v : ''}</em>` : ''}</button>`; }).join('') + '</div>';
-    const mk = Object.keys(B).filter(many); if (mk.length) h += '<div class="pl-cnts">' + mk.map(k => `<span>${CAT[k].e} ${esc(CAT[k].t)}</span><button type="button" data-su="bcnt:${k}:-1">−</button><b>${B[k]}</b><button type="button" data-su="bcnt:${k}:1">+</button>`).join('') + '</div>';
-    h += `<button type="button" class="pl-go pl-sunext" data-su="next"${Object.keys(B).length ? '' : ' disabled'}>Next →</button>`; }
-  else if (q === 'people') h += '<h2>How many people usually sit together?</h2><div class="pl-subig">' + [['2-4', '2 – 4'], ['5-8', '5 – 8'], ['9-12', '9 – 12'], ['12+', '12 +']].map(z => chip('ppl:' + z[0], su.people === z[0], `<b>${z[1]}</b><small>people</small>`)).join('') + '</div>';
-  else if (q === 'north') { const t = S.site; h += '<h2>Which side is north?</h2><p class="pl-sub">Tap the side — we keep the seating in the shade of the afternoon sun.</p>' +
+  else if (q === 'want') { const cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'chair', 'table', 'graffiti', 'bench', 'sculpture', 'pathway', 'turf', 'lights', 'planter', 'vgarden'].includes(c.k));
+    h += '<h2>What do you want?</h2><div class="pl-els pl-els2">' + cats.map(c => { const v = B[c.k] || 0; return `<button type="button" data-su="bel:${c.k}" class="${v ? 'on' : ''}"><i>${c.e}</i><b>${esc(c.t)}</b>${v ? '<em>✓</em>' : ''}</button>`; }).join('') + '</div><p class="pl-sub" style="margin-top:12px">Plants and lights come next.</p>' + next('', !Object.keys(B).length); }
+  else if (q === 'cabin') { const cb = suCab(); h += '<h2>Your cabin' + (cb.length > 1 ? 's' : '') + '</h2><div class="pl-cnts"><span>🏠 How many cabins</span><button type="button" data-su="ncab:-1">−</button><b>' + cb.length + '</b><button type="button" data-su="ncab:1">+</button></div>';
+    cb.forEach((c, i) => { h += `<div class="pl-cab"><b>Cabin ${cb.length > 1 ? i + 1 : ''} — what for?</b><div class="pl-sucs">` + CAB_USE.map(u => chip(`cuse:${i}:${u}`, c.use.includes(u), esc(u))).join('') + `</div><b>Inside it</b><div class="pl-sucs">` + chip(`cin:${i}:pantry`, c.pantry, '🍳 Pantry') + chip(`cin:${i}:wash`, c.wash, '🚿 Washroom') + '</div></div>'; });
+    h += next(); }
+  else if (q === 'seats') { h += '<h2>How many people?</h2>';
+    if (B.pergola) h += '<p class="pl-h">Sitting under the pergola</p><div class="pl-subig">' + [['2-4', '2 – 4'], ['5-8', '5 – 8'], ['9-12', '9 – 12'], ['12+', '12 +']].map(z => chip('pg:' + z[0], su.pg === z[0], `<b>${z[1]}</b>`)).join('') + '</div>';
+    if (B.cabin) h += '<p class="pl-h">In the cabin</p><div class="pl-subig">' + [['1-2', '1 – 2'], ['3-4', '3 – 4'], ['5-8', '5 – 8']].map(z => chip('cs:' + z[0], su.cs === z[0], `<b>${z[1]}</b>`)).join('') + '</div>';
+    h += next(); }
+  else if (q === 'existing') { const bl = S.site.blocks || [];
+    h += '<h2>What is already there</h2>';
+    if (bl.some(b => b.type === 'mumty')) h += '<p class="pl-h">The staircase room</p><div class="pl-subig">' + big('stairs:keep', su.stairs === 'keep', '✓', 'Keep as is') + big('stairs:door', su.stairs === 'door', '🚪', 'New door') + big('stairs:refurb', su.stairs === 'refurb', '🎨', 'Refurbish', 'door, cladding, paint') + '</div>';
+    if (bl.some(b => b.type === 'room')) h += '<p class="pl-h">The room / washroom on the roof — refurbish it?</p><div class="pl-subig">' + chip('rref:1', su.roomRef === true, 'Yes, refurbish') + chip('rref:0', su.roomRef === false, 'No, keep it') + '</div>';
+    h += next(); }
+  else if (q === 'green') h += '<h2>How much greenery?</h2><div class="pl-subig pl-col3">' + big('green:light', su.green === 'light', '🌱', 'A little', 'a few plants in the corners') + big('green:balanced', su.green === 'balanced', '🪴', 'Balanced', 'corners, a wall of plants, a green wall') + big('green:lush', su.green === 'lush', '🌿', 'Lush', 'thick greenery all round') + '</div>' + next();
+  else if (q === 'lights') h += '<h2>Lights for the evenings?</h2><div class="pl-subig pl-col3">' + big('light:none', su.light === 'none', '☀️', 'No lights', 'only daytime use') + big('light:soft', su.light === 'soft', '🕯️', 'Soft & warm', 'pergola profile, cove lights, plant spikes') + big('light:full', su.light === 'full', '✨', 'All lit up', '+ wall lights and screen downlights') + '</div>' + next();
+  else if (q === 'floor') h += '<h2>Artificial grass?</h2><div class="pl-subig">' + big('turf:1', su.turf === true, '🟩', 'Yes', 'a patch of soft grass') + big('turf:0', su.turf === false, '⬜', 'No', 'tiles all through') + '</div><p class="pl-sub" style="margin-top:12px">Pathway, pebble border and tiles are added for you — you pick the look at the end.</p>';
+  else if (q === 'north') { const t = S.site; h += '<h2>Which side is north?</h2><p class="pl-sub">Tap the side — the seating goes where the afternoon sun is softer.</p>' +
       `<div class="pl-sun" style="aspect-ratio:${t.pw}/${t.pd}">${['back', 'left', 'right', 'front'].map(sd => `<button type="button" data-su="north:${sd}" class="pl-sn pl-sn-${sd}${su.north === sd ? ' on' : ''}">N</button>`).join('')}<span>▼ road</span></div>` +
-      '<div class="pl-subig">' + chip('north:', su.north === '', 'Not sure') + '</div>'; }
-  else if (q === 'floor') h += '<h2>The floor</h2><p class="pl-h">Artificial grass?</p><div class="pl-subig">' + chip('turf:1', su.turf === true, '🟩 Yes') + chip('turf:0', su.turf === false, 'No') + '</div>' +
-      '<p class="pl-h">Floor tiles</p><div class="pl-subig pl-tiles">' + chip('tile:plain', su.tile === 'plain', '<i class="pl-sw pl-sw-p"></i>Plain') + chip('tile:moroccan', su.tile === 'moroccan', '<i class="pl-sw pl-sw-m"></i>Moroccan') + chip('tile:', !su.tile, 'Keep as is') + '</div>' +
-      '<p class="pl-sub" style="margin-top:12px">Pathway and a pebble border are added for you.</p>' + `<button type="button" class="pl-go pl-sunext" data-su="next">See the plan →</button>`;
+      '<div class="pl-subig">' + chip('north:', false, 'Not sure') + '</div>'; }
   else { const it = S.sel != null ? S.items[S.sel] : null;
     h += '<h2>Your setup</h2><p class="pl-sub">Drag to move · tap to resize</p>' + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d">${suPlan()}</div>`;
     if (it) { const c = CAT[it.cat] || {}; h += `<div class="pl-sued"><b>${c.e || ''} ${esc(it.label || c.t || '')}</b>` + (c.size && c.size !== 'fixed' ? `<span>W</span><button type="button" data-su="rs:w:-1">−</button><em>${it.w}</em><button type="button" data-su="rs:w:1">+</button>` + (c.size === 'wd' ? `<span>L</span><button type="button" data-su="rs:d:-1">−</button><em>${it.d}</em><button type="button" data-su="rs:d:1">+</button>` : '') : '') +
       (c.kind === 'free' || c.kind === 'floor' ? '<button type="button" data-su="rot" aria-label="Turn">↻</button>' : '') + '<button type="button" data-su="del" aria-label="Remove">🗑</button><button type="button" data-su="unsel" aria-label="Done">✓</button></div>'; }
     h += '<div class="pl-sucs">' + chip('meas', !!su.meas, '📏 Measurements') + chip('again', false, '↺ Set up again') + chip('roof', false, '✎ Change the roof') + '</div>' +
-      `<button type="button" class="pl-go pl-sunext" data-su="done">See it in 3D →</button>`; }
+      `<div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>`; }
   SUEL.innerHTML = h + '</div>';
 }
-function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disabled) return; const a = b.getAttribute('data-su').split(':'), su = S.su, adv = () => { su.q = Math.min(SUQ.length - 1, su.q + 1); su.dirty = true; };
+function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disabled) return; const a = b.getAttribute('data-su').split(':'), su = S.su, adv = () => { su.dirty = true; suStep(1); };
+  const toPlan = () => { if (SUQ[su.q] === 'plan' && (su.dirty || !S.items.length)) suCompose(); };
   switch (a[0]) {
     case 'x': su.done = true; return suClose();
-    case 'back': if (su.q > 0) su.q--; else return suRoof(); break;
-    case 'next': if (SUQ[su.q + 1] === 'plan' && (su.dirty || !S.items.length)) { su.q++; suCompose(); } else su.q++; break;
-    case 'mood': { const x = SETUPS.find(z => z.k === a[1]); S.bth = x ? x.k : null; S.bsel = {}; if (x) x.items.forEach(k => { if (CAT[k] && (designs(CAT[k]).length || CAT[k].always)) S.bsel[k] = (S.bsel[k] || 0) + 1; }); if (S.bsel.privacy) S.bsel.privacy = 1; if (S.site.blocks.some(b2 => b2.type === 'ac') && designs(CAT.accover).length) S.bsel.accover = 1; if (S.bsel.turf) su.turf = true; adv(); break; }
-    case 'bel': S.bsel = S.bsel || {}; if (S.bsel[a[1]]) delete S.bsel[a[1]]; else S.bsel[a[1]] = a[1] === 'planter' || a[1] === 'lights' ? 4 : 1; su.dirty = true; break;
-    case 'bcnt': S.bsel[a[1]] = Math.max(1, Math.min(20, (S.bsel[a[1]] || 1) + (+a[2] || 0))); su.dirty = true; break;
-    case 'ppl': su.people = a[1]; adv(); break;
-    case 'north': su.north = a[1]; adv(); break;
-    case 'turf': su.turf = a[1] === '1'; su.dirty = true; break;
-    case 'tile': su.tile = a[1] || ''; su.dirty = true; break;
+    case 'back': if (su.q > 0) suStep(-1); else return suRoof(); break;
+    case 'next': suStep(1); toPlan(); break;
+    case 'mood': { const x = SETUPS.find(z => z.k === a[1]); S.bth = x ? x.k : null; S.bsel = {}; if (x) x.items.forEach(k => { if (CAT[k] && (designs(CAT[k]).length || CAT[k].always)) S.bsel[k] = 1; }); S.bsel.feature = 1; if (S.site.blocks.some(b2 => b2.type === 'ac') && designs(CAT.accover).length) S.bsel.accover = 1; if (S.bsel.turf) su.turf = true;
+      su.theme = { party: 'modern', spa: 'tropical', green: 'natural', yoga: 'natural', work: 'modern', chill: 'natural' }[S.bth] || su.theme; adv(); break; }
+    case 'bel': S.bsel = S.bsel || {}; if (S.bsel[a[1]]) delete S.bsel[a[1]]; else S.bsel[a[1]] = 1; su.dirty = true; break;
+    case 'ncab': S.bsel.cabin = Math.max(1, Math.min(3, (S.bsel.cabin || 1) + (+a[1] || 0))); suCab(); su.dirty = true; break;
+    case 'cuse': { const c = suCab()[+a[1]]; if (c) { const u = a.slice(2).join(':'); c.use = c.use.includes(u) ? c.use.filter(z => z !== u) : c.use.concat(u); } su.dirty = true; break; }
+    case 'cin': { const c = suCab()[+a[1]]; if (c) c[a[2]] = !c[a[2]]; su.dirty = true; break; }
+    case 'pg': su.pg = a[1]; su.dirty = true; break;
+    case 'cs': su.cs = a[1]; su.dirty = true; break;
+    case 'stairs': su.stairs = a[1]; su.dirty = true; break;
+    case 'rref': su.roomRef = a[1] === '1'; su.dirty = true; break;
+    case 'green': su.green = a[1]; su.dirty = true; break;
+    case 'light': su.light = a[1]; su.dirty = true; break;
+    case 'turf': su.turf = a[1] === '1'; adv(); break;
+    case 'north': su.north = a[1]; adv(); toPlan(); break;
     case 'meas': su.meas = !su.meas; break;
     case 'again': suCompose(); break;
     case 'roof': return suRoof();
@@ -681,10 +711,10 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'done': su.done = true; ev('plan_step', { ref: '3d' }); return suClose();
   }
   if (SUQ[su.q] === 'plan' && !S.items.length) suCompose();
-  suPaint();
+  suPaint(); if (a[0] === 'next' || a[0] === 'back' || a[0] === 'mood' || a[0] === 'turf' || a[0] === 'north') SUEL.scrollTop = 0;
 }
 function suRoof() {   // back to the roof plan; a changed roof sets the terrace up again
-  if (!window.mtoSpaceAsk) return; SUEL.style.display = 'none'; EL.style.display = 'none'; save();
+  if (!window.mtoSpaceAsk) return; if (!SUEL) suOpen(SUQ.length - 1); SUEL.style.display = 'none'; EL.style.display = 'none'; save();
   window.mtoSpaceAsk('planner', r => { EL.style.display = 'flex'; if (r && r.site) { S.site = Object.assign({}, S.site, r.site); S.su.dirty = true; suCompose(); } SUEL.style.display = 'block'; suPaint(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60); }, { site: S.site });
 }
 let SUD = null;
@@ -707,7 +737,7 @@ function spotBest(it, i, score, rots, dz) {   // dz: the space in front of the s
 }
 function compose() {
   const g = geo(), t = g.t, P = g.P, B = S.bsel || {}, WH = S.bwh || {}, M = g.M, wh = k => WH[k] || whereOpts(k, g)[0][0];
-  const ppl = (S.su || {}).people || '5-8', SZ = { '2-4': { sofa: [8, 7], dining: [5, 5], pergola: [10, 9] }, '5-8': { sofa: [10, 8], dining: [7, 6], pergola: [12, 10] }, '9-12': { sofa: [12, 9], dining: [10, 6], pergola: [16, 12] }, '12+': { sofa: [14, 10], dining: [12, 7], pergola: [18, 13] } }[ppl] || {};
+  const ppl = (S.su || {}).pg || (S.su || {}).people || '5-8', SZ = { '2-4': { sofa: [8, 7], dining: [5, 5], pergola: [10, 9] }, '5-8': { sofa: [10, 8], dining: [7, 6], pergola: [12, 10] }, '9-12': { sofa: [12, 9], dining: [10, 6], pergola: [16, 12] }, '12+': { sofa: [14, 10], dining: [12, 7], pergola: [18, 13] } }[ppl] || {};
   const sun = (cx, cz, k) => g.sw ? k * ((cx - t.pw / 2) * g.sw[0] + (cz - t.pd / 2) * g.sw[1]) : 0;   // + toward the afternoon sun (south-west)
   const farX = w => g.far === 'right' ? t.pw - P - w / 2 : P + w / 2, by = k => S.items.find(o => o.cat === k);
   const d2 = (x, z, X, Z) => Math.hypot(x - X, z - Z), wallBonus = (f, cx, cz, sd) => { const e = { left: cx - f[0] / 2 - P, right: t.pw - P - cx - f[0] / 2, back: cz - f[1] / 2 - P, front: t.pd - P - cz - f[1] / 2 }[sd]; return e < 0.6 ? 6 : 0; };
@@ -720,6 +750,11 @@ function compose() {
   // the cabin first (it is the biggest), then the pathway from the stairs, so nothing else sits on it
   if (B.cabin) { const w = wh('cabin'), mf = mumtyFace();
     put('cabin', (cx, cz, f) => w === 'front' ? -d2(cx, cz, t.pw / 2, t.pd) : w === 'far' ? -d2(cx, cz, farX(f[0]), t.pd * 0.4) : -d2(cx, cz, M && g.side !== 'centre' ? (g.side === 'left' ? M.x + M.w + f[0] / 2 + 3.5 : M.x - f[0] / 2 - 3.5) : farX(f[0]), P + f[1] / 2) + wallBonus(f, cx, cz, 'back'), { rots: [0] });
+    const CS = { '1-2': [10, 8], '3-4': [12, 10], '5-8': [16, 10] }[(S.su || {}).cs], cabs = (S.su || {}).cab || [];   // 235: size by people, purpose + pantry / washroom per cabin
+    for (let ci = 1; ci < Math.min(3, B.cabin || 1); ci++) put('cabin', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * (0.35 + ci * 0.2)), { rots: [0] });
+    S.items.forEach((o, oi) => { if (o.cat !== 'cabin') return; const k = S.items.filter(z => z.cat === 'cabin').indexOf(o), c = cabs[k] || {};
+      if (CS) try { cabinSize(o, CS[0], CS[1]); } catch (e) {}
+      o.purpose = (c.use || []).slice(); o.inside = { pantry: !!c.pantry, wash: !!c.wash }; if (o.purpose.length) o.label = 'Cabin · ' + o.purpose.join(', '); });
     const cb0 = by('cabin'); if (cb0) { const cz = cb0.z + rectI(cb0).d / 2, dep = cz < t.pd / 3 ? 'at the back' : cz < t.pd * 2 / 3 ? 'in the middle' : 'at the front'; notes.push('Cabin ' + dep + (w === 'back' && g.side !== 'centre' && dep === 'at the back' ? ', beside the stairs (54% of ours)' : '')); } }
   const cab = by('cabin'), cr = cab ? rectI(cab) : null;
   if (B.pathway) { const mf = mumtyFace(), cx0 = g.side === 'left' ? Math.min(t.pw - P - 3, Math.max(mf[0] + 2, t.pw / 2 - 1.5)) : g.side === 'right' ? Math.max(P, Math.min(mf[0] - 5, t.pw / 2 - 1.5)) : r2(t.pw / 2 - 1.5);
@@ -764,17 +799,24 @@ function compose() {
       : fw ? -d2(cx, cz, rectI(fw).x + rectI(fw).w / 2 + (g.facing === 'right' ? -3 : g.facing === 'left' ? 3 : 0), rectI(fw).z + rectI(fw).d / 2 + (g.facing === 'back' ? 3 : g.facing === 'front' ? -3 : 0))
       : -d2(cx, cz, g.facing === 'right' ? t.pw - P - 3 : g.facing === 'left' ? P + 3 : t.pw / 2, g.facing === 'back' ? P + 3 : g.facing === 'front' ? t.pd - P - 3 : mU));
     if (by('water')) notes.push('Water feature facing the stairs (58% of ours)'); }
-  for (let k = 0; k < (B.vgarden || 0); k++) { const w = wh('vgarden'), sd = w === 'back' ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd; put('vgarden', null, wallAt(sd, run * (k + 1) / ((B.vgarden || 1) + 1), 'vgarden')); }
+  if (S.su && S.su.green) { const lv = S.su.green, quiet = (k, tg, o) => { const m0 = miss; put(k, (cx, cz) => -d2(cx, cz, tg[0], tg[1]), Object.assign({ rots: [0] }, o || {})); miss = m0; }, C1 = P + 1.2;   // 235: plants in the corners and the empty spaces
+    [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]].forEach(tg => quiet('planter', tg));
+    if (lv !== 'light') { const fx = g.far === 'right' ? t.pw - C1 : C1, step = lv === 'lush' ? 5 : 9; for (let z = P + 6; z < t.pd - 6; z += step) quiet('planter', [fx, z]);
+      P2.freeRects(t, S.items, lv === 'lush' ? 4 : 2).forEach(b => { quiet('planter', [b.x + 1, b.z + 1]); if (lv === 'lush') quiet('planter', [b.x + b.w - 1, b.z + b.d - 1]); });
+      const vg = lv === 'lush' ? 2 : 1; for (let k = 0; k < vg; k++) { const sd = k ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd, m0 = miss; put('vgarden', null, wallAt(sd, run * (k ? 0.5 : 0.35), 'vgarden')); miss = m0; } }
+    if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; for (let z = P + 6; z < t.pd - 6; z += 6) quiet('planter', [nx, z]); const pg2 = by('pergola'); if (pg2) { const r = rectI(pg2); [[r.x - 1, r.z - 1], [r.x + r.w + 1, r.z - 1], [r.x - 1, r.z + r.d + 1], [r.x + r.w + 1, r.z + r.d + 1]].forEach(tg => quiet('planter', tg)); } }
+    notes.push('Plants in the corners and the empty spaces'); }
+  for (let k = 0; k < (S.su && S.su.green ? 0 : B.vgarden || 0); k++) { const w = wh('vgarden'), sd = w === 'back' ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd; put('vgarden', null, wallAt(sd, run * (k + 1) / ((B.vgarden || 1) + 1), 'vgarden')); }
   if (B.firepit) { const so = by('sofa') || pg; put('firepit', (cx, cz) => so ? -d2(cx, cz, rectI(so).x + rectI(so).w / 2 + (g.far === 'right' ? -1 : 1) * (rectI(so).w / 2 + 2.5), rectI(so).z + rectI(so).d / 2) : -d2(cx, cz, t.pw / 2, t.pd * 0.6)); }
   if (B.umbrella) { const tf = by('turf'); put('umbrella', (cx, cz) => tf ? -d2(cx, cz, rectI(tf).x + rectI(tf).w / 2, rectI(tf).z + rectI(tf).d / 2) : -d2(cx, cz, t.pw / 2, t.pd * 0.7)); }
   if (B.sculpture) { const pa = by('pathway'); put('sculpture', (cx, cz) => pa ? -d2(cx, cz, pa.x + 4.5, pa.z + pa.d - 1.5) : -d2(cx, cz, t.pw / 2, t.pd - 3)); }
   // planters: along the far wall (74% of ours), round the edges, or both sides of the pathway
-  if (B.planter) { const w = wh('planter'), n = B.planter, pa = by('pathway');
+  if (B.planter && !(S.su && S.su.green)) { const w = wh('planter'), n = B.planter, pa = by('pathway');
     for (let k = 0; k < n; k++) { const u = (k + 0.5) / n;
       const tgt = w === 'path' && pa ? [pa.x + (k % 2 ? 4 : -1), pa.z + pa.d * ((Math.floor(k / 2) + 0.5) / Math.ceil(n / 2))] : w === 'edges' ? (u < 0.34 ? [P + 1 + (t.pw - 2) * u * 3, P + 1] : u < 0.67 ? [g.far === 'right' ? t.pw - P - 1 : P + 1, t.pd * (u - 0.34) * 3] : [P + 1 + (t.pw - 2) * (u - 0.67) * 3, t.pd - P - 1]) : [g.far === 'right' ? t.pw - P - 1 : P + 1, P + 1 + (t.pd - 2 * P - 2) * u];
       put('planter', (cx, cz) => -d2(cx, cz, tgt[0], tgt[1]), { rots: [0] }); }
     if (by('planter') && w === 'far') notes.push(n + ' planters along the ' + g.far + ' wall (74% of ours)'); }
-  if (B.lights) { const pa = by('pathway'), n = B.lights;
+  if (B.lights && !(S.su && S.su.light)) { const pa = by('pathway'), n = B.lights;
     for (let k = 0; k < n; k++) { const tgt = pa ? [k % 2 ? pa.x + pa.w + 0.6 : pa.x - 0.6, pa.z + pa.d * ((Math.floor(k / 2) + 0.5) / Math.ceil(n / 2))] : [P + 1 + (t.pw - 2) * ((k + 0.5) / n), t.pd - P - 1]; put('lights', (cx, cz) => -d2(cx, cz, tgt[0], tgt[1]), { rots: [0] }); } }
   if (B.privacy) { const w = wh('privacy');
     if (w === 'part' || !g.open.length || t.kind !== 'terrace') { for (let k = 0; k < B.privacy; k++) { const before = S.items.length; addItem('privacy'); if (S.items.length === before) miss++; } }
@@ -851,8 +893,8 @@ function draw(rec) {
     : S.step === 2 ? (lock || !S.items.length ? '' : `<div class="pl-tot"><b>${E.n ? lakh(E.t) : '—'}</b><small>${E.n} design${E.n === 1 ? '' : 's'} · before delivery & installation (added at checkout)</small></div><button type="button" class="pl-go" data-pl="cart"${E.n ? '' : ' disabled'}>Add all to cart</button>`)
     : `<div class="pl-tot">${S.items.length ? (lock ? '<b>🔒</b><small>Sign in to see the estimate</small>' : (T.n ? `<b>${lakh(T.t)}+</b><small>${S.items.length} thing${S.items.length > 1 ? 's' : ''} · starting price${T.n < S.items.length ? ' of ' + T.n : ''}, before delivery & installation</small>` : `<b>—</b><small>Prices open soon for these</small>`)) : '<b>—</b><small>Add something to see the estimate</small>'}</div>` + (S.items.length ? '<button type="button" class="pl-go" data-pl="step:2">Pick designs →</button>' : '');
   document.getElementById('plZ').innerHTML = `<button type="button" data-pl="undo" aria-label="Undo" title="Undo (Ctrl+Z)"${S.hi > 0 ? '' : ' disabled'}>↶</button><button type="button" data-pl="redo" aria-label="Redo" title="Redo (Ctrl+Y)"${S.hi < S.hist.length - 1 ? '' : ' disabled'}>↷</button>` +
-    `<button type="button" data-pl="view" class="${S.view === 'top' ? 'on' : ''}" aria-label="${S.view === 'top' ? '3D view' : 'Top view'}" title="${S.view === 'top' ? '3D view' : 'Top view'}">${S.view === 'top' ? '🧊' : '▦'}</button><button type="button" data-pl="zin" aria-label="Zoom in">+</button><button type="button" data-pl="zout" aria-label="Zoom out">−</button><button type="button" data-pl="home" aria-label="Whole space" title="Whole space">⌖</button>${S.su && S.su.done ? '<button type="button" data-pl="plan2d" aria-label="Edit the 2D plan" title="Edit the 2D plan">📐</button>' : ''}` + (S.items.length ? '<button type="button" data-pl="share" aria-label="Share this plan" title="Share this plan">🔗</button><button type="button" data-pl="pdf" aria-label="Save as PDF" title="Save as PDF">⎙</button>' : '');
-  try { S3.show(document.getElementById('pl3d'), { site: S.site, items: S.items, sel: S.step === 1 ? S.sel : null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW', noDrag: !!(S.su && S.su.done) }, { place: S.step === 0, view: S.view }); } catch (e) { if (window.console) console.warn(e); }
+    `<button type="button" data-pl="view" class="${S.view === 'top' ? 'on' : ''}" aria-label="${S.view === 'top' ? '3D view' : 'Top view'}" title="${S.view === 'top' ? '3D view' : 'Top view'}">${S.view === 'top' ? '🧊' : '▦'}</button><button type="button" data-pl="zin" aria-label="Zoom in">+</button><button type="button" data-pl="zout" aria-label="Zoom out">−</button><button type="button" data-pl="home" aria-label="Whole space" title="Whole space">⌖</button>${S.su && S.su.done ? '<button type="button" data-pl="plan2d" aria-label="Edit the 2D plan" title="Edit the 2D plan">📐</button>' : ''}<button type="button" data-pl="night" class="${S.night ? 'on' : ''}" aria-label="${S.night ? 'Day view' : 'Night view'}" title="${S.night ? 'Day view' : 'Night view'}">${S.night ? '☀️' : '🌙'}</button>` + (S.items.length ? '<button type="button" data-pl="share" aria-label="Share this plan" title="Share this plan">🔗</button><button type="button" data-pl="pdf" aria-label="Save as PDF" title="Save as PDF">⎙</button>' : '');
+  try { S3.show(document.getElementById('pl3d'), { site: S.site, items: S.items, sel: S.step === 1 ? S.sel : null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW', noDrag: !!(S.su && S.su.done), theme: (S.su && S.su.theme) || 'natural', night: !!S.night }, { place: S.step === 0, view: S.view }); } catch (e) { if (window.console) console.warn(e); }
 }
 
 function onClick(e) {
@@ -868,8 +910,11 @@ function act(a) {   // one button's action on S; true = draw again
     case 'zout': return S3.zoom(1.25);
     case 'home': return S3.home();
     case 'plan2d': suOpen(SUQ.length - 1); return;
+    case 'night': S.night = !S.night; return draw(false);
+    case 'look': { S.su = S.su || {}; S.su.theme = a[1]; S.site.floor = Object.assign({ pebble: true }, S.site.floor || {}, { tile: (THEME_T[a[1]] || THEME_T.natural)[1] }); ev('plan_theme', { ref: a[1] }); break; }
     case 'view': S.view = S.view === 'top' ? '3d' : 'top'; return draw(false);
-    case 'step': if (S.step !== +a[1]) ev('plan_step', { ref: a[1] }); S.step = +a[1]; S.sel = null; S.ask = null; S.cust = null; for (const k in PC) delete PC[k]; if (S.step >= 1 && S.pend) { putPieces(S.pend); S.pend = null; } break;
+    case 'step': if (a[1] === '0' && S.site.kind === 'terrace' && S.su && S.su.done && window.mtoSpaceAsk) { suRoof(); return; }
+      if (S.step !== +a[1]) ev('plan_step', { ref: a[1] }); S.step = +a[1]; S.sel = null; S.ask = null; S.cust = null; for (const k in PC) delete PC[k]; if (S.step >= 1 && S.pend) { putPieces(S.pend); S.pend = null; } break;
     case 'kind': if (t.kind !== a[1]) { t.kind = a[1]; if (a[1] === 'terrace' && !t.blocks.length) defBlocks(t); S.items = S.items.filter((x, i) => !(CAT[x.cat].lawn && a[1] === 'terrace') && settle(x, i)); } break;
     case 'unit': try { localStorage.setItem('outrr_area_unit', a[1] === 'm' ? 'm' : 'yd'); } catch (e) {} break;
     case 'plot': { delete t.tpl; const p = PLOTS.find(z => z[0] === a[1]); t.plot = a[1]; setPlot(p[1], p[2]); break; }
