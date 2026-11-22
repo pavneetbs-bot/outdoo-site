@@ -3032,7 +3032,7 @@
       else if (q === 'plan') { if (!st.site && !TMM && TMP) { TMP.then(function () { if (TWQ[st.q] === 'plan') paint(); }); return h + '<p class="sp-sub">Loading…</p>'; }
         if (!st.site) { twLearn(); st.site = twSite(); }
         var t = st.site, sb = t.blocks[st.sel], IC = { mumty: '🪜 Stairs', lift: '🛗 Lift', room: '🚪 Room', shaft: '⬛ Shaft', ac: '❄️ AC' };
-        h += '<h2>Your roof</h2><p class="sp-sub">Drag to move · tap to resize · ✂ corner cut · 🧱 higher wall next door</p>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
+        h += '<h2>Your roof</h2><p class="sp-sub">Drag to move · tap to resize · ✂ corner cut · 🧱 higher wall next door</p><div class="tw-chips tw-sm2" style="margin:-6px 0 4px">' + chip('pmeas', !!st.pmeas, '📏 ' + (st.pmeas ? 'Hide' : 'Show') + ' measurements') + '</div>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
           '<div class="tw-plw' + (st.pmeas ? ' tw-meas' : '') + '" style="aspect-ratio:' + t.pw + '/' + t.pd + ';height:min(50vh,' + Math.round(330 * t.pd / t.pw) + 'px)">' + TS_CUTS.map(function (ck) { var on = t.cuts && t.cuts[ck[0]]; return '<button type="button" class="tw-ck tw-ck-' + ck[0] + (on ? ' cut' : '') + (st.csel === ck[0] ? ' on' : '') + '" data-sp="w:csel:' + ck[0] + '" aria-label="' + ck[1] + ' corner">✂</button>'; }).join('') +
           ['back', 'left', 'right'].filter(function (sd) { return twRoads().indexOf(sd) < 0; }).map(function (sd) { var on = !!(t.high || {})[sd];   // 230: tap a wall → the neighbour's wall there is higher
             var hl = ((t.hw || {})[sd] || {}).l, full = sd === 'back' ? t.pw : t.pd, pc = Math.min(100, (hl || full) / full * 100);
@@ -3053,7 +3053,7 @@
           (sb.type === 'mumty' || sb.type === 'room' || sb.type === 'lift' ? '<div class="tw-chips tw-sm2" style="width:100%;margin:4px 0"><span style="align-self:center;font-size:12px;color:#7A7268">Door</span>' + [['back', '⬆'], ['left', '⬅'], ['right', '➡'], ['front', '⬇ road side']].map(function (z) { return chip('pdoor:' + z[0], twDoor(t, sb) === z[0], z[1]); }).join('') + '</div>' : '') +
           '<button type="button" data-sp="w:brot" aria-label="Turn">↻</button><button type="button" data-sp="w:bdel" aria-label="Remove">🗑</button><button type="button" data-sp="w:bx" aria-label="Done">✓</button></div>';
         h += '<div class="tw-chips tw-sm2 tw-add">' + ['mumty', 'lift', 'room', 'shaft', 'ac'].map(function (k) { return chip('badd:' + k, false, '+ ' + IC[k]); }).join('') + '</div>' +
-          '<div class="tw-chips tw-sm2 tw-add">' + chip('pmeas', !!st.pmeas, '📏 Measurements') + '</div><div class="tw-chips tw-sm2 tw-add">' + chip('ptank', t.tanks, '💧 Tanks on stairs') + [['3', 'Wall 3 ft'], ['4', 'Wall 4 ft+'], ['rail', 'Railing']].map(function (z) { return chip('ppar:' + z[0], a.par === z[0], z[1]); }).join('') + '</div>';
+          '<div class="tw-chips tw-sm2 tw-add">' + chip('ptank', t.tanks, '💧 Tanks on stairs') + [['3', 'Wall 3 ft'], ['4', 'Wall 4 ft+'], ['rail', 'Railing']].map(function (z) { return chip('ppar:' + z[0], a.par === z[0], z[1]); }).join('') + '</div>';
       }
       else { if (!st.site) st.site = twSite();
         h += '<h2>Your terrace</h2><div id="tw3d" class="tw3d"></div>';
