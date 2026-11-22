@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=23';
-import { pergolaModel } from './pergola3d.js?v=15';
+import { cabinModel, plotModel } from './cabin3d.js?v=24';
+import { pergolaModel } from './pergola3d.js?v=16';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -396,11 +396,12 @@ export function itemsGroup(list, P) {
 function camHome(t, view) {
   const pw = +t.pw || 30, pd = +t.pd || 60, d = Math.max(pw, pd), C = R.controls; C.target.set(pw / 2, 0, pd / 2);
   if (view === 'top') { R.cam.position.set(pw / 2, d * 1.3 + 8, pd / 2 + 0.01); C.enableRotate = false; }
-  else { R.cam.position.set(pw / 2 + d * 0.3, d * 0.62 + 6, pd + d * 0.32); C.enableRotate = true; }
+  else { const k = R.cam.aspect < 1 ? Math.min(1.7, 1 / R.cam.aspect) : 1;   // 223: a tall phone screen sees the whole terrace
+    R.cam.position.set(pw / 2 + d * 0.3 * k, (d * 0.62 + 6) * k, pd / 2 + (pd / 2 + d * 0.32) * k); C.enableRotate = true; }
   C.update();
 }
 export function show(el, P, opts) {
-  opts = opts || {}; ensure(el); R.P = P; R.place = !!opts.place;
+  opts = opts || {}; ensure(el); R.P = P; R.place = !!opts.place; R.on = opts.on || null;   // 223: a screen may take the 3D's events for itself (the terrace wizard)
   const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels]), dims = [t.kind, t.pw, t.pd].join('x');
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
@@ -419,7 +420,7 @@ export function snapshot() { return R ? R.renderer.domElement.toDataURL('image/j
 function rayAt(e) { const r = R.renderer.domElement.getBoundingClientRect(); R.ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), R.cam); return R.ray; }
 function floorAt(e) { const p = new THREE.Vector3(); return rayAt(e).ray.intersectPlane(R.floor, p) ? p : null; }
 function pDown(e) {
-  if (!R || !R.group || !HANDLER || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  if (!R || !R.group || !(R.on || HANDLER) || (e.pointerType === 'mouse' && e.button !== 0)) return;
   const ray = rayAt(e), f = floorAt(e); R.down = { x: e.clientX, y: e.clientY };
   if (R.place && R.plot) {   // step 1: a block on the roof
     const hits = ray.intersectObject(R.plot, true), h = hits.find(z => { let o = z.object; while (o && !o.userData.st) o = o.parent; return o; });
@@ -440,8 +441,9 @@ function pMove(e) {
 }
 function pUp(e) {
   if (!R) return; const d = R.drag; R.drag = null; R.controls.enabled = true;
-  if (d) { if (d.moved) HANDLER({ t: d.kind === 'block' ? 'block' : 'move', i: d.i, x: d.nx, z: d.nz }); else if (d.kind === 'item') HANDLER({ t: 'sel', i: d.i }); return; }
-  if (R.tapEmpty && R.down && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) HANDLER({ t: 'sel', i: null });
+  const H = R.on || HANDLER;
+  if (d) { if (d.moved) H({ t: d.kind === 'block' ? 'block' : 'move', i: d.i, x: d.nx, z: d.nz }); else if (d.kind === 'item') H({ t: 'sel', i: d.i }); else if (d.kind === 'block') H({ t: 'bsel', i: d.i }); return; }
+  if (R.tapEmpty && R.down && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) H({ t: 'sel', i: null });
   R.tapEmpty = false;
 }
 window.Space3D = { show, onEvent, zoom, home, resize, snapshot, _r: () => R };
