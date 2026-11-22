@@ -632,8 +632,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=22').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=22'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=23').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=23'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1884,7 +1884,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=34').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=35').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2336,7 +2336,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=14').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=15').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -2744,7 +2744,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=20').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=21').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -2889,14 +2889,27 @@
       if (a.lift) put({ id: id(), type: 'lift', w: +a.lw, d: +a.ld, h: 11, side: 'free' }, nextTo({ w: +a.lw, d: +a.ld }));
       if (a.shaft) put({ id: id(), type: 'shaft', w: +a.sw, d: +a.sd, h: 3, side: 'free' }, nextTo({ w: +a.sw, d: +a.sd }));
       if (a.room) { var rw = +a.rw, rd = +a.rd, farR = !m || m.x + m.w / 2 < pw / 2; put({ id: id(), type: 'room', w: rw, d: rd, h: 9, side: 'free' }, [[farR ? pw - P - rw : P, P], [farR ? P : pw - P - rw, P]].concat(nextTo({ w: rw, d: rd }))); }
-      if (a.ac) { var n = Math.max(1, +a.acn || 2), al = Math.min(pd * 0.6, n * 3), sideR = m ? m.x + m.w / 2 < pw / 2 : true; put({ id: id(), type: 'ac', w: 2.5, d: al, h: 3, side: sideR ? 'right' : 'left' }, [[sideR ? pw - P - 2.5 : P, pd * 0.3], [sideR ? pw - P - 2.5 : P, pd * 0.55], [sideR ? P : pw - P - 2.5, pd * 0.3]]); }
+      if (a.ac) { var n = Math.max(1, +a.acn || 2), al = Math.min(pd * 0.6, n * 3), sideR = m ? m.x + m.w / 2 < pw / 2 : true, aw = 1.2; put({ id: id(), type: 'ac', w: aw, d: al, h: 2.5, side: sideR ? 'right' : 'left' }, [[sideR ? pw - P - aw : P, pd * 0.3], [sideR ? pw - P - aw : P, pd * 0.55], [sideR ? P : pw - P - aw, pd * 0.3]]); }
       if (a.shape === 'L') { var k = m && m.x + m.w / 2 < pw / 2 ? 'fr' : 'fl'; t.cuts = {}; t.cuts[k] = { type: 'notch', a: Math.round(+a.la * 2) / 2, b: Math.round(+a.lb * 2) / 2 };
         var c = t.cuts[k], cx = k[1] === 'l' ? 0 : pw - c.a; for (var i = B.length - 1; i >= 0; i--) { var q = B[i]; if (q.x < cx + c.a && cx < q.x + q.w && q.z + q.d > pd - c.b) B.splice(i, 1); } }
       B.forEach(function (q) { var L = q.x <= P + 0.3, R = q.x + q.w >= pw - P - 0.3, Bk = q.z <= P + 0.3, F = q.z + q.d >= pd - P - 0.3; if (q.type === 'ac') return; q.side = (L || R) && !Bk && !F ? (L ? 'left' : 'right') : Bk && !L && !R ? 'back' : F && !L && !R ? 'front' : 'free'; });
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { mm.show(el, { site: twSite(), items: [] }, { view: '3d' }); setTimeout(function () { try { mm.resize(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=20').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=21').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+    var twSum = function () {   // 222: every answer under the 3D, each with Change
+      var a = st.a, G = { b: 'back', m: 'middle', f: 'front' }, C = { l: 'left', c: 'centre', r: 'right' }, rows = [
+        [0, 'Terrace', a.pw + ' × ' + a.pd + ' ft' + (a.plot ? ' (' + a.plot + ' gaj)' : '') + (a.shape === 'L' ? ' · L-shape, corner cut ' + a.la + ' × ' + a.lb + ' ft' : ' · rectangle')],
+        [1, 'Road', ({ front: 'In front', both: 'Front and back', cl: 'Corner — front + left', cr: 'Corner — front + right' })[a.road]],
+        [2, 'Staircase room', a.mpos === 'none' ? 'None' : (G[a.mpos[0]] + ' ' + C[a.mpos[2]]).replace('middle centre', 'in the middle') + ' · ' + a.mw + ' × ' + a.md + ' ft · door to the ' + ({ front: 'road side', back: 'back', left: 'left', right: 'right' })[a.door || 'front']],
+        [3, 'Lift room', a.lift ? 'Yes · ' + a.lw + ' × ' + a.ld + ' ft' : 'No'],
+        [4, 'Water tanks', a.tanks ? 'Yes, on the mumty' : 'No'],
+        [4, 'Room / washroom', a.room ? 'Yes · ' + a.rw + ' × ' + a.rd + ' ft' : 'No'],
+        [4, 'Shaft / duct', a.shaft ? 'Yes · ' + a.sw + ' × ' + a.sd + ' ft' : 'No'],
+        [4, 'AC outdoor units', a.ac ? a.acn + ' unit' + (a.acn > 1 ? 's' : '') : 'No'],
+        [5, 'Parapet', ({ '3': 'Wall about 3 ft', '4': 'Wall 4 ft or more', rail: 'Railing / glass' })[a.par]]];
+      return '<div class="tw-sum">' + rows.map(function (r) { return '<div><span>' + r[1] + '</span><b>' + esc(r[2] || '') + '</b><button type="button" data-sp="w:go:' + r[0] + '">Change</button></div>'; }).join('') + '</div>';
+    };
     var twPaint = function () {
       var a = st.a, q = TWQ[st.q], h = '<button type="button" class="sp-back" data-sp="w:prev">← Back</button><div class="tw-dots">' + TWQ.map(function (z, i) { return '<i class="' + (i <= st.q ? 'on' : '') + '"></i>'; }).join('') + '</div>';
       if (q === 'size') h += '<h2>How big is the terrace?</h2><p class="sp-sub">Pick the plot, or type the open roof size — width (left → right as you face the road) × depth (back → front).</p><div class="tw-chips">' + TWP.map(function (p) { return chip('plot:' + p[0], a.plot === p[0], p[1] + '<small>' + p[2] + ' × ' + p[3] + ' ft</small>'); }).join('') + '</div>' + num2('pw', a.pw, 'pd', a.pd) +
@@ -2920,24 +2933,24 @@
       else {
         h += '<h2>Is this your terrace?</h2><p class="sp-sub">Made from your answers. Drag to turn it. Change anything below — it updates.</p><div id="tw3d" class="tw3d"></div>' +
           '<div class="tw-flt">' + num2('pw', a.pw, 'pd', a.pd, 'W', 'D').replace('tw-wd', 'tw-wd tw-sm') +
-          chip('go:2', 0, '🧱 Mumty') + chip('go:3', 0, '🛗 Lift') + chip('go:4', 0, '🛢 Tanks / room / shaft / AC') + chip('go:5', 0, '▁ Parapet') + chip('go:1', 0, '🛣 Road') + chip('go:0', 0, '⌐ Shape') + '</div>';
+          '</div>' + twSum();
       }
-      h += '<div class="tw-ft"><button type="button" class="tw-next" data-sp="w:next">' + (q === 'view' ? '✓ Yes — what goes on it →' : q === 'par' ? 'See my terrace in 3D →' : 'Next →') + '</button></div>';
+      h += '<div class="tw-ft"><button type="button" class="tw-next" data-sp="w:next">' + (q === 'view' ? '✓ Yes — what goes on it →' : q === 'par' || st.back ? 'See my terrace in 3D →' : 'Next →') + '</button></div>';
       return h;
     };
     var twDone = function (site) { close(); try { if (window.otrack) window.otrack('plan_tpl', { ref: 'wizard' }); } catch (e) {} cb({ kind: 'terrace', site: site, had: list.length > 0 }); };
     var twGo = function (k) {
       var a = st.a, p = k.split(':');
       if (p[0] === 'prev') { if (st.q > 0) st.q--; else st.step = 'kind'; }
-      else if (p[0] === 'next') { if (TWQ[st.q] === 'view') return twDone(twSite()); st.q = Math.min(TWQ.length - 1, st.q + 1); }
-      else if (p[0] === 'go') st.q = +p[1];
+      else if (p[0] === 'next') { if (TWQ[st.q] === 'view') return twDone(twSite()); st.q = st.back ? TWQ.length - 1 : Math.min(TWQ.length - 1, st.q + 1); if (TWQ[st.q] === 'view') st.back = false; }
+      else if (p[0] === 'go') { st.q = +p[1]; st.back = true; }
       else if (p[0] === 'plot') { var pp = TWP.filter(function (x) { return x[0] === p[1]; })[0]; if (pp) { a.plot = pp[0]; a.pw = pp[2]; a.pd = pp[3]; a.la = Math.round(pp[2] * 0.4); a.lb = Math.round(pp[3] * 0.3); } }
       else if (p[0] === 'shape') a.shape = p[1];
-      else if (p[0] === 'road') { a.road = p[1]; st.q++; }
+      else if (p[0] === 'road') { a.road = p[1]; st.q = st.back ? TWQ.length - 1 : st.q + 1; if (TWQ[st.q] === 'view') st.back = false; }
       else if (p[0] === 'mpos') a.mpos = p[1];
       else if (p[0] === 'msz') { var z = TWM.filter(function (x) { return x[0] === p[1]; })[0]; if (z) { a.mw = z[2]; a.md = z[3]; } }
       else if (p[0] === 'door') a.door = p[1];
-      else if (p[0] === 'par') { a.par = p[1]; st.q++; }
+      else if (p[0] === 'par') { a.par = p[1]; st.q = TWQ.length - 1; st.back = false; }
       else if (['lift', 'tanks', 'room', 'shaft', 'ac'].indexOf(p[0]) >= 0) a[p[0]] = p[1] === '1';
       paint(); if (TWQ[st.q] === 'view') tw3d();
     };
@@ -2988,7 +3001,7 @@
   (function () { try { var st = document.createElement('style'); st.textContent =
     '.cu3d{position:absolute;inset:0;z-index:1}.cu-st.photo .cu3d{display:none}.cu-st:not(.photo) #cuImg{visibility:hidden}.cu-vw{position:absolute;top:12px;left:12px;z-index:3;display:flex;background:#fff;border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.12)}.cu-vw button{border:0;background:none;border-radius:999px;padding:7px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.cu-vw button.on{background:#2E2E2E;color:#fff}.cu-st .pg3-cap{z-index:3}'+
     '#cuOv .pg3-pn{padding-bottom:150px}.cu-pcs{display:flex;align-items:center;gap:10px;margin-top:4px}.cu-pcs button{width:36px;height:36px;border-radius:50%;border:1px solid #ccc;background:#fff;font-size:18px;cursor:pointer}.cu-pcs button:disabled{opacity:.4}.cu-pcs b{min-width:24px;text-align:center;font-size:16px}.pg3-ft .cu-sp{background:#fff!important;color:#2E2E2E!important;border:1.5px solid #2E2E2E!important;margin-bottom:8px}' +
-    '.tw-grid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:min(100%,320px);aspect-ratio:3/4;background:#EADCC8;border:3px solid #9B8E7E;border-radius:10px;padding:6px;box-sizing:border-box;margin-bottom:22px}.tw-grid button{border:1.5px dashed #C9BBA7;background:rgba(255,255,255,.35);border-radius:8px;cursor:pointer;font-size:30px;color:#C26445}.tw-grid button.on{background:#C26445;color:#fff;border-style:solid;border-color:#C26445}.tw-road{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font:700 12px inherit;font-family:inherit;color:#8a3a1f}.tw3d{position:relative;height:min(52vh,420px);border-radius:16px;overflow:hidden;background:#eef0ea;margin:0 0 12px}.tw3d canvas{display:block;width:100%!important;height:100%!important}.tw-sm{margin:0;width:100%}.tw-sm input{width:64px;padding:6px}' +
+    '.tw-sum{background:#fff;border:1px solid #E7DFD3;border-radius:14px;margin:0 0 8px}.tw-sum div{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #F0E9DE}.tw-sum div:last-child{border-bottom:0}.tw-sum span{width:118px;flex:none;font-size:12.5px;color:#7A7268}.tw-sum b{flex:1;font-size:13.5px;font-weight:600}.tw-sum button{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer}.tw-grid{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:min(100%,320px);aspect-ratio:3/4;background:#EADCC8;border:3px solid #9B8E7E;border-radius:10px;padding:6px;box-sizing:border-box;margin-bottom:22px}.tw-grid button{border:1.5px dashed #C9BBA7;background:rgba(255,255,255,.35);border-radius:8px;cursor:pointer;font-size:30px;color:#C26445}.tw-grid button.on{background:#C26445;color:#fff;border-style:solid;border-color:#C26445}.tw-road{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font:700 12px inherit;font-family:inherit;color:#8a3a1f}.tw3d{position:relative;height:min(52vh,420px);border-radius:16px;overflow:hidden;background:#eef0ea;margin:0 0 12px}.tw3d canvas{display:block;width:100%!important;height:100%!important}.tw-sm{margin:0;width:100%}.tw-sm input{width:64px;padding:6px}' +
     '.tw-dots{display:flex;gap:6px;margin:0 0 14px}.tw-dots i{flex:1;height:4px;border-radius:4px;background:#E2D6C4}.tw-dots i.on{background:#C26445}.tw-chips{display:flex;flex-wrap:wrap;gap:8px}.tw-chips button,.tw-yn button,.tw-flt button{border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:10px 14px;font:600 14px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer;text-align:left}.tw-chips button small{display:block;font-weight:500;font-size:11.5px;color:#7A7268}.tw-chips button.on,.tw-yn button.on,.tw-flt button.on,.sp-list button.on{border-color:#C26445;background:#FFF3EC;box-shadow:0 0 0 2px #C2644533}.tw-wd{display:flex;align-items:center;gap:10px;margin:16px 0 0;flex-wrap:wrap}.tw-wd label,.tw-flt label{font-size:13px;color:#6A6258;display:flex;align-items:center;gap:6px}.tw-wd input{width:80px;padding:10px;border:1.5px solid #E2D6C4;border-radius:10px;font:600 16px inherit;font-family:inherit}.tw-h{font-weight:700;font-size:14px;margin:18px 0 8px}.tw-yn{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 0;border-bottom:1px solid #EEE5D8}.tw-yn span{flex:1;min-width:180px;font-size:15px;font-weight:600}.tw-ft{position:sticky;bottom:0;padding:16px 0 4px;background:linear-gradient(transparent,#F7F3EC 30%);display:flex;justify-content:flex-end}.tw-next{background:#2E2E2E;color:#fff;border:0;border-radius:14px;padding:14px 22px;font:700 15px inherit;font-family:inherit;cursor:pointer}.tw-flt{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 14px;padding:10px;background:#fff;border:1px solid #E7DFD3;border-radius:14px}.tw-flt button{padding:6px 10px;font-size:12.5px;border-radius:999px}.tw-flt input{width:54px;padding:6px;border:1.5px solid #E2D6C4;border-radius:8px;font:600 13px inherit;font-family:inherit}.tw-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.tw-cards button{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;border:1.5px solid #E2D6C4;background:#fff;border-radius:14px;padding:26px 6px 10px;cursor:pointer;font-family:inherit}.tw-cards button:hover{border-color:#C26445}.tw-cards svg{max-width:100%;height:auto}.tw-cards b{font-size:13px}.tw-cards small{font-size:11px;color:#7A7268}.tw-pc{position:absolute;top:6px;left:8px;font:700 11px inherit;font-family:inherit;color:#55634A;background:#EEF1E9;border-radius:999px;padding:2px 8px}.tw-own{margin-top:14px;width:100%;border:1.5px dashed #C9BBA7;background:none;border-radius:12px;padding:12px;font:600 14px inherit;font-family:inherit;color:#6A6258;cursor:pointer}@media(max-width:600px){.tw-cards{grid-template-columns:1fr 1fr}}' +
     '.sp-ov{position:fixed;inset:0;z-index:340;background:#F7F3EC;display:none;flex-direction:column}.sp-ov.open{display:flex}body.sp-on{overflow:hidden}body.sp-on .near-pill,body.sp-on .wa-fab,body.sp-on #wachat{display:none!important}' +
     '.sp-hd{display:flex;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #E7DFD3}.sp-hd b{flex:1;font-size:15px}.sp-hd button{border:1px solid #ddd;background:#fff;border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:15px}' +

@@ -323,13 +323,16 @@ function drawPlot(tg, t) {
   // what's already on the roof
   (t.blocks || []).forEach((bk, i) => {
     const bg = new THREE.Group(); bg.userData.st = { i }; tg.add(bg); const x = +bk.x + bk.w / 2, z = +bk.z + bk.d / 2, h = (bk.type !== 'ac' && +bk.h > 0 ? +bk.h : 0) || BH_[bk.type] || 9;   // a height the customer typed
-    if (bk.type === 'ac') {   // an AC outdoor unit: a grey cabinet on low stands, the fan grille facing the open terrace
-      const acm = P('t_ac', 0xD9DCDD), grill = P('t_acg', 0x3A3F44), ac = h - 0.4, alongX = bk.w >= bk.d;
-      box(bg, bk.w, ac, bk.d, x, Y + 0.4 + ac / 2, z, acm); box(bg, alongX ? bk.w - 0.2 : 0.25, 0.4, alongX ? 0.25 : bk.d - 0.2, x, Y + 0.2, z, grill, false);
-      const dx = pw / 2 - x, dz = pd / 2 - z, fan = new THREE.Mesh(new THREE.CircleGeometry(Math.min(ac, alongX ? bk.w : bk.d) * 0.36, 24), grill);
-      if (alongX) { fan.position.set(x - bk.w * 0.15, Y + 0.4 + ac / 2, z + Math.sign(dz || 1) * (bk.d / 2 + 0.02)); if (dz < 0) fan.rotation.y = Math.PI; }
-      else { fan.position.set(x + Math.sign(dx || 1) * (bk.w / 2 + 0.02), Y + 0.4 + ac / 2, z - bk.d * 0.15); fan.rotation.y = dx > 0 ? Math.PI / 2 : -Math.PI / 2; }
-      bg.add(fan); return;
+    if (bk.type === 'ac') {   // 222: split AC outdoor units of a standard size (~2.75 × 1 × 2 ft) on low stands, one per 3 ft of the block, fans facing the open terrace
+      const acm = P('t_ac', 0xD9DCDD), grill = P('t_acg', 0x3A3F44), alongX = bk.w >= bk.d, L = alongX ? bk.w : bk.d, n = Math.max(1, Math.round(L / 3)), ul = Math.min(2.75, L / n - 0.25), ud = Math.min(1.05, alongX ? bk.d : bk.w), uh = Math.min(2, h - 0.4);
+      const dx = pw / 2 - x, dz = pd / 2 - z, sx = alongX ? 0 : Math.sign(dx || 1) * ((bk.w - ud) / 2), sz = alongX ? Math.sign(dz || 1) * ((bk.d - ud) / 2) : 0;
+      for (let k = 0; k < n; k++) { const off = -L / 2 + (k + 0.5) * (L / n), ux = alongX ? x + off : x + sx, uz = alongX ? z + sz : z + off;
+        box(bg, alongX ? ul : ud, uh, alongX ? ud : ul, ux, Y + 0.4 + uh / 2, uz, acm); box(bg, alongX ? ul - 0.2 : 0.2, 0.4, alongX ? 0.2 : ul - 0.2, ux, Y + 0.2, uz, grill, false);
+        const fan = new THREE.Mesh(new THREE.CircleGeometry(Math.min(uh, ul) * 0.34, 24), grill);
+        if (alongX) { fan.position.set(ux - ul * 0.15, Y + 0.4 + uh / 2, uz + Math.sign(dz || 1) * (ud / 2 + 0.02)); if (dz < 0) fan.rotation.y = Math.PI; }
+        else { fan.position.set(ux + Math.sign(dx || 1) * (ud / 2 + 0.02), Y + 0.4 + uh / 2, uz - ul * 0.15); fan.rotation.y = dx > 0 ? Math.PI / 2 : -Math.PI / 2; }
+        bg.add(fan); }
+      return;
     }
     if (bk.type === 'shaft') { const th = 0.33; box(bg, bk.w, h, th, x, Y + h / 2, z - bk.d / 2 + th / 2, plaster); box(bg, bk.w, h, th, x, Y + h / 2, z + bk.d / 2 - th / 2, plaster);
       box(bg, th, h, bk.d, x - bk.w / 2 + th / 2, Y + h / 2, z, plaster); box(bg, th, h, bk.d, x + bk.w / 2 - th / 2, Y + h / 2, z, plaster); box(bg, bk.w - 0.6, 0.05, bk.d - 0.6, x, Y + 0.3, z, dark, false); return; }
@@ -344,7 +347,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=20').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=21').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
