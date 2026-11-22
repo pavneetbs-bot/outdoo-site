@@ -4,8 +4,8 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=22';
-import { cutHit } from './cabin3d.js?v=24';
+import * as S3 from './space3d.js?v=23';
+import { cutHit } from './cabin3d.js?v=25';
 import * as TM from './terrace-match.js?v=2';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -36,18 +36,26 @@ const CATS = [
   { k: 'vgarden', t: 'Vertical garden', e: '🌿', col: 'vertical-gardens', kind: 'wall', w: 6, d: 0.6, h: 6, min: [2, 0.6], max: [40, 0.6], hr: [2, 12], size: 'wh' },
   { k: 'graffiti', t: 'Graffiti art', e: '🎨', col: 'graffiti', kind: 'wall', w: 10, d: 0.3, h: 6, min: [3, 0.3], max: [60, 0.3], hr: [3, 12], size: 'wh' },
   { k: 'accover', t: 'AC cover', e: '❄️', col: 'ac-covers', sb: /floor|terrace/i, kind: 'free', w: 3.6, d: 1.8, h: 2.9, size: 'fixed' },
+  { k: 'pathway', t: 'Pathway', e: '🪨', col: 'pathways', kind: 'floor', w: 3, d: 20, h: 0.15, min: [2, 3], max: [6, 150], size: 'wd', always: true, nolabel: true },   // 224: layout elements (priced by our team until designs are listed)
+  { k: 'turf', t: 'Artificial grass', e: '🟩', col: 'turf', kind: 'floor', w: 12, d: 10, h: 0.1, min: [4, 4], max: [80, 80], size: 'wd', always: true, nolabel: true },
+  { k: 'firepit', t: 'Fire pit', e: '🔥', col: 'fire-pits', kind: 'free', w: 3.5, d: 3.5, h: 1.5, size: 'fixed', always: true },
+  { k: 'jacuzzi', t: 'Jacuzzi', e: '🛁', col: 'jacuzzi', kind: 'free', w: 7, d: 7, h: 3, size: 'fixed', always: true },
+  { k: 'lights', t: 'Garden lights', e: '💡', col: 'lighting', kind: 'free', w: 0.8, d: 0.8, h: 3, size: 'fixed', always: true, nolabel: true },
+  { k: 'umbrella', t: 'Umbrella', e: '☂️', col: 'umbrellas', kind: 'free', w: 8, d: 8, h: 8, size: 'fixed', always: true },
   { k: 'gate', t: 'Gate', e: '🚪', col: 'gates', kind: 'edge', w: 10, d: 0.4, h: 6, min: [3, 0.4], max: [30, 0.4], hr: [4, 10], size: 'wh', lawn: true },
 ];
 // 193 phase 3: ready-made setups — added to what's already there, each thing at the nearest free spot
 const SETUPS = [
-  { k: 'chill', t: 'Chill corner', e: '☕', d: 'Pergola, sofa, table, planters', items: ['pergola', 'sofa', 'table', 'planter', 'planter', 'planter'] },
-  { k: 'party', t: 'Party terrace', e: '🎉', d: 'Bar counter, pergola, sofa, dining', items: ['bar', 'pergola', 'sofa', 'dining', 'planter', 'planter'] },
-  { k: 'work', t: 'Work + relax', e: '💻', d: 'Cabin, deck, sofa, green wall', items: ['cabin', 'deck', 'sofa', 'vgarden', 'planter', 'planter'] },
-  { k: 'green', t: 'Green retreat', e: '🌿', d: 'Green walls, planters, bench, water', items: ['vgarden', 'vgarden', 'planter', 'planter', 'planter', 'bench', 'water', 'privacy'] },
-  { k: 'yoga', t: 'Yoga & wellness', e: '🧘', d: 'Deck, pergola, water, green wall, screens', items: ['deck', 'pergola', 'water', 'vgarden', 'planter', 'planter', 'privacy'] },
+  { k: 'chill', t: 'Chill corner', e: '☕', d: 'Pergola with a sofa on a deck, water, planters, lights', items: ['pergola', 'deck', 'sofa', 'water', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter', 'planter'] },
+  { k: 'party', t: 'Party terrace', e: '🎉', d: 'Bar by the stairs, pergola lounge, dining, fire pit, grass', items: ['bar', 'pergola', 'sofa', 'dining', 'firepit', 'turf', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter'] },
+  { k: 'work', t: 'Work + relax', e: '💻', d: 'Cabin at the back, deck, sofa, green wall', items: ['cabin', 'deck', 'pergola', 'sofa', 'vgarden', 'pathway', 'privacy', 'planter', 'planter', 'planter'] },
+  { k: 'green', t: 'Green retreat', e: '🌿', d: 'Grass, green walls, planters, bench, water', items: ['turf', 'vgarden', 'feature', 'water', 'bench', 'pathway', 'privacy', 'planter', 'planter', 'planter', 'planter', 'planter', 'planter'] },
+  { k: 'yoga', t: 'Yoga & wellness', e: '🧘', d: 'Deck under a pergola, water, green wall, screens', items: ['deck', 'pergola', 'water', 'vgarden', 'turf', 'privacy', 'planter', 'planter', 'planter', 'planter'] },
+  { k: 'spa', t: 'Spa & lounge', e: '🛁', d: 'Jacuzzi, pergola lounge, feature wall, lights', items: ['jacuzzi', 'pergola', 'deck', 'sofa', 'feature', 'water', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter', 'planter'] },
   { k: 'family', t: 'Family lawn', e: '🌳', d: 'Pergola, dining, bench, water, sculpture', items: ['pergola', 'dining', 'bench', 'water', 'sculpture', 'planter'], lawn: true },
 ];
 const CAT = Object.fromEntries(CATS.map(c => [c.k, c]));
+const UMB = new Set(['pergola', 'umbrella']), FLX = new Set(['pathway', 'turf', 'deck']);   // things can stand under these; these floors don't overlap each other
 const PR = () => (typeof PRODS !== 'undefined' ? PRODS : window.PRODS) || {};   // the store's catalogue is a page-level const
 const num = v => { const n = parseFloat(v); return isFinite(n) ? n : null; };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -113,8 +121,9 @@ function clashes(it, i) {   // what it would sit on
   const r = rectI(it), fl = CAT[it.cat] && CAT[it.cat].kind === 'floor';
   if (!inside(r)) return 'edge';
   if ((S.site.kind === 'terrace' ? S.site.blocks : []).some(b => hit(r, b))) return 'block';
-  const under = (a, b) => (a.cat === 'pergola' && b.cat !== 'pergola' && b.cat !== 'cabin') || (b.cat === 'pergola' && a.cat !== 'pergola' && a.cat !== 'cabin');   // 203: seating, a bar, planters… can stand under a pergola
-  if (S.items.some((o, j) => j !== i && !att(o) && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin') && !under(it, o) && hit(r, rectI(o)))) return 'item';   // decking goes under things, never under a cabin
+  const under = (a, b) => (UMB.has(a.cat) && !UMB.has(b.cat) && b.cat !== 'cabin') || (UMB.has(b.cat) && !UMB.has(a.cat) && a.cat !== 'cabin');   // 203: seating, a bar, planters… can stand under a pergola
+  if (S.items.some((o, j) => j !== i && !att(o) && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin') && !under(it, o) && hit(r, rectI(o)))) return 'item';
+  if (S.items.some((o, j) => j !== i && !att(o) && (fl ? FLX.has(it.cat) && FLX.has(o.cat) && it.cat !== o.cat : o.cat === 'pathway') && hit(r, rectI(o)))) return 'item';   // 224: nothing stands on the pathway; pathway / grass / deck don't overlap   // decking goes under things, never under a cabin
   return '';
 }
 function placeFree(it, i, from) {   // nearest free spot to where it was dropped (spiral), keeping its turn
@@ -405,6 +414,8 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin:8px 0}#plOv .pl-n{display:flex;flex-direction:column;font-size:11px;color:#6A6258;gap:3px}#plOv .pl-n input{width:76px;height:36px;border:1px solid #D9CDBB;border-radius:8px;padding:0 8px;font:inherit}
 #plOv .pl-etabs{display:flex;gap:4px;background:#F3EDE4;border-radius:12px;padding:4px;margin:8px 0 10px}#plOv .pl-etabs button{flex:1;border:0;background:none;border-radius:9px;padding:8px 6px;font:600 12.5px inherit;font-family:inherit;color:#6A6258;cursor:pointer}#plOv .pl-etabs button.on{background:#fff;color:#2E2E2E;box-shadow:0 1px 3px rgba(0,0,0,.08)}#plOv .pl-epane{min-height:60px}
 #plOv .pl-qh{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:11.5px;color:#7A7268;font-weight:600}#plOv .pl-qh i{display:flex;gap:4px;flex:1}#plOv .pl-qh i b{width:18px;height:4px;border-radius:2px;background:#E2D6C4}#plOv .pl-qh i b.on{background:#C26445}#plOv .pl-qh i b.dn{background:#B9C4AE}#plOv .pl-qh .pl-tsq{margin:0}#plOv .pl-col{flex-direction:column;align-items:stretch}#plOv .pl-col button,#plOv .pl-big button{text-align:left;padding:12px 14px;font-size:14px}
+#plOv .pl-rq{border:1.5px solid #E7DDCF;border-radius:14px;margin:0 0 8px;background:#fff}#plOv .pl-rq.on{border-color:#C26445;background:#FFF8F2}#plOv .pl-rqh{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:10px 12px;text-align:left;cursor:pointer;font-family:inherit}#plOv .pl-rqh i{font-style:normal;font-size:22px}#plOv .pl-rqh span{flex:1}#plOv .pl-rqh b{display:block;font-size:14px;color:#2E2E2E}#plOv .pl-rqh small{color:#7A7268;font-size:11.5px}#plOv .pl-rqh em{font-style:normal;font-weight:700;color:#C26445;font-size:18px}
+#plOv .pl-rq .pl-pm{padding:0 12px}#plOv .pl-wh{display:flex;flex-direction:column;gap:6px;padding:0 12px 12px}#plOv .pl-wh button{border:1px solid #E2D6C4;background:#fff;border-radius:10px;padding:8px 10px;text-align:left;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}#plOv .pl-wh button.on{border:2px solid #C26445}#plOv .pl-wh small{display:block;font-weight:500;color:#55634A;font-size:11.5px}#plOv .pl-bgo{position:sticky;bottom:-16px;background:#fff;padding:10px 0;display:flex;gap:10px;align-items:center}#plOv .pl-bgo .pl-tsq{margin:0}
 #plOv .pl-setg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}#plOv .pl-setg button{flex:none}#plOv .pl-els{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}#plOv .pl-els button{display:flex;flex-direction:column;align-items:center;gap:1px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 4px;cursor:pointer;font-family:inherit}#plOv .pl-els i{font-style:normal;font-size:20px}#plOv .pl-els b{font-size:12px;color:#2E2E2E}#plOv .pl-els small{font-size:10.5px;color:#7A7268}#plOv .pl-els button.on{border-color:#C26445;background:#FFF8F3;box-shadow:0 0 0 2px #C2644533}#plOv .pl-set button.on{border-color:#C26445;background:#FFF8F3;box-shadow:0 0 0 2px #C2644533}#plOv .pl-tpls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0}#plOv .pl-tpl{display:flex;flex-direction:column;align-items:center;gap:2px;border:1.5px solid #E2D6C4;background:#fff;border-radius:12px;padding:8px 6px;cursor:pointer;font-family:inherit;text-align:center}#plOv .pl-tpl svg{max-width:100%;height:auto}#plOv .pl-tpl b{font-size:12.5px;color:#2E2E2E}#plOv .pl-tpl small{font-size:11px;color:#7A7268}#plOv .pl-tpl.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533;background:#FFF8F3}#plOv .pl-full{display:block;width:100%;text-align:left;border:1px dashed #C9B9A2;background:#FFFCF8;border-radius:12px;padding:10px 12px;font:700 13px inherit;font-family:inherit;color:#2E2E2E;cursor:pointer}#plOv .pl-full small{display:block;font-weight:500;font-size:11.5px;color:#7A7268;margin-top:2px}#plOv .pl-tsq{border:0;background:none;color:#8a3a1f;font:700 12.5px inherit;font-family:inherit;cursor:pointer;padding:0;margin:10px 0 0}
 #plOv .pl-blk{border:1px solid #E7DDCF;border-radius:12px;padding:10px;margin:0 0 8px;background:#FFFCF8;display:flex;align-items:center;gap:8px;flex-wrap:wrap}#plOv .pl-blk b{flex:1;font-size:13.5px}
 #plOv .pl-xx{border:0;background:none;color:#B3261E;font-size:16px;cursor:pointer}
@@ -533,6 +544,7 @@ function stepPlace() {
     (mumtyTanks() ? '<button type="button" data-pl="pmode:tank"><b>Hide the water tanks</b><small>A screen round the tanks on the mumty roof</small></button>' : '') +
     '</div><div class="pl-act"><button type="button" data-pl="askx">Cancel</button></div></div>';
   if (!S.items.length && !S.bskip) return builder();
+  if (S.bnote && S.bnote.length) h += '<div class="pl-note"><b>Set up the way our terraces are</b><br>' + S.bnote.map(esc).join(' · ') + '<br><small>Drag anything to move it, tap it to change it.</small></div>';
   h += '<h4>Add things</h4><p class="pl-sub">Tap to add, then drag on the 3D. You\'ll pick the exact design of each at the end — here one model stands for all designs of that kind.</p>';
   if (lock) h += '<button type="button" class="pl-lock" data-pl="unlock">🔒 Sign in to see prices</button>';
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
@@ -546,18 +558,153 @@ function stepPlace() {
   return h;
 }
 // 217: first time in step 2 — what the space is for (a theme ticks its things) + every thing with its icon → "Build my setup" places them all
+// 224: what LifeWall's 70 real terraces taught us — how often each thing is there, and where it usually stands (vs the staircase room)
+const LEARN = { cabin: 75, pergola: 75, bar: 69, planter: 51, water: 46, feature: 46, pathway: 44, sofa: 42, privacy: 42, turf: 39, deck: 24, jacuzzi: 7 };
+function geo() {   // the terrace read for the setup: where the stairs are, which side is the far side, which parapets are open
+  const t = S.site, terr = t.kind === 'terrace', M = terr ? (t.blocks.find(b => b.type === 'mumty') || t.blocks.find(b => b.type === 'lift')) : null;
+  const mc = M ? M.x + M.w / 2 : t.pw / 2, side = !M ? 'none' : mc < t.pw * 0.4 ? 'left' : mc > t.pw * 0.6 ? 'right' : 'centre';
+  const far = side === 'left' ? 'right' : side === 'right' ? 'left' : 'right', road = ['front'].concat(t.road_back ? ['back'] : [], t.corner ? [t.corner] : []).filter(x => t.road_front !== false || x !== 'front');
+  const facing = side === 'centre' ? (M.z + M.d / 2 < t.pd / 2 ? 'front' : 'back') : far, hi = t.high || {};
+  const open = ['back', 'left', 'right', 'front'].filter(sd => !road.includes(sd) && !hi[sd]);
+  let door = M && M.door; if (M && !door) { const dx = t.pw / 2 - mc, dz = t.pd / 2 - (M.z + M.d / 2); door = Math.abs(dx) / t.pw > Math.abs(dz) / t.pd ? (dx > 0 ? 'right' : 'left') : (dz > 0 ? 'front' : 'back'); }   // = cabin3d: the door looks at the middle
+  const dz0 = !M ? null : door === 'right' ? { x: M.x + M.w, z: M.z + M.d / 2 - 2.5, w: 4.5, d: 5 } : door === 'left' ? { x: M.x - 4.5, z: M.z + M.d / 2 - 2.5, w: 4.5, d: 5 } : door === 'front' ? { x: M.x + M.w / 2 - 2.5, z: M.z + M.d, w: 5, d: 4.5 } : { x: M.x + M.w / 2 - 2.5, z: M.z - 4.5, w: 5, d: 4.5 };
+  const fr = !M ? null : side === 'left' ? { x: M.x + M.w, z: M.z, w: 6, d: M.d } : side === 'right' ? { x: M.x - 6, z: M.z, w: 6, d: M.d } : M.z + M.d / 2 < t.pd / 2 ? { x: M.x, z: M.z + M.d, w: M.w, d: 6 } : { x: M.x, z: M.z - 6, w: M.w, d: 6 };   // big things don't stand right in front of the stairs
+  return { t, M, side, far, facing, open, road, door, dz: dz0, fr, P: P0() };
+}
+const SD = { left: 'left', right: 'right', back: 'back', front: 'front (road side)', none: '' };
+function whereOpts(k, g) {   // [key, text, note] — the first is what most of our terraces did
+  const st = g.M ? 'the staircase room' : 'the entrance', far = SD[g.far], B = S.bsel || {};
+  const o = {
+    cabin: [['back', 'At the back, beside ' + st, '54% stand beside it'], ['far', 'On the ' + far + ' side', ''], ['front', 'At the front', '']],
+    pergola: [['front', 'At the front, on the ' + far + ' side', '49% at the front · 87% on a side'], ['back', 'At the back', ''], B.cabin ? ['cabin', 'Joined to the cabin', ''] : null],
+    sofa: [B.pergola ? ['pergola', 'Under the pergola', 'shaded seating'] : null, ['open', 'In the open, facing the view', '']],
+    dining: [B.pergola && !B.sofa ? ['pergola', 'Under the pergola', ''] : null, B.bar ? ['bar', 'Next to the bar', ''] : null, B.pergola && B.sofa ? ['pergola', 'Under the pergola, with the sofa', ''] : null, ['open', 'In the open', '']],
+    swing: [B.pergola ? ['pergola', 'Under the pergola', ''] : null, ['far', 'On the ' + far + ' side', '']],
+    bar: [['mumty', 'Beside ' + st, '64% beside it — water and power are close'], B.pergola ? ['pergola', 'Under the pergola', ''] : null, ['far', 'On the ' + far + ' side', '']],
+    planter: [['far', 'Along the ' + far + ' wall', '74% on the side away from the stairs'], ['edges', 'All round the edges', ''], ['path', 'Along the pathway', '']],
+    water: [['facing', 'Facing ' + st + ' (' + SD[g.facing] + ' wall)', '58% opposite the stairs — the first thing you see'], ['seat', 'Next to the seating', '']],
+    feature: [['facing', 'On the wall facing ' + st + ' (' + SD[g.facing] + ')', '49% opposite the stairs'], g.M ? ['mumty', 'On the staircase room wall', '43% beside it'] : null],
+    vgarden: [['far', 'On the ' + far + ' wall', ''], ['back', 'On the back wall', '']],
+    privacy: [['par', 'On the parapet — ' + (g.open.length ? g.open.join(', ') : 'none open'), g.open.length < 4 ? 'road side and higher neighbour walls left out' : ''], ['part', 'A partition between spaces', '']],
+    pathway: [['centre', 'From the stairs through the middle', '78% run through the centre']],
+    turf: [['front', 'At the front, away from the stairs', '76% on the far side · 95% front / middle'], ['mid', 'In the middle', '']],
+    deck: [B.pergola ? ['pergola', 'Under the pergola', ''] : null, B.cabin ? ['cabin', 'In front of the cabin', '65% next to a built room'] : null, ['open', 'An open deck', '']],
+    jacuzzi: [['far', 'On the ' + far + ' side, away from the stairs', 'all of ours are on the far side']],
+    firepit: [['seat', 'In front of the seating', '']],
+    lights: [['path', 'Along the pathway and seating', '']],
+    umbrella: [['open', 'In the open, over a table', '']],
+  }[k];
+  return (o || [['auto', 'We place it', '']]).filter(Boolean);
+}
 function builder() {
-  const terr = S.site.kind === 'terrace', B = S.bsel || {}, lock = !priceOk();
-  const sets = SETUPS.filter(x => !x.lawn || !terr), cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr));
-  let h = '<h4>What is this space for?</h4><p class="pl-sub">Pick a mood — we tick what usually goes in it. Change the ticks as you like.</p>';
-  h += '<div class="pl-set pl-setg">' + sets.map(x => `<button type="button" class="${S.bth === x.k ? 'on' : ''}" data-pl="theme:${x.k}" aria-pressed="${S.bth === x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div>';
-  h += '<p class="pl-h">What do you want in it?</p><div class="pl-els">' + cats.map(c => { const n = B[c.k] || 0, fp = lock ? null : fromPrice(Object.assign({ cat: c.k, w: c.w || 4, d: c.d || 4, h: c.h || 3 }, c.k === 'cabin' ? { sku: (cabinSkus().find(z => /PORTA/.test(z)) || cabinSkus()[0]) } : {}));
-    return `<button type="button" class="${n ? 'on' : ''}" data-pl="bel:${c.k}" aria-pressed="${!!n}"><i>${c.e}</i><b>${esc(c.t)}${n > 1 ? ' ×' + n : ''}</b>${fp && fp.price != null ? `<small>from ${lakh(fp.price)}</small>` : ''}</button>`; }).join('') + '</div>';
+  const terr = S.site.kind === 'terrace', B = S.bsel || {}, lock = !priceOk(), g = geo();
+  const sets = SETUPS.filter(x => !x.lawn || !terr), cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'chair', 'table', 'graffiti'].includes(c.k));
   const n = Object.values(B).reduce((p, q) => p + q, 0);
-  h += `<button type="button" class="pl-go" style="width:100%;margin-top:14px" data-pl="build"${n ? '' : ' disabled'}>✨ Build my setup${n ? ' (' + n + ' thing' + (n > 1 ? 's' : '') + ')' : ''}</button>`;
-  h += '<button type="button" class="pl-tsq" style="margin-top:12px" data-pl="bskip">Skip — I\'ll add things one by one</button>';
+  if (!S.bq) {   // 1 of 2: what is it for
+    let h = '<div class="pl-qh"><i><b class="on"></b><b></b></i>1 of 2</div><h4>What is this space for?</h4><p class="pl-sub">Pick a mood — we tick what usually goes in it. Next you choose what and where.</p>';
+    h += '<div class="pl-set pl-setg">' + sets.map(x => `<button type="button" class="${S.bth === x.k ? 'on' : ''}" data-pl="theme:${x.k}" aria-pressed="${S.bth === x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div>';
+    h += `<button type="button" class="pl-go" style="width:100%;margin-top:14px" data-pl="bq:1">${S.bth ? 'Next — what and where →' : 'I\'ll choose things myself →'}</button>`;
+    h += '<button type="button" class="pl-tsq" style="margin-top:12px" data-pl="bskip">Skip — I\'ll add things one by one</button>';
+    return h;
+  }
+  // 2 of 2: what, how many and where — the usual spot first, with how often our terraces have it
+  let h = '<div class="pl-qh"><i><b class="dn"></b><b class="on"></b></i>2 of 2</div><h4>What do you want, and where?</h4><p class="pl-sub">' + (g.M ? 'Your staircase room is on the ' + (g.side === 'centre' ? 'middle' : g.side) + ' — ' : '') + 'the first choice under each is where it stood on most of the 70 terraces we built.</p>';
+  const rows = cats.slice().sort((a, b) => (B[b.k] ? 1 : 0) - (B[a.k] ? 1 : 0) || (LEARN[b.k] || 0) - (LEARN[a.k] || 0));
+  h += rows.map(c => { const on = B[c.k] || 0, fp = lock || !on ? null : fromPrice(Object.assign({ cat: c.k, w: c.w || 4, d: c.d || 4, h: c.h || 3 }, c.k === 'cabin' ? { sku: (cabinSkus().find(z => /PORTA/.test(z)) || cabinSkus()[0]) } : {})), many = ['planter', 'lights', 'privacy', 'vgarden'].includes(c.k) || c.k === 'chair';
+    let r = `<div class="pl-rq${on ? ' on' : ''}"><button type="button" class="pl-rqh" data-pl="bel:${c.k}" aria-pressed="${!!on}"><i>${c.e}</i><span><b>${esc(c.t)}</b><small>${LEARN[c.k] ? LEARN[c.k] + '% of our terraces have one' : c.always ? 'Planned with you by our team' : ''}${fp && fp.price != null ? ' · from ' + lakh(fp.price) : ''}</small></span><em>${on ? '✓' : '+'}</em></button>`;
+    if (on) { const W = whereOpts(c.k, g), cur = (S.bwh || {})[c.k] || W[0][0];
+      if (many && c.k !== 'privacy') r += `<div class="pl-pm"><span>How many</span><button type="button" data-pl="bcnt:${c.k}:-1">−</button><b>${on}</b><button type="button" data-pl="bcnt:${c.k}:1">+</button></div>`;
+      if (W.length > 1 || W[0][0] !== 'auto') r += '<div class="pl-wh">' + W.map((w, j) => `<button type="button" class="${cur === w[0] ? 'on' : ''}" data-pl="bwh:${c.k}:${w[0]}" aria-pressed="${cur === w[0]}">${j === 0 ? '★ ' : ''}${esc(w[1])}${w[2] ? `<small>${esc(w[2])}</small>` : ''}</button>`).join('') + '</div>'; }
+    return r + '</div>'; }).join('');
+  h += `<div class="pl-bgo"><button type="button" class="pl-tsq" data-pl="bq:0">← Mood</button><button type="button" class="pl-go" data-pl="build"${n ? '' : ' disabled'}>✨ Set it all up${n ? ' (' + n + ')' : ''}</button></div>`;
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   return h;
+}
+// 224: the setup, placed the way our terraces are — big things first, each at the best free spot for its "where"
+const BIG = new Set(['cabin', 'pergola', 'jacuzzi']);
+function spotBest(it, i, score, rots, dz) {   // dz: the space in front of the staircase door stays clear
+  const t = S.site, p = P0(), keep = { x: it.x, z: it.z, rot: it.rot }, fl = CAT[it.cat].kind === 'floor'; let best = null;
+  for (const rot of rots || [0, 90]) { it.rot = rot; const f = foot(it), st = Math.max(f[0], f[1]) > 8 ? 1 : 0.5;
+    for (let z = p; z <= t.pd - p - f[1] + 0.01; z += st) for (let x = p; x <= t.pw - p - f[0] + 0.01; x += st) { it.x = r2(x); it.z = r2(z); if (clashes(it, i) || (dz && !fl && hit(rectI(it), dz)) || (dz && dz.fr && BIG.has(it.cat) && hit(rectI(it), dz.fr))) continue;
+      const sc = score(it.x + f[0] / 2, it.z + f[1] / 2, f, rot); if (!best || sc > best[0]) best = [sc, it.x, it.z, rot]; } }
+  if (!best) { Object.assign(it, keep); return false; } it.x = best[1]; it.z = best[2]; it.rot = best[3]; return true;
+}
+function compose() {
+  const g = geo(), t = g.t, P = g.P, B = S.bsel || {}, WH = S.bwh || {}, M = g.M, wh = k => WH[k] || whereOpts(k, g)[0][0];
+  const farX = w => g.far === 'right' ? t.pw - P - w / 2 : P + w / 2, by = k => S.items.find(o => o.cat === k);
+  const d2 = (x, z, X, Z) => Math.hypot(x - X, z - Z), wallBonus = (f, cx, cz, sd) => { const e = { left: cx - f[0] / 2 - P, right: t.pw - P - cx - f[0] / 2, back: cz - f[1] / 2 - P, front: t.pd - P - cz - f[1] / 2 }[sd]; return e < 0.6 ? 6 : 0; };
+  const inR = (cx, cz, r) => r && cx > r.x && cx < r.x + r.w && cz > r.z && cz < r.z + r.d;
+  let miss = 0; const notes = [];
+  const put = (k, score, opt) => { opt = opt || {}; const it = newItem(k); if (!it) return null; Object.assign(it, opt.set || {}); const i = S.items.length; S.items.push(it);
+    if (CAT[k].kind === 'wall') { it.x = r2(opt.at[0] - it.w / 2); it.z = r2(opt.at[1]); it.rot = opt.rot; if (!settle(it, i, [it.x, it.z])) { S.items.pop(); miss++; return null; } return it; }
+    if (!spotBest(it, i, score, opt.rots, g.dz && Object.assign({ fr: g.fr }, g.dz))) { S.items.pop(); miss++; return null; } flush(it, i); if (opt.wside) it.wside = opt.wside; return it; };
+  const mumtyFace = () => { if (!M) return [t.pw / 2, P + 2]; return g.door === 'right' ? [M.x + M.w, M.z + M.d / 2] : g.door === 'left' ? [M.x, M.z + M.d / 2] : g.door === 'front' ? [M.x + M.w / 2, M.z + M.d + 1.5] : [M.x + M.w / 2, M.z - 1.5]; };
+  // the cabin first (it is the biggest), then the pathway from the stairs, so nothing else sits on it
+  if (B.cabin) { const w = wh('cabin'), mf = mumtyFace();
+    put('cabin', (cx, cz, f) => w === 'front' ? -d2(cx, cz, t.pw / 2, t.pd) : w === 'far' ? -d2(cx, cz, farX(f[0]), t.pd * 0.4) : -d2(cx, cz, M && g.side !== 'centre' ? (g.side === 'left' ? M.x + M.w + f[0] / 2 + 3.5 : M.x - f[0] / 2 - 3.5) : farX(f[0]), P + f[1] / 2) + wallBonus(f, cx, cz, 'back'), { rots: [0] });
+    const cb0 = by('cabin'); if (cb0) { const cz = cb0.z + rectI(cb0).d / 2, dep = cz < t.pd / 3 ? 'at the back' : cz < t.pd * 2 / 3 ? 'in the middle' : 'at the front'; notes.push('Cabin ' + dep + (w === 'back' && g.side !== 'centre' && dep === 'at the back' ? ', beside the stairs (54% of ours)' : '')); } }
+  const cab = by('cabin'), cr = cab ? rectI(cab) : null;
+  if (B.pathway) { const mf = mumtyFace(), cx0 = g.side === 'left' ? Math.min(t.pw - P - 3, Math.max(mf[0] + 2, t.pw / 2 - 1.5)) : g.side === 'right' ? Math.max(P, Math.min(mf[0] - 5, t.pw / 2 - 1.5)) : r2(t.pw / 2 - 1.5);
+    const z0 = r2(g.side === 'centre' ? (M.z + M.d / 2 < t.pd / 2 ? M.z + M.d : P) : Math.max(P, cr ? cr.z + cr.d : Math.min(mf[1] - 1.5, P + 4))), z1 = g.side === 'centre' && M.z + M.d / 2 >= t.pd / 2 ? M.z : t.pd - P;
+    const mk = (x, z, w, d) => { const it = newItem('pathway'); const fl2 = v => Math.floor(v * 2) / 2; Object.assign(it, { x: r2(x), z: r2(z), w: fl2(w), d: fl2(d), rot: 0 }); const i = S.items.length; S.items.push(it); const cl = clashes(it, i); if (cl) { S.items.pop(); return null; } return it; };
+    let pth = null;   // from where the door is to the front; if something stands in the way, start after it / shift a little
+    for (let dx = 0; !pth && dx < 8; dx += 0.5) for (let zs = z0; !pth && z1 - zs >= 8; zs += 0.5) pth = mk(cx0 + dx, zs, 3, z1 - zs) || (dx ? mk(cx0 - dx, zs, 3, z1 - zs) : null);
+    if (pth && M) { const ns = g.door === 'front' || g.door === 'back', dpx = mf[0], a = dpx < pth.x ? (ns ? dpx - 1.5 : dpx) : pth.x + 3, b = dpx < pth.x ? pth.x : (ns ? dpx + 1.5 : dpx); if (b - a > 0.5 && (dpx < pth.x || dpx > pth.x + 3)) mk(a, r2(mf[1] - 1.5), b - a, 3); }
+    if (pth) notes.push('Pathway from the stairs through the middle'); else miss++; }
+  if (B.pergola) { const w = wh('pergola');
+    put('pergola', (cx, cz, f) => w === 'cabin' && cr ? -d2(cx, cz, cr.x + cr.w / 2, cr.z + cr.d + f[1] / 2) : w === 'back' ? -d2(cx, cz, farX(f[0]), P + f[1] / 2) : -d2(cx, cz, farX(f[0]), t.pd - P - f[1] / 2) + wallBonus(f, cx, cz, g.far) + wallBonus(f, cx, cz, 'front'));
+    if (by('pergola')) notes.push(w === 'cabin' ? 'Pergola joined to the cabin' : 'Pergola on the ' + g.far + (w === 'back' ? ', at the back' : ', at the front') + ' (like 87% of ours)'); }
+  const pg = by('pergola'), pr = pg ? rectI(pg) : null;
+  if (B.deck) { const w = wh('deck');
+    if (w === 'pergola' && pr) { const it = newItem('deck'); Object.assign(it, { x: pr.x, z: pr.z, w: pr.w, d: pr.d, rot: 0 }); S.items.push(it); if (clashes(it, S.items.length - 1)) S.items.pop(); }
+    else if (w === 'cabin' && cr) { const it = newItem('deck'); Object.assign(it, { x: cr.x, z: cr.z + cr.d, w: Math.min(cr.w, 14), d: 6, rot: 0 }); S.items.push(it); if (clashes(it, S.items.length - 1)) { S.items.pop(); put('deck', (cx, cz) => -d2(cx, cz, cr.x + cr.w / 2, cr.z + cr.d + 3)); } }
+    else put('deck', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.5)); }
+  if (B.jacuzzi) put('jacuzzi', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.35) + wallBonus(f, cx, cz, g.far));
+  if (B.bar) { const w = wh('bar'), mf = mumtyFace();
+    put('bar', (cx, cz, f, rot) => (w === 'pergola' && pr ? -d2(cx, cz, pr.x + pr.w / 2, pr.z + 1.5) + (inR(cx, cz, pr) ? 8 : 0) : w === 'far' ? -d2(cx, cz, farX(f[0]), t.pd * 0.4) : -d2(cx, cz, mf[0] + (g.side === 'left' ? 5 : g.side === 'right' ? -5 : 0), mf[1] + (g.side === 'centre' ? 5 : 0)))
+      + ((g.side === 'centre' ? rot === 0 : rot === 90) ? 2 : 0));
+    if (by('bar') && w === 'mumty') notes.push('Bar beside the stairs (64% of ours)'); }
+  const seat = (k, wk) => { const w = wh(k); put(k, (cx, cz, f) => w === 'pergola' && pr ? -d2(cx, cz, pr.x + pr.w / 2, pr.z + pr.d / 2) + (inR(cx, cz, pr) && inR(cx - f[0] / 2 + 0.3, cz - f[1] / 2 + 0.3, pr) && inR(cx + f[0] / 2 - 0.3, cz + f[1] / 2 - 0.3, pr) ? 20 : 0)
+    : w === 'bar' && by('bar') ? -d2(cx, cz, rectI(by('bar')).x + rectI(by('bar')).w / 2, rectI(by('bar')).z + rectI(by('bar')).d / 2 + 5) : -d2(cx, cz, farX(f[0]), t.pd * (wk || 0.55))); };
+  if (B.sofa) { seat('sofa'); if (by('sofa') && wh('sofa') === 'pergola') notes.push('Sofa under the pergola'); }
+  if (B.dining) seat('dining', 0.7);
+  if (B.swing) seat('swing', 0.3);
+  if (B.bench) put('bench', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.25) + wallBonus(f, cx, cz, g.far));
+  if (B.turf) { const w = wh('turf'); for (const sz of [[14, 12], [12, 10], [10, 8], [8, 6], [6, 5]]) { const it = newItem('turf'); it.w = Math.min(sz[0], t.pw - 2 * P - 4); it.d = sz[1]; const i = S.items.length; S.items.push(it);
+      const ok = spotBest(it, i, (cx, cz, f) => -d2(cx, cz, g.far === 'right' ? t.pw * 0.6 : t.pw * 0.4, w === 'mid' ? t.pd / 2 : t.pd - P - f[1] / 2) - S.items.filter((o, j) => j !== i && !att(o) && CAT[o.cat].kind !== 'floor' && hit(rectI(it), rectI(o))).length * 6, [0]);
+      if (ok) break; S.items.pop(); } if (!by('turf')) miss++; }
+  // walls: the feature wall faces the stairs, the water feature stands in front of it
+  const wallAt = (sd, u, k) => { const it = newItem(k), w = it.w, run = sd === 'back' || sd === 'front' ? t.pw : t.pd, uu = Math.max(P, Math.min(run - P - w, u - w / 2));
+    return sd === 'back' ? { at: [uu + w / 2, P], rot: 0 } : sd === 'front' ? { at: [uu + w / 2, t.pd - P - it.d], rot: 180 } : sd === 'left' ? { at: [P + w / 2, uu], rot: 270 } : { at: [t.pw - P - it.d + w / 2, uu], rot: 90 }; };
+  const mU = M ? (g.facing === 'back' || g.facing === 'front' ? M.x + M.w / 2 : M.z + M.d / 2) : t.pd / 2;
+  if (B.feature) { const w = wh('feature');
+    if (w === 'mumty' && M) put('feature', null, Object.assign(wallAt(g.side === 'left' ? 'right' : 'left', 0, 'feature'), { at: [g.side === 'left' ? M.x + M.w + 0.6 : M.x - 0.6, M.z + 1], rot: g.side === 'left' ? 90 : 270 }));
+    else put('feature', null, wallAt(g.facing, mU, 'feature'));
+    if (by('feature')) notes.push('Feature wall on the wall facing the stairs'); }
+  if (B.water) { const w = wh('water'), fw = by('feature');
+    put('water', (cx, cz, f) => w === 'seat' && (by('sofa') || pr) ? -d2(cx, cz, rectI(by('sofa') || pg).x + rectI(by('sofa') || pg).w + 3, rectI(by('sofa') || pg).z + 3)
+      : fw ? -d2(cx, cz, rectI(fw).x + rectI(fw).w / 2 + (g.facing === 'right' ? -3 : g.facing === 'left' ? 3 : 0), rectI(fw).z + rectI(fw).d / 2 + (g.facing === 'back' ? 3 : g.facing === 'front' ? -3 : 0))
+      : -d2(cx, cz, g.facing === 'right' ? t.pw - P - 3 : g.facing === 'left' ? P + 3 : t.pw / 2, g.facing === 'back' ? P + 3 : g.facing === 'front' ? t.pd - P - 3 : mU));
+    if (by('water')) notes.push('Water feature facing the stairs (58% of ours)'); }
+  for (let k = 0; k < (B.vgarden || 0); k++) { const w = wh('vgarden'), sd = w === 'back' ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd; put('vgarden', null, wallAt(sd, run * (k + 1) / ((B.vgarden || 1) + 1), 'vgarden')); }
+  if (B.firepit) { const so = by('sofa') || pg; put('firepit', (cx, cz) => so ? -d2(cx, cz, rectI(so).x + rectI(so).w / 2 + (g.far === 'right' ? -1 : 1) * (rectI(so).w / 2 + 2.5), rectI(so).z + rectI(so).d / 2) : -d2(cx, cz, t.pw / 2, t.pd * 0.6)); }
+  if (B.umbrella) { const tf = by('turf'); put('umbrella', (cx, cz) => tf ? -d2(cx, cz, rectI(tf).x + rectI(tf).w / 2, rectI(tf).z + rectI(tf).d / 2) : -d2(cx, cz, t.pw / 2, t.pd * 0.7)); }
+  if (B.sculpture) { const pa = by('pathway'); put('sculpture', (cx, cz) => pa ? -d2(cx, cz, pa.x + 4.5, pa.z + pa.d - 1.5) : -d2(cx, cz, t.pw / 2, t.pd - 3)); }
+  // planters: along the far wall (74% of ours), round the edges, or both sides of the pathway
+  if (B.planter) { const w = wh('planter'), n = B.planter, pa = by('pathway');
+    for (let k = 0; k < n; k++) { const u = (k + 0.5) / n;
+      const tgt = w === 'path' && pa ? [pa.x + (k % 2 ? 4 : -1), pa.z + pa.d * ((Math.floor(k / 2) + 0.5) / Math.ceil(n / 2))] : w === 'edges' ? (u < 0.34 ? [P + 1 + (t.pw - 2) * u * 3, P + 1] : u < 0.67 ? [g.far === 'right' ? t.pw - P - 1 : P + 1, t.pd * (u - 0.34) * 3] : [P + 1 + (t.pw - 2) * (u - 0.67) * 3, t.pd - P - 1]) : [g.far === 'right' ? t.pw - P - 1 : P + 1, P + 1 + (t.pd - 2 * P - 2) * u];
+      put('planter', (cx, cz) => -d2(cx, cz, tgt[0], tgt[1]), { rots: [0] }); }
+    if (by('planter') && w === 'far') notes.push(n + ' planters along the ' + g.far + ' wall (74% of ours)'); }
+  if (B.lights) { const pa = by('pathway'), n = B.lights;
+    for (let k = 0; k < n; k++) { const tgt = pa ? [k % 2 ? pa.x + pa.w + 0.6 : pa.x - 0.6, pa.z + pa.d * ((Math.floor(k / 2) + 0.5) / Math.ceil(n / 2))] : [P + 1 + (t.pw - 2) * ((k + 0.5) / n), t.pd - P - 1]; put('lights', (cx, cz) => -d2(cx, cz, tgt[0], tgt[1]), { rots: [0] }); } }
+  if (B.privacy) { const w = wh('privacy');
+    if (w === 'part' || !g.open.length || t.kind !== 'terrace') { for (let k = 0; k < B.privacy; k++) { const before = S.items.length; addItem('privacy'); if (S.items.length === before) miss++; } }
+    else { const it2 = { cat: 'privacy', mode: 'par', label: 'Screen on the parapet', sides: g.open.slice(), h: 3, w: 0, d: 0.3, x: 0, z: 0, rot: 0 }; S.items.push(it2); attach(it2, S.items.length - 1); if (!it2.w) { S.items.pop(); miss++; } else notes.push('Privacy screens on the ' + g.open.join(', ') + ' parapet'); } }
+  if (B.accover && t.kind === 'terrace') coverAC();
+  ['chair', 'table', 'graffiti', 'railing', 'gate'].forEach(k => { for (let j = 0; j < (B[k] || 0); j++) { const before = S.items.length; addItem(k); if (S.items.length === before) miss++; } });
+  S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); });
+  S.bnote = notes; return miss;
 }
 function stepPick() {
   if (!S.items.length) return '<h4>Pick designs</h4><p class="pl-sub">Add something to your space first.</p>';
@@ -651,13 +798,14 @@ function act(a) {   // one button's action on S; true = draw again
     case 'corner': t.corner = a[1] || ''; break;
     case 'etab': S.edTab = a[1]; break;
     case 'start': t.start = a[1] === 'own' ? 'own' : 'tpl'; S.tsq = (S.tsq || 0) + 1; ev('plan_start', { ref: t.start }); break;
-    case 'theme': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; S.bth = S.bth === x.k ? null : x.k; S.bsel = {}; if (S.bth) x.items.forEach(k => { if (CAT[k] && designs(CAT[k]).length) S.bsel[k] = (S.bsel[k] || 0) + 1; }); break; }
-    case 'bel': { S.bsel = S.bsel || {}; if (S.bsel[a[1]]) delete S.bsel[a[1]]; else S.bsel[a[1]] = 1; break; }
+    case 'theme': { const x = SETUPS.find(z => z.k === a[1]); if (!x) break; S.bth = S.bth === x.k ? null : x.k; S.bsel = {}; S.bwh = {}; if (S.bth) x.items.forEach(k => { if (CAT[k] && (designs(CAT[k]).length || CAT[k].always)) S.bsel[k] = (S.bsel[k] || 0) + 1; }); if (S.bsel.privacy) S.bsel.privacy = 1; if (S.site.kind === 'terrace' && S.site.blocks.some(b => b.type === 'ac') && designs(CAT.accover).length) S.bsel.accover = 1; break; }
+    case 'bel': { S.bsel = S.bsel || {}; if (S.bsel[a[1]]) delete S.bsel[a[1]]; else S.bsel[a[1]] = a[1] === 'planter' ? 4 : a[1] === 'lights' ? 4 : 1; break; }
+    case 'bq': S.bq = +a[1]; { const pn = document.getElementById('plPn'); if (pn) pn.scrollTop = 0; } break;
+    case 'bcnt': { S.bsel = S.bsel || {}; const v = Math.max(1, Math.min(20, (S.bsel[a[1]] || 1) + (+a[2] || 0))); S.bsel[a[1]] = v; break; }
+    case 'bwh': S.bwh = S.bwh || {}; S.bwh[a[1]] = a[2]; break;
     case 'bskip': S.bskip = true; break;
-    case 'build': { const B = S.bsel || {}, ks = Object.keys(B); if (!ks.length) { S.msg = 'Tick at least one thing'; break; } let n = 0, miss = 0;
-      const order = ['cabin', 'deck', 'pergola', 'bar', 'sofa', 'dining', 'swing', 'water', 'vgarden', 'privacy'];   // big things first, small ones fill round them
-      ks.sort((p, q) => (order.indexOf(p) < 0 ? 99 : order.indexOf(p)) - (order.indexOf(q) < 0 ? 99 : order.indexOf(q))).forEach(k => { for (let j = 0; j < B[k]; j++) { const before = S.items.length; addItem(k); if (S.items.length > before) n++; else miss++; } });
-      ev('plan_build', { ref: S.bth || 'own', n }); S.sel = null; S.bskip = true; S.msg = miss ? `${miss} thing${miss > 1 ? 's' : ''} didn't fit — make them smaller or move things` : ''; break; }
+    case 'build': { const B = S.bsel || {}; if (!Object.keys(B).length) { S.msg = 'Tick at least one thing'; break; }
+      const miss = compose(); ev('plan_build', { ref: S.bth || 'own', n: S.items.length }); S.sel = null; S.bskip = true; S.msg = miss ? `${miss} thing${miss > 1 ? 's' : ''} didn't fit — make the space or them smaller, or add them one by one` : ''; break; }
     case 'tlift': S.tplLift = a[1] === '' ? null : a[1] === '1'; break;
     case 'tpl': if (!a[1]) { if (t.tpl) { S.site = Object.assign({}, S.tplBase || t); delete S.site.tpl; if (!S.tplBase) defBlocks(S.site); S.tplBase = null; } }
       else { const tp = TM.get(a[1]); if (tp) { if (!t.tpl) S.tplBase = JSON.parse(JSON.stringify(t)); S.site = TM.fit(tp, a[2] === '1', t); ev('plan_tpl', { ref: S.site.tpl }); } }

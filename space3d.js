@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=24';
-import { pergolaModel } from './pergola3d.js?v=16';
+import { cabinModel, plotModel } from './cabin3d.js?v=25';
+import { pergolaModel } from './pergola3d.js?v=17';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -256,6 +256,7 @@ export function screenModel(g, w, h, it, K) {
     xs.forEach(px => box(g, 0.7, 0.04, 0.7, Math.max(-L / 2 + 0.35, Math.min(L / 2 - 0.35, px)), 0.02, 0, fr));
   }
 }
+const NOLABEL = new Set(['pathway', 'turf', 'lights', 'planter']);   // 224: small or many — no tag over each
 export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
   if (cat === 'sofa') {   // 193d: a 3-seater along the back, a 2-seater on the right, a coffee table in front
@@ -321,6 +322,22 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     let u = 0; op.slice().sort((a, b) => a.u0 - b.u0).forEach(o => { if (o.u0 > u) pcs.push([u, o.u0, 0, H]); if (H > o.h) pcs.push([o.u0, o.u1, o.h, H]); u = o.u1; }); if (u < w) pcs.push([u, w, 0, H]);
     pcs.forEach(([a0, a1, y0, y1]) => { const pw = a1 - a0, ph = y1 - y0, cx = -w / 2 + (a0 + a1) / 2; if (pw < 0.05 || ph < 0.05) return; box(g, pw, ph, 0.3, cx, y0 + ph / 2, 0, K.white);
       const a = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(0.1, pw - (pcs.length > 1 ? 0.1 : 0.4)), Math.max(0.1, ph - (pcs.length > 1 ? 0.1 : 0.4))), art()); a.position.set(cx, y0 + ph / 2, 0.16); g.add(a); });
+  } else if (cat === 'pathway') {   // 224: grey stone slabs on pebbles, along the long side
+    const L = Math.max(w, d), W = Math.min(w, d), al = d >= w; box(g, w, 0.05, d, 0, 0.025, 0, mat('c_pebble', 0xCFC8BC), false);
+    const n = Math.max(1, Math.floor(L / 2.2)); for (let k = 0; k < n; k++) { const u = -L / 2 + L * (k + 0.5) / n; box(g, al ? W - 0.5 : 1.8, 0.1, al ? 1.8 : W - 0.5, al ? 0 : u, 0.08, al ? u : 0, mat('c_slab', 0x8F8A82), false); }
+  } else if (cat === 'turf') {
+    const n = Math.max(1, Math.round(d / 2)); for (let k = 0; k < n; k++) box(g, w, 0.08, d / n, 0, 0.04, -d / 2 + d * (k + 0.5) / n, k % 2 ? mat('c_turf', 0x6FA24A) : mat('c_turf2', 0x63963F), false);
+  } else if (cat === 'firepit') {
+    const r = Math.min(w, d) / 2; cyl(g, r, r * 0.9, 1.2, 0, 0.6, 0, K.dark, 28); cyl(g, r - 0.3, r - 0.3, 0.05, 0, 1.2, 0, mat('c_ember', 0x3A1A0A), 28);
+    [[0, 0, 1.4], [0.5, 0.2, 1], [-0.4, 0.3, 1.1], [0.1, -0.5, 0.9]].forEach(([x, z, hh]) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.35, hh, 8), mat('c_flame', 0xFF8A2A, { emissive: 0xFF6A00, emissiveIntensity: 1.2, roughness: 1 })); f.position.set(x, 1.2 + hh / 2, z); g.add(f); });
+  } else if (cat === 'jacuzzi') {
+    const H = h || 3; box(g, w, H, d, 0, H / 2, 0, K.white); box(g, w - 0.8, 0.08, d - 0.8, 0, H - 0.25, 0, K.water); box(g, w + 0.4, 0.15, d + 0.4, 0, H, 0, K.wood2);
+    box(g, 2, 0.8, 1.2, 0, 0.4, d / 2 + 0.6, K.wood2);
+  } else if (cat === 'lights') {
+    cyl(g, 0.15, 0.2, (h || 3) - 0.4, 0, ((h || 3) - 0.4) / 2, 0, K.frame, 10); cyl(g, 0.3, 0.25, 0.4, 0, (h || 3) - 0.2, 0, mat('c_lamp', 0xFFE2A8, { emissive: 0xFFC46B, emissiveIntensity: 1 }), 12);
+  } else if (cat === 'umbrella') {
+    const H = h || 8, r = Math.min(w, d) / 2; cyl(g, 0.9, 1, 0.4, 0, 0.2, 0, K.dark, 16); cyl(g, 0.1, 0.1, H, 0, H / 2, 0, K.wood2, 8);
+    const c = new THREE.Mesh(new THREE.ConeGeometry(r, 1.6, 8, 1, true), mat('c_canopy', 0xEADCC8, { side: THREE.DoubleSide })); c.position.y = H - 0.6; c.castShadow = true; g.add(c);
   } else box(g, w, h || 2, d, 0, (h || 2) / 2, 0, K.stone);
   return g;
 }
@@ -374,7 +391,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
     const [fw, fd] = foot(it), hd = new THREE.Group(); hd.userData.it = i; hd.position.set(+it.x + fw / 2, 0, +it.z + fd / 2); hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);
     const m = model(it, P), ex = it.cat === 'cabin' && it.ex ? it.ex : null; m.position.set(-it.w / 2 + (ex ? ex.l : 0), 0, -it.d / 2 + (ex ? ex.b : 0)); hd.add(m);   // a cabin's body sits inside its plinth / projections
     const hit = new THREE.Mesh(new THREE.BoxGeometry(Math.max(it.w, 0.8), Math.max(+it.h || 3, 2), Math.max(it.d, 0.8)), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = Math.max(+it.h || 3, 2) / 2; hit.userData.hit = i; hd.add(hit);
-    if (P.labels !== false && it.cat !== 'cabin') { const tg = tag(it.label || it.cat); tg.position.y = (it.cat === 'pergola' ? 10 : Math.max(+it.h || 3, 3)) + 1.4; hd.add(tg); }
+    if (P.labels !== false && it.cat !== 'cabin' && !NOLABEL.has(it.cat)) { const tg = tag(it.label || it.cat); tg.position.y = (it.cat === 'pergola' ? 10 : Math.max(+it.h || 3, 3)) + 1.4; hd.add(tg); }
     if (P.sel === i) { const sz = [it.w + 0.6, Math.max(+it.h || 3, 1) + 0.4, it.d + 0.6], ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(...sz)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = sz[1] / 2; hd.add(ln);
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(it.w + 0.6, it.d + 0.6), new THREE.MeshBasicMaterial({ color: 0xC26445, transparent: true, opacity: 0.18, depthWrite: false })); pl.rotation.x = -Math.PI / 2; pl.position.y = 0.04; hd.add(pl); }
     if (P.bad === i) { const pl = new THREE.Mesh(new THREE.PlaneGeometry(it.w + 0.4, it.d + 0.4), new THREE.MeshBasicMaterial({ color: 0xE0352B, transparent: true, opacity: 0.3, depthWrite: false })); pl.rotation.x = -Math.PI / 2; pl.position.y = 0.05; hd.add(pl); }
