@@ -7,7 +7,7 @@
 import * as S3 from './space3d.js?v=26';
 import * as P2 from './plan2d.js?v=2';
 import { cutHit } from './cabin3d.js?v=28';
-import * as TM from './terrace-match.js?v=3';
+import * as TM from './terrace-match.js?v=4';
 
 const KEY = 'outrr_plan', PAR = 0.75;
 const PLOTS = [['100', 20, 45], ['125', 25, 45], ['200', 30, 60], ['300', 40, 67], ['400', 40, 90], ['500', 50, 90]];
@@ -743,9 +743,18 @@ function compose() {
   const d2 = (x, z, X, Z) => Math.hypot(x - X, z - Z), wallBonus = (f, cx, cz, sd) => { const e = { left: cx - f[0] / 2 - P, right: t.pw - P - cx - f[0] / 2, back: cz - f[1] / 2 - P, front: t.pd - P - cz - f[1] / 2 }[sd]; return e < 0.6 ? 6 : 0; };
   const inR = (cx, cz, r) => r && cx > r.x && cx < r.x + r.w && cz > r.z && cz < r.z + r.d;
   let miss = 0; const notes = [];
+  // 236: the closest real terraces (stairs at the same spot, same shape / size) say where each thing goes — their spots are the targets, the rules only break ties
+  const LAY = (() => { try { return TM.layout ? TM.layout(t, 6) : []; } catch (e) { return []; } })(), LMAP = { sofa: 'seating', dining: 'seating', swing: 'swing' }, used = {};
+  const learned = k => { const ty = LMAP[k] || k, pts = []; LAY.forEach(L => L.els.forEach(e => { if (e[0] === ty) pts.push([e[1], e[2]]); })); const n = used[k] || 0; used[k] = n + 1; return pts[n] || null; };
+  const LEARNED = new Set(['cabin', 'pergola', 'bar', 'water', 'jacuzzi', 'turf']);
+  const SHRINK = { pergola: [8, 8], deck: [6, 6], turf: [6, 5], sofa: [6, 5], dining: [4, 4], jacuzzi: [6, 6] };
   const put = (k, score, opt) => { opt = opt || {}; const it = newItem(k); if (!it) return null; Object.assign(it, opt.set || {}); if (k === 'cabin' || k === 'pergola') it.label = it.label || CAT[k].t; const i = S.items.length; S.items.push(it);
+    const tg = LEARNED.has(k) && !opt.keepRule ? learned(k) : null, sc = tg && score ? (cx, cz, f, rot) => -1.6 * d2(cx, cz, tg[0], tg[1]) + 0.25 * score(cx, cz, f, rot) : score;
     if (CAT[k].kind === 'wall') { it.x = r2(opt.at[0] - it.w / 2); it.z = r2(opt.at[1]); it.rot = opt.rot; if (!settle(it, i, [it.x, it.z])) { S.items.pop(); miss++; return null; } return it; }
-    if (!spotBest(it, i, score, opt.rots, g.dz && Object.assign({ fr: g.fr }, g.dz))) { S.items.pop(); miss++; return null; } flush(it, i); if (opt.wside) it.wside = opt.wside; return it; };
+    const dz = g.dz && Object.assign({ fr: g.fr }, g.dz); let ok = spotBest(it, i, sc, opt.rots, dz);
+    for (let tr = 0; !ok && tr < 5 && SHRINK[k]; tr++) { it.w = Math.max(SHRINK[k][0], r2(it.w * 0.85)); it.d = Math.max(SHRINK[k][1], r2(it.d * 0.85)); ok = spotBest(it, i, sc, opt.rots, dz); if (it.w === SHRINK[k][0] && it.d === SHRINK[k][1]) break; }   // too big → a little smaller, not left out
+    if (!ok && k === 'cabin') { try { cabinSize(it, 10, 8); } catch (e) {} ok = spotBest(it, i, sc, opt.rots, dz); }
+    if (!ok) { S.items.pop(); miss++; return null; } flush(it, i); if (opt.wside) it.wside = opt.wside; if (tg) it.learned = true; return it; };
   const mumtyFace = () => { if (!M) return [t.pw / 2, P + 2]; return g.door === 'right' ? [M.x + M.w, M.z + M.d / 2] : g.door === 'left' ? [M.x, M.z + M.d / 2] : g.door === 'front' ? [M.x + M.w / 2, M.z + M.d + 1.5] : [M.x + M.w / 2, M.z - 1.5]; };
   // the cabin first (it is the biggest), then the pathway from the stairs, so nothing else sits on it
   if (B.cabin) { const w = wh('cabin'), mf = mumtyFace();
@@ -754,7 +763,9 @@ function compose() {
     for (let ci = 1; ci < Math.min(3, B.cabin || 1); ci++) put('cabin', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * (0.35 + ci * 0.2)), { rots: [0] });
     S.items.forEach((o, oi) => { if (o.cat !== 'cabin') return; const k = S.items.filter(z => z.cat === 'cabin').indexOf(o), c = cabs[k] || {};
       if (CS) try { cabinSize(o, CS[0], CS[1]); } catch (e) {}
-      o.purpose = (c.use || []).slice(); o.inside = { pantry: !!c.pantry, wash: !!c.wash }; if (o.purpose.length) o.label = 'Cabin · ' + o.purpose.join(', '); });
+      o.purpose = (c.use || []).slice(); o.inside = { pantry: !!c.pantry, wash: !!c.wash }; if (o.purpose.length) o.label = 'Cabin · ' + o.purpose.join(', ');
+      if (c.pantry || c.wash) try { const lay = JSON.parse(JSON.stringify(cabinLay(o))), L = +lay.L || 12, pl = (lay.places || []).filter(p => !['toilet', 'wc', 'pantry'].includes(p.key));
+        if (c.wash) pl.push({ key: 'toilet', x: 0, y: 0, rot: 0, len: null }); if (c.pantry) pl.push({ key: 'pantry', x: Math.max(c.wash ? 4.5 : 0, L - 6), y: 0, rot: 0, len: null }); lay.places = pl; o.layout = lay; o.lsku = o.sku; } catch (e) {} });
     const cb0 = by('cabin'); if (cb0) { const cz = cb0.z + rectI(cb0).d / 2, dep = cz < t.pd / 3 ? 'at the back' : cz < t.pd * 2 / 3 ? 'in the middle' : 'at the front'; notes.push('Cabin ' + dep + (w === 'back' && g.side !== 'centre' && dep === 'at the back' ? ', beside the stairs (54% of ours)' : '')); } }
   const cab = by('cabin'), cr = cab ? rectI(cab) : null;
   if (B.pathway) { const mf = mumtyFace(), cx0 = g.side === 'left' ? Math.min(t.pw - P - 3, Math.max(mf[0] + 2, t.pw / 2 - 1.5)) : g.side === 'right' ? Math.max(P, Math.min(mf[0] - 5, t.pw / 2 - 1.5)) : r2(t.pw / 2 - 1.5);
@@ -792,7 +803,8 @@ function compose() {
   const mU = M ? (g.facing === 'back' || g.facing === 'front' ? M.x + M.w / 2 : M.z + M.d / 2) : t.pd / 2;
   if (B.feature) { const w = wh('feature');
     if (w === 'mumty' && M) put('feature', null, Object.assign(wallAt(g.side === 'left' ? 'right' : 'left', 0, 'feature'), { at: [g.side === 'left' ? M.x + M.w + 0.6 : M.x - 0.6, M.z + 1], rot: g.side === 'left' ? 90 : 270 }));
-    else put('feature', null, wallAt(g.facing, mU, 'feature'));
+    else { const tf = learned('feature'); if (tf) { const ds = [['back', tf[1]], ['left', tf[0]], ['right', t.pw - tf[0]], ['front', t.pd - tf[1]]].filter(z => !g.road.includes(z[0])).sort((p, q) => p[1] - q[1])[0];
+        put('feature', null, wallAt(ds[0], ds[0] === 'back' || ds[0] === 'front' ? tf[0] : tf[1], 'feature')); } if (!by('feature')) put('feature', null, wallAt(g.facing, mU, 'feature')); }
     if (by('feature')) notes.push('Feature wall on the wall facing the stairs'); }
   if (B.water) { const w = wh('water'), fw = by('feature');
     put('water', (cx, cz, f) => w === 'seat' && (by('sofa') || pr) ? -d2(cx, cz, rectI(by('sofa') || pg).x + rectI(by('sofa') || pg).w + 3, rectI(by('sofa') || pg).z + 3)
@@ -801,6 +813,7 @@ function compose() {
     if (by('water')) notes.push('Water feature facing the stairs (58% of ours)'); }
   if (S.su && S.su.green) { const lv = S.su.green, quiet = (k, tg, o) => { const m0 = miss; put(k, (cx, cz) => -d2(cx, cz, tg[0], tg[1]), Object.assign({ rots: [0] }, o || {})); miss = m0; }, C1 = P + 1.2;   // 235: plants in the corners and the empty spaces
     [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]].forEach(tg => quiet('planter', tg));
+    { const pts = []; LAY.slice(0, lv === 'lush' ? 3 : lv === 'balanced' ? 2 : 1).forEach(L => L.els.forEach(e => { if (e[0] === 'planter') pts.push([e[1], e[2]]); })); pts.slice(0, lv === 'lush' ? 12 : lv === 'balanced' ? 6 : 2).forEach(tg => quiet('planter', tg)); }
     if (lv !== 'light') { const fx = g.far === 'right' ? t.pw - C1 : C1, step = lv === 'lush' ? 5 : 9; for (let z = P + 6; z < t.pd - 6; z += step) quiet('planter', [fx, z]);
       P2.freeRects(t, S.items, lv === 'lush' ? 4 : 2).forEach(b => { quiet('planter', [b.x + 1, b.z + 1]); if (lv === 'lush') quiet('planter', [b.x + b.w - 1, b.z + b.d - 1]); });
       const vg = lv === 'lush' ? 2 : 1; for (let k = 0; k < vg; k++) { const sd = k ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd, m0 = miss; put('vgarden', null, wallAt(sd, run * (k ? 0.5 : 0.35), 'vgarden')); miss = m0; } }

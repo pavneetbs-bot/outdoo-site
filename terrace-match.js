@@ -6,7 +6,7 @@ const PAR = 0.75;
 let LIST = null, LOADING = null;
 export function load() {
   if (LIST) return Promise.resolve(LIST);
-  if (!LOADING) LOADING = fetch('/terrace-templates.json?v=2', { cache: 'no-cache' }).then(r => r.json()).then(j => (LIST = (j.templates || []).filter(t => t.site && t.site.pw && t.site.pd))).catch(() => (LIST = []));
+  if (!LOADING) LOADING = fetch('/terrace-templates.json?v=3', { cache: 'no-cache' }).then(r => r.json()).then(j => (LIST = (j.templates || []).filter(t => t.site && t.site.pw && t.site.pd))).catch(() => (LIST = []));
   return LOADING;
 }
 export const ready = () => !!LIST;
@@ -146,4 +146,18 @@ export function suggest(mcell) {
       cells: Object.keys(cells).sort((p, q) => cells[q] - cells[p]).map(c => [c, Math.round(cells[c] / tot * 100)]) };
   });
   return out;
+}
+
+// 236: where LifeWall put each element on the real terraces most like this one (stairs at the same spot, same shape / size), in this
+// terrace's feet — mirrored when the stairs are on the other side. [{ id, sc, els: [[type, x, z], …] }], closest first.
+export function layout(site, n) {
+  if (!LIST) return [];
+  const pw = +site.pw, pd = +site.pd, m = (site.blocks || []).find(b => b.type === 'mumty'), mx = m ? (m.x + m.w / 2) / pw : null, mz = m ? (m.z + m.d / 2) / pd : null, lift = (site.blocks || []).some(b => b.type === 'lift'), out = [];
+  for (const t of LIST) { const s = t.site; if (!t.els || !t.els.length) continue; const tm = (s.blocks || []).find(b => b.type === 'mumty');
+    for (const mir of [false, true]) { let sc = 3 * Math.abs(Math.log((s.pw / s.pd) / (pw / pd))) + 1.2 * Math.abs(Math.log((s.pw * s.pd) / (pw * pd)));
+      if (m && tm) { const tx = (tm.x + tm.w / 2) / s.pw, tz = (tm.z + tm.d / 2) / s.pd; sc += 4 * Math.hypot((mir ? 1 - tx : tx) - mx, tz - mz); } else if (!!m !== !!tm) sc += 2;
+      sc += hasLift(s) === lift ? 0 : 0.5; out.push({ id: t.id, sc, els: t.els.map(e => [e[0], (mir ? 1 - e[1] : e[1]) * pw, e[2] * pd]) }); } }
+  out.sort((p, q) => p.sc - q.sc); const seen = new Set(), res = [];
+  for (const o of out) { if (seen.has(o.id)) continue; seen.add(o.id); res.push(o); if (res.length >= (n || 5)) break; }
+  return res;
 }
