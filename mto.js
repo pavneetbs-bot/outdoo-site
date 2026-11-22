@@ -2866,11 +2866,12 @@
       else h += (list.length ? '<button type="button" class="sp-back" data-sp="back">← My plans</button>' : '') + '<h2>Where will ' + esc(W) + ' go?</h2><p class="sp-sub">We set up the space first' + (what === 'planner' ? '' : ', then you design ' + esc(W) + ' on it in 3D') + '.</p><div class="sp-kinds">' +
         '<button type="button" data-sp="k:ground"><i>🌳</i><b>Lawn / garden</b><small>Ground level — a lawn, garden, farmhouse or courtyard</small></button>' +
         '<button type="button" data-sp="k:terrace"><i>🏙</i><b>Terrace / rooftop</b><small>Set its size, parapet, mumty, tanks and walls next</small></button></div>';
-      d.innerHTML = h + '</div>';
+      var bd0 = d.querySelector('.sp-bd'), sc = bd0 && st._pq === st.step + ':' + st.q ? bd0.scrollTop : 0; st._pq = st.step + ':' + st.q;
+      d.innerHTML = h + '</div>'; if (sc) { var bd1 = d.querySelector('.sp-bd'); if (bd1) bd1.scrollTop = sc; }
     };
     if (!d.dataset.w) { d.dataset.w = 1; d.addEventListener('click', function (e) { var b = e.target.closest('[data-sp]'); if (!b || !d._go) return; d._go(b.getAttribute('data-sp')); }); }
     // 221: terrace wizard on the blank screen — every answer is used as given (sizes too); one terrace in 3D to check, edit, confirm
-    var TWQ = ['size', 'road', 'mumty', 'lift', 'built', 'place', 'par', 'walls', 'view'];
+    var TWQ = ['size', 'plan', 'view'];   // 228: size + road → the roof as a plan to drag → 3D
     var TWP = [['100', 'Up to 100 gaj', 25, 36], ['150', '150 gaj', 30, 45], ['200', '200 gaj', 30, 60], ['300', '300 gaj', 45, 60], ['500', '500 gaj', 50, 90], ['1000', '1000 gaj+', 75, 120]];
     var TWM = [['s', 'Small', 8, 12], ['m', 'Standard', 10, 16], ['l', 'Large', 12, 20]];   // staircase room sizes (median of our 70 terraces ≈ 10.5 × 16.5 ft)
     var chip = function (k, on, t) { return '<button type="button" class="' + (on ? 'on' : '') + '" data-sp="w:' + k + '" aria-pressed="' + !!on + '">' + t + '</button>'; };
@@ -2981,7 +2982,7 @@
     var twPaint = function () {
       if (TWQ[st.q] !== 'view') twLearn();
       var a = st.a, q = TWQ[st.q], h = '<button type="button" class="sp-back" data-sp="w:prev">← Back</button><div class="tw-dots">' + TWQ.map(function (z, i) { return '<i class="' + (i <= st.q ? 'on' : '') + '"></i>'; }).join('') + '</div>';
-      if (q === 'size') h += '<h2>How big is the terrace?</h2><p class="sp-sub">Pick the plot, or type the open roof size — width (left → right as you face the road) × depth (back → front).</p><div class="tw-chips">' + TWP.map(function (p) { return chip('plot:' + p[0], a.plot === p[0], p[1] + '<small>' + p[2] + ' × ' + p[3] + ' ft</small>'); }).join('') + '</div>' + num2('pw', a.pw, 'pd', a.pd) + '<p class="sp-sub" style="margin-top:12px">A corner cut / L-shape is asked a little later.</p>';
+      if (q === 'size') h += '<h2>How big is the terrace?</h2><p class="sp-sub">Pick the plot, or type the open roof size — width (left → right as you face the road) × depth (back → front).</p><div class="tw-chips">' + TWP.map(function (p) { return chip('plot:' + p[0], a.plot === p[0], p[1] + '<small>' + p[2] + ' × ' + p[3] + ' ft</small>'); }).join('') + '</div>' + num2('pw', a.pw, 'pd', a.pd) + '<p class="tw-h">Road on which side?</p><div class="tw-chips">' + [['front', '⬇ Front'], ['both', '⇅ Front + back'], ['cl', '↙ Front + left'], ['cr', '↘ Front + right']].map(function (z) { return chip('road:' + z[0], a.road === z[0], z[1]); }).join('') + '</div>';
       else if (q === 'road') h += '<h2>Where is the road?</h2><p class="sp-sub">We draw the terrace as you see it standing on the road.</p><div class="sp-list">' +
         [['front', '⬇', 'In front', 'Most builder floors'], ['both', '⇅', 'Front and back', 'Road on two sides'], ['cl', '↙', 'Corner — front + left', 'Corner plot'], ['cr', '↘', 'Corner — front + right', 'Corner plot']].map(function (r) { return '<button type="button" data-sp="w:road:' + r[0] + '" class="' + (a.road === r[0] ? 'on' : '') + '"><i>' + r[1] + '</i><span><b>' + r[2] + '</b><small>' + r[3] + '</small></span></button>'; }).join('') + '</div>';
       else if (q === 'mumty') { h += '<h2>The staircase room (mumty)</h2><p class="sp-sub">Tap where it is — standing on the road, looking at the terrace.' + (st.sug && st.sug.mumty ? ' ★ = where it is on ' + st.sug.mumty.pct + '% of the ' + st.sug.n + ' terraces we built.' : '') + '</p><div class="tw-grid">' +
@@ -3006,29 +3007,43 @@
             return '<div class="tw-cut"><b>' + ck[1] + '</b><div class="tw-chips">' + chip('cut:' + ck[0] + ':', !on, 'No cut') + chip('cut:' + ck[0] + ':notch', c.type === 'notch', '⌐ Straight') + chip('cut:' + ck[0] + ':slant', c.type === 'slant', '◸ Slant') + '</div>' + (on ? num2('ca:' + ck[0], c.a, 'cb:' + ck[0], c.b, 'Across', 'Deep') : '') + '</div>'; }).join(''); }
       else if (q === 'par') h += '<h2>The boundary wall (parapet)</h2><p class="sp-sub">It decides how much privacy screen you need.</p><div class="sp-list">' +
         [['3', '▁', 'Wall about 3 ft', 'Most terraces'], ['4', '▂', 'Wall 4 ft or more', 'Already private'], ['rail', '┼', 'Railing / glass', 'Open view']].map(function (r) { return '<button type="button" data-sp="w:par:' + r[0] + '" class="' + (a.par === r[0] ? 'on' : '') + '"><i>' + r[1] + '</i><span><b>' + r[2] + '</b><small>' + r[3] + '</small></span></button>'; }).join('') + '</div>';
-      else { if (!st.site) st.site = twSite();
-        h += '<h2>Is this your terrace?</h2><p class="sp-sub">Made from your answers. Drag a room to move it, tap it to resize. Drag the floor to turn the view.</p><div id="tw3d" class="tw3d"></div>' +
-          '<div id="twPn">' + (st.site ? twPanel() : '') + '</div><div class="tw-flt">' + num2('pw', a.pw, 'pd', a.pd, 'Terrace W', 'D').replace('tw-wd', 'tw-wd tw-sm') +
-          '</div><div id="twSm">' + twSum() + '</div>';
+      else if (q === 'plan') { if (!st.site && !TMM && TMP) { TMP.then(function () { if (TWQ[st.q] === 'plan') paint(); }); return h + '<p class="sp-sub">Loading…</p>'; }
+        if (!st.site) { twLearn(); st.site = twSite(); }
+        var t = st.site, sb = t.blocks[st.sel], IC = { mumty: '🪜 Stairs', lift: '🛗 Lift', room: '🚪 Room', shaft: '⬛ Shaft', ac: '❄️ AC' };
+        h += '<h2>Your roof</h2><p class="sp-sub">Drag to move · tap to resize</p>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
+          '<div class="tw-pl" style="aspect-ratio:' + t.pw + '/' + t.pd + ';height:min(50vh,' + Math.round(330 * t.pd / t.pw) + 'px)">' + t.blocks.map(function (b, i) {
+            return '<div data-blk="' + i + '" class="tw-b tw-' + b.type + (i === st.sel ? ' on' : '') + '" style="left:' + (b.x / t.pw * 100) + '%;top:' + (b.z / t.pd * 100) + '%;width:' + (b.w / t.pw * 100) + '%;height:' + (b.d / t.pd * 100) + '%"><span>' + (IC[b.type] || b.type) + '</span></div>'; }).join('') +
+          '<i class="tw-rd">▼ road</i>' + (a.road === 'cl' ? '<i class="tw-rd tw-rl">road ◀</i>' : a.road === 'cr' ? '<i class="tw-rd tw-rr">▶ road</i>' : a.road === 'both' ? '<i class="tw-rd tw-rb">▲ road</i>' : '') + '</div>';
+        if (sb) h += '<div class="tw-ed"><b>' + (IC[sb.type] || '') + '</b>' + (sb.type === 'ac' ? '<span>Units</span><button type="button" data-sp="w:bz:n:-">−</button><em>' + Math.max(1, Math.round(sb.d / 3)) + '</em><button type="button" data-sp="w:bz:n:+">+</button>'
+          : '<span>W</span><button type="button" data-sp="w:bz:w:-">−</button><em>' + sb.w + '</em><button type="button" data-sp="w:bz:w:+">+</button><span>L</span><button type="button" data-sp="w:bz:d:-">−</button><em>' + sb.d + '</em><button type="button" data-sp="w:bz:d:+">+</button>') +
+          '<button type="button" data-sp="w:brot" aria-label="Turn">↻</button><button type="button" data-sp="w:bdel" aria-label="Remove">🗑</button><button type="button" data-sp="w:bx" aria-label="Done">✓</button></div>';
+        h += '<div class="tw-chips tw-sm2 tw-add">' + ['mumty', 'lift', 'room', 'shaft', 'ac'].map(function (k) { return chip('badd:' + k, false, '+ ' + IC[k]); }).join('') + '</div>' +
+          '<div class="tw-chips tw-sm2 tw-add">' + chip('ptank', t.tanks, '💧 Tanks on stairs') + [['3', 'Wall 3 ft'], ['4', 'Wall 4 ft+'], ['rail', 'Railing']].map(function (z) { return chip('ppar:' + z[0], a.par === z[0], z[1]); }).join('') + '</div>';
       }
-      h += '<div class="tw-ft' + (q === 'view' ? ' tw-fs' : '') + '"><button type="button" class="tw-next" data-sp="w:next">' + (q === 'view' ? '✓ Yes — what goes on it →' : q === 'walls' || st.back ? 'See my terrace in 3D →' : 'Next →') + '</button></div>';
+      else { if (!st.site) st.site = twSite();
+        h += '<h2>Your terrace</h2><div id="tw3d" class="tw3d"></div>';
+      }
+      h += '<div class="tw-ft' + (q === 'view' ? ' tw-fs' : '') + '"><button type="button" class="tw-next" data-sp="w:next">' + (q === 'view' ? '✓ Looks right →' : q === 'plan' ? 'See it in 3D →' : 'Next →') + '</button></div>';
       return h;
     };
     var twDone = function (site) { close(); try { if (window.otrack) window.otrack('plan_tpl', { ref: 'wizard' }); } catch (e) {} cb({ kind: 'terrace', site: site, had: list.length > 0 }); };
     var twGo = function (k) {
       var a = st.a, p = k.split(':'), t = st.site, bi = st.sel;
+      if (p[0] === 'ptank' && t) { t.tanks = a.tanks = !t.tanks; return paint(); }
+      if (p[0] === 'ppar' && t) { a.par = p[1]; t.par = p[1] === '4' ? 4 : 3; t.rail = p[1] === 'rail'; return paint(); }
+      if (p[0] === 'brot' && t && t.blocks[bi]) { twTry(bi, function (q) { var w0 = q.w; q.w = q.d; q.d = w0; q.side = 'free'; }); return paint(); }
       if (['bsel', 'badd', 'bz', 'bwall', 'blk', 'bdel', 'bx'].indexOf(p[0]) >= 0 && t) { st.msg = '';
         if (p[0] === 'bsel') st.sel = +p[1];
         else if (p[0] === 'bx') st.sel = null;
-        else if (p[0] === 'badd') { var D0 = TWD[p[1]], nb = { id: 'b' + Math.random().toString(36).slice(2, 8), type: p[1], w: D0[0], d: D0[1], h: D0[2], side: p[1] === 'ac' ? 'right' : 'free' }, ok = false;
+        else if (p[0] === 'badd') { var D0 = p[1] === 'lift' ? [+a.lw || 7, +a.ld || 7, 11] : p[1] === 'room' ? [+a.rw || 10, +a.rd || 10, 9] : p[1] === 'shaft' ? [+a.sw || 5, +a.sd || 6, 3] : TWD[p[1]], nb = { id: 'b' + Math.random().toString(36).slice(2, 8), type: p[1], w: D0[0], d: D0[1], h: D0[2], side: p[1] === 'ac' ? 'right' : 'free' }, ok = false;
           for (var zz = 0.75; !ok && zz <= t.pd; zz += 1) for (var xx = 0.75; !ok && xx <= t.pw; xx += 1) { nb.x = p[1] === 'ac' ? t.pw - 0.75 - nb.w : xx; nb.z = zz; if (!twHit(t, nb, -1)) ok = true; }
           if (ok) { t.blocks.push(nb); st.sel = t.blocks.length - 1; } else st.msg = 'No free space left for it'; }
         else if (bi != null && t.blocks[bi]) { var b = t.blocks[bi];
           if (p[0] === 'blk') b.lock = !b.lock;
           else if (p[0] === 'bdel') { t.blocks.splice(bi, 1); st.sel = null; }
           else if (p[0] === 'bwall') twTry(bi, function (q) { q.side = p[1]; });
-          else if (p[0] === 'bz') twTry(bi, function (q) { var s = p[2] === '+' ? 1 : -1; if (p[1] === 'n') q.d = Math.max(1, Math.round(q.d / 3) + s) * 3; else if (p[1] === 'h') q.h = Math.max(2, Math.min(30, (+q.h || TS_BH[q.type] || 9) + s * 0.5)); else q[p[1]] = Math.max(1, Math.min(60, q[p[1]] + s * 0.5)); }); }
-        return twRef(); }
+          else if (p[0] === 'bz') twTry(bi, function (q) { var s = p[2] === '+' ? 1 : -1; if (p[1] === 'n') q.d = Math.max(1, Math.round(q.d / 3) + s) * 3; else if (p[1] === 'h') q.h = Math.max(2, Math.min(30, (+q.h || TS_BH[q.type] || 9) + s * 0.5)); else q[p[1]] = Math.max(1, Math.min(60, q[p[1]] + s * (TWQ[st.q] === 'plan' ? 1 : 0.5))); }); }
+        return TWQ[st.q] === 'plan' ? paint() : twRef(); }
       if (['plot', 'road', 'mpos', 'msz', 'door', 'par', 'high', 'cut', 'lift', 'tanks', 'room', 'shaft', 'ac', 'ip'].indexOf(p[0]) >= 0) { st.site = null; st.sel = null; }
       var T = a._t = a._t || {}; if (p[0] === 'mpos') T.mpos = 1; if (['lift', 'room', 'shaft'].indexOf(p[0]) >= 0) T[p[0]] = 1;
       if (p[0] === 'ip') { twSync(); if (p[1] === 'lift') T.lpos = 1; else if (a[p[1]] && a[p[1]][+p[2]]) a[p[1]][+p[2]].t = 1; if (p[1] === 'lift') a.lpos = p[3]; else if (p[1] === 'al') { if (a.al[0]) { a.al[0].pos = p[3]; a.al[0].side = p[3] === 'auto' ? 'auto' : p[3][2] === 'l' ? 'left' : p[3][2] === 'r' ? 'right' : p[3][0] === 'f' ? 'front' : 'back'; } } else if (a[p[1]] && a[p[1]][+p[2]]) a[p[1]][+p[2]].pos = p[3]; paint(); return; }   // an answer changed → the terrace is made again from the answers
@@ -3039,7 +3054,7 @@
       else if (p[0] === 'go') { st.q = +p[1]; st.back = true; }
       else if (p[0] === 'plot') { var pp = TWP.filter(function (x) { return x[0] === p[1]; })[0]; if (pp) { a.plot = pp[0]; a.pw = pp[2]; a.pd = pp[3]; a.la = Math.round(pp[2] * 0.4); a.lb = Math.round(pp[3] * 0.3); } }
       else if (p[0] === 'shape') a.shape = p[1];
-      else if (p[0] === 'road') { a.road = p[1]; st.q = st.back ? TWQ.length - 1 : st.q + 1; if (TWQ[st.q] === 'view') st.back = false; }
+      else if (p[0] === 'road') a.road = p[1];
       else if (p[0] === 'mpos') a.mpos = p[1];
       else if (p[0] === 'msz') { var z = TWM.filter(function (x) { return x[0] === p[1]; })[0]; if (z) { a.mw = z[2]; a.md = z[3]; } }
       else if (p[0] === 'door') a.door = p[1];
@@ -3051,6 +3066,20 @@
       if (TWQ[st.q] === 'place') st.pi = p[0] === 'prev' ? Math.max(0, twList().length - 1) : 0;
       paint(); if (TWQ[st.q] === 'view') tw3d();
     };
+    if (!d.dataset.twp) { d.dataset.twp = 1;   // 228: drag a block on the plan; a tap picks it
+      d.addEventListener('pointerdown', function (e) { var el = e.target.closest && e.target.closest('[data-blk]'); if (!el || !d._pd) return; d._pd.down(e, el); });
+      d.addEventListener('pointermove', function (e) { if (d._pd) d._pd.move(e); });
+      d.addEventListener('pointerup', function (e) { if (d._pd) d._pd.up(e); }); d.addEventListener('pointercancel', function (e) { if (d._pd) d._pd.up(e); }); }
+    d._pd = { down: function (e, el) { var t = st.site, i = +el.getAttribute('data-blk'), b = t && t.blocks[i]; if (!b) return; e.preventDefault(); var r = el.parentNode.getBoundingClientRect();
+        this.D = { i: i, el: el, x0: e.clientX, y0: e.clientY, bx: b.x, bz: b.z, kx: t.pw / r.width, kz: t.pd / r.height, mv: false }; try { el.setPointerCapture(e.pointerId); } catch (er) {} },
+      move: function (e) { var D = this.D; if (!D) return; if (!D.mv && Math.hypot(e.clientX - D.x0, e.clientY - D.y0) < 5) return; D.mv = true; var t = st.site, b = t.blocks[D.i], P = 0.75;
+        D.nx = Math.round(Math.max(P, Math.min(t.pw - P - b.w, D.bx + (e.clientX - D.x0) * D.kx)) * 2) / 2; D.nz = Math.round(Math.max(P, Math.min(t.pd - P - b.d, D.bz + (e.clientY - D.y0) * D.kz)) * 2) / 2;
+        D.el.style.left = D.nx / t.pw * 100 + '%'; D.el.style.top = D.nz / t.pd * 100 + '%'; },
+      up: function () { var D = this.D; this.D = null; if (!D) return; st.msg = '';
+        if (!D.mv) { st.sel = st.sel === D.i ? null : D.i; return paint(); }
+        twTry(D.i, function (q) { q.x = D.nx; q.z = D.nz; var t = st.site, P = 0.75, L = q.x <= P + 0.3, Rr = q.x + q.w >= t.pw - P - 0.3, Bk = q.z <= P + 0.3, F = q.z + q.d >= t.pd - P - 0.3;
+          q.side = q.type === 'ac' ? (Bk && !L && !Rr ? 'back' : q.x + q.w / 2 < t.pw / 2 ? 'left' : 'right') : (L || Rr) && !Bk && !F ? (L ? 'left' : 'right') : Bk && !L && !Rr ? 'back' : F && !L && !Rr ? 'front' : 'free'; });
+        st.sel = D.i; paint(); } };
     if (!d.dataset.twi) { d.dataset.twi = 1; d.addEventListener('input', function (e) { if (d._twin) d._twin(e); }); }
     d._twin = function (e) { var t = e.target; if (!t.dataset || !t.dataset.tw || !st.a) return; var v = Math.round(+t.value * 2) / 2, k = t.dataset.tw, lo = k === 'pw' || k === 'pd' ? 10 : 1; if (!(v >= lo && v <= 300)) return;
       if (/^(rl|sl)\.\d+\.[wd]$/.test(k)) { var kk = k.split('.'); twSync(); if (st.a[kk[0]][+kk[1]]) { st.a[kk[0]][+kk[1]][kk[2]] = v; st.a[kk[0]][+kk[1]].ts = 1; } st.site = null; return; }
@@ -3104,6 +3133,9 @@
   (function () { try { var st = document.createElement('style'); st.textContent =
     '.cu3d{position:absolute;inset:0;z-index:1}.cu-st.photo .cu3d{display:none}.cu-st:not(.photo) #cuImg{visibility:hidden}.cu-vw{position:absolute;top:12px;left:12px;z-index:3;display:flex;background:#fff;border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.12)}.cu-vw button{border:0;background:none;border-radius:999px;padding:7px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.cu-vw button.on{background:#2E2E2E;color:#fff}.cu-st .pg3-cap{z-index:3}'+
     '#cuOv .pg3-pn{padding-bottom:150px}.cu-pcs{display:flex;align-items:center;gap:10px;margin-top:4px}.cu-pcs button{width:36px;height:36px;border-radius:50%;border:1px solid #ccc;background:#fff;font-size:18px;cursor:pointer}.cu-pcs button:disabled{opacity:.4}.cu-pcs b{min-width:24px;text-align:center;font-size:16px}.pg3-ft .cu-sp{background:#fff!important;color:#2E2E2E!important;border:1.5px solid #2E2E2E!important;margin-bottom:8px}' +
+    '.tw-pl{position:relative;margin:4px auto 26px;max-width:100%;background:#EADCC8;border:4px solid #9B8E7E;border-radius:6px;box-sizing:border-box;touch-action:none}.tw-b{position:absolute;box-sizing:border-box;border:2px solid #8E8578;background:#D6D2C7;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.tw-b span{font:700 11px Inter,system-ui,sans-serif;color:#3A3530;text-align:center;line-height:1.1;padding:1px;pointer-events:none}.tw-b.on{border-color:#C26445;background:#F6D9CC;box-shadow:0 0 0 3px rgba(194,100,69,.35)}.tw-b.tw-mumty{background:#CFC7BA}.tw-b.tw-ac{background:#BFD9E6}.tw-b.tw-shaft{background:#9C958A}.tw-b.tw-shaft span{color:#fff}' +
+    '.tw-rd{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font:700 12px inherit;font-family:inherit;font-style:normal;color:#8a3a1f}.tw-rl{bottom:auto;top:45%;left:-4px;right:auto;writing-mode:vertical-rl;transform:translateX(-100%)}.tw-rr{bottom:auto;top:45%;right:-4px;left:auto;writing-mode:vertical-rl;transform:translateX(100%)}.tw-rb{bottom:auto;top:-22px}' +
+    '.tw-ed{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:8px 10px;margin:0 0 10px}.tw-ed b{font-size:13px;margin-right:4px}.tw-ed span{font-size:12px;color:#7A7268}.tw-ed em{font-style:normal;font-weight:700;min-width:22px;text-align:center}.tw-ed button{width:36px;height:36px;border-radius:50%;border:1.5px solid #E2D6C4;background:#fff;font-size:17px;cursor:pointer}.tw-add{margin:0 0 8px}' +
     '.tw-grid button em{display:block;font-style:normal;font-size:11px;font-weight:700;color:#8a3a1f;margin-top:2px}.tw-grid button.on em{color:#fff}.tw-lrn{background:#EEF3E8;border:1px solid #D3DEC5;border-radius:10px;padding:8px 10px;font-size:12.5px;color:#3D4A33;margin:6px 0 10px}' +
     '.tw-grid button small{display:block;font-size:10.5px;line-height:1.15;color:#6A6258;font-weight:600}.tw-grid button.mu{background:#D6D2C7;border-style:solid;border-color:#B9B2A5}.tw-grid button.on small{color:#fff}' +
     '.tw-it{background:#fff;border:1px solid #E7DFD3;border-radius:14px;padding:12px;margin:0 0 12px}.tw-it>b{font-size:15px}.tw-it .tw-wd{margin-top:8px}.tw-mini{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-top:12px}.tw-grid.tw-g2{width:120px;margin:0 0 20px;gap:4px;padding:4px;border-width:2px}.tw-grid.tw-g2 button{font-size:16px;min-height:0;padding:0}.tw-grid.tw-g2 button.mu{background:#D6D2C7;border-style:solid;border-color:#B9B2A5;color:#6A6258}.tw-grid.tw-g2 button.mu small{font-size:9.5px}.tw-grid.tw-g2 .tw-road{font-size:10.5px;bottom:-18px}.tw-mini .tw-chips{flex:1;min-width:140px}' +
