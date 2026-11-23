@@ -2971,6 +2971,7 @@ function pdColList(id){ const c=window.mtoColourOf&&mtoColourOf(id), l=(GALC[id]
 function pdThumbs(id){
   const x=PRODS[id]; if(!x) return; const cl=pdColList(id), list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
   if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg?v=2');
+  if(x.col==='landscape-plants') list.push('/img/trust/lp-assurance.jpg');   // 218: local nursery, delivered upright, 7-day replacement
   if(/^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(id)) list.push('/img/trust/cb-assurance.jpg');   // cabins: factory-made, kit, 2–5 day assembly, 10-year warranty
   if(x.cz&&!['furniture','vertical-gardens'].includes(x.col)&&!/^MTO-PL-\d/.test(id)) list.push(MTO_CTA);   // last photo of Made to Order designs: "Customise & order now" (tapping it opens the customiser)
   window.PDG={id,list,i:0};
@@ -3382,11 +3383,11 @@ function renderCart(){
 // 215: "Complete your setup" — only things that go with what is in the cart: related ready-to-ship categories (one per sub-category),
 // soil / fertiliser only when a pot is in the cart, + up to 2 Made to Order designs that earn the combo offer
 const XS_REL={'fire-pits':['furniture','lighting','furnishings'],furniture:['furnishings','lighting','planters','fire-pits'],lighting:['furniture','planters'],
-  planters:['planters','lighting'],furnishings:['furniture','lighting'],art:['lighting','planters'],'vertical-gardens':['planters','lighting'],'water-features':['lighting','planters']};
+  planters:['planters','landscape-plants','lighting'],'landscape-plants':['landscape-plants','planters','lighting'],furnishings:['furniture','lighting'],art:['lighting','planters'],'vertical-gardens':['planters','lighting'],'water-features':['lighting','planters']};
 const isCons=x=>/potting|soil|fertil|plant food|compost|seed/i.test((x.sb||'')+' '+(x.n||''));
 function cartXsell(){
  const inCart=new Set(CART.map(c=>c.id)), cols=[...new Set(CART.map(c=>PRODS[c.id]&&PRODS[c.id].col).filter(Boolean))];
- const pot=CART.some(c=>{const x=PRODS[c.id];return x&&x.col==='planters'&&!isCons(x);});
+ const pot=CART.some(c=>{const x=PRODS[c.id];return x&&((x.col==='planters'&&!isCons(x))||x.col==='landscape-plants');});   // soil / fertiliser only with a pot or a plant
  const rel=[]; cols.forEach(c=>(XS_REL[c]||[c]).forEach(r=>{if(rel.indexOf(r)<0)rel.push(r);}));
  const top=Math.max(15000,...CART.map(c=>(PRODS[c.id]||{}).p||0).map(p=>p*0.5)), seen=new Set(), xs=[];
  Object.keys(PRODS).filter(i=>{const x=PRODS[i];return !inCart.has(i)&&!x.cz&&!x.bun&&!x.pv&&!soon(i)&&x.p>0&&x.p<=top&&rel.indexOf(x.col)>=0&&(!isCons(x)||pot)&&(!window.IMGS||IMGS[x.img]);})
@@ -3992,7 +3993,7 @@ function mmCat(k){const p=document.getElementById('navPanel'); if(!p) return;
 }
 function openSub(k,t){openCol(k); FLT.sub=new Set([t]); buildChips(); renderPLP();}
 // ---- 2026-11: categories once (menu + home grid): photo, count, sub-categories; built once per catalogue load ----
-const CAT_ORDER=['furniture','fire-pits','lighting','planters','plants','shade','bar-counters','cabins','sculptures','water-features','vertical-gardens','privacy-screens','feature-walls','gates','railings','decking','graffiti','art'];
+const CAT_ORDER=['furniture','fire-pits','lighting','planters','plants','landscape-plants','shade','bar-counters','cabins','sculptures','water-features','vertical-gardens','privacy-screens','feature-walls','gates','railings','decking','graffiti','art'];
 const CAT_PIC={'bar-counters':'MTO-BR-ARCH','cabins':'MTO-CB-GLASS','shade':'MTO-PG-AL','sculptures':'MTO-SC-ABS-KNOT-FRP','vertical-gardens':'MTO-VG-PVC-WALL','water-features':'MTO-WC-TRIPLE'};
 let _CATS=null,_CATS_N=-1;
 // categories everywhere (menu, home grid, top categories, mobile chips / circles / drawer) follow one order:
