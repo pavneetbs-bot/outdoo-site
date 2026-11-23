@@ -6,9 +6,9 @@ const E = 0.75;   // parapet
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const f1 = v => (Math.round(v * 2) / 2).toString();
 export const ICON = { mumty: '🪜', lift: '🛗', room: '🚪', shaft: '⬛', ac: '❄️', cabin: '🏠', pergola: '⛱️', sofa: '🛋️', swing: '🪢', dining: '🍽️', chair: '🪑', bench: '🪵', table: '🟫', bar: '🍸', planter: '🪴',
-  water: '⛲', sculpture: '🗿', deck: '🟧', railing: '🚧', privacy: '🎋', feature: '🧱', vgarden: '🌿', graffiti: '🎨', accover: '❄️', gate: '🚪', pathway: '🪨', turf: '🟩', firepit: '🔥', jacuzzi: '🛁', lights: '💡', umbrella: '☂️', fbench: '💺', counter: '🍳' };
+  water: '⛲', sculpture: '🗿', deck: '🟧', railing: '🚧', privacy: '🎋', feature: '🧱', vgarden: '🌿', graffiti: '🎨', accover: '❄️', gate: '🚪', pathway: '🪨', turf: '🟩', firepit: '🔥', jacuzzi: '🛁', lights: '💡', umbrella: '☂️', fbench: '💺', counter: '🍳', shaftcover: '⬜' };
 const NAME = { mumty: 'Stairs', lift: 'Lift', room: 'Room', shaft: 'Shaft', ac: 'AC' };
-const FILL = { deck: 'url(#p2wood)', turf: 'url(#p2turf)', pathway: 'url(#p2path)', cabin: '#E8E1D4', jacuzzi: '#CFE6EF', water: '#D6EAF2', planter: '#DCE8D0', vgarden: '#DCE8D0', feature: '#D8D2C8', bar: '#E9D9CC', lights: '#FFF1C9', firepit: '#F2D5C4', fbench: '#E3D6C2', counter: '#E9D9CC' };
+const FILL = { deck: 'url(#p2wood)', turf: 'url(#p2turf)', pathway: 'url(#p2path)', cabin: '#E8E1D4', jacuzzi: '#CFE6EF', water: '#D6EAF2', planter: '#DCE8D0', vgarden: '#DCE8D0', feature: '#D8D2C8', bar: '#E9D9CC', lights: '#FFF1C9', firepit: '#F2D5C4', fbench: '#E3D6C2', counter: '#E9D9CC', shaftcover: 'rgba(244,244,242,.85)' };
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 export const cellFt = (t) => Math.max(t.pw, t.pd);
 
@@ -51,6 +51,11 @@ function dim(x1, y1, x2, y2, off, txt, s, cls) {
 }
 
 // the whole plan. opts: { measure, sel: {k: 'blk'|'it', i}, north: 'back'|'front'|'left'|'right', road: [...sides], items, labels }
+function pebNear(t, items) { const out = [], E = 0.75, b = 1.25, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
+  (items || []).forEach(it => { if (!it || it.segs) return; const rot = +it.rot || 0, sw = rot % 180 ? it.d : it.w, sd = rot % 180 ? it.w : it.d, x = +it.x, z = +it.z;
+    if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c) out.push(c); });
+    else if (it.cat === 'feature') { const f = { 0: [x, z + sd, sw, b], 180: [x, z - b, sw, b], 90: [x - b, z, b, sd], 270: [x + sw, z, b, sd] }[rot % 360]; const c = f && cl(f); if (c) out.push(c); } });
+  return out; }
 export function svg(t, opts) {
   opts = opts || {}; const pw = +t.pw, pd = +t.pd, s = Math.max(0.8, Math.max(pw, pd) / 46), M = opts.measure ? s * 9 : s * 3.2, items = opts.items || [], fl = t.floor || {};
   const O = outline(t), poly = O.map(p => p.join(',')).join(' '), sel = opts.sel || {};
@@ -65,17 +70,21 @@ export function svg(t, opts) {
     `<pattern id="p2turf" width="1" height="1" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="#8DBB63"/><path d="M0.2 0.8l0.1-0.35M0.6 0.5l0.08-0.3M0.8 0.95l0.06-0.28" stroke="#6E9E46" stroke-width="0.07"/></pattern>` +
     `<pattern id="p2wood" width="4" height="0.6" patternUnits="userSpaceOnUse"><rect width="4" height="0.6" fill="#B88A5E"/><path d="M0 0.58H4M2.4 0V0.6" stroke="#8E6640" stroke-width="0.05"/></pattern>` +
     `<pattern id="p2path" width="2.2" height="2.2" patternUnits="userSpaceOnUse"><rect width="2.2" height="2.2" fill="#D9D3C8"/><rect x="0.2" y="0.2" width="1.8" height="1.8" rx="0.15" fill="#9E978C"/></pattern></defs>`;
-  h += `<style>.p2svg{display:block;width:100%;height:100%;overflow:visible;font-family:Inter,system-ui,sans-serif;touch-action:none}.p2l,.p2e{stroke:#3A3530;stroke-width:${s * 0.09};fill:none}.p2e{stroke-width:${s * 0.06}}.p2tb{fill:#fff;stroke:none}.p2t{text-anchor:middle;fill:#2E2E2E;font-weight:600}.p2d.fr .p2l{stroke:#2E7D3E}.p2d.fr .p2t{fill:#1F5E2C}.p2lb{text-anchor:middle;dominant-baseline:central;pointer-events:none;fill:#2E2E2E;font-weight:700}[data-blk],[data-it]{cursor:grab}.p2d,.p2fr{pointer-events:none}</style>`;
+  h += `<style>.p2svg{display:block;width:100%;height:100%;overflow:visible;font-family:Inter,system-ui,sans-serif;touch-action:pan-y}.p2svg [data-it],.p2svg [data-blk]{touch-action:none}.p2l,.p2e{stroke:#3A3530;stroke-width:${s * 0.09};fill:none}.p2e{stroke-width:${s * 0.06}}.p2tb{fill:#fff;stroke:none}.p2t{text-anchor:middle;fill:#2E2E2E;font-weight:600}.p2d.fr .p2l{stroke:#2E7D3E}.p2d.fr .p2t{fill:#1F5E2C}.p2lb{text-anchor:middle;dominant-baseline:central;pointer-events:none;fill:#2E2E2E;font-weight:700}[data-blk],[data-it]{cursor:grab}.p2d,.p2fr{pointer-events:none}</style>`;
   // floor: tiles (plain / Moroccan) or bare, then a pebble border along the parapet
   h += `<polygon points="${poly}" fill="${({ moroccan: 'url(#p2moro)', plain: 'url(#p2tile)', grey: 'url(#p2grey)', stone: 'url(#p2stone)', terracotta: 'url(#p2terra)' })[fl.tile] || '#EADCC8'}"/>`;
-  if (fl.pebble) { const b = fl.pebble === true ? 1.25 : +fl.pebble; h += `<clipPath id="p2clip"><polygon points="${poly}"/></clipPath><g clip-path="url(#p2clip)"><path d="M${E} ${E}H${pw - E}V${pd - E}H${E}Z M${E + b} ${E + b}V${pd - E - b}H${pw - E - b}V${E + b}Z" fill="url(#p2peb)" fill-rule="evenodd"/></g>`; }
+  if (fl.pebble === 'near') h += pebNear(t, items).map(r => `<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" fill="url(#p2peb)"/>`).join('');   // 241: only round the deck / in front of the feature wall
+  else if (fl.pebble) { const b = fl.pebble === true ? 1.25 : +fl.pebble; h += `<clipPath id="p2clip"><polygon points="${poly}"/></clipPath><g clip-path="url(#p2clip)"><path d="M${E} ${E}H${pw - E}V${pd - E}H${E}Z M${E + b} ${E + b}V${pd - E - b}H${pw - E - b}V${E + b}Z" fill="url(#p2peb)" fill-rule="evenodd"/></g>`; }
   // neighbour walls that rise higher
   const hi = t.high || {}, hw = t.hw || {};
   ['left', 'right', 'back'].forEach(sd => { if (!hi[sd]) return; const L = Math.min(sd === 'back' ? pw : pd, +((hw[sd] || {}).l) || (sd === 'back' ? pw : pd));
     h += sd === 'back' ? `<rect x="0" y="${-s * 0.9}" width="${L}" height="${s * 0.9}" fill="#55634A"/>` : `<rect x="${sd === 'left' ? -s * 0.9 : pw}" y="0" width="${s * 0.9}" height="${L}" fill="#55634A"/>`; });
   // floors set up on it (deck, grass, pathway) under everything else
   const drawn = (it, i) => { const f = foot(it), x = +it.x, z = +it.z, on = sel.k === 'it' && sel.i === i, pg = it.cat === 'pergola', fs = Math.min(f[0], f[1]) * 0.5, lab = Math.max(s * 0.9, Math.min(s * 2, fs));
-    let r = `<g data-it="${i}"><rect x="${x}" y="${z}" width="${f[0]}" height="${f[1]}" rx="${it.cat === 'water' || it.cat === 'firepit' || it.cat === 'umbrella' ? Math.min(f[0], f[1]) / 2 : 0.2}" fill="${pg ? 'rgba(46,46,46,.06)' : FILL[it.cat] || '#F1E3D8'}" stroke="${on ? '#C26445' : pg ? '#2E2E2E' : '#9B8E7E'}" stroke-width="${on ? s * 0.3 : s * 0.1}"${pg ? ` stroke-dasharray="${s * 0.5} ${s * 0.3}"` : ''}/>`;
+    const Lb = it.cat === 'bar' && it.shape === 'L';   // 241: an L bar drawn as an L
+    let r = `<g data-it="${i}"><rect x="${x}" y="${z}" width="${f[0]}" height="${f[1]}" rx="${it.cat === 'water' || it.cat === 'firepit' || it.cat === 'umbrella' ? Math.min(f[0], f[1]) / 2 : 0.2}" fill="${Lb ? 'rgba(0,0,0,0)' : pg ? 'rgba(46,46,46,.06)' : FILL[it.cat] || '#F1E3D8'}" stroke="${on ? '#C26445' : Lb ? 'none' : pg ? '#2E2E2E' : '#9B8E7E'}" stroke-width="${on ? s * 0.3 : s * 0.1}"${pg ? ` stroke-dasharray="${s * 0.5} ${s * 0.3}"` : ''}/>`;
+    if (Lb) { const w = +it.w, d = +it.d, D = 2.2, th = -(+it.rot || 0) * Math.PI / 180, cx = x + f[0] / 2, cz = z + f[1] / 2, P = [[0, 0], [w, 0], [w, d], [w - D, d], [w - D, D], [0, D]].map(([a, b]) => { const lx = a - w / 2, lz = b - d / 2; return [cx + lx * Math.cos(th) + lz * Math.sin(th), cz - lx * Math.sin(th) + lz * Math.cos(th)]; });
+      r += `<polygon points="${P.map(p => p.map(v => +v.toFixed(2)).join(',')).join(' ')}" fill="${FILL.bar || '#F1E3D8'}" stroke="${on ? '#C26445' : '#9B8E7E'}" stroke-width="${on ? s * 0.3 : s * 0.1}"/>`; }
     if (pg) for (let u = x + 1; u < x + f[0] - 0.4; u += 1.2) r += `<path d="M${u} ${z}V${z + f[1]}" stroke="#2E2E2E" stroke-width="${s * 0.05}" opacity=".35"/>`;
     if (opts.labels !== false && !['pathway', 'lights'].includes(it.cat)) r += `<text x="${x + f[0] / 2}" y="${z + (pg ? lab * 0.9 : f[1] / 2)}" font-size="${lab}" class="p2lb">${ICON[it.cat] || ''}</text>`;
     return r + '</g>'; };

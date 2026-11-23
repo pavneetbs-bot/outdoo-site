@@ -7,7 +7,7 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel } from './cabin3d.js?v=30';
 import { pergolaModel } from './pergola3d.js?v=22';
-import { outline } from './plan2d.js?v=3';
+import { outline } from './plan2d.js?v=4';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -289,6 +289,10 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'chair') {
     box(g, w * 0.8, 0.3, d * 0.8, 0, 1.4, 0, K.cush); box(g, w * 0.8, 1.8, 0.3, 0, 2.4, -d * 0.4 + 0.15, K.frame);
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 1.3, 0.15, a * w * 0.35, 0.65, b * d * 0.35, K.frame)); box(g, 0.15, 0.6, d * 0.8, -w * 0.4, 1.9, 0, K.frame); box(g, 0.15, 0.6, d * 0.8, w * 0.4, 1.9, 0, K.frame);
+  } else if (cat === 'shaftcover') {   // 241: on top of the shaft — an MS tube frame with a white polycarbonate sheet, a little sloped
+    const y = (h || 3.4) - 0.4, fm = K.frame; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 0.5, 0.15, a * (w / 2 - 0.08), y + 0.25, b * (d / 2 - 0.08), fm));
+    box(g, w, 0.12, 0.12, 0, y + 0.5, -d / 2 + 0.06, fm); box(g, w, 0.12, 0.12, 0, y + 0.62, d / 2 - 0.06, fm); box(g, 0.12, 0.12, d, -w / 2 + 0.06, y + 0.56, 0, fm); box(g, 0.12, 0.12, d, w / 2 - 0.06, y + 0.56, 0, fm);
+    const sh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, 0.05, d + 0.3), mat('c_poly', 0xF4F4F2, { roughness: 0.35, transparent: true, opacity: 0.88 })); sh.position.set(0, y + 0.66, 0); sh.rotation.x = Math.atan2(0.12, d); sh.castShadow = true; g.add(sh);
   } else if (cat === 'fbench') {   // 239: built-in seating — a masonry seat with a cushion and a backrest against the wall (back = −z)
     box(g, w, 1.4, d - 0.3, 0, 0.7, 0.15, K.stone); box(g, w - 0.1, 0.25, d - 0.5, 0, 1.52, 0.2, K.cush); box(g, w, 1.5, 0.3, 0, 2.15, -d / 2 + 0.15, K.stone); box(g, w - 0.2, 1.0, 0.25, 0, 2.15, -d / 2 + 0.45, K.cush2);
   } else if (cat === 'counter') {   // 239: food / buffet counter — base, stone top, a cooktop and a sink on it (back = −z, against the wall)
@@ -298,13 +302,15 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     box(g, w, 0.2, d * 0.8, 0, 1.5, 0, K.wood); [-w / 2 + 0.4, w / 2 - 0.4].forEach(x => box(g, 0.25, 1.4, d * 0.7, x, 0.7, 0, K.frame));
   } else if (cat === 'table') {
     box(g, w, 0.15, d, 0, 2.4, 0, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.2, 2.35, 0.2, a * (w / 2 - 0.3), 1.18, b * (d / 2 - 0.3), K.frame));
-  } else if (cat === 'bar') {
-    box(g, w, 3.4, d * 0.7, 0, 1.7, -d * 0.15, K.stone); box(g, w + 0.3, 0.15, d * 0.85, 0, 3.5, -d * 0.1, K.wood2); box(g, w - 0.4, 0.1, 0.2, 0, 0.4, d * 0.2 + 0.1, K.frame);
-    const n = Math.max(1, Math.floor(w / 2.2)); for (let i = 0; i < n; i++) { const x = -w / 2 + w * (i + 0.5) / n; cyl(g, 0.55, 0.55, 0.15, x, 2.6, d / 2 + 0.6, K.cush2); cyl(g, 0.08, 0.08, 2.5, x, 1.25, d / 2 + 0.6, K.frame, 8); }
+  } else if (cat === 'bar') {   // 241: island bar — free on both sides, stools at the front; L = a return arm on the right
+    const L = it && it.shape === 'L', D = L ? 2.2 : d * 0.7, arm = (bw, bd, x, z, st) => { box(g, bw, 3.4, bd, x, 1.7, z, K.stone); box(g, bw + 0.3, 0.15, bd + 0.5, x, 3.5, z + 0.1, K.wood2); };
+    if (L) { arm(w, D, 0, -d / 2 + D / 2); arm(D, d - D, w / 2 - D / 2, D / 2); } else arm(w, D, 0, -d * 0.15);
+    const fz = L ? -d / 2 + D + 0.6 : d / 2 + 0.6, run = L ? w - D : w, x0 = -w / 2, n = Math.max(1, Math.floor(run / 2.2));
+    for (let i = 0; i < n; i++) { const x = x0 + run * (i + 0.5) / n; cyl(g, 0.55, 0.55, 0.15, x, 2.6, fz, K.cush2); cyl(g, 0.08, 0.08, 2.5, x, 1.25, fz, K.frame, 8); }
   } else if (cat === 'planter' && it && /^MTO-PL-[A-Z]{2}$/.test(it.cfgId || it.pick || '')) {   // 199: an outrr planter — its own size, finish colour, plinth, plants, LED glow underneath
     planterModel(g, w, d, h, it, K);
   } else if (cat === 'planter') {
-    const r = Math.min(w, d) / 2; cyl(g, r * 0.9, r * 0.7, r * 1.6, 0, r * 0.8, 0, K.pot, 24); const f = new THREE.Mesh(new THREE.IcosahedronGeometry(r * 1.05, 1), K.leaf); f.position.y = r * 2.2; f.scale.y = 1.2; f.castShadow = true; g.add(f);
+    tropical(g, w, d, it);   // 241: a mix of tropical plants — palms, big leaves, bushes — big and small
   } else if (cat === 'water') {
     cyl(g, Math.min(w, d) / 2, Math.min(w, d) / 2, 1.2, 0, 0.6, 0, K.stone, 32); cyl(g, Math.min(w, d) / 2 - 0.3, Math.min(w, d) / 2 - 0.3, 0.1, 0, 1.15, 0, K.water, 32);
     cyl(g, 0.5, 0.7, 2.6, 0, 1.3, 0, K.stone); cyl(g, 1.2, 0.9, 0.35, 0, 2.7, 0, K.stone); cyl(g, 1.0, 1.0, 0.06, 0, 2.86, 0, K.water); cyl(g, 0.25, 0.35, 1, 0, 3.3, 0, K.stone);
@@ -333,7 +339,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     pcs.forEach(([a0, a1, y0, y1]) => { const pw = a1 - a0, ph = y1 - y0, cx = -w / 2 + (a0 + a1) / 2; if (pw < 0.05 || ph < 0.05) return; box(g, pw, ph, 0.3, cx, y0 + ph / 2, 0, K.white);
       const a = new THREE.Mesh(new THREE.PlaneGeometry(Math.max(0.1, pw - (pcs.length > 1 ? 0.1 : 0.4)), Math.max(0.1, ph - (pcs.length > 1 ? 0.1 : 0.4))), art()); a.position.set(cx, y0 + ph / 2, 0.16); g.add(a); });
   } else if (cat === 'pathway') {   // 224: grey stone slabs on pebbles, along the long side
-    const L = Math.max(w, d), W = Math.min(w, d), al = d >= w; box(g, w, 0.05, d, 0, 0.025, 0, mat('c_pebble', 0xCFC8BC), false);
+    const L = Math.max(w, d), W = Math.min(w, d), al = d >= w; if (!(it && it.onTurf)) box(g, w, 0.05, d, 0, 0.025, 0, mat('c_pebble', 0xCFC8BC), false);   // 241: on the grass = stepping stones only
     const n = Math.max(1, Math.floor(L / 2.2)); for (let k = 0; k < n; k++) { const u = -L / 2 + L * (k + 0.5) / n; box(g, al ? W - 0.5 : 1.8, 0.1, al ? 1.8 : W - 0.5, al ? 0 : u, 0.08, al ? u : 0, mat('c_slab', 0x8F8A82), false); }
   } else if (cat === 'turf') {
     const n = Math.max(1, Math.round(d / 2)); for (let k = 0; k < n; k++) box(g, w, 0.08, d / n, 0, 0.04, -d / 2 + d * (k + 0.5) / n, k % 2 ? mat('c_turf', 0x6FA24A) : mat('c_turf2', 0x63963F), false);
@@ -344,7 +350,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const H = h || 3; box(g, w, H, d, 0, H / 2, 0, K.white); box(g, w - 0.8, 0.08, d - 0.8, 0, H - 0.25, 0, K.water); box(g, w + 0.4, 0.15, d + 0.4, 0, H, 0, K.wood2);
     box(g, 2, 0.8, 1.2, 0, 0.4, d / 2 + 0.6, K.wood2);
   } else if (cat === 'lights') {
-    cyl(g, 0.15, 0.2, (h || 3) - 0.4, 0, ((h || 3) - 0.4) / 2, 0, K.frame, 10); cyl(g, 0.3, 0.25, 0.4, 0, (h || 3) - 0.2, 0, mat('c_lamp', 0xFFE2A8, { emissive: 0xFFC46B, emissiveIntensity: 1 }), 12);
+    cyl(g, 0.15, 0.2, (h || 3) - 0.4, 0, ((h || 3) - 0.4) / 2, 0, K.frame, 10); cyl(g, 0.3, 0.25, 0.4, 0, (h || 3) - 0.2, 0, mat('c_lamp', 0xFFE2A8, { emissive: 0xFFE6C0, emissiveIntensity: 1 }), 12);
   } else if (cat === 'umbrella') {
     const H = h || 8, r = Math.min(w, d) / 2; cyl(g, 0.9, 1, 0.4, 0, 0.2, 0, K.dark, 16); cyl(g, 0.1, 0.1, H, 0, H / 2, 0, K.wood2, 8);
     const c = new THREE.Mesh(new THREE.ConeGeometry(r, 1.6, 8, 1, true), mat('c_canopy', 0xEADCC8, { side: THREE.DoubleSide })); c.position.y = H - 0.6; c.castShadow = true; g.add(c);
@@ -375,7 +381,7 @@ const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 
 function build(P) {
   if (R) R.nl = []; const g = new THREE.Group(), t = P.site || {}, terr = t.kind === 'terrace';
-  if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; if (t.floor) try { floorFin(g, t); } catch (e) {} } else { lawn(g, t); R.plot = null; }
+  if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; if (t.floor) try { floorFin(g, t, P.items || []); } catch (e) {} } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   drawItems(items, R.holders, P);
   if (P.measure && terr) { try { g.add(measures(P)); } catch (e) {} }
@@ -408,25 +414,46 @@ function measures(P) {
 
 // 235: night view — the lights show
 function night(on) { if (!R || R.night === on) return; R.night = on; (R.nl || []).forEach(m => { m.visible = on; }); R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.12 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
+// 241: tropical planting in a pot — areca palm / big-leaf (monstera, bird of paradise) / round bush, size varies from pot to pot
+function tropical(g, w, d, it) { const sd = Math.abs(Math.round((+(it && it.x) || 1) * 13 + (+(it && it.z) || 1) * 7)), rnd = (k => () => (k = (k * 16807) % 2147483647) / 2147483647)(sd + 11), r = Math.min(w, d) / 2, sz = 0.8 + rnd() * 0.9, ty = sd % 3;
+  const pot = sd % 2 ? mat('c_potc', 0x3A3836, { roughness: 0.7 }) : mat('c_pott', 0xB06A47, { roughness: 0.9 }); cyl(g, r * 0.92, r * 0.72, r * 1.7, 0, r * 0.85, 0, pot, 20); const y0 = r * 1.7;
+  const L1 = mat('c_lf1', 0x2F6B34, { roughness: 0.8, side: THREE.DoubleSide }), L2 = mat('c_lf2', 0x4C8A3C, { roughness: 0.8, side: THREE.DoubleSide }), L3 = mat('c_lf3', 0x22552A, { roughness: 0.85, side: THREE.DoubleSide });
+  const leaf = (len, wid, m) => { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(wid, len * 0.45, 0, len); sh.quadraticCurveTo(-wid, len * 0.45, 0, 0); const o = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), m); o.castShadow = true; return o; };
+  if (ty === 0) { const n = 5 + Math.floor(rnd() * 4), H = (3.2 + rnd() * 2.5) * sz;   // areca palm: stems with arching fronds
+    for (let i = 0; i < n; i++) { const a = i / n * 6.28 + rnd(), tl = 0.12 + rnd() * 0.15, hh = H * (0.6 + rnd() * 0.4); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, hh, 5), L3); st.position.set(Math.cos(a) * r * 0.3, y0 + hh / 2, Math.sin(a) * r * 0.3); st.rotation.z = Math.cos(a) * tl; st.rotation.x = -Math.sin(a) * tl; g.add(st);
+      for (let k = 0; k < 7; k++) { const f = leaf(1.4 * sz, 0.12, k % 2 ? L1 : L2), ang = a + (k - 3) * 0.18; f.position.set(Math.cos(a) * (r * 0.3 + hh * tl), y0 + hh, Math.sin(a) * (r * 0.3 + hh * tl)); f.rotation.set(-Math.PI / 2 + 0.9 + rnd() * 0.4, 0, 0); f.rotation.order = 'YXZ'; f.rotation.y = -ang + Math.PI / 2; g.add(f); } } }
+  else if (ty === 1) { const n = 7 + Math.floor(rnd() * 5);   // big leaves on long stalks
+    for (let i = 0; i < n; i++) { const a = i / n * 6.28 + rnd() * 0.5, hh = (1.2 + rnd() * 2.2) * sz, f = leaf((1.1 + rnd() * 0.8) * sz, (0.45 + rnd() * 0.3) * sz, i % 3 ? L1 : L2);
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, hh, 4), L3); st.position.set(Math.cos(a) * 0.3, y0 + hh / 2, Math.sin(a) * 0.3); g.add(st);
+      f.position.set(Math.cos(a) * 0.3, y0 + hh, Math.sin(a) * 0.3); f.rotation.order = 'YXZ'; f.rotation.y = -a + Math.PI / 2; f.rotation.x = -0.5 - rnd() * 0.6; g.add(f); } }
+  else { const n = 4 + Math.floor(rnd() * 3);   // a full round bush
+    for (let i = 0; i < n; i++) { const rr = r * (0.55 + rnd() * 0.5) * sz, b = new THREE.Mesh(new THREE.IcosahedronGeometry(rr, 1), i % 2 ? L1 : L2); b.position.set((rnd() - 0.5) * r, y0 + rr * 0.8 + rnd() * r * 0.6 * sz, (rnd() - 0.5) * r); b.castShadow = true; g.add(b); } }
+}
 // 239: flowering creepers climbing each pergola post (bougainvillea-like: leaves + magenta flowers)
-function creepers(hd) { hd.updateMatrixWorld(true); const posts = []; hd.traverse(o => { if (o.isMesh && o.userData.post) posts.push(o); }); if (!posts.length) return;
-  const lg = new THREE.IcosahedronGeometry(0.26, 0), fg = new THREE.IcosahedronGeometry(0.15, 0), n = posts.length * 34, LM = new THREE.InstancedMesh(lg, mat('c_leaf', 0x3F7D3A, { roughness: 0.9 }), n), FM = new THREE.InstancedMesh(fg, mat('c_bloom', 0xC2187A, { roughness: 0.7 }), n);
-  const inv = new THREE.Matrix4().copy(hd.matrixWorld).invert(), q = new THREE.Matrix4(), bx = new THREE.Box3(); let li = 0, fi = 0;
-  posts.forEach((o, pi) => { bx.setFromObject(o).applyMatrix4(inv); const cx = (bx.min.x + bx.max.x) / 2, cz = (bx.min.z + bx.max.z) / 2, r = Math.max(bx.max.x - bx.min.x, bx.max.z - bx.min.z) / 2 + 0.12, y0 = bx.min.y + 0.2, y1 = bx.max.y;
-    for (let k = 0; k < 34 && li < n; k++) { const a = k * 1.9 + pi, y = y0 + (y1 - y0) * k / 33, s = 0.8 + ((k * 7 + pi) % 5) * 0.12; q.makeScale(s, s, s).setPosition(cx + Math.cos(a) * r, y, cz + Math.sin(a) * r); LM.setMatrixAt(li++, q);
-      if (k % 2 && k > 6) { q.makeScale(1, 1, 1).setPosition(cx + Math.cos(a + 0.8) * (r + 0.12), y + 0.1, cz + Math.sin(a + 0.8) * (r + 0.12)); FM.setMatrixAt(fi++, q); } } });
+function creepers(hd, it) {   // 241: bougainvillea on one post (two on a big pergola, on two sides), from a planter at its foot — loose and uneven, not a wedding garland
+  hd.updateMatrixWorld(true); const posts = []; hd.traverse(o => { if (o.isMesh && o.userData.post) posts.push(o); }); if (!posts.length) return;
+  const inv = new THREE.Matrix4().copy(hd.matrixWorld).invert(), bx = new THREE.Box3(), P = posts.map(o => { bx.setFromObject(o).applyMatrix4(inv); return { cx: (bx.min.x + bx.max.x) / 2, cz: (bx.min.z + bx.max.z) / 2, r: Math.max(bx.max.x - bx.min.x, bx.max.z - bx.min.z) / 2, y0: bx.min.y, y1: bx.max.y }; });
+  P.sort((a, b) => (b.cx + b.cz * 0.37) - (a.cx + a.cz * 0.37)); const big = (+(it && it.w) || 10) * (+(it && it.d) || 10) >= 150, pick = [P[0]];
+  if (big) { const o = P.filter(p => Math.sign(p.cx) !== Math.sign(P[0].cx) && Math.sign(p.cz) !== Math.sign(P[0].cz))[0] || P[P.length - 1]; if (o !== P[0]) pick.push(o); }
+  const rnd = (k => () => (k = (k * 16807) % 2147483647) / 2147483647)(Math.round(Math.abs(P[0].cx * 31 + P[0].cz * 17)) + 7), n = 260, LM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.22, 0), mat('c_leaf', 0x3F7D3A, { roughness: 0.9 }), n), FM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.17, 0), mat('c_bloom', 0xC2187A, { roughness: 0.7 }), n), q = new THREE.Matrix4(), e = new THREE.Euler();
+  let li = 0, fi = 0; const put = (M, i, x, y, z, s) => { q.makeRotationFromEuler(e.set(rnd() * 3, rnd() * 3, rnd() * 3)); q.scale(new THREE.Vector3(s, s * (0.6 + rnd() * 0.6), s)); q.setPosition(x, y, z); M.setMatrixAt(i, q); };
+  pick.forEach(p => { const pot = generic('planter', 1.6, 1.6, 1.4); pot.children.slice(1).forEach(c => pot.remove(c)); pot.position.set(p.cx + (p.cx > 0 ? 0.9 : -0.9), p.y0, p.cz + (p.cz > 0 ? 0.9 : -0.9)); hd.add(pot);
+    let x = p.cx, z = p.cz, a = rnd() * 6.28; for (let y = p.y0 + 1; y < p.y1 && li < n - 2; y += 0.22) { a += 0.5 + rnd() * 0.9; const rr = p.r + 0.08 + rnd() * 0.35; x = p.cx + Math.cos(a) * rr; z = p.cz + Math.sin(a) * rr;
+      put(LM, li++, x, y, z, 0.7 + rnd() * 0.9); if (y > p.y0 + 2.5 && rnd() < 0.45 + (y - p.y0) / (p.y1 - p.y0) * 0.4) put(FM, fi++, x + (rnd() - 0.5) * 0.4, y + rnd() * 0.2, z + (rnd() - 0.5) * 0.4, 0.8 + rnd() * 1.2); }
+    for (let k = 0; k < 40 && li < n - 1; k++) { const ax = rnd() < 0.5, u = (rnd() - 0.2) * 3.5, x2 = p.cx - Math.sign(p.cx) * (ax ? u : 0) , z2 = p.cz - Math.sign(p.cz) * (ax ? 0 : u), y2 = p.y1 - 0.1 + (rnd() - 0.6) * 0.8;   // spills along the beams at the top
+      put(LM, li++, x2, y2, z2, 0.8 + rnd()); if (rnd() < 0.7 && fi < n) put(FM, fi++, x2 + (rnd() - 0.5) * 0.5, y2 - rnd() * 0.5, z2 + (rnd() - 0.5) * 0.5, 0.9 + rnd() * 1.3); } });
   LM.count = li; FM.count = fi; LM.castShadow = true; hd.add(LM, FM); }
 // 239: a soft cone of light under a down light — seen only in the night view
-function downGlow(par, x, y, z, H) { if (!R) return; const h = Math.min(H, 6), m = new THREE.Mesh(new THREE.ConeGeometry(h * 0.32, h, 14, 1, true), mat('g_cone', 0xFFC46B, { emissive: 0xFFC46B, emissiveIntensity: 1, transparent: true, opacity: 0.13, depthWrite: false, side: THREE.DoubleSide }));
+function downGlow(par, x, y, z, H) { if (!R) return; const h = Math.min(H, 6), m = new THREE.Mesh(new THREE.ConeGeometry(h * 0.32, h, 14, 1, true), mat('g_cone', 0xFFE6C0, { emissive: 0xFFE6C0, emissiveIntensity: 1, transparent: true, opacity: 0.13, depthWrite: false, side: THREE.DoubleSide }));
   m.position.set(x, y - h / 2, z); m.visible = !!R.night; m.userData.nightOnly = 1; par.add(m); (R.nl || (R.nl = [])).push(m); }
 const glow = c => mat('g_' + c.toString(16), c, { emissive: c, emissiveIntensity: 2.2, roughness: 1 });
 // wall lights on the structures and the parapet (full lighting)
-function wallLights(g, t) { const W = 0xFFC46B, gm = glow(W), E = 0.75, add = (x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.45), gm); m.position.set(x, y, z); g.add(m); const l = new THREE.PointLight(W, 1.6, 9, 2); l.position.set(x, y, z); g.add(l); };
+function wallLights(g, t) { const W = 0xFFE6C0, gm = glow(W), E = 0.75, add = (x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.45), gm); m.position.set(x, y, z); g.add(m); const l = new THREE.PointLight(W, 1.6, 9, 2); l.position.set(x, y, z); g.add(l); };
   (t.blocks || []).filter(b => ['mumty', 'room', 'lift'].includes(b.type)).forEach(b => { const cx = b.x + b.w / 2, cz = b.z + b.d / 2, dx = t.pw / 2 - cx, dz = t.pd / 2 - cz;
     if (Math.abs(dx) / t.pw > Math.abs(dz) / t.pd) { const x = dx > 0 ? b.x + b.w + 0.25 : b.x - 0.25; for (let z = b.z + 2; z < b.z + b.d - 1; z += 6) add(x, 6.5, z); } else { const z = dz > 0 ? b.z + b.d + 0.25 : b.z - 0.25; for (let x = b.x + 2; x < b.x + b.w - 1; x += 6) add(x, 6.5, z); } });
   const par = (+t.par || 3) - 0.5; for (let x = 4; x < t.pw - 3; x += 9) add(x, par, E + 0.2); for (let z = 4; z < t.pd - 3; z += 9) { add(E + 0.2, par, z); add(t.pw - E - 0.2, par, z); } }
 // the setup's own lights: pergola profile, cove under bar / feature wall, spikes in planters, downlights on screens every 4 ft
-function itemLights(hd, it, P) { const lv = (P.site || {}).light; if (!lv) return; const W = 0xFFC46B, gm = glow(W), w = it.w, d = it.d, h = +it.h || 3;
+function itemLights(hd, it, P) { const lv = (P.site || {}).light; if (!lv) return; const W = 0xFFE6C0, gm = glow(W), w = it.w, d = it.d, h = +it.h || 3;
   if (it.cat === 'pergola') { const y = Math.max(7, h) - 0.35; [[w, 0.12, 0, -d / 2 + 0.3], [w, 0.12, 0, d / 2 - 0.3]].forEach(([a, b, x, z]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(a - 0.6, 0.08, b), gm); m.position.set(x, y, z); hd.add(m); });
     [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, d - 0.6), gm); m.position.set(x, y, 0); hd.add(m); }); const l = new THREE.PointLight(W, 4, Math.max(w, d) * 1.2, 2); l.position.set(0, y - 0.5, 0); hd.add(l); }
   else if (it.cat === 'feature' || it.cat === 'bar') { const m = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.06, 0.1), gm); m.position.set(0, it.cat === 'bar' ? 3.3 : 0.35, d / 2 + 0.08); hd.add(m); const l = new THREE.PointLight(W, 2.2, 7, 2); l.position.set(0, it.cat === 'bar' ? 3 : 0.8, d / 2 + 0.8); hd.add(l); }
@@ -442,13 +469,19 @@ function finTex(k) { if (TEX[k]) return TEX[k]; const cv = document.createElemen
     x.globalAlpha = 1; x.fillStyle = '#F3EEE6'; x.beginPath(); x.arc(c, c, 26, 0, 7); x.fill(); x.strokeStyle = '#C9C1B4'; x.lineWidth = 3; x.strokeRect(0, 0, 256, 256); }
   else { x.fillStyle = '#D9D3C8'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 260; i++) { x.fillStyle = ['#B8B0A3', '#A9A194', '#C7BFB2', '#9E968A'][i % 4]; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 6 + Math.random() * 7, 5 + Math.random() * 5, Math.random() * 3, 0, 7); x.fill(); } }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return (TEX[k] = t); }
-function floorFin(g, t) {
+// 241: pebbles only round the deck and in front of the feature wall (not the whole parapet)
+export function pebNear(t, items) { const out = [], E = 0.75, b = 1.25, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
+  (items || []).forEach(it => { if (!it || it.segs) return; const rot = +it.rot || 0, sw = rot % 180 ? it.d : it.w, sd = rot % 180 ? it.w : it.d, x = +it.x, z = +it.z;
+    if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c) out.push(c); });
+    else if (it.cat === 'feature') { const f = { 0: [x, z + sd, sw, b], 180: [x, z - b, sw, b], 90: [x - b, z, b, sd], 270: [x + sw, z, b, sd] }[rot % 360]; const c = f && cl(f); if (c) out.push(c); } });
+  return out; }
+function floorFin(g, t, items) {
   const f = t.floor || {}, pw = +t.pw, pd = +t.pd, E = 0.75;
   if (['plain', 'moroccan', 'stone', 'terracotta', 'grey'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
     const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const per = f.tile === 'moroccan' ? 3 : 2; tx.repeat.set(1 / per, 1 / per);
     const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
   if (f.pebble) { const b = 1.25, pm = new THREE.MeshStandardMaterial({ map: finTex('pebble'), roughness: 1 });
-    [[E, E, pw - 2 * E, b], [E, pd - E - b, pw - 2 * E, b], [E, E + b, b, pd - 2 * E - 2 * b], [pw - E - b, E + b, b, pd - 2 * E - 2 * b]].forEach(([x, z, w, d]) => { const tx = pm.map.clone(); tx.needsUpdate = true; tx.repeat.set(w / 2, d / 2);
+    (f.pebble === 'near' ? pebNear(t, items) : [[E, E, pw - 2 * E, b], [E, pd - E - b, pw - 2 * E, b], [E, E + b, b, pd - 2 * E - 2 * b], [pw - E - b, E + b, b, pd - 2 * E - 2 * b]]).forEach(([x, z, w, d]) => { const tx = pm.map.clone(); tx.needsUpdate = true; tx.repeat.set(w / 2, d / 2);
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04, z + d / 2); m.receiveShadow = true; g.add(m); }); }
 }
 function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (also drawn by the cabin / pergola designers)
@@ -466,7 +499,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
         const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
         if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.2, (+it.h || 3) + 0.2, 0.6)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = (+it.h || 3) / 2; p.add(ln); }
         if (!k && P.labels !== false) { const tg = tag(it.label || 'Privacy screen'); tg.position.y = (+it.h || 3) + 1.4; p.add(tg); }
-        if ((P.site || {}).light !== '' ) { const gm = glow(0xFFC46B), hh = +it.h || 3; for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 10), gm); m.position.set(u, hh - 0.1, 0.25); p.add(m); downGlow(p, u, hh - 0.15, 0.3, sg.y + hh); } } });   // 239: one-way down lights on every screen by default
+        if ((P.site || {}).light !== '' ) { const gm = glow(0xFFE6C0), hh = +it.h || 3; for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 10), gm); m.position.set(u, hh - 0.1, 0.25); p.add(m); downGlow(p, u, hh - 0.15, 0.3, sg.y + hh); } } });   // 239: one-way down lights on every screen by default
       return;
     }
     const [fw, fd] = foot(it), hd = new THREE.Group(); hd.userData.it = i; hd.position.set(+it.x + fw / 2, 0, +it.z + fd / 2); hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);
@@ -483,7 +516,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
       const top = (+it.h || 8) + (it.deck ? 0.6 : 0), fm = mat('c_ledger', 0x2E2E2E, { metalness: 0.4, roughness: 0.5 });
       it.att.forEach(z => { const b = box(items, z.w, 0.6, z.d, z.x + z.w / 2, top - 0.3, z.z + z.d / 2, fm); b.userData.it = i; });
     }
-    if (it.cat === 'pergola') try { creepers(hd); } catch (e) {}
+    if (it.cat === 'pergola') try { creepers(hd, it); } catch (e) {}
     H[i] = hd;
   });
 }
