@@ -1892,7 +1892,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=49').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=50').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2867,13 +2867,14 @@
     var paint = function () {
       var h = '<div class="sp-hd"><b>' + (what === 'planner' ? 'Plan your space' : what === 'cabin' ? 'Design your cabin' : what === 'pergola' ? 'Design your pergola' : 'See it in your space') + '</b><button type="button" data-sp="x" aria-label="Close">✕</button></div><div class="sp-bd">';
       if (st.step === 'w') h += twPaint();
+      else if (st.step === 'src') h += srcPaint();
       else if (st.step === 'load') h += '<p class="sp-sub">Loading your plans…</p>';
       else if (st.step === 'plans') h += '<h2>Which space is ' + esc(W) + ' for?</h2><p class="sp-sub">Pick one of your plans — ' + (what === 'planner' ? 'it opens as you left it' : 'it goes on that terrace / lawn, with the things around it') + '. Or start a new one, for another home or client.</p><div class="sp-list">' +
         list.map(function (p, i) { return '<div class="sp-row"><button type="button" data-sp="p:' + i + '"><i>' + (p.kind === 'lawn' ? '🌳' : '🏙') + '</i><span><b>' + esc(p.name) + '</b><small>' + esc([p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace', p.size, p.n ? p.n + ' thing' + (p.n > 1 ? 's' : '') : '', p.local ? 'open on this device' : p.at ? 'saved ' + new Date(p.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')) + '</small></span></button>' + (p.local ? '' : '<div class="sp-acts"><button type="button" data-sp="pdup:' + i + '">⧉ Duplicate</button><button type="button" data-sp="pdel:' + i + '">🗑 Delete</button></div>') + '</div>'; }).join('') +   // 242: duplicate / delete a saved plan (own plans only — the server checks)
         '<button type="button" data-sp="new" class="sp-new"><i>＋</i><span><b>A new space</b><small>Another home, a client’s site… — your plans stay saved</small></span></button></div>';
       else h += (list.length ? '<button type="button" class="sp-back" data-sp="back">← My plans</button>' : '') + '<h2>Where will ' + esc(W) + ' go?</h2><p class="sp-sub">We set up the space first' + (what === 'planner' ? '' : ', then you design ' + esc(W) + ' on it in 3D') + '.</p><div class="sp-kinds">' +
         '<button type="button" data-sp="k:ground"><i>🌳</i><b>Lawn / garden</b><small>Ground level — a lawn, garden, farmhouse or courtyard</small></button>' +
-        '<button type="button" data-sp="k:terrace"><i>🏙</i><b>Terrace / rooftop</b><small>Set its size, parapet, mumty, tanks and walls next</small></button></div>';
+        '<button type="button" data-sp="tsrc"><i>🏙</i><b>Terrace / rooftop</b><small>Set its size, parapet, mumty, tanks and walls next</small></button></div>';
       var bd0 = d.querySelector('.sp-bd'), sc = bd0 && st._pq === st.step + ':' + st.q ? bd0.scrollTop : 0; st._pq = st.step + ':' + st.q;
       d.innerHTML = h + '</div>'; if (sc) { var bd1 = d.querySelector('.sp-bd'); if (bd1) bd1.scrollTop = sc; }
     };
@@ -3041,13 +3042,14 @@
       else if (q === 'plan') { if (!st.site && !TMM && TMP) { TMP.then(function () { if (TWQ[st.q] === 'plan') paint(); }); return h + '<p class="sp-sub">Loading…</p>'; }
         if (!st.site) { twLearn(); st.site = twSite(); }
         var t = st.site, sb = t.blocks[st.sel], IC = { mumty: '🪜 Stairs', lift: '🛗 Lift', room: '🚪 Room', shaft: '⬛ Shaft', ac: '❄️ AC' };
-        h += '<h2>Your roof</h2><p class="sp-sub">Drag to move · tap to resize · ✂ corner cut · 🧱 higher wall next door</p><div class="tw-chips tw-sm2" style="margin:-6px 0 4px">' + chip('pmeas', !!st.pmeas, '📏 ' + (st.pmeas ? 'Hide' : 'Show') + ' measurements') + '</div>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
+        h += '<h2>Your roof</h2>' + (st.fromPdf ? '<div class="tw-pdf"><b>📄 Drawn from your layout</b> — check it against your drawing' + (st.bg ? ' (shown behind)' : '') + '. <b>Built anything after this drawing?</b> Add it with the + buttons below.' + (st.fromPdf.team || st.fromPdf.left == null ? '' : '<small>' + st.fromPdf.left + ' of 2 layout uploads left on this account</small>') + '</div>' : '') +
+          '<p class="sp-sub">Drag to move · tap to resize · ✂ corner cut · 🧱 higher wall next door</p><div class="tw-chips tw-sm2" style="margin:-6px 0 4px">' + chip('pmeas', !!st.pmeas, '📏 ' + (st.pmeas ? 'Hide' : 'Show') + ' measurements') + (st.bg ? chip('pbg', !!st.bgOn, '👁 ' + (st.bgOn ? 'Hide' : 'Show') + ' my drawing') : '') + '</div>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
           '<div class="tw-plw' + (st.pmeas ? ' tw-meas' : '') + '" style="aspect-ratio:' + t.pw + '/' + t.pd + ';height:min(50vh,' + Math.round(330 * t.pd / t.pw) + 'px)">' + TS_CUTS.map(function (ck) { var on = t.cuts && t.cuts[ck[0]]; return '<button type="button" class="tw-ck tw-ck-' + ck[0] + (on ? ' cut' : '') + (st.csel === ck[0] ? ' on' : '') + '" data-sp="w:csel:' + ck[0] + '" aria-label="' + ck[1] + ' corner">✂</button>'; }).join('') +
           ['back', 'left', 'right'].filter(function (sd) { return twRoads().indexOf(sd) < 0; }).map(function (sd) { var on = !!(t.high || {})[sd];   // 230: tap a wall → the neighbour's wall there is higher
             var hl = ((t.hw || {})[sd] || {}).l, full = sd === 'back' ? t.pw : t.pd, pc = Math.min(100, (hl || full) / full * 100);
             return '<i class="tw-hw tw-hw-' + sd + (on ? ' on' : '') + '" style="' + (sd === 'back' ? 'right:auto;width:' + pc + '%' : 'bottom:auto;height:' + pc + '%') + '"></i><button type="button" class="tw-hb tw-hb-' + sd + (on ? ' on' : '') + '" data-sp="w:phigh:' + sd + '" aria-pressed="' + on + '">🧱' + (on ? ' High' : '') + '</button>'; }).join('') +
           (st.pmeas && p2Get(function () { paint(); }) ? P2M.dimsSvg(t, []) : '') +
-          '<div class="tw-pl" style="clip-path:' + twClip(t) + '">' + t.blocks.map(function (b, i) {
+          (st.bg && st.bgOn ? '<img class="tw-bg" src="' + st.bg + '" alt="">' : '') + '<div class="tw-pl" style="clip-path:' + twClip(t) + '">' + t.blocks.map(function (b, i) {
             return '<div data-blk="' + i + '" class="tw-b tw-' + b.type + (i === st.sel ? ' on' : '') + '" style="left:' + (b.x / t.pw * 100) + '%;top:' + (b.z / t.pd * 100) + '%;width:' + (b.w / t.pw * 100) + '%;height:' + (b.d / t.pd * 100) + '%"><span>' + (IC[b.type] || b.type) + '</span>' + (b.type === 'mumty' || b.type === 'room' || b.type === 'lift' ? '<i class="tw-door tw-door-' + twDoor(t, b) + '"></i>' : '') + '</div>'; }).join('') +
           '</div><i class="tw-rd">▼ road</i>' + (a.road === 'cl' ? '<i class="tw-rd tw-rl">road ◀</i>' : a.road === 'cr' ? '<i class="tw-rd tw-rr">▶ road</i>' : a.road === 'both' ? '<i class="tw-rd tw-rb">▲ road</i>' : '') + '</div>';
         if (st.hsel && (t.high || {})[st.hsel]) { var ho = (t.hw || {})[st.hsel] || {}, hf = st.hsel === 'back' ? t.pw : t.pd;
@@ -3083,6 +3085,7 @@
       if (p[0] === 'pcz' && t && st.csel && t.cuts && t.cuts[st.csel]) { var c2 = t.cuts[st.csel], lim = p[1] === 'a' ? t.pw - 4 : t.pd - 4; c2[p[1]] = Math.max(2, Math.min(lim, c2[p[1]] + (p[2] === '+' ? 1 : -1))); twCutFix(); return paint(); }
       if (p[0] === 'meas') { st.meas = !st.meas; paint(); return tw3d(); }
       if (p[0] === 'pmeas') { st.pmeas = !st.pmeas; return paint(); }
+      if (p[0] === 'pbg') { st.bgOn = !st.bgOn; return paint(); }
       if (p[0] === 'ptank' && t) { t.tanks = a.tanks = !t.tanks; return paint(); }
       if (p[0] === 'ppar' && t) { a.par = p[1]; t.par = p[1] === '4' ? 4 : 3; t.rail = p[1] === 'rail'; return paint(); }
       if (p[0] === 'brot' && t && t.blocks[bi]) { twTry(bi, function (q) { var w0 = q.w; q.w = q.d; q.d = w0; q.side = 'free'; }); return paint(); }
@@ -3147,6 +3150,10 @@
       if (k === 'x') return close();
       if (k === 'new') { st.step = 'kind'; return paint(); }
       if (k === 'back') { st.step = 'plans'; return paint(); }
+      if (k === 'tsrc') { st.step = 'src'; st.lmsg = ''; lqLoad(); return paint(); }
+      if (k === 'src:own') return d._go('k:terrace');
+      if (k === 'src:pdf') return lPick();
+      if (k === 'src:back') { st.step = 'kind'; return paint(); }
       if (k.indexOf('p:') === 0) { var p = list[+k.slice(2)]; close(); return cb({ plan: p, had: true }); }
       if (k.indexOf('pdup:') === 0) { var pi = +k.slice(5), pp = list[pi]; if (!pp || pp.local) return; authRpc('plan_duplicate', { p_id: pp.id }).then(function (r) { if (r && r.id) { list.splice(pi + 1, 0, { id: r.id, name: r.name, size: pp.size, kind: pp.kind, n: pp.n, at: r.updated_at }); paint(); } else alert('Could not copy the plan — 50 plans is the limit'); }, function (e) { alert((e && e.message) || 'Could not copy the plan'); }); return; }
       if (k.indexOf('pdel:') === 0) { var di = +k.slice(5), dp = list[di]; if (!dp || dp.local || !confirm('Delete "' + dp.name + '"? This cannot be undone.')) return; authRpc('plan_delete', { p_id: dp.id }).then(function (ok) { if (!ok) return alert('Could not delete the plan'); list.splice(di, 1); st.step = list.length ? 'plans' : 'kind'; paint(); }, function (e) { alert((e && e.message) || 'Could not delete the plan'); }); return; }
@@ -3155,6 +3162,56 @@
       if (k.indexOf('w:') === 0) return twGo(k.slice(2));
     };
     d.classList.add('open'); document.body.classList.add('sp-on'); paint();
+    var openRoof = function (site) { d._go('k:terrace'); var t0 = JSON.parse(JSON.stringify(site)); (t0.blocks || []).forEach(function (b) { b.lock = false; });
+      Object.assign(st.a, { pw: +t0.pw, pd: +t0.pd, plot: t0.plot || '', road: t0.road_back ? 'both' : t0.corner === 'left' ? 'cl' : t0.corner === 'right' ? 'cr' : 'front', tanks: t0.tanks !== false, par: t0.rail ? 'rail' : String(t0.par || 3), high: t0.high || {}, cuts: t0.cuts || {} });
+      st.a._t = { mpos: 1, lift: 1, room: 1, shaft: 1, lpos: 1, lsz: 1, rn: 1, sn: 1 }; st.a._m0 = 1; st.site = t0; st.q = 1; return paint(); };
+    // ---------------------------------------------------------------- 243: the customer's own CAD layout (PDF) → the as-built roof
+    var lqLoad = function () { st.lq = null; if (window.ASSIST && window.ASSIST.token) { st.lq = { team: true }; return; } if (!window.acToken || !localStorage.getItem('outrr_session')) { st.lq = { signed_in: false, left: 2 }; return; }
+      authRpc('my_layout_quota').then(function (r) { st.lq = r || { left: 2 }; if (st.step === 'src') paint(); }, function () {}); };
+    var srcPaint = function () { var q = st.lq || {}, none = !q.team && q.signed_in !== false && q.left === 0;
+      var note = q.team ? 'Our team — no upload limit' : q.signed_in === false ? 'Sign in first · 2 uploads per account' : q.left == null ? '' : q.left + ' of 2 uploads left on your account';
+      return '<button type="button" class="sp-back" data-sp="src:back">← Back</button><h2>Your terrace</h2><p class="sp-sub">Have the architect\'s CAD layout of this terrace? Upload the PDF — we draw what is already built on it, you check it.</p>' +
+        (st.lbusy ? '<div class="sp-busy"><i></i><b>Reading your drawing…</b><small>This takes 20 – 40 seconds. Please keep this screen open.</small></div>' :
+        '<div class="sp-list"><button type="button" data-sp="src:pdf"' + (none ? ' disabled' : '') + '><i>📄</i><span><b>Upload my CAD layout (PDF)</b><small>' + esc(none ? 'Both uploads on this account are used — set it up yourself, or ask our team' : 'Exported from AutoCAD / the architect · up to 15 MB' + (note ? ' · ' + note : '')) + '</small></span></button>' +
+        '<button type="button" data-sp="src:own"><i>✏️</i><span><b>Set it up myself</b><small>Size, stairs room, rooms — about a minute</small></span></button></div>') +
+        (st.lmsg ? '<p class="tw-msg" style="margin-top:12px">' + esc(st.lmsg) + '</p>' : ''); };
+    var lPick = function () { var q = st.lq || {};
+      if (!q.team && (!window.acToken || !localStorage.getItem('outrr_session'))) { if (window.acRequire) return window.acRequire(function () { lqLoad(); setTimeout(lPick, 400); }, 'Sign in to upload your terrace layout'); return; }
+      if (!q.team && q.left === 0) { st.lmsg = 'Both uploads on this account are used.'; return paint(); }
+      var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'application/pdf,.pdf';
+      inp.onchange = function () { var f = inp.files && inp.files[0]; if (f) lUpload(f); }; inp.click(); };
+    var lUpload = async function (f) { st.lmsg = '';
+      if (!/\.pdf$/i.test(f.name) && f.type !== 'application/pdf') { st.lmsg = 'Please upload the layout as a PDF exported from CAD.'; return paint(); }
+      if (f.size > 15 * 1024 * 1024) { st.lmsg = 'The PDF must be under 15 MB.'; return paint(); }
+      st.lbusy = true; paint();
+      try { var buf = await f.arrayBuffer(), u8 = new Uint8Array(buf), bin = ''; for (var i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+        var A = window.OUTRR_SUPA || {}, tk = (window.acToken && await window.acToken()) || A.anon;
+        var r = await fetch(A.url + '/functions/v1/layouts', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read', name: f.name, pdf: btoa(bin), token: window.ASSIST && window.ASSIST.token || null }) });
+        var j = await r.json().catch(function () { return {}; }); st.lbusy = false;
+        if (j.left != null) st.lq = Object.assign({}, st.lq, { left: j.left, signed_in: true });
+        if (!r.ok || !j.layout) { st.lmsg = (j.error || j.reason || 'We could not read this drawing.') + (j.left != null ? ' · ' + j.left + ' of 2 uploads left' : ''); return paint(); }
+        try { if (window.otrack) window.otrack('plan_start', { ref: 'pdf' }); } catch (e) {}
+        var site = layoutSite(j.layout, j.id); st.fromPdf = { left: j.left, team: !!j.team, proposed: j.layout.proposed || [] }; st.bg = null; lBg(u8, j.layout); openRoof(site);
+      } catch (e) { st.lbusy = false; st.lmsg = 'Upload failed — check the connection and try again.'; paint(); } };
+    var layoutSite = function (L, id) {   // the drawing (x → right, y ↓, feet from the plot's top-left, road on some side) → our terrace (road in front, x left → right seen from the road, z back → front)
+      var P = 0.75, R = L.plot.road || 'bottom', W = +L.plot.w_ft, D = +L.plot.d_ft, r90 = R === 'left' || R === 'right', pw = r90 ? D : W, pd = r90 ? W : D;
+      var tr = function (x, y, w, d) { return R === 'top' ? [W - x - w, D - y - d, w, d] : R === 'left' ? [y, W - x - w, d, w] : R === 'right' ? [D - y - d, x, d, w] : [x, y, w, d]; };
+      var dir = function (sd) { var v = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[sd]; if (!v) return ''; var n = R === 'top' ? [-v[0], -v[1]] : R === 'left' ? [v[1], -v[0]] : R === 'right' ? [-v[1], v[0]] : v; return n[1] < 0 ? 'back' : n[1] > 0 ? 'front' : n[0] < 0 ? 'left' : 'right'; };
+      var H = { mumty: 9, lift: 11, room: 9, shaft: 3, ac: 2.5 }, TY = { stairs: 'mumty', lift: 'lift', room: 'room', toilet: 'room', shaft: 'shaft', tank: 'room', ac: 'ac' }, r2 = function (v) { return Math.round(v * 2) / 2; };
+      var B = (L.blocks || []).map(function (b) { var q = tr(+b.x, +b.y, +b.w, +b.d), ty = TY[b.type] || 'room', w = Math.max(1, Math.min(pw - 2 * P, r2(q[2]))), dd = Math.max(1, Math.min(pd - 2 * P, r2(q[3])));
+        return { id: 'b' + Math.random().toString(36).slice(2, 8), type: ty, w: w, d: dd, h: +b.h || (b.type === 'tank' ? 6 : H[ty]), x: Math.max(P, Math.min(pw - P - w, r2(q[0]))), z: Math.max(P, Math.min(pd - P - dd, r2(q[1]))), side: 'free', door: dir(b.door) || '' }; });
+      B.forEach(function (q) { var Lf = q.x <= P + 0.3, Rt = q.x + q.w >= pw - P - 0.3, Bk = q.z <= P + 0.3, F = q.z + q.d >= pd - P - 0.3; if (q.type === 'ac') { q.side = Lf ? 'left' : Rt ? 'right' : Bk ? 'back' : 'front'; return; } q.side = (Lf || Rt) && !Bk && !F ? (Lf ? 'left' : 'right') : Bk && !Lf && !Rt ? 'back' : F && !Lf && !Rt ? 'front' : 'free'; });
+      var cuts = {}; (L.cuts || []).forEach(function (c) { var pt = { tl: [0, 0], tr: [W, 0], bl: [0, D], br: [W, D] }[c.corner]; if (!pt) return; var q = tr(pt[0], pt[1], 0, 0), k = (q[1] < pd / 2 ? 'b' : 'f') + (q[0] < pw / 2 ? 'l' : 'r'); cuts[k] = { type: c.type === 'slant' ? 'slant' : 'notch', a: r2(r90 ? +c.b : +c.a), b: r2(r90 ? +c.a : +c.b) }; });
+      var r2nd = dir(L.plot.road2), N = dir({ up: 'top', down: 'bottom', left: 'left', right: 'right' }[L.plot.north]);
+      return { kind: 'terrace', plot: '', pw: r2(pw), pd: r2(pd), par: +L.plot.parapet_ft >= 4 ? 4 : 3, rail: false, corner: r2nd === 'left' ? 'left' : r2nd === 'right' ? 'right' : '', road_front: true, road_back: r2nd === 'back', high: {}, tanks: !!L.tanks, blocks: B, cuts: cuts, start: 'pdf', layout: { id: id, proposed: L.proposed || [], north: N || '' } }; };
+    var lBg = function (u8, L) {   // the drawing behind the plan (pdf.js in the browser): the roof cut out and turned like the plan
+      if (!L.plot.box) return; new Function('u', 'return import(u)')('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs').then(async function (pj) {
+        pj.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+        var doc = await pj.getDocument({ data: u8.slice() }).promise, pg = await doc.getPage(Math.min(doc.numPages, L.page || 1)), v0 = pg.getViewport({ scale: 1 }), sc = Math.min(4, 2600 / Math.max(v0.width, v0.height)), vp = pg.getViewport({ scale: sc });
+        var c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height); var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height); await pg.render({ canvasContext: cx, viewport: vp }).promise;
+        var b = L.plot.box, sx = b[0] * c.width, sy = b[1] * c.height, sw = (b[2] - b[0]) * c.width, sh = (b[3] - b[1]) * c.height, R = L.plot.road || 'bottom', r90 = R === 'left' || R === 'right';
+        var o = document.createElement('canvas'); o.width = Math.round(r90 ? sh : sw); o.height = Math.round(r90 ? sw : sh); var ox = o.getContext('2d'); ox.translate(o.width / 2, o.height / 2); ox.rotate(R === 'top' ? Math.PI : R === 'left' ? -Math.PI / 2 : R === 'right' ? Math.PI / 2 : 0); ox.drawImage(c, sx, sy, sw, sh, -sw / 2, -sh / 2, sw, sh);
+        st.bg = o.toDataURL('image/jpeg', 0.72); st.bgOn = true; if (st.step === 'w' && TWQ[st.q] === 'plan') paint(); }).catch(function () {}); };
     if (opts && opts.site && opts.site.kind === 'terrace') {   // 234: back to the roof plan of a terrace already set up (planner "Change the roof")
       d._go('k:terrace'); var t0 = JSON.parse(JSON.stringify(opts.site)); (t0.blocks || []).forEach(function (b) { b.lock = false; });
       Object.assign(st.a, { pw: +t0.pw, pd: +t0.pd, plot: t0.plot || '', road: t0.road_back ? 'both' : t0.corner === 'left' ? 'cl' : t0.corner === 'right' ? 'cr' : 'front', tanks: t0.tanks !== false, par: t0.rail ? 'rail' : String(t0.par || 3), high: t0.high || {}, cuts: t0.cuts || {} });
@@ -3212,6 +3269,8 @@
     '.sp-hd{display:flex;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #E7DFD3}.sp-hd b{flex:1;font-size:15px}.sp-hd button{border:1px solid #ddd;background:#fff;border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:15px}' +
     '.sp-bd{flex:1;overflow:auto;padding:40px 18px;max-width:720px;width:100%;margin:0 auto;box-sizing:border-box}.sp-bd h2{font-size:26px;margin:0 0 6px}.sp-sub{font-size:14px;color:#6A6258;margin:0 0 20px}' +
     '.sp-list{display:flex;flex-direction:column;gap:10px}.sp-list button,.sp-kinds button{display:flex;gap:14px;align-items:center;text-align:left;border:1.5px solid #E2D6C4;background:#fff;border-radius:16px;padding:14px 16px;font:inherit;color:#2E2E2E;cursor:pointer}.sp-list button:hover,.sp-kinds button:hover{border-color:#C26445;background:#FFF8F2}' +
+    '.tw-pdf{background:#FBF3EC;border:1px solid #EBCDB9;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;margin:0 0 10px}.tw-pdf small{display:block;color:#7A7268;margin-top:4px}.tw-plw{position:relative}.tw-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:.45;pointer-events:none;z-index:3;mix-blend-mode:multiply;border-radius:6px}' +
+    '.sp-busy{display:flex;flex-direction:column;align-items:center;gap:6px;padding:30px 10px;text-align:center}.sp-busy i{width:34px;height:34px;border-radius:50%;border:3px solid #E2D6C4;border-top-color:#C26445;animation:spin 0.9s linear infinite}.sp-busy small{color:#7A7268}@keyframes spin{to{transform:rotate(360deg)}}.sp-list button[disabled]{opacity:.55;cursor:not-allowed}' +
     '.sp-row{display:flex;flex-direction:column;gap:4px}.sp-row>button{width:100%}.sp-acts{display:flex;gap:8px;justify-content:flex-end;padding:0 6px}.sp-list .sp-acts button{border:0;background:none;padding:4px 6px;font-size:12.5px;color:#7A7268;border-radius:8px}.sp-list .sp-acts button:hover{color:#C26445}' +
     '.sp-list i,.sp-kinds i{font-style:normal;font-size:26px;flex:none}.sp-list b{display:block;font-size:15px}.sp-list small,.sp-kinds small{display:block;font-size:12.5px;color:#7A7268;margin-top:2px}.sp-new{border-style:dashed!important}' +
     '.sp-kinds{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sp-kinds button{flex-direction:column;align-items:flex-start;padding:22px 18px;min-height:170px}.sp-kinds i{font-size:40px}.sp-kinds b{font-size:18px;margin-top:6px}' +
