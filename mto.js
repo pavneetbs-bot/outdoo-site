@@ -3121,6 +3121,8 @@
       var ins = c.t !== 'slant' ? [at(f, 0), at(f, dp), at(f + w, dp), at(f + w, 0)] : endC ? [at(f, 0), at(L, dp)] : startC ? [at(0, dp), at(w, 0)] : [at(f, 0), at(f + w / 2, dp), at(f + w, 0)];
       var out = [], bi = (e + 1) % P.length; P.forEach(function (q, i) { if (i === e) { if (!startC) out.push(q); ins.forEach(function (z) { out.push(z); }); } else if (!(i === bi && endC)) out.push(q); });
       out = olNorm(out); return shOk(out) && olArea(out) < olArea(P0) - 0.1 ? out : null; };
+    var shGeo = function (P, e) { var a = P[e], b = P[(e + 1) % P.length]; if (!a || !b) return null; var L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.5) return null; var ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, nx = -uz, nz = ux;
+      if (!olIn(P, (a[0] + b[0]) / 2 + nx * 0.3, (a[1] + b[1]) / 2 + nz * 0.3)) { nx = -nx; nz = -nz; } return { a: a, b: b, L: L, ux: ux, uz: uz, nx: nx, nz: nz, at: function (u, v) { return [a[0] + ux * u + nx * v, a[1] + uz * u + nz * v]; } }; };
     var shPush = function () { var t = st.site; (st.shH = st.shH || []).push(JSON.stringify({ o: t.outline, b: t.blocks })); if (st.shH.length > 30) st.shH.shift(); };
     var shFit = function (t) {   // things now outside the shape (or under the penthouse) move to the nearest free spot; nothing free → taken off
       var gone = 0, ord = t.blocks.map(function (b, i) { return i; }).sort(function (i, j) { return (t.blocks[i].pent ? 1 : 0) - (t.blocks[j].pent ? 1 : 0); });
@@ -3150,9 +3152,18 @@
       P.forEach(function (a, i) { var b = P[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.2) return; var mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, nx = (b[1] - a[1]) / L, nz = -(b[0] - a[0]) / L;
         if (olIn(P, mx + nx * 0.3, mz + nz * 0.3)) { nx = -nx; nz = -nz; } var on = st.se === i && st.shm !== 'pts';
         if (on) h += '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="#C26445" stroke-width="5" vector-effect="non-scaling-stroke"/><circle cx="' + a[0] + '" cy="' + a[1] + '" r="' + (k * 0.35) + '" fill="#C26445"/>';
-        if (L >= 2.5) h += '<text x="' + (mx + nx * k * 1.05) + '" y="' + (mz + nz * k * 1.05 + k * 0.32) + '" font-size="' + (k * 0.85) + '" text-anchor="middle" fill="' + (on ? '#C26445' : '#5B544B') + '" font-weight="' + (on ? 800 : 600) + '">' + f1(L) + '′</text>';
+        if (L >= 2.5 && !(on && st.sc)) h += '<text x="' + (mx + nx * k * 1.05) + '" y="' + (mz + nz * k * 1.05 + k * 0.32) + '" font-size="' + (k * 0.85) + '" text-anchor="middle" fill="' + (on ? '#C26445' : '#5B544B') + '" font-weight="' + (on ? 800 : 600) + '">' + f1(L) + '′</text>';
         if (st.shm !== 'pts') h += '<line data-sp="w:sedge:' + i + '" x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="rgba(0,0,0,0)" stroke-width="22" vector-effect="non-scaling-stroke" style="cursor:pointer"/>';
         else if (L > 3) h += '<g data-sp="w:sadd:' + i + '" style="cursor:pointer"><circle cx="' + mx + '" cy="' + mz + '" r="' + (k * 0.5) + '" fill="#fff" stroke="#55634A" stroke-width="1.5" vector-effect="non-scaling-stroke"/><text x="' + mx + '" y="' + (mz + k * 0.3) + '" font-size="' + (k * 0.9) + '" text-anchor="middle" fill="#55634A" font-weight="700">+</text></g>'; });
+      var G = st.shm !== 'pts' && st.se != null && st.sc ? shGeo(P, st.se) : null;
+      if (G) { var c = st.sc, f = Math.max(0, Math.min(G.L - 0.5, +c.f || 0)), w = Math.max(0.5, Math.min(G.L - f, +c.w || 1)), dp = Math.max(0.5, +c.d || 1), A = G.at, ln = function (p, q, col) { return '<line x1="' + p[0] + '" y1="' + p[1] + '" x2="' + q[0] + '" y2="' + q[1] + '" stroke="' + (col || '#2E2E2E') + '" stroke-width="1" vector-effect="non-scaling-stroke"/>'; };   // 250 (owner): drag the cut along the wall / its sides / its depth, with arrow dimensions while you do
+        var dim = function (u0, u1, off, lab) { if (u1 - u0 < 0.2) return ''; var p = A(u0, -off), q = A(u1, -off), m = A((u0 + u1) / 2, -off - k * 0.55), tk = function (u) { return ln(A(u, -off - k * 0.25), A(u, -off + k * 0.25)); }; return ln(p, q) + tk(u0) + tk(u1) + '<text x="' + m[0] + '" y="' + (m[1] + k * 0.22) + '" font-size="' + (k * 0.62) + '" text-anchor="middle" fill="#2E2E2E" font-weight="700">' + lab + '</text>'; };
+        var off = k * 1.9; h += dim(0, f, off, f1(f) + '′') + dim(f, f + w, off, f1(w) + '′') + dim(f + w, G.L, off, f1(G.L - f - w) + '′');
+        var dm0 = A(f + w + Math.min(1.2, (G.L - f - w) / 2 + 0.3), 0), dm1 = A(f + w + Math.min(1.2, (G.L - f - w) / 2 + 0.3), dp), dmM = A(f + w + Math.min(1.2, (G.L - f - w) / 2 + 0.3) + k * 0.7, dp / 2);
+        h += ln(dm0, dm1, '#C26445') + '<text x="' + dmM[0] + '" y="' + (dmM[1] + k * 0.22) + '" font-size="' + (k * 0.62) + '" text-anchor="middle" fill="#C26445" font-weight="700">' + f1(dp) + '′</text>';
+        var poly = c.t === 'slant' ? [A(f, 0), A(f + w / 2, dp), A(f + w, 0)] : [A(f, 0), A(f, dp), A(f + w, dp), A(f + w, 0)];
+        h += '<polygon data-ch="move" points="' + pts(poly) + '" fill="rgba(194,100,69,.08)" stroke="#C26445" stroke-width="1.5" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" style="cursor:move"/>';
+        [['l', A(f, dp / 2)], ['r', A(f + w, dp / 2)], ['d', A(f + w / 2, dp)]].forEach(function (hd) { h += '<circle data-ch="' + hd[0] + '" cx="' + hd[1][0] + '" cy="' + hd[1][1] + '" r="' + (k * 0.55) + '" fill="#fff" stroke="#C26445" stroke-width="2.5" vector-effect="non-scaling-stroke" style="cursor:' + (hd[0] === 'd' ? 'ns-resize' : 'ew-resize') + '"/>'; }); }
       if (st.shm === 'pts') P.forEach(function (q, i) { var on = st.sv === i; h += '<circle data-vtx="' + i + '" cx="' + q[0] + '" cy="' + q[1] + '" r="' + (k * (on ? 0.62 : 0.48)) + '" fill="' + (on ? '#C26445' : '#fff') + '" stroke="#C26445" stroke-width="2.5" vector-effect="non-scaling-stroke" style="cursor:grab"/>'; });
       return h + '</svg>'; };
     var shPanel = function (t) {
@@ -3233,10 +3244,21 @@
       paint(); if (TWQ[st.q] === 'view') tw3d();
     };
     if (!d.dataset.twp) { d.dataset.twp = 1;   // 228: drag a block on the plan; a tap picks it
-      d.addEventListener('pointerdown', function (e) { var vx = e.target.closest && e.target.closest('[data-vtx]'); if (vx && d._vd) return d._vd.down(e, vx); var el = e.target.closest && e.target.closest('[data-blk]'); if (!el || !d._pd) return; d._pd.down(e, el); });
-      d.addEventListener('pointermove', function (e) { if (d._vd && d._vd.D) return d._vd.move(e); if (d._pd) d._pd.move(e); });
-      d.addEventListener('pointerup', function (e) { if (d._vd && d._vd.D) return d._vd.up(e); if (d._pd) d._pd.up(e); }); d.addEventListener('pointercancel', function (e) { if (d._vd && d._vd.D) return d._vd.up(e); if (d._pd) d._pd.up(e); });
+      d.addEventListener('pointerdown', function (e) { var vx = e.target.closest && e.target.closest('[data-vtx]'); if (vx && d._vd) return d._vd.down(e, vx); var chh = e.target.closest && e.target.closest('[data-ch]'); if (chh && d._cd) return d._cd.down(e, chh); var el = e.target.closest && e.target.closest('[data-blk]'); if (!el || !d._pd) return; d._pd.down(e, el); });
+      d.addEventListener('pointermove', function (e) { if (d._cd && d._cd.D) return d._cd.move(e); if (d._vd && d._vd.D) return d._vd.move(e); if (d._pd) d._pd.move(e); });
+      d.addEventListener('pointerup', function (e) { if (d._cd && d._cd.D) return d._cd.up(e); if (d._vd && d._vd.D) return d._vd.up(e); if (d._pd) d._pd.up(e); }); d.addEventListener('pointercancel', function (e) { if (d._vd && d._vd.D) return d._vd.up(e); if (d._pd) d._pd.up(e); });
       d.addEventListener('change', function (e) { var k = e.target && e.target.dataset && e.target.dataset.shc; if (!k || !st.sc) return; var v = Math.round(+e.target.value * 2) / 2; if (!(v >= 0 && v <= 400)) return; st.sc[k] = k === 'f' ? v : Math.max(0.5, v); paint(); }); }
+    d._cd = { down: function (e, el) { var t = st.site; if (!t || !t.outline || !st.sc || st.se == null) return; var G = shGeo(t.outline, st.se); if (!G) return; e.preventDefault(); var svg = el.ownerSVGElement;   // 250: the cut box — move along the wall, stretch either side, pull deeper
+        var p = this.ft(e, svg); this.D = { k: el.getAttribute('data-ch'), G: G, svg: svg, u0: (p[0] - G.a[0]) * G.ux + (p[1] - G.a[1]) * G.uz, c0: Object.assign({}, st.sc) }; },
+      ft: function (e, svg) { var t = st.site, r = svg.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * t.pw, (e.clientY - r.top) / r.height * t.pd]; },
+      move: function (e) { var D = this.D; if (!D) return; e.preventDefault(); var p = this.ft(e, D.svg), G = D.G, u = (p[0] - G.a[0]) * G.ux + (p[1] - G.a[1]) * G.uz, v = (p[0] - G.a[0]) * G.nx + (p[1] - G.a[1]) * G.nz, c = st.sc, c0 = D.c0, R = function (x) { return Math.round(x * 2) / 2; };
+        if (D.k === 'move') c.f = R(Math.max(0, Math.min(G.L - c0.w, c0.f + (u - D.u0))));
+        else if (D.k === 'l') { var end = c0.f + c0.w, nf = R(Math.max(0, Math.min(end - 0.5, u))); c.f = nf; c.w = R(end - nf); }
+        else if (D.k === 'r') c.w = R(Math.max(0.5, Math.min(G.L - c0.f, u - c0.f)));
+        else c.d = R(Math.max(0.5, Math.min(80, v)));
+        var sv = d.querySelector('.tw-shs'); if (sv) { sv.outerHTML = shSvg(st.site); D.svg = d.querySelector('.tw-shs'); }
+        ['f', 'w', 'd'].forEach(function (kk) { var inp = d.querySelector('[data-shc="' + kk + '"]'); if (inp) inp.value = c[kk]; }); },
+      up: function () { if (!this.D) return; this.D = null; paint(); } };
     d._vd = { down: function (e, el) { var t = st.site; if (!t || !t.outline) return; e.preventDefault(); shPush(); var i = +el.getAttribute('data-vtx'); this.D = { i: i, svg: el.ownerSVGElement, q0: t.outline[i].slice(), mv: false, x0: e.clientX, y0: e.clientY }; st.sv = i; },
       move: function (e) { var D = this.D, t = st.site; if (!D || !t) return; if (!D.mv && Math.hypot(e.clientX - D.x0, e.clientY - D.y0) < 4) return; D.mv = true; e.preventDefault(); var r = D.svg.getBoundingClientRect();
         t.outline[D.i] = [Math.round(Math.max(0, Math.min(t.pw, (e.clientX - r.left) / r.width * t.pw)) * 2) / 2, Math.round(Math.max(0, Math.min(t.pd, (e.clientY - r.top) / r.height * t.pd)) * 2) / 2];
