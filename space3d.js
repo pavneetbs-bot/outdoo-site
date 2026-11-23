@@ -7,7 +7,7 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel } from './cabin3d.js?v=32';
 import { pergolaModel } from './pergola3d.js?v=22';
-import { outline } from './plan2d.js?v=6';
+import { outline } from './plan2d.js?v=7';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -286,6 +286,8 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const tw = Math.max(2.5, w - 2.6), td = Math.max(2.5, d - 2.6); box(g, tw, 0.15, td, 0, 2.5, 0, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.2, 2.45, 0.2, a * (tw / 2 - 0.3), 1.22, b * (td / 2 - 0.3), K.frame));
     const ch = (x, z, ry) => { const c = new THREE.Group(); c.position.set(x, 0, z); c.rotation.y = ry; g.add(c); box(c, 1.5, 0.15, 1.5, 0, 1.5, 0, K.cush); box(c, 1.5, 1.6, 0.15, 0, 2.3, -0.7, K.frame); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(c, 0.12, 1.5, 0.12, a * 0.65, 0.75, b * 0.65, K.frame)); };
     const nx = Math.max(1, Math.floor(tw / 2.2)); for (let i = 0; i < nx; i++) { const x = -tw / 2 + tw * (i + 0.5) / nx; ch(x, -td / 2 - 0.9, 0); ch(x, td / 2 + 0.9, Math.PI); }
+  } else if (cat === 'stool') {   // 245: a bar chair — round seat, a slim post, a foot ring
+    cyl(g, 0.6, 0.6, 0.15, 0, 2.55, 0, K.cush, 18); cyl(g, 0.07, 0.07, 2.45, 0, 1.25, 0, K.frame, 8); cyl(g, 0.5, 0.55, 0.06, 0, 0.03, 0, K.frame, 18); const r = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.035, 6, 20), K.frame); r.rotation.x = Math.PI / 2; r.position.y = 0.9; g.add(r);
   } else if (cat === 'chair') {
     box(g, w * 0.8, 0.3, d * 0.8, 0, 1.4, 0, K.cush); box(g, w * 0.8, 1.8, 0.3, 0, 2.4, -d * 0.4 + 0.15, K.frame);
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 1.3, 0.15, a * w * 0.35, 0.65, b * d * 0.35, K.frame)); box(g, 0.15, 0.6, d * 0.8, -w * 0.4, 1.9, 0, K.frame); box(g, 0.15, 0.6, d * 0.8, w * 0.4, 1.9, 0, K.frame);
@@ -482,6 +484,8 @@ const TEX = {};
 function finTex(k) { if (TEX[k]) return TEX[k]; const cv = document.createElement('canvas'); cv.width = cv.height = 256; const x = cv.getContext('2d');
   const flat = { plain: ['#EFEBE4', '#CFC8BD'], grey: ['#B9B8B4', '#9E9C97'], stone: ['#D8C9A8', '#BBAA86'], terracotta: ['#C98B63', '#A86E4B'] }[k];
   if (flat) { x.fillStyle = flat[0]; x.fillRect(0, 0, 256, 256); if (k === 'stone') for (let i = 0; i < 90; i++) { x.fillStyle = 'rgba(120,100,70,.12)'; x.fillRect(Math.random() * 256, Math.random() * 256, 3 + Math.random() * 10, 2 + Math.random() * 4); } x.strokeStyle = flat[1]; x.lineWidth = 4; x.strokeRect(0, 0, 256, 256); }
+  else if (k === 'terrazzo') { x.fillStyle = '#EFE8DC'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 380; i++) { x.fillStyle = ['#C9B99E', '#9FA89A', '#D2B48F', '#B7AE9F', '#A9B3A4'][i % 5]; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 1.5 + Math.random() * 4, 1.2 + Math.random() * 3, Math.random() * 3, 0, 7); x.fill(); } x.strokeStyle = '#DED5C6'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); }
+  else if (k === 'checker') { x.fillStyle = '#E9E6E0'; x.fillRect(0, 0, 256, 256); x.fillStyle = '#8F8D88'; x.fillRect(0, 0, 128, 128); x.fillRect(128, 128, 128, 128); x.strokeStyle = '#C9C5BD'; x.lineWidth = 3; x.strokeRect(0, 0, 256, 256); x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke(); }
   else if (k === 'moroccan') { x.fillStyle = '#F3EEE6'; x.fillRect(0, 0, 256, 256); x.fillStyle = '#2F6F7E'; x.globalAlpha = 0.75; const c = 128, r = 90;
     x.beginPath(); x.moveTo(c, c - r); x.quadraticCurveTo(c + 60, c - 60, c + r, c); x.quadraticCurveTo(c + 60, c + 60, c, c + r); x.quadraticCurveTo(c - 60, c + 60, c - r, c); x.quadraticCurveTo(c - 60, c - 60, c, c - r); x.fill();
     x.globalAlpha = 1; x.fillStyle = '#F3EEE6'; x.beginPath(); x.arc(c, c, 26, 0, 7); x.fill(); x.strokeStyle = '#C9C1B4'; x.lineWidth = 3; x.strokeRect(0, 0, 256, 256); }
@@ -495,9 +499,14 @@ export function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r =>
   return out; }
 function floorFin(g, t, items) {
   const f = t.floor || {}, pw = +t.pw, pd = +t.pd, E = 0.75;
-  if (['plain', 'moroccan', 'stone', 'terracotta', 'grey'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
-    const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const per = f.tile === 'moroccan' ? 3 : 2; tx.repeat.set(1 / per, 1 / per);
+  if (['plain', 'moroccan', 'stone', 'terracotta', 'grey', 'terrazzo', 'checker'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
+    const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const per = f.tile === 'moroccan' ? 3 : f.tile === 'checker' ? 4 : 2; tx.repeat.set(1 / per, 1 / per);
     const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
+  if (f.border) { const bw = 1.25, bm = mat('fl_bord' + f.preset, f.preset === 'greek' ? 0x8FA38A : 0x4A4A48, { roughness: 0.8 }), O = outline(t);   // 245: the floor look's border band along the parapet
+    O.forEach((a, i) => { const b = O[(i + 1) % O.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.5) return; const ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L; let nx = -uz, nz = ux; const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+      let c = false; for (let p = 0, q = O.length - 1; p < O.length; q = p++) { const [xi, zi] = O[p], [xj, zj] = O[q]; if ((zi > mz + nz) !== (zj > mz + nz) && mx + nx < (xj - xi) * (mz + nz - zi) / (zj - zi) + xi) c = !c; } if (!c) { nx = -nx; nz = -nz; }
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(L, bw), bm); m.rotation.x = -Math.PI / 2; m.rotation.z = -Math.atan2(uz, ux); m.position.set(mx + nx * (E + bw / 2), 0.03, mz + nz * (E + bw / 2)); m.receiveShadow = true; g.add(m); }); }
+  (f.rugs || []).forEach(([x, z, w, d]) => { const tx = finTex('moroccan').clone(); tx.needsUpdate = true; tx.repeat.set(w / 3, d / 3); const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.8 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.035, z + d / 2); m.receiveShadow = true; g.add(m); });   // 245: Moroccan 'rugs'
   if (f.pebble) { const b = 0.6, pm = new THREE.MeshStandardMaterial({ map: finTex('pebble'), roughness: 1 });
     (f.pebble === 'near' ? pebNear(t, items) : [[E, E, pw - 2 * E, b], [E, pd - E - b, pw - 2 * E, b], [E, E + b, b, pd - 2 * E - 2 * b], [pw - E - b, E + b, b, pd - 2 * E - 2 * b]]).forEach(([x, z, w, d]) => { const tx = pm.map.clone(); tx.needsUpdate = true; tx.repeat.set(w / 2, d / 2);
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04, z + d / 2); m.receiveShadow = true; g.add(m); }); }
