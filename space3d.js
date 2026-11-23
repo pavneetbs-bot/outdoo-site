@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=34';
-import { pergolaModel } from './pergola3d.js?v=24';
-import { outline } from './plan2d.js?v=9';
+import { cabinModel, plotModel } from './cabin3d.js?v=35';
+import { pergolaModel } from './pergola3d.js?v=25';
+import { outline } from './plan2d.js?v=10';
 
 let R = null, HANDLER = null;
 const M = {};

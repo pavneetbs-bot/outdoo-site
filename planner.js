@@ -4,9 +4,9 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=38';
-import * as P2 from './plan2d.js?v=9';
-import { cutHit } from './cabin3d.js?v=34';
+import * as S3 from './space3d.js?v=39';
+import * as P2 from './plan2d.js?v=10';
+import { cutHit } from './cabin3d.js?v=35';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -482,7 +482,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-subig{display:flex;flex-wrap:wrap;gap:10px}#plOv .pl-subig button{flex:1;min-width:120px;border:1.5px solid #E2D6C4;background:#fff;border-radius:14px;padding:16px 10px;font:600 15px inherit;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}#plOv .pl-subig button b{font-size:22px}#plOv .pl-subig small{color:#7A7268;font-size:12px}#plOv .pl-subig button.on{border-color:#C26445;background:#FFF8F2}
 #plOv .pl-sw{display:block;width:44px;height:30px;border-radius:6px;border:1px solid #D4CEC4}#plOv .pl-sw-p{background:#EFEBE4 repeating-linear-gradient(0deg,transparent 0 14px,#D4CEC4 14px 15px),repeating-linear-gradient(90deg,transparent 0 14px,#D4CEC4 14px 15px)}#plOv .pl-sw-m{background:radial-gradient(circle at 50% 50%,#2F6F7E 0 5px,transparent 6px) 0 0/15px 15px,#F3EEE6}
 #plOv .pl-sun{position:relative;margin:28px auto 34px;max-width:70%;max-height:42vh;background:#EADCC8;border:4px solid #9B8E7E;border-radius:6px}#plOv .pl-sun span{position:absolute;bottom:-26px;left:0;right:0;text-align:center;font:700 12px inherit;color:#8a3a1f}#plOv .pl-sn{position:absolute;width:42px;height:42px;border-radius:50%;border:2px dashed #9B8E7E;background:#fff;font-weight:800;cursor:pointer}#plOv .pl-sn.on{background:#C26445;color:#fff;border:2px solid #C26445}#plOv .pl-sn-back{top:-22px;left:calc(50% - 21px)}#plOv .pl-sn-front{bottom:-22px;left:calc(50% - 21px)}#plOv .pl-sn-left{left:-22px;top:calc(50% - 21px)}#plOv .pl-sn-right{right:-22px;top:calc(50% - 21px)}
-#plOv .pl-elw{display:flex;flex-direction:column;gap:4px}#plOv .pl-elw>button{width:100%}#plOv .pl-cnt{display:flex;align-items:center;justify-content:center;gap:10px}#plOv .pl-els2 .pl-cnt button{padding:0;width:30px;height:30px;border-radius:50%;border:1.5px solid #E3DCD2;background:#fff;font:inherit;font-size:16px;cursor:pointer}#plOv .pl-cnt b{min-width:14px;text-align:center}#plOv .pl-lays{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}#plOv .pl-lays button{border:1.5px solid #E3DCD2;background:#fff;border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;cursor:pointer}#plOv .pl-lays button.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533}#plOv .pl-lays span{display:block;width:100%;height:120px}#plOv .pl-lays svg{width:100%;height:100%;pointer-events:none}#plOv .pl-lays b{font-size:13px}#plOv .pl-lays small{font-size:10.5px;color:#7A7268;text-align:center;line-height:1.2}#plOv .pl-su2d{height:min(62vh,640px);margin:4px 0 10px;touch-action:none}#plOv .pl-sued{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:8px 10px;margin:0 0 10px}#plOv .pl-sued b{font-size:13px;margin-right:4px}#plOv .pl-sued span{font-size:12px;color:#7A7268}#plOv .pl-sued em{font-style:normal;font-weight:700;min-width:22px;text-align:center}#plOv .pl-sued button{width:36px;height:36px;border-radius:50%;border:1.5px solid #E2D6C4;background:#fff;font-size:16px;cursor:pointer}
+#plOv .pl-elw{display:flex;flex-direction:column;gap:4px}#plOv .pl-elw>button{width:100%}#plOv .pl-cnt{display:flex;align-items:center;justify-content:center;gap:10px}#plOv .pl-els2 .pl-cnt button{padding:0;width:30px;height:30px;border-radius:50%;border:1.5px solid #E3DCD2;background:#fff;font:inherit;font-size:16px;cursor:pointer}#plOv .pl-cnt b{min-width:14px;text-align:center}#plOv .pl-lays{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}#plOv .pl-lays button{border:1.5px solid #E3DCD2;background:#fff;border-radius:12px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;cursor:pointer}#plOv .pl-lays button.on{border-color:#C26445;box-shadow:0 0 0 2px #C2644533}#plOv .pl-lays span{display:block;width:100%;height:120px}#plOv .pl-lays svg{width:100%;height:100%;pointer-events:none}#plOv .pl-lays b{font-size:13px}#plOv .pl-lays small{font-size:10.5px;color:#7A7268;text-align:center;line-height:1.2}#plOv .pl-su2d{height:min(62vh,640px);margin:4px 0 10px;touch-action:pan-y;position:relative}#plOv .pl-tb{position:absolute;z-index:6;display:flex;gap:2px;align-items:stretch;background:#2E2E2E;border-radius:12px;padding:4px;box-shadow:0 6px 18px rgba(0,0,0,.28);touch-action:manipulation}#plOv .pl-tb button{background:none;border:0;color:#fff;font:600 11px Inter,system-ui,sans-serif;padding:6px 8px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:44px;cursor:pointer}#plOv .pl-tb button i{font-style:normal;font-size:16px;line-height:1.1}#plOv .pl-tb button.on{background:#C26445}#plOv .pl-tb button.ok{background:#55634A}#plOv .pl-tb .pl-tbn{color:#EADCC8;font:700 11px Inter,system-ui,sans-serif;padding:0 6px 0 4px;display:flex;align-items:center;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#plOv .pl-szp{background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:6px 12px;margin:0 0 10px}#plOv .pl-szr{display:flex;align-items:center;gap:10px;padding:8px 0}#plOv .pl-szr+.pl-szr{border-top:1px solid #F0EAE0}#plOv .pl-szr .pl-sza{width:30px;height:30px;border-radius:8px;background:#FBEDE7;color:#C26445;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex:none}#plOv .pl-szr .pl-szl{flex:1;font-weight:700;font-size:14px;line-height:1.2}#plOv .pl-szr .pl-szl small{display:block;font-weight:400;color:#8A8278;font-size:11.5px}#plOv .pl-szr button{width:40px;height:40px;border-radius:12px;border:1.5px solid #E3DCD2;background:#fff;font-size:20px;flex:none;touch-action:manipulation}#plOv .pl-szr em{font-style:normal;font-weight:800;font-size:15px;min-width:58px;text-align:center}#plOv .pl-sued{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:8px 10px;margin:0 0 10px}#plOv .pl-sued b{font-size:13px;margin-right:4px}#plOv .pl-sued span{font-size:12px;color:#7A7268}#plOv .pl-sued em{font-style:normal;font-weight:700;min-width:22px;text-align:center}#plOv .pl-sued button{width:36px;height:36px;border-radius:50%;border:1.5px solid #E2D6C4;background:#fff;font-size:16px;cursor:pointer}
 #plOv .pl-sucs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}#plOv .pl-sucs button{border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 12px;font:600 13px inherit;font-family:inherit;cursor:pointer}#plOv .pl-sucs button.on{border-color:#C26445;background:#FFF8F2}#plOv .pl-sunext{width:100%;margin-top:14px;padding:14px}#plOv .pl-sucs{flex-wrap:wrap}
 #plOv .pl-moods{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 0 4px;scrollbar-width:none}#plOv .pl-moods button{flex:none;display:flex;align-items:center;gap:6px;border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;white-space:nowrap}#plOv .pl-moods button.on{border-color:#C26445;background:#C26445;color:#fff}#plOv .pl-moods i{font-style:normal}
 #plOv .pl-els2 button{position:relative;padding:12px 4px 10px}#plOv .pl-els2 i{font-size:26px}#plOv .pl-els2 em{position:absolute;top:4px;right:6px;font-style:normal;font-size:11px;font-weight:700;color:#C26445}
@@ -701,7 +701,7 @@ const CAB_USE = ['Lounge', 'WFH office', 'Gym', 'Bedroom', 'Guest room', 'Home t
 let SUEL = null;
 function suNeed() { return S.step === 1 && S.site.kind === 'terrace' && !S.items.length && !S.bskip && !(S.su && S.su.done); }
 function suOpen(q) { S.su = Object.assign({ q: 0, pg: '5-8', cs: '3-4', north: '', turf: null, green: 'balanced', light: 'soft', stairs: 'keep', roomRef: null, cab: [], theme: 'natural', walls: 'paint', tankHas: null, tankScr: true, shaft: 'keep', have: {}, rm: {}, floor0: 'cement', pipes: null, pipeScr: true }, S.su || {}); if (q != null) S.su.q = q; S.su.on = true;
-  if (!SUEL) { SUEL = document.createElement('div'); SUEL.className = 'pl-su'; EL.appendChild(SUEL); SUEL.addEventListener('click', suClick); SUEL.addEventListener('pointerdown', suDown); SUEL.addEventListener('pointermove', suMove); SUEL.addEventListener('pointerup', suUp); SUEL.addEventListener('pointercancel', suUp); }
+  if (!SUEL) { SUEL = document.createElement('div'); SUEL.className = 'pl-su'; EL.appendChild(SUEL); SUEL.addEventListener('click', suClick); SUEL.addEventListener('pointerdown', suDown); SUEL.addEventListener('pointermove', suMove); SUEL.addEventListener('pointerup', suUp); SUEL.addEventListener('pointercancel', suCancel); }
   SUEL.style.display = 'block'; suPaint(); }
 function suClose() { if (SUEL) SUEL.style.display = 'none'; if (S.su) S.su.on = false; draw(false); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 60); }
 function suSkip(q) { const B = S.bsel || {}; if (q === 'remove') return !suRemList().length;
@@ -764,7 +764,7 @@ function suCompose(ph) {   // a fresh setup from the answers — 245: ph 'el' = 
   su.opts = null; su.dirty = false; floorRugs();
  S.bskip = true; ev('plan_build', { ref: S.bth || 'own', n: S.items.length }); draw(true); }
 function suPlan() { const su = S.su, t = S.site, rd = ['front'].concat(t.road_back ? ['back'] : [], t.corner ? [t.corner] : []).filter(x => t.road_front !== false || x !== 'front');
-  return P2.svg(t, { items: S.items, measure: !!su.meas, sel: S.sel != null ? { k: 'it', i: S.sel } : null, north: su.north, road: rd }); }
+  return P2.svg(t, { items: S.items, measure: !!su.meas, sel: S.sel != null ? { k: 'it', i: S.sel } : null, grp: S.sel != null ? grpOf(S.sel) : null, wl: S.sel != null && S.suSz ? S.sel : null, north: su.north, road: rd }); }
 function suPaint() { if (S.magic) return;
   const su = S.su, q = SUQ[su.q], B = S.bsel || {}, terr = S.site.kind === 'terrace', chip = (k, on, tx) => `<button type="button" data-su="${k}" class="${on ? 'on' : ''}" aria-pressed="${!!on}">${tx}</button>`;
   const big = (k, on, e, t, sm) => chip(k, on, `<i>${e}</i><b>${t}</b>${sm ? `<small>${sm}</small>` : ''}`), next = (tx, dis) => `<div class="pl-subar"><button type="button" class="pl-go" data-su="next"${dis ? ' disabled' : ''}>${tx || 'Next →'}</button></div>`;
@@ -796,7 +796,7 @@ function suPaint() { if (S.magic) return;
   else if (q === 'have') { const hv = su.have || (su.have = {});
     h += '<h2>Already built on the roof?</h2><p class="pl-sub">Anything that stands there now — you place it on the plan later. Nothing? Just press Next.</p><div class="pl-els pl-els2">' + HAVE.map(([k, t]) => { const v = hv[k] || 0; return `<div class="pl-elw"><button type="button" data-su="hv:${k}" class="${v ? 'on' : ''}"><i>${P2.ico(k)}</i><b>${esc(t)}</b>${v ? '<em>✓</em>' : ''}</button>${v ? `<div class="pl-cnt"><button type="button" data-su="hvc:${k}:-1" aria-label="One less">−</button><b>${v}</b><button type="button" data-su="hvc:${k}:1" aria-label="One more">+</button></div>` : ''}</div>`; }).join('') + '</div>' + next(); }
   else if (q === 'asbuilt') { suOld();   // 249 (owner): the roof as it stands — 2D (drag the existing things to where they really are), then 3D, before anything new
-    h += '<h2>Your roof as it stands</h2><p class="pl-sub">' + (S.items.some(o => o.old) ? 'Drag the existing things to where they really are.' : 'What is built on it now — check it before we plan.') + '</p>' + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d">${suPlan()}</div>` +
+    h += '<h2>Your roof as it stands</h2><p class="pl-sub">' + (S.items.some(o => o.old) ? 'Drag the existing things to where they really are.' : 'What is built on it now — check it before we plan.') + '</p>' + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d">${suPlan()}${suPopHtml()}</div>` + suSzHtml() +
       '<div class="pl-sucs">' + chip('roof', false, '✎ Change the roof') + '</div>' + next('See it in 3D →'); }
   else if (q === 'e3d') h += '<h2>Your layout in 3D</h2><p class="pl-sub">The big pieces as you set them — next, furniture and plants.</p><div id="suab3d" class="pl-ab3d"></div>' + next('Next: furniture & plants →');   // 251 (owner): see round 2 in 3D before round 3
   else if (q === 'ab3d') { suOld(); h += '<h2>Your roof in 3D</h2><p class="pl-sub">As it stands today — next, what you want on it.</p><div id="suab3d" class="pl-ab3d"></div>' + next('Looks right →'); }
@@ -825,12 +825,10 @@ function suPaint() { if (S.magic) return;
       '<div class="pl-subig">' + chip('north:', false, 'Not sure') + '</div>'; }
   else { const it = S.sel != null ? S.items[S.sel] : null;
     h += q === 'eplan' ? '<h2>Your layout</h2><p class="pl-sub" style="margin:-4px 0 6px">Round 2 of 3 — the big pieces. Furniture and plants come next.</p>' : '<h2>Your setup</h2>';
-    h += '<p class="pl-sub">Drag to move · tap to resize</p>' + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d">${suPlan()}</div>`;
-    if (it) { const c = CAT[it.cat] || {}; h += `<div class="pl-sued"><b>${c.e || ''} ${esc(it.label || c.t || '')}</b>` + (c.size && c.size !== 'fixed' ? `<span>W</span><button type="button" data-su="rs:w:-1">−</button><em>${it.w}</em><button type="button" data-su="rs:w:1">+</button>` + (c.size === 'wd' ? `<span>L</span><button type="button" data-su="rs:d:-1">−</button><em>${it.d}</em><button type="button" data-su="rs:d:1">+</button>` : '') : '') +
-      (!att(it) && !it.segs ? '<button type="button" data-su="rot" aria-label="Turn">↻</button>' : '') + '<button type="button" data-su="del" aria-label="Remove">🗑</button><button type="button" data-su="unsel" aria-label="Done">✓</button></div>'; }
+    h += `<p class="pl-sub">${it ? 'Drag it to move · ✓ Done when finished' : 'Tap a thing to change it · swipe to scroll'}</p>` + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d">${suPlan()}${suPopHtml()}</div>` + suSzHtml();   // 254: toolbar over the picked thing
     h += '<div class="pl-sucs">' + chip('meas', !!su.meas, '📏 Measurements') + chip('again', false, '↺ Set up again') + chip('roof', false, '✎ Change the roof') + '</div>' +
       (q === 'eplan' ? `<div class="pl-subar"><button type="button" class="pl-go" data-su="next">See it in 3D →</button></div>` : `<div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>`); }
-  SUEL.innerHTML = h + '</div>';
+  SUEL.innerHTML = h + '</div>'; if (S.sel != null) requestAnimationFrame(suPopPlace);
   if (q === 'ab3d' || q === 'e3d') setTimeout(() => { const el = document.getElementById('suab3d'); if (!el) return; try { S3.show(el, { site: S.site, items: S.items, sel: null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW', noDrag: true, theme: (S.su && S.su.theme) || 'natural' }, { view: '3d' }); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 80); } catch (e) {} }, 30);
 }
 const WT_COL = { red: ['#A4553A', 'Brick red'], beige: ['#D8C7A8', 'Beige'], grey: ['#9A9A96', 'Grey'], white: ['#ECE9E2', 'White'], charcoal: ['#4A4A48', 'Charcoal'], wood: ['#8B6440', 'Wood brown'] };
@@ -885,8 +883,17 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'lay': { const o = (su.opts || [])[+a[1]]; if (o) { su.pick = +a[1]; S.items = JSON.parse(JSON.stringify(o.items)); S.bnote = o.note; S.sel = null; ev('plan_step', { ref: 'layout' + (+a[1] + 1) }); draw(true); } break; }
     case 'again': return suMagic(SUQ[su.q] === 'eplan' ? 'el' : 'all');
     case 'roof': return suRoof();
-    case 'unsel': S.sel = null; break;
-    case 'rs': case 'rot': case 'del': if (S.sel == null) break; act(a); draw(true); break;
+    case 'unsel': S.sel = null; S.suSz = false; S.msg = ''; break;
+    case 'sz': S.suSz = !S.suSz; break;
+    case 'rs': case 'rot': case 'del': if (S.sel == null) break; { const G = grpOf(S.sel), it = S.items[S.sel];   // 254: Remove takes the whole group; a deck under the pergola follows its turn / size
+      if (a[0] === 'del') { S.items = S.items.filter((o, j) => !G.includes(j)); S.sel = null; S.suSz = false; draw(true); break; }
+      if (a[0] === 'rs' && it.cat === 'fbench' && G.length > 1) {   // an arm of the L grows / shrinks away from the corner, the other arm stays
+        const keep = JSON.stringify(it), b0 = rectI(it), mt = rectI(S.items[G.find(j => j !== S.sel)]), c = CAT[it.cat], lo = c.min || [1, 1], hi = c.max || [80, 80], k = a[1] === 'd' ? 'd' : 'w';
+        it[k] = Math.max(k === 'w' ? lo[0] : lo[1], Math.min(k === 'w' ? hi[0] : hi[1], r2(+it[k] + (+a[2] || 0)))); const b1 = rectI(it);
+        if (b1.w !== b0.w) it.x = Math.abs(b0.x - (mt.x + mt.w)) < 0.3 || Math.abs(b0.x - mt.x) < 0.3 ? b0.x : r2(b0.x + b0.w - b1.w);
+        if (b1.d !== b0.d) it.z = Math.abs(b0.z - (mt.z + mt.d)) < 0.3 || Math.abs(b0.z - mt.z) < 0.3 ? b0.z : r2(b0.z + b0.d - b1.d);
+        if (clashes(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'No room for it that size here'; } else S.msg = ''; draw(true); break; }
+      const mo = G.filter(j => j !== S.sel && sameR(rectI(S.items[j]), rectI(it))).map(j => S.items[j]); act(a); mo.forEach(o => Object.assign(o, { x: it.x, z: it.z, w: it.w, d: it.d, rot: it.rot })); draw(true); } break;
     case 'done': su.done = true; ev('plan_step', { ref: '3d' }); return suClose();
   }
   if ((SUQ[su.q] === 'plan' || SUQ[su.q] === 'eplan') && !S.items.length) suCompose(SUQ[su.q] === 'eplan' ? 'el' : 'all');
@@ -897,15 +904,47 @@ function suRoof() {   // back to the roof plan; a changed roof sets the terrace 
   window.mtoSpaceAsk('planner', r => { EL.style.display = 'flex'; if (r && r.site) { S.site = Object.assign({}, S.site, r.site); S.su.dirty = true; S.su.oldDirty = true; if (S.su.q >= SUQ.indexOf('eplan')) suCompose(SUQ[S.su.q] === 'eplan' ? 'el' : 'all'); } SUEL.style.display = 'block'; suPaint(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60); }, { site: S.site });
 }
 let SUD = null;
-function suDown(e) { const g = e.target.closest && e.target.closest('[data-it]'); if (!g) return; const svg = SUEL.querySelector('.pl-su2d svg'), i = +g.getAttribute('data-it'), it = S.items[i]; if (!svg || !it || it.segs || it.box) { if (it) { S.sel = i; suPaint(); } return; }
-  const p = P2.toFt(svg, e); if (!p) return; e.preventDefault(); SUD = { i, g, p0: p, x0: +it.x, z0: +it.z, mv: false, svg, sx: e.clientX, sy: e.clientY }; try { g.setPointerCapture(e.pointerId); } catch (er) {} }
-function suMove(e) { const D = SUD; if (!D) return; if (!D.mv && Math.hypot(e.clientX - D.sx, e.clientY - D.sy) < 5) return; D.mv = true; const p = P2.toFt(D.svg, e); if (!p) return; D.dx = r2(p.x - D.p0.x); D.dz = r2(p.z - D.p0.z); D.g.setAttribute('transform', `translate(${D.dx} ${D.dz})`); }
-function suUp() { const D = SUD; SUD = null; if (!D) return; S.msg = '';
-  if (!D.mv) { S.sel = S.sel === D.i ? null : D.i; return suPaint(); }
-  const it = S.items[D.i], keep = JSON.stringify(it); it.x = r2(D.x0 + (D.dx || 0)); it.z = r2(D.z0 + (D.dz || 0)); delete it.wside;
-  if (CAT[it.cat] && CAT[it.cat].kind === 'wall') snapWall(it, true);   // 242: a wall panel dropped anywhere goes onto the nearest wall at that spot
-  if (clashes(it, D.i)) { if (!settle(it, D.i, [it.x, it.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It can\'t go there'; } } else if (CAT[it.cat] && CAT[it.cat].kind === 'wall') settle(it, D.i, [it.x, it.z]);
-  S.sel = D.i; draw(true); suPaint(); }
+// 254 (owner): tap a thing to pick it (a small toolbar over it, like Google Sheets); only the picked thing — and what moves with it — can be dragged; the rest is faded and can't be picked until ✓ Done / a tap on empty floor; a swipe anywhere else scrolls the page
+const sameR = (a, b) => Math.abs(a.x - b.x) < 0.6 && Math.abs(a.z - b.z) < 0.6 && Math.abs(a.w - b.w) < 0.6 && Math.abs(a.d - b.d) < 0.6;
+const touchR = (a, b) => a.x <= b.x + b.w + 0.15 && a.x + a.w >= b.x - 0.15 && a.z <= b.z + b.d + 0.15 && a.z + a.d >= b.z - 0.15;
+function grpOf(i) { const it = S.items[i]; if (!it) return []; const out = [i];   // L seating = its two arms; a pergola = + the deck under it
+  if (it.grp) S.items.forEach((o, j) => { if (j !== i && o.grp === it.grp) out.push(j); });
+  else if (it.cat === 'fbench' && it.shape !== 'curve' && !it.segs) S.items.forEach((o, j) => { if (j !== i && o.cat === 'fbench' && o.shape !== 'curve' && !o.grp && (+o.rot || 0) % 180 !== (+it.rot || 0) % 180 && touchR(rectI(it), rectI(o))) out.push(j); });
+  const pg = it.cat === 'pergola' ? it : it.cat === 'deck' ? S.items.find(o => o.cat === 'pergola' && sameR(rectI(o), rectI(it))) : null;
+  if (pg) S.items.forEach((o, j) => { if (!out.includes(j) && (o === pg || (o.cat === 'deck' && sameR(rectI(o), rectI(pg))))) out.push(j); });
+  return out; }
+function suDown(e) { const svg = SUEL.querySelector('.pl-su2d svg'); if (!svg || !svg.contains(e.target)) return; const g = e.target.closest && e.target.closest('[data-it]'), i = g ? +g.getAttribute('data-it') : null;
+  SUD = { i, sx: e.clientX, sy: e.clientY, svg, mv: false };
+  if (S.sel == null || i == null) return; const G = grpOf(S.sel); if (!G.includes(i)) return;   // only the picked thing (or its group) drags
+  const it = S.items[i]; if (!it || it.segs || it.box || it.lock) return; const p = P2.toFt(svg, e); if (!p) return; e.preventDefault();
+  Object.assign(SUD, { drag: true, G, p0: p, xs: G.map(j => [+S.items[j].x, +S.items[j].z]), gs: G.map(j => svg.querySelector(`[data-it="${j}"]`)).filter(Boolean) }); try { svg.setPointerCapture(e.pointerId); } catch (er) {}
+  const pop = SUEL.querySelector('.pl-tb'); if (pop) pop.style.visibility = 'hidden'; }
+function suMove(e) { const D = SUD; if (!D) return; if (!D.mv && Math.hypot(e.clientX - D.sx, e.clientY - D.sy) < 6) return; D.mv = true; if (!D.drag) return; const p = P2.toFt(D.svg, e); if (!p) return; D.dx = r2(p.x - D.p0.x); D.dz = r2(p.z - D.p0.z); D.gs.forEach(g => g.setAttribute('transform', `translate(${D.dx} ${D.dz})`)); }
+function suCancel() { const D = SUD; SUD = null; if (D && D.drag) suPaint(); }
+function suUp() { const D = SUD; SUD = null; if (!D) return;
+  if (!D.mv) {   // a tap
+    if (S.sel == null) { if (D.i != null) { S.sel = D.i; S.suSz = false; S.msg = ''; suPaint(); } return; }
+    if (D.i == null) { S.sel = null; S.suSz = false; S.msg = ''; return suPaint(); }   // empty floor = done
+    if (grpOf(S.sel).includes(D.i)) { if (D.i !== S.sel) { S.sel = D.i; suPaint(); } else { const pop = SUEL.querySelector('.pl-tb'); if (pop) pop.style.visibility = ''; } return; }   // the other arm of an L: size it on its own
+    S.msg = 'Tap ✓ Done first, then pick the next thing'; return suPaint(); }
+  if (!D.drag) return; S.msg = '';
+  const keep = D.G.map(j => JSON.stringify(S.items[j])); D.G.forEach((j, k) => { const o = S.items[j]; o.x = r2(D.xs[k][0] + (D.dx || 0)); o.z = r2(D.xs[k][1] + (D.dz || 0)); delete o.wside; });
+  if (D.G.length === 1) { const i = D.G[0], it = S.items[i];
+    if (CAT[it.cat] && CAT[it.cat].kind === 'wall') snapWall(it, true);   // 242: a wall panel dropped anywhere goes onto the nearest wall at that spot
+    if (clashes(it, i)) { if (!settle(it, i, [it.x, it.z])) { Object.assign(it, JSON.parse(keep[0])); S.msg = 'It can\'t go there'; } } else if (CAT[it.cat] && CAT[it.cat].kind === 'wall') settle(it, i, [it.x, it.z]); }
+  else if (D.G.some(j => clashes(S.items[j], j))) { D.G.forEach((j, k) => Object.assign(S.items[j], JSON.parse(keep[k]))); S.msg = 'It can\'t go there'; }   // a group moves together or not at all
+  draw(true); suPaint(); }
+function suPopHtml() { const it = S.sel != null ? S.items[S.sel] : null; if (!it) return ''; const c = CAT[it.cat] || {}, G = grpOf(S.sel), Lg = G.length > 1 && it.cat === 'fbench';
+  return `<div class="pl-tb" style="visibility:hidden"><span class="pl-tbn">${esc(G.length > 1 && G.some(j => S.items[j].cat === 'pergola') ? 'Pergola + deck' : Lg ? 'L seating · 1 arm' : it.label || c.t || '')}</span>` +
+    (!att(it) && !it.segs && !Lg && !it.lock ? '<button type="button" data-su="rot"><i>↻</i>Turn</button>' : '') + (c.size && c.size !== 'fixed' && !it.lock ? `<button type="button" data-su="sz" class="${S.suSz ? 'on' : ''}"><i>⤢</i>Size</button>` : '') +
+    '<button type="button" data-su="del"><i>🗑</i>Remove</button><button type="button" class="ok" data-su="unsel"><i>✓</i>Done</button></div>'; }
+function suSzHtml() { const it = S.sel != null ? S.items[S.sel] : null; if (!it || !S.suSz) return ''; const c = CAT[it.cat] || {}; if (!c.size || c.size === 'fixed') return ''; const tw = (+it.rot || 0) % 180 === 0;
+  const row = (k, ar, nm, sm, v) => `<div class="pl-szr"><span class="pl-sza">${ar}</span><span class="pl-szl">${nm}<small>${sm}</small></span><button type="button" data-su="rs:${k}:-1" aria-label="Smaller">−</button><em>${v} ft</em><button type="button" data-su="rs:${k}:1" aria-label="Bigger">+</button></div>`;
+  return '<div class="pl-szp">' + row('w', tw ? '↔' : '↕', 'Width — W', tw ? 'left to right on the plan' : 'top to bottom on the plan', it.w) + (c.size === 'wd' ? row('d', tw ? '↕' : '↔', 'Length — L', tw ? 'top to bottom on the plan' : 'left to right on the plan', it.d) : '') + '</div>'; }
+function suPopPlace() { const pop = SUEL && SUEL.querySelector('.pl-tb'), box = SUEL && SUEL.querySelector('.pl-su2d'); if (!pop || !box || S.sel == null) return;
+  const gs = grpOf(S.sel).map(j => box.querySelector(`[data-it="${j}"]`)).filter(Boolean); if (!gs.length) return; const R = gs.map(g => g.getBoundingClientRect()), cb = box.getBoundingClientRect();
+  const top = Math.min(...R.map(r => r.top)) - cb.top, bot = Math.max(...R.map(r => r.bottom)) - cb.top, mid = (Math.min(...R.map(r => r.left)) + Math.max(...R.map(r => r.right))) / 2 - cb.left, pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let y = top - ph - 8; if (y < 0) y = Math.min(cb.height - ph, bot + 8); pop.style.left = Math.max(0, Math.min(cb.width - pw, mid - pw / 2)) + 'px'; pop.style.top = Math.max(0, y) + 'px'; pop.style.visibility = ''; }
 // 224: the setup, placed the way our terraces are — big things first, each at the best free spot for its "where"
 const BIG = new Set(['cabin', 'pergola', 'jacuzzi', 'water', 'bar', 'counter', 'sculpture', 'fbench']);   // 241: nothing big in front of the stairs door
 function spotBest(it, i, score, rots, dz) {   // dz: the space in front of the staircase door stays clear
@@ -1196,7 +1235,7 @@ function lSeat(g, sz, lt, PRS, notes) {   // 241: open to the sky (never under a
       const cx = left ? X + La / 3 : X - La / 3, cz = back ? Z + Lb / 3 : Z - Lb / 3, roadSide = g.road.includes(back ? 'back' : 'front') ? 1 : 0;
       const sc = roadSide * 30 - (lt ? 0.15 * Math.hypot(cx - lt[0], cz - lt[1]) : 0) - (g.dz ? (Math.hypot(cx - (g.dz.x + g.dz.w / 2), cz - (g.dz.z + g.dz.d / 2)) < 10 ? 12 : 0) : 0) - s0 * 3;
       if (!best || sc > best[0]) best = [sc, A, Bb]; break; } }
-  if (!best) return false; S.items.push(best[1], best[2]); notes.push('Built-in L seating in the open corner on the road side'); return true;
+  if (!best) return false; { const gid = 'L' + Math.random().toString(36).slice(2, 7); best[1].grp = gid; best[2].grp = gid; } S.items.push(best[1], best[2]); notes.push('Built-in L seating in the open corner on the road side'); return true;
 }
 const inR2 = (cx, cz, r) => cx > r.x - 1 && cx < r.x + r.w + 1 && cz > r.z - 1 && cz < r.z + r.d + 1;
 function stepPick() {
