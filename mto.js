@@ -3287,7 +3287,7 @@
     var srcPaint = function () { var q = st.lq || {}, none = !q.team && q.signed_in !== false && q.left === 0;
       var note = q.team ? 'Our team — no upload limit' : q.signed_in === false ? 'Sign in first · 2 uploads per account' : q.left == null ? '' : q.left + ' of 2 uploads left on your account';
       return '<button type="button" class="sp-back" data-sp="src:back">← Back</button><h2>Your terrace</h2><p class="sp-sub">Have the architect\'s CAD layout of this terrace? Upload the PDF — we draw what is already built on it, you check it.</p>' +
-        (st.lbusy ? '<div class="sp-busy"><i></i><b>Reading your drawing…</b><small>This takes 20 – 40 seconds. Please keep this screen open.</small></div>' :
+        (st.lbusy ? '<div class="sp-busy"><i></i><b>Reading your drawing…</b><small>Usually under 2 minutes. Please keep this screen open.</small></div>' :
         '<div class="sp-list"><button type="button" data-sp="src:pdf"' + (none ? ' disabled' : '') + '><i>📄</i><span><b>Upload my CAD layout (PDF)</b><small>' + esc(none ? 'Both uploads on this account are used — set it up yourself, or ask our team' : 'Exported from AutoCAD / the architect · up to 15 MB' + (note ? ' · ' + note : '')) + '</small></span></button>' +
         '<button type="button" data-sp="src:own"><i>✏️</i><span><b>Set it up myself</b><small>Size, stairs room, rooms — about a minute</small></span></button></div>') +
         (st.lmsg ? '<p class="tw-msg" style="margin-top:12px">' + esc(st.lmsg) + '</p>' : ''); };
@@ -3303,7 +3303,12 @@
       try { var buf = await f.arrayBuffer(), u8 = new Uint8Array(buf), bin = ''; for (var i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
         var A = window.OUTRR_SUPA || {}, tk = (window.acToken && await window.acToken()) || A.anon;
         var r = await fetch(A.url + '/functions/v1/layouts', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read', name: f.name, pdf: btoa(bin), token: window.ASSIST && window.ASSIST.token || null }) });
-        var j = await r.json().catch(function () { return {}; }); st.lbusy = false;
+        var j = await r.json().catch(function () { return {}; });
+        if (r.ok && j.reading && j.id) {   // 248: the drawing is read in the background — ask every 3 s (up to 4 min)
+          for (var k = 0; k < 80; k++) { await new Promise(function (ok) { setTimeout(ok, 3000); }); var r2 = null; try { r2 = await (await fetch(A.url + '/functions/v1/layouts', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', id: j.id }) })).json(); } catch (e2) { continue; }
+            if (r2 && r2.status === 'read') { j.layout = r2.layout; break; } if (r2 && r2.status === 'failed') { j.reason = r2.reason; if (!j.team && j.left != null) j.left = Math.min(2, j.left + 1); break; } }
+          if (!j.layout && !j.reason) j.reason = 'Still reading — it is taking long. Try again in a few minutes.'; }
+        st.lbusy = false;
         if (j.left != null) st.lq = Object.assign({}, st.lq, { left: j.left, signed_in: true });
         if (!r.ok || !j.layout) { st.lmsg = (j.error || j.reason || 'We could not read this drawing.') + (j.left != null ? ' · ' + j.left + ' of 2 uploads left' : ''); return paint(); }
         try { if (window.otrack) window.otrack('plan_start', { ref: 'pdf' }); } catch (e) {}
