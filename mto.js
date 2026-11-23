@@ -632,8 +632,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=31').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=31'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=32').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=32'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -776,7 +776,7 @@
   // 202: the terrace one kind of question at a time — Quick: Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof
   // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
   var TMM = null, TMP = null;
-  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=5').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
+  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=6').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
   function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=5').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
   function tsTpl() {
     var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -1911,7 +1911,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=52').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=53').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2771,7 +2771,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=31').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=32').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -3010,7 +3010,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=31').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=32').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
@@ -3375,7 +3375,7 @@
     '.sp-hd{display:flex;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #E7DFD3}.sp-hd b{flex:1;font-size:15px}.sp-hd button{border:1px solid #ddd;background:#fff;border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:15px}' +
     '.sp-bd{flex:1;overflow:auto;padding:40px 18px;max-width:720px;width:100%;margin:0 auto;box-sizing:border-box}.sp-bd h2{font-size:26px;margin:0 0 6px}.sp-sub{font-size:14px;color:#6A6258;margin:0 0 20px}' +
     '.sp-list{display:flex;flex-direction:column;gap:10px}.sp-list button,.sp-kinds button{display:flex;gap:14px;align-items:center;text-align:left;border:1.5px solid #E2D6C4;background:#fff;border-radius:16px;padding:14px 16px;font:inherit;color:#2E2E2E;cursor:pointer}.sp-list button:hover,.sp-kinds button:hover{border-color:#C26445;background:#FFF8F2}' +
-    '.tw-plw.tw-plw-shp{max-width:calc(100% - 64px);margin:26px auto 34px}.tw-shs{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:4;touch-action:none}.tw-shs text{pointer-events:none;font-family:Inter,system-ui,sans-serif}.tw-pl-dim .tw-b{opacity:.45;pointer-events:none}.tw-shp{margin-top:4px}.tw-shc .tw-pm{width:100%;display:flex;align-items:center;gap:6px}.tw-shc .tw-pm span{flex:1;font-size:13px}.tw-shc .tw-pm input{width:62px;text-align:center;border:1px solid #D6D2C7;border-radius:8px;padding:6px 4px;font-size:14px}.tw-shc .tw-pm small{color:#7A7268}.tw-shok{background:#C26445;color:#fff;border:0;border-radius:18px;padding:7px 16px;font-weight:700;cursor:pointer}.tw-shok[disabled]{opacity:.4}' +
+    '.tw-plw.tw-plw-shp{max-width:calc(100% - 64px);margin:26px auto 34px}.ar-pal .ico,.ar-ed .ico,.ar-list .ico,.pp-ar .ico{width:1.2em;height:1.2em;vertical-align:-.25em;color:#55634A}.tw-shs{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:4;touch-action:none}.tw-shs text{pointer-events:none;font-family:Inter,system-ui,sans-serif}.tw-pl-dim .tw-b{opacity:.45;pointer-events:none}.tw-shp{margin-top:4px}.tw-shc .tw-pm{width:100%;display:flex;align-items:center;gap:6px}.tw-shc .tw-pm span{flex:1;font-size:13px}.tw-shc .tw-pm input{width:62px;text-align:center;border:1px solid #D6D2C7;border-radius:8px;padding:6px 4px;font-size:14px}.tw-shc .tw-pm small{color:#7A7268}.tw-shok{background:#C26445;color:#fff;border:0;border-radius:18px;padding:7px 16px;font-weight:700;cursor:pointer}.tw-shok[disabled]{opacity:.4}' +
     '.tw-pdf{background:#FBF3EC;border:1px solid #EBCDB9;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;margin:0 0 10px}.tw-pdf small{display:block;color:#7A7268;margin-top:4px}.tw-plw{position:relative}.tw-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:.45;pointer-events:none;z-index:3;mix-blend-mode:multiply;border-radius:6px}' +
     '.sp-busy{display:flex;flex-direction:column;align-items:center;gap:6px;padding:30px 10px;text-align:center}.sp-busy i{width:34px;height:34px;border-radius:50%;border:3px solid #E2D6C4;border-top-color:#C26445;animation:spin 0.9s linear infinite}.sp-busy small{color:#7A7268}@keyframes spin{to{transform:rotate(360deg)}}.sp-list button[disabled]{opacity:.55;cursor:not-allowed}' +
     '.sp-row{display:flex;flex-direction:column;gap:4px}.sp-row>button{width:100%}.sp-acts{display:flex;gap:8px;justify-content:flex-end;padding:0 6px}.sp-list .sp-acts button{border:0;background:none;padding:4px 6px;font-size:12.5px;color:#7A7268;border-radius:8px}.sp-list .sp-acts button:hover{color:#C26445}' +

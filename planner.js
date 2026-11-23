@@ -4,9 +4,9 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=31';
-import * as P2 from './plan2d.js?v=5';
-import { cutHit } from './cabin3d.js?v=31';
+import * as S3 from './space3d.js?v=32';
+import * as P2 from './plan2d.js?v=6';
+import { cutHit } from './cabin3d.js?v=32';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -51,13 +51,14 @@ const CATS = [
 // 193 phase 3: ready-made setups — added to what's already there, each thing at the nearest free spot
 const SETUPS = [
   { k: 'chill', t: 'Chill corner', e: '☕', d: 'Pergola with a sofa on a deck, water, planters, lights', items: ['pergola', 'deck', 'sofa', 'water', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter', 'planter'] },
-  { k: 'party', t: 'Party terrace', e: '🎉', d: 'Bar by the stairs, pergola lounge, dining, fire pit, grass', items: ['bar', 'pergola', 'fbench', 'dining', 'counter', 'firepit', 'turf', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter'] },
+  { k: 'party', t: 'Party terrace', e: '🎉', d: 'Bar by the stairs, pergola lounge, dining, fire pit, grass', items: ['bar', 'pergola', 'fbench', 'dining', 'counter', 'turf', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter'] },
   { k: 'work', t: 'Work + relax', e: '💻', d: 'Cabin at the back, deck, sofa, green wall', items: ['cabin', 'deck', 'pergola', 'sofa', 'vgarden', 'pathway', 'privacy', 'planter', 'planter', 'planter'] },
   { k: 'green', t: 'Green retreat', e: '🌿', d: 'Grass, green walls, planters, bench, water', items: ['turf', 'vgarden', 'feature', 'water', 'fbench', 'pathway', 'privacy', 'planter', 'planter', 'planter', 'planter', 'planter', 'planter'] },
   { k: 'yoga', t: 'Yoga & wellness', e: '🧘', d: 'Deck under a pergola, water, green wall, screens', items: ['deck', 'pergola', 'water', 'vgarden', 'turf', 'privacy', 'planter', 'planter', 'planter', 'planter'] },
   { k: 'spa', t: 'Spa & lounge', e: '🛁', d: 'Jacuzzi, pergola lounge, feature wall, lights', items: ['jacuzzi', 'pergola', 'deck', 'sofa', 'feature', 'water', 'pathway', 'privacy', 'lights', 'lights', 'lights', 'lights', 'planter', 'planter', 'planter', 'planter'] },
   { k: 'family', t: 'Family lawn', e: '🌳', d: 'Pergola, dining, bench, water, sculpture', items: ['pergola', 'dining', 'bench', 'water', 'sculpture', 'planter'], lawn: true },
 ];
+CATS.forEach(c => { c.e = P2.ico(c.k) || c.e; }); SETUPS.forEach(x => { x.e = P2.ico(x.k) || x.e; });   // 245: line icons
 const CAT = Object.fromEntries(CATS.map(c => [c.k, c]));
 const UMB = new Set(['pergola', 'umbrella']), FLX = new Set(['pathway', 'turf', 'deck']);   // things can stand under these; these floors don't overlap each other
 const PR = () => (typeof PRODS !== 'undefined' ? PRODS : window.PRODS) || {};   // the store's catalogue is a page-level const
@@ -475,7 +476,7 @@ const CSS = `#plOv{-webkit-user-select:none;user-select:none;-webkit-touch-callo
 #plOv .pl-lk-modern{background:linear-gradient(90deg,#2E2E2E 0 30%,#B9B8B4 30% 75%,#3A4A5A 75%)}#plOv .pl-lk-natural{background:linear-gradient(90deg,#A8784C 0 30%,#D8C9A8 30% 75%,#8A9A5B 75%)}#plOv .pl-lk-moroccan{background:radial-gradient(circle,#1F6F7E 0 4px,transparent 5px) 0 0/10px 10px,#F2E2C8}#plOv .pl-lk-tropical{background:linear-gradient(90deg,#F1EDE4 0 30%,#C98B63 30% 75%,#2E7D5B 75%)}
 #plOv .pl-su{position:absolute;inset:0;z-index:20;background:#F7F3EC;overflow:auto;display:none}#plOv .pl-suh{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border-bottom:1px solid #E2D6C4}#plOv .pl-suh b{flex:1;font-size:15px}#plOv .pl-suh button{border:1px solid #ddd;background:#fff;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer}
 #plOv .pl-sub2{max-width:640px;margin:0 auto;padding:18px 16px 40px}#plOv .pl-sub2 h2{font-size:24px;margin:6px 0 14px}#plOv .pl-dots{display:flex;gap:5px;margin-bottom:8px}#plOv .pl-dots i{flex:1;height:4px;border-radius:4px;background:#E2D6C4}#plOv .pl-dots i.on{background:#C26445}
-#plOv .pl-sumood{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#plOv .pl-sumood button{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #E2D6C4;background:#fff;border-radius:16px;padding:18px 8px;cursor:pointer;font-family:inherit}#plOv .pl-sumood i{font-style:normal;font-size:34px}#plOv .pl-sumood b{font-size:14px}#plOv .pl-sumood button.on{border-color:#C26445;background:#FFF8F2}
+#plOv .pl-sumood{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#plOv .pl-sumood button{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid #E2D6C4;background:#fff;border-radius:16px;padding:18px 8px;cursor:pointer;font-family:inherit}#plOv .pl-sumood i{font-style:normal;font-size:34px}.pl-swr{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 12px}.pl-swr button{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:0}.pl-swr i{width:38px;height:38px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #D6D2C7}.pl-swr .on i{box-shadow:0 0 0 2px #C26445}.pl-swr small{font-size:11px;color:#5B544B}.pl-magic{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}.pl-magic h2{margin:14px 0 6px}.pl-mgo{font-size:46px;color:#C26445;animation:plmg 1.6s ease-in-out infinite}.pl-mgo .ico{color:#C26445}@keyframes plmg{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.15) rotate(12deg)}}.pl-mgl{color:#5B544B;min-height:2.6em;transition:opacity .18s;margin:0 0 14px;max-width:300px}.pl-mgb{width:220px;height:4px;border-radius:4px;background:#EADCC8;overflow:hidden}.pl-mgb i{display:block;height:100%;width:40%;background:#C26445;border-radius:4px;animation:plmgb 1.3s ease-in-out infinite}@keyframes plmgb{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}.ico{width:1em;height:1em;display:inline-block;vertical-align:-.15em;color:#55634A}#plOv .pl-sumood b{font-size:14px}#plOv .pl-sumood button.on{border-color:#C26445;background:#FFF8F2}
 #plOv .pl-subig{display:flex;flex-wrap:wrap;gap:10px}#plOv .pl-subig button{flex:1;min-width:120px;border:1.5px solid #E2D6C4;background:#fff;border-radius:14px;padding:16px 10px;font:600 15px inherit;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px}#plOv .pl-subig button b{font-size:22px}#plOv .pl-subig small{color:#7A7268;font-size:12px}#plOv .pl-subig button.on{border-color:#C26445;background:#FFF8F2}
 #plOv .pl-sw{display:block;width:44px;height:30px;border-radius:6px;border:1px solid #D4CEC4}#plOv .pl-sw-p{background:#EFEBE4 repeating-linear-gradient(0deg,transparent 0 14px,#D4CEC4 14px 15px),repeating-linear-gradient(90deg,transparent 0 14px,#D4CEC4 14px 15px)}#plOv .pl-sw-m{background:radial-gradient(circle at 50% 50%,#2F6F7E 0 5px,transparent 6px) 0 0/15px 15px,#F3EEE6}
 #plOv .pl-sun{position:relative;margin:28px auto 34px;max-width:70%;max-height:42vh;background:#EADCC8;border:4px solid #9B8E7E;border-radius:6px}#plOv .pl-sun span{position:absolute;bottom:-26px;left:0;right:0;text-align:center;font:700 12px inherit;color:#8a3a1f}#plOv .pl-sn{position:absolute;width:42px;height:42px;border-radius:50%;border:2px dashed #9B8E7E;background:#fff;font-weight:800;cursor:pointer}#plOv .pl-sn.on{background:#C26445;color:#fff;border:2px solid #C26445}#plOv .pl-sn-back{top:-22px;left:calc(50% - 21px)}#plOv .pl-sn-front{bottom:-22px;left:calc(50% - 21px)}#plOv .pl-sn-left{left:-22px;top:calc(50% - 21px)}#plOv .pl-sn-right{right:-22px;top:calc(50% - 21px)}
@@ -585,7 +586,7 @@ function stepPlace() {
   const sel = S.sel != null ? S.items[S.sel] : null;
   if (sel) {
     const c = CAT[sel.cat], fp = fromPrice(sel), pm = (k, lbl, v, ns) => `<div class="pl-pm"><span>${lbl}</span><button type="button" data-pl="${ns || 'rs'}:${k}:-1" aria-label="${lbl} smaller">−</button><label class="pl-sz"><input type="number" inputmode="decimal" step="${ns ? 1 : 0.5}" data-plin="${ns || 'rs'}:${k}" value="${v}" aria-label="${lbl} in feet"> ft</label><button type="button" data-pl="${ns || 'rs'}:${k}:1" aria-label="${lbl} bigger">+</button></div>`;
-    h += `<div class="pl-ed"><h4>${esc(c.e)} ${esc(sel.label || c.t)}</h4>`; const T = { size: '', place: '', design: '' };   // 202: one kind at a time — Size · Place · Design tabs
+    h += `<div class="pl-ed"><h4>${c.e} ${esc(sel.label || c.t)}</h4>`; const T = { size: '', place: '', design: '' };   // 202: one kind at a time — Size · Place · Design tabs
     if (sel.cat === 'cabin') { const sk = cabinSkus(); T.size += '<div class="pl-tabs">' + sk.map(s => btn(`data-pl="csku:${s}"`, s === sel.sku, esc(PR()[s].n.replace(/ —.*$/, '').replace(/ \(.*$/, '')))).join('') + '</div>'; const L = cabinLay(sel); if (!sel.lock && L && L.walls && window.mtoCabinSize) { const lim = window.mtoCabinSize(sel.sku, L, L.L, L.W) || {}; T.size += pm('L', 'Length', num(L.L), 'cz') + pm('W', 'Width', num(L.W), 'cz') + `<p class="pl-sub" style="margin:2px 0 0">${lim.Lmin}–${lim.Lmax} × ${lim.Wmin}–${lim.Wmax} ft. Walls, doors, rooms and finishes: in its designer.</p>`; } }
     else if (c.size === 'fixed') T.size += `<p class="pl-sub">One standard size here — you'll pick the exact design at the end.</p>`;
     if (sel.lock) T.size += '<p class="pl-note" style="margin:6px 0">🔒 Locked — its size and place can\'t change by mistake.</p>';
@@ -703,7 +704,7 @@ function suPgs() { const su = S.su, n = (S.bsel || {}).pergola || 0; su.pgs = (s
 function suCompose() {   // a fresh setup from the answers
   const su = S.su; S.items = []; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; S.bsel.feature = S.bsel.feature || 1; delete S.bsel.lights; delete S.bsel.planter;
   if (su.turf === true) S.bsel.turf = 1; else if (su.turf === false) delete S.bsel.turf;
-  S.site.floor = { tile: (THEME_T[su.theme] || THEME_T.natural)[1], pebble: 'near' }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls || 'none'; S.site.tankScreen = su.tankHas === true && !su.tankScr ? 'existing' : '';
+  S.site.floor = { tile: (THEME_T[su.theme] || THEME_T.natural)[1], pebble: 'near' }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls || 'none'; S.site.wallTile = su.walls === 'tiles' ? Object.assign({ k: 'brick', c: 'red' }, su.wtile || {}) : undefined; S.site.tankScreen = su.tankHas === true && !su.tankScr ? 'existing' : '';
   // 241 (owner): ONE setup — the closest LifeWall layout that has the wanted things, then the rules
   const B = S.bsel, want = k => ({ cabin: B.cabin, pergola: B.pergola, turf: B.turf, deck: B.deck, seating: B.sofa || B.fbench || B.dining, fbench: B.fbench || B.sofa, bar: B.bar, counter: B.counter || B.bar, jacuzzi: B.jacuzzi, water: B.water })[k];
   let lay = null; try { lay = (TM.layout ? TM.layout(S.site, 14) : []).map((L, r) => ({ L, n: L.els.filter(e => e.length > 3 && want(e[0])).length, r })).filter(z => z.n).sort((a, b) => b.n - a.n || a.r - b.r).map(z => z.L)[0] || null; } catch (e) { lay = null; }
@@ -714,11 +715,11 @@ function suCompose() {   // a fresh setup from the answers
  S.bskip = true; ev('plan_build', { ref: S.bth || 'own', n: S.items.length }); draw(true); }
 function suPlan() { const su = S.su, t = S.site, rd = ['front'].concat(t.road_back ? ['back'] : [], t.corner ? [t.corner] : []).filter(x => t.road_front !== false || x !== 'front');
   return P2.svg(t, { items: S.items, measure: !!su.meas, sel: S.sel != null ? { k: 'it', i: S.sel } : null, north: su.north, road: rd }); }
-function suPaint() {
+function suPaint() { if (S.magic) return;
   const su = S.su, q = SUQ[su.q], B = S.bsel || {}, terr = S.site.kind === 'terrace', chip = (k, on, tx) => `<button type="button" data-su="${k}" class="${on ? 'on' : ''}" aria-pressed="${!!on}">${tx}</button>`;
   const big = (k, on, e, t, sm) => chip(k, on, `<i>${e}</i><b>${t}</b>${sm ? `<small>${sm}</small>` : ''}`), next = (tx, dis) => `<div class="pl-subar"><button type="button" class="pl-go" data-su="next"${dis ? ' disabled' : ''}>${tx || 'Next →'}</button></div>`;
   let h = `<div class="pl-suh"><button type="button" data-su="back" aria-label="Back">←</button><b>Set up your terrace</b><button type="button" data-su="x" aria-label="Close">✕</button></div><div class="pl-sub2"><div class="pl-dots">${SUQ.filter(z => !suSkip(z)).map(z => `<i class="${SUQ.indexOf(z) <= su.q ? 'on' : ''}"></i>`).join('')}</div>`;
-  if (q === 'mood') h += '<h2>What is it for?</h2><div class="pl-sumood">' + SETUPS.filter(x => !x.lawn || !terr).map(x => `<button type="button" data-su="mood:${x.k}" class="${S.bth === x.k ? 'on' : ''}"><i>${x.e}</i><b>${esc(x.t)}</b></button>`).join('') + `<button type="button" data-su="mood:"><i>✋</i><b>I'll choose</b></button></div>`;
+  if (q === 'mood') h += '<h2>What is it for?</h2><div class="pl-sumood">' + SETUPS.filter(x => !x.lawn || !terr).map(x => `<button type="button" data-su="mood:${x.k}" class="${S.bth === x.k ? 'on' : ''}"><i>${x.e}</i><b>${esc(x.t)}</b></button>`).join('') + `<button type="button" data-su="mood:"><i>${P2.ico('choose')}</i><b>I'll choose</b></button></div>`;
   else if (q === 'want') { const LY = S.site && S.site.layout;   // 243: what the architect proposed on the customer's own drawing comes ticked
     if (LY && !su.layTicked) { su.layTicked = true; const M = { seating: 'sofa', planter: null, turf: null }; (LY.proposed || []).forEach(k => { const c = k in M ? M[k] : k; if (k === 'turf') su.turf = true; if (c && CAT[c]) S.bsel[c] = S.bsel[c] || 1; }); if (LY.north && !su.north) su.north = LY.north; } const cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'pathway', 'turf', 'lights', 'planter', 'shaftcover'].includes(c.k));   // 241: graffiti, sculpture, bench, chairs, tables are back
     h += (LY && (LY.proposed || []).length ? '<p class="pl-sub" style="margin:0 0 6px">📄 Ticked from your drawing — change anything.</p>' : '') + '<h2>What do you want?</h2><div class="pl-els pl-els2">' + cats.map(c => { const v = B[c.k] || 0; return `<div class="pl-elw"><button type="button" data-su="bel:${c.k}" class="${v ? 'on' : ''}"><i>${c.e}</i><b>${esc(c.t)}</b>${v ? '<em>✓</em>' : ''}</button>${v ? `<div class="pl-cnt"><button type="button" data-su="bcnt:${c.k}:-1" aria-label="One less">−</button><b>${v}</b><button type="button" data-su="bcnt:${c.k}:1" aria-label="One more">+</button></div>` : ''}</div>`; }).join('') + '</div><p class="pl-sub" style="margin-top:12px">Plants and lights come next.</p>' + next('', !Object.keys(B).length); }
@@ -726,24 +727,27 @@ function suPaint() {
     cb.forEach((c, i) => { h += `<div class="pl-cab"><b>Cabin ${cb.length > 1 ? i + 1 : ''} — what for?</b><div class="pl-sucs">` + CAB_USE.map(u => chip(`cuse:${i}:${u}`, c.use.includes(u), esc(u))).join('') + `</div><b>Inside it</b><div class="pl-sucs">` + chip(`cin:${i}:pantry`, c.pantry, '🍳 Pantry') + chip(`cin:${i}:wash`, c.wash, '🚿 Washroom') + '</div></div>'; });
     h += next(); }
   else if (q === 'bar') { const bs = suBars(); h += '<h2>Your bar counter' + (bs.length > 1 ? 's' : '') + '</h2><p class="pl-sub">An island — room on both sides.</p>';
-    bs.forEach((v, i) => { h += `<p class="pl-h">Bar counter${bs.length > 1 ? ' ' + (i + 1) : ''}</p><div class="pl-subig">` + big(`bshape:${i}:straight`, v === 'straight', '▬', 'Straight') + big(`bshape:${i}:L`, v === 'L', '⌐', 'L-shape') + '</div>'; });
+    bs.forEach((v, i) => { h += `<p class="pl-h">Bar counter${bs.length > 1 ? ' ' + (i + 1) : ''}</p><div class="pl-subig">` + big(`bshape:${i}:straight`, v === 'straight', P2.ico('straight'), 'Straight') + big(`bshape:${i}:L`, v === 'L', P2.ico('lshape'), 'L-shape') + '</div>'; });
     h += next(); }
   else if (q === 'seats') { h += '<h2>How many people?</h2>'; const pgs = suPgs();
     pgs.forEach((v, i) => { h += `<p class="pl-h">Sitting under the pergola${pgs.length > 1 ? ' ' + (i + 1) : ''}</p><div class="pl-subig">` + [['2-4', '2 – 4'], ['5-8', '5 – 8'], ['9-12', '9 – 12'], ['12+', '12 +']].map(z => chip(`pg:${z[0]}:${i}`, v === z[0], `<b>${z[1]}</b>`)).join('') + '</div>'; });
     if (B.cabin) h += '<p class="pl-h">In the cabin</p><div class="pl-subig">' + [['1-2', '1 – 2'], ['3-4', '3 – 4'], ['5-8', '5 – 8']].map(z => chip('cs:' + z[0], su.cs === z[0], `<b>${z[1]}</b>`)).join('') + '</div>';
     h += next(); }
   else if (q === 'existing') { const bl = S.site.blocks || [];
-    h += '<h2>What is already there</h2><p class="pl-h">The walls — stairs room, parapet and the rest</p><div class="pl-subig">' + big('walls:paint', su.walls === 'paint', '🎨', 'Paint') + big('walls:tiles', su.walls === 'tiles', '🧱', 'Tiles / cladding') + big('walls:none', su.walls === 'none', '✓', 'Nothing') + '</div>';
+    h += '<h2>What is already there</h2><p class="pl-h">The walls — stairs room, parapet and the rest</p><div class="pl-subig">' + big('walls:paint', su.walls === 'paint', P2.ico('roller'), 'Paint') + big('walls:tiles', su.walls === 'tiles', P2.ico('brick'), 'Tiles / cladding') + big('walls:none', su.walls === 'none', P2.ico('check'), 'Nothing') + '</div>';
+    if (su.walls === 'tiles') { const wt = su.wtile || (su.wtile = { k: 'brick', c: 'red' });   // 245 (owner): which tiles are on the walls now, and their colour — the 3D shows them
+      h += '<p class="pl-h">Which tiles?</p><div class="pl-subig">' + [['brick', 'Brick look'], ['t22', 'Plain 2 × 2 ft'], ['t24', 'Plain 2 × 4 ft'], ['stone', 'Stone cladding']].map(z => chip('wtk:' + z[0], wt.k === z[0], z[1])).join('') + '</div>' +
+        '<p class="pl-h">Their colour</p><div class="pl-swr">' + Object.keys(WT_COL).map(c => `<button type="button" data-su="wtc:${c}" class="${wt.c === c ? 'on' : ''}" aria-label="${WT_COL[c][1]}" title="${WT_COL[c][1]}"><i style="background:${WT_COL[c][0]}"></i><small>${WT_COL[c][1]}</small></button>`).join('') + '</div>'; }
     if (bl.some(b => b.type === 'mumty') && S.site.tanks !== false) { h += '<p class="pl-h">Is there a screen round the water tanks now?</p><div class="pl-subig">' + chip('thas:0', su.tankHas === false, 'No screen') + chip('thas:1', su.tankHas === true, 'Yes, there is one') + '</div>';   // 238
       if (su.tankHas === false) h += '<p class="pl-h">Add a screen to hide them?</p><div class="pl-subig">' + chip('tscr:1', su.tankScr === true, 'Yes, add one') + chip('tscr:0', su.tankScr === false, 'No') + '</div>';
       else if (su.tankHas === true) h += '<p class="pl-h">Change it?</p><div class="pl-subig">' + chip('tscr:0', su.tankScr === false, 'Keep it') + chip('tscr:1', su.tankScr === true, 'Replace with a new one') + '</div>'; }
-    if (bl.some(b => b.type === 'mumty')) h += '<p class="pl-h">The staircase room</p><div class="pl-subig">' + big('stairs:keep', su.stairs === 'keep', '✓', 'Keep as is') + big('stairs:door', su.stairs === 'door', '🚪', 'New door') + big('stairs:refurb', su.stairs === 'refurb', '🎨', 'Refurbish', 'door, cladding, paint') + '</div>';
-    if (bl.some(b => b.type === 'shaft')) h += '<p class="pl-h">The shaft' + (bl.filter(b => b.type === 'shaft').length > 1 ? 's' : '') + ' — a cover on top?</p><div class="pl-subig">' + big('shaft:keep', su.shaft === 'keep', '✓', 'Keep as is') + big('shaft:change', su.shaft === 'change', '🔁', 'Change the cover') + big('shaft:new', su.shaft === 'new', '⬜', 'New cover', 'MS frame + white polycarbonate') + '</div>';   // 241
+    if (bl.some(b => b.type === 'mumty')) h += '<p class="pl-h">The staircase room</p><div class="pl-subig">' + big('stairs:keep', su.stairs === 'keep', P2.ico('check'), 'Keep as is') + big('stairs:door', su.stairs === 'door', P2.ico('door'), 'New door') + big('stairs:refurb', su.stairs === 'refurb', P2.ico('brush'), 'Refurbish', 'door, cladding, paint') + '</div>';
+    if (bl.some(b => b.type === 'shaft')) h += '<p class="pl-h">The shaft' + (bl.filter(b => b.type === 'shaft').length > 1 ? 's' : '') + ' — a cover on top?</p><div class="pl-subig">' + big('shaft:keep', su.shaft === 'keep', P2.ico('check'), 'Keep as is') + big('shaft:change', su.shaft === 'change', P2.ico('refresh'), 'Change the cover') + big('shaft:new', su.shaft === 'new', P2.ico('plusbox'), 'New cover', 'MS frame + white polycarbonate') + '</div>';   // 241
     if (bl.some(b => b.type === 'room')) h += '<p class="pl-h">The room / washroom on the roof — refurbish it?</p><div class="pl-subig">' + chip('rref:1', su.roomRef === true, 'Yes, refurbish') + chip('rref:0', su.roomRef === false, 'No, keep it') + '</div>';
     h += next(); }
-  else if (q === 'green') h += '<h2>How much greenery?</h2><div class="pl-subig pl-col3">' + big('green:light', su.green === 'light', '🌱', 'A little', 'a few plants in the corners') + big('green:balanced', su.green === 'balanced', '🪴', 'Balanced', 'corners, a wall of plants, a green wall') + big('green:lush', su.green === 'lush', '🌿', 'Lush', 'thick greenery all round') + '</div>' + next();
-  else if (q === 'lights') h += '<h2>Lights for the evenings?</h2><div class="pl-subig pl-col3">' + big('light:none', su.light === 'none', '☀️', 'No lights', 'only daytime use') + big('light:soft', su.light === 'soft', '🕯️', 'Soft & warm', 'pergola profile, cove lights, plant spikes') + big('light:full', su.light === 'full', '✨', 'All lit up', '+ wall lights and screen downlights') + '</div>' + next();
-  else if (q === 'floor') h += '<h2>Artificial grass?</h2><div class="pl-subig">' + big('turf:1', su.turf === true, '🟩', 'Yes', 'a patch of soft grass') + big('turf:0', su.turf === false, '⬜', 'No', 'tiles all through') + '</div><p class="pl-sub" style="margin-top:12px">Pathway, pebble border and tiles are added for you — you pick the look at the end.</p>';
+  else if (q === 'green') h += '<h2>How much greenery?</h2><div class="pl-subig pl-col3">' + big('green:light', su.green === 'light', P2.ico('sprout'), 'A little', 'a few plants in the corners') + big('green:balanced', su.green === 'balanced', P2.ico('planter'), 'Balanced', 'corners, a wall of plants, a green wall') + big('green:lush', su.green === 'lush', P2.ico('lush'), 'Lush', 'thick greenery all round') + '</div>' + next();
+  else if (q === 'lights') h += '<h2>Lights for the evenings?</h2><div class="pl-subig pl-col3">' + big('light:none', su.light === 'none', P2.ico('sun'), 'No lights', 'only daytime use') + big('light:soft', su.light === 'soft', P2.ico('moon'), 'Soft & warm', 'pergola profile, cove lights, plant spikes') + big('light:full', su.light === 'full', P2.ico('sparkle'), 'All lit up', '+ wall lights and screen downlights') + '</div>' + next();
+  else if (q === 'floor') h += '<h2>Artificial grass?</h2><div class="pl-subig">' + big('turf:1', su.turf === true, P2.ico('grass'), 'Yes', 'a patch of soft grass') + big('turf:0', su.turf === false, P2.ico('none'), 'No', 'tiles all through') + '</div><p class="pl-sub" style="margin-top:12px">Pathway, pebble border and tiles are added for you — you pick the look at the end.</p>';
   else if (q === 'north') { const t = S.site; h += '<h2>Which side is north?</h2><p class="pl-sub">Tap the side — the seating goes where the afternoon sun is softer.</p>' +
       `<div class="pl-sun" style="aspect-ratio:${t.pw}/${t.pd}">${['back', 'left', 'right', 'front'].map(sd => `<button type="button" data-su="north:${sd}" class="pl-sn pl-sn-${sd}${su.north === sd ? ' on' : ''}">N</button>`).join('')}<span>▼ road</span></div>` +
       '<div class="pl-subig">' + chip('north:', false, 'Not sure') + '</div>'; }
@@ -756,12 +760,19 @@ function suPaint() {
       `<div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>`; }
   SUEL.innerHTML = h + '</div>';
 }
+const WT_COL = { red: ['#A4553A', 'Brick red'], beige: ['#D8C7A8', 'Beige'], grey: ['#9A9A96', 'Grey'], white: ['#ECE9E2', 'White'], charcoal: ['#4A4A48', 'Charcoal'], wood: ['#8B6440', 'Wood brown'] };
+// 245 (owner): while the setup is made, a short "creating" screen instead of a frozen one
+const MAGIC = ['Reading your roof…', 'Finding the corner with the softest evening light…', 'Setting the big pieces where they belong…', 'Laying out the walkways…', 'Balancing open space and shade…', 'Adding the finishing touches…'];
+function suMagic() { const t0 = Date.now(); let k = 0; S.magic = false;
+  SUEL.innerHTML = '<div class="pl-magic"><div class="pl-mgo">' + P2.ico('sparkle') + '</div><h2>Creating your outdoor space</h2><p class="pl-mgl">' + MAGIC[0] + '</p><div class="pl-mgb"><i></i></div></div>';
+  S.magic = true; const tk = setInterval(() => { const el = SUEL.querySelector('.pl-mgl'); if (!el) return clearInterval(tk); k = (k + 1) % MAGIC.length; el.style.opacity = 0; setTimeout(() => { el.textContent = MAGIC[k]; el.style.opacity = 1; }, 180); }, 900);
+  setTimeout(() => { try { suCompose(); } catch (e) { S.magic = false; } setTimeout(() => { clearInterval(tk); S.magic = false; suPaint(); SUEL.scrollTop = 0; }, Math.max(0, 2600 - (Date.now() - t0))); }, 80); }
 function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disabled) return; const a = b.getAttribute('data-su').split(':'), su = S.su, adv = () => { su.dirty = true; suStep(1); };
   const toPlan = () => { if (SUQ[su.q] === 'plan' && (su.dirty || !S.items.length)) suCompose(); };
   switch (a[0]) {
     case 'x': su.done = true; return suClose();
     case 'back': if (su.q > 0) suStep(-1); else return suRoof(); break;
-    case 'next': suStep(1); toPlan(); break;
+    case 'next': suStep(1); if (SUQ[su.q] === 'plan' && (su.dirty || !S.items.length)) return suMagic(); break;
     case 'mood': { const x = SETUPS.find(z => z.k === a[1]); S.bth = x ? x.k : null; S.bsel = {}; if (x) x.items.forEach(k => { if (CAT[k] && (designs(CAT[k]).length || CAT[k].always)) S.bsel[k] = 1; }); S.bsel.feature = 1; if (S.bsel.pergola) S.bsel.deck = 1; if (S.site.blocks.some(b2 => b2.type === 'ac') && designs(CAT.accover).length) S.bsel.accover = 1; if (S.bsel.turf) su.turf = true;
       su.theme = { party: 'modern', spa: 'tropical', green: 'natural', yoga: 'natural', work: 'modern', chill: 'natural' }[S.bth] || su.theme; adv(); break; }
     case 'bel': S.bsel = S.bsel || {}; if (S.bsel[a[1]]) delete S.bsel[a[1]]; else { S.bsel[a[1]] = 1; if (a[1] === 'pergola') S.bsel.deck = 1; } su.dirty = true; break;   // a pergola comes with a deck (untick it if not wanted)
@@ -775,16 +786,18 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'stairs': su.stairs = a[1]; su.dirty = true; break;
     case 'rref': su.roomRef = a[1] === '1'; su.dirty = true; break;
     case 'walls': su.walls = a[1]; su.dirty = true; break;
+    case 'wtk': (su.wtile = su.wtile || { c: 'red' }).k = a[1]; su.dirty = true; break;
+    case 'wtc': (su.wtile = su.wtile || { k: 'brick' }).c = a[1]; su.dirty = true; break;
     case 'shaft': su.shaft = a[1]; su.dirty = true; break;
     case 'tscr': su.tankScr = a[1] === '1'; su.dirty = true; break;
     case 'thas': su.tankHas = a[1] === '1'; su.tankScr = !su.tankHas; su.dirty = true; break;
     case 'green': su.green = a[1]; su.dirty = true; break;
     case 'light': su.light = a[1]; su.dirty = true; break;
     case 'turf': su.turf = a[1] === '1'; adv(); break;
-    case 'north': su.north = a[1]; adv(); toPlan(); break;
+    case 'north': su.north = a[1]; adv(); if (SUQ[su.q] === 'plan' && (su.dirty || !S.items.length)) return suMagic(); break;
     case 'meas': su.meas = !su.meas; break;
     case 'lay': { const o = (su.opts || [])[+a[1]]; if (o) { su.pick = +a[1]; S.items = JSON.parse(JSON.stringify(o.items)); S.bnote = o.note; S.sel = null; ev('plan_step', { ref: 'layout' + (+a[1] + 1) }); draw(true); } break; }
-    case 'again': suCompose(); break;
+    case 'again': return suMagic();
     case 'roof': return suRoof();
     case 'unsel': S.sel = null; break;
     case 'rs': case 'rot': case 'del': if (S.sel == null) break; act(a); draw(true); break;

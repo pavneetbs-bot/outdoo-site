@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=31';
+import { cabinModel, plotModel } from './cabin3d.js?v=32';
 import { pergolaModel } from './pergola3d.js?v=22';
-import { outline } from './plan2d.js?v=5';
+import { outline } from './plan2d.js?v=6';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -350,7 +350,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const H = h || 3; box(g, w, H, d, 0, H / 2, 0, K.white); box(g, w - 0.8, 0.08, d - 0.8, 0, H - 0.25, 0, K.water); box(g, w + 0.4, 0.15, d + 0.4, 0, H, 0, K.wood2);
     box(g, 2, 0.8, 1.2, 0, 0.4, d / 2 + 0.6, K.wood2);
   } else if (cat === 'lights') {
-    cyl(g, 0.15, 0.2, (h || 3) - 0.4, 0, ((h || 3) - 0.4) / 2, 0, K.frame, 10); cyl(g, 0.3, 0.25, 0.4, 0, (h || 3) - 0.2, 0, mat('c_lamp', 0xFFE2A8, { emissive: 0xFFE6C0, emissiveIntensity: 1 }), 12);
+    cyl(g, 0.15, 0.2, (h || 3) - 0.4, 0, ((h || 3) - 0.4) / 2, 0, K.frame, 10); cyl(g, 0.3, 0.25, 0.4, 0, (h || 3) - 0.2, 0, mat('c_lamp', 0xFFE2A8, { emissive: WARM, emissiveIntensity: 1 }), 12);
   } else if (cat === 'umbrella') {
     const H = h || 8, r = Math.min(w, d) / 2; cyl(g, 0.9, 1, 0.4, 0, 0.2, 0, K.dark, 16); cyl(g, 0.1, 0.1, H, 0, H / 2, 0, K.wood2, 8);
     const c = new THREE.Mesh(new THREE.ConeGeometry(r, 1.6, 8, 1, true), mat('c_canopy', 0xEADCC8, { side: THREE.DoubleSide })); c.position.y = H - 0.6; c.castShadow = true; g.add(c);
@@ -372,6 +372,14 @@ function pgO(it) {   // 193g: the pergola as set up in its designer (finish, col
 }
 function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w, d)
   if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { const b = cabinModel(P.cabinCfg(it), P.cabinLay(it)); const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }
+  if (it.cat === 'pergola' && !it.cfgId && !it.pick && !P.fullPergola) {   // 245 (owner): in the plan a light, simple pergola — 4 slim posts, a frame, thin rafters; the chosen design shows in full
+    const h = new THREE.Group(), y0 = it.deck ? 0.6 : 0, H = (+it.h || 8), w = +it.w, d = +it.d, fm = mat('c_pgs', 0x2F2F2F, { metalness: 0.35, roughness: 0.5 }), sp = Math.max(w, d) > 16 ? 3 : 2;
+    if (it.deck) { const dk = mat('c_pdeck', 0x8B6A4A); box(h, w, 0.6, d, w / 2, 0.3, d / 2, dk); }
+    const px = [0.2, w - 0.2].concat(w > 16 ? [w / 2] : []), pz = [0.2, d - 0.2].concat(d > 16 ? [d / 2] : []);
+    px.forEach(x => pz.forEach(z => { if ((x === w / 2 && z !== 0.2 && z !== d - 0.2) || (z === d / 2 && x !== 0.2 && x !== w - 0.2)) return; const p0 = box(h, 0.3, H, 0.3, x, y0 + H / 2, z, fm); p0.userData.post = 1; }));
+    box(h, w, 0.35, 0.18, w / 2, y0 + H - 0.18, 0.2, fm); box(h, w, 0.35, 0.18, w / 2, y0 + H - 0.18, d - 0.2, fm); box(h, 0.18, 0.35, d, 0.2, y0 + H - 0.18, d / 2, fm); box(h, 0.18, 0.35, d, w - 0.2, y0 + H - 0.18, d / 2, fm);
+    for (let x = 1.2; x < w - 0.6; x += 1.2) box(h, 0.1, 0.22, d - 0.2, x, y0 + H + 0.05, d / 2, fm, false);
+    h.userData.pg = { top: H + y0 }; return h; }
   if (it.cat === 'pergola') { try { const b = pergolaModel(/^MTO-PG-/.test(it.cfgId || it.pick || '') ? (it.cfgId || it.pick) : (P.pergolaSku || 'MTO-PG-TW'), pgO(it)), h = new THREE.Group(), y0 = it.deck ? 0.6 : 0;   // 193d: on a deck as high as a porta cabin's
     b.g.position.y = y0; h.add(b.g); if (it.deck) { const dk = mat('c_pdeck', 0x8B6A4A); const n = Math.max(1, Math.round(it.d / 0.5)); for (let k = 0; k < n; k++) box(h, it.w, 0.6, it.d / n - 0.03, it.w / 2, 0.3, it.d * (k + 0.5) / n, k % 2 ? dk : mat('c_pdeck2', 0x7A5C40)); }
     h.userData.pg = { top: (+it.h || 8) + y0 }; return h; } catch (e) { /* fall back to a box */ } }
@@ -445,16 +453,25 @@ function creepers(hd, it) {   // 241: bougainvillea on one post (two on a big pe
       put(LM, li++, x2, y2, z2, 0.8 + rnd()); if (rnd() < 0.7 && fi < n) put(FM, fi++, x2 + (rnd() - 0.5) * 0.5, y2 - rnd() * 0.5, z2 + (rnd() - 0.5) * 0.5, 0.9 + rnd() * 1.3); } });
   LM.count = li; FM.count = fi; LM.castShadow = true; hd.add(LM, FM); }
 // 239: a soft cone of light under a down light — seen only in the night view
-function downGlow(par, x, y, z, H) { if (!R) return; const h = Math.min(H, 6), m = new THREE.Mesh(new THREE.ConeGeometry(h * 0.32, h, 14, 1, true), mat('g_cone', 0xFFE6C0, { emissive: 0xFFE6C0, emissiveIntensity: 1, transparent: true, opacity: 0.13, depthWrite: false, side: THREE.DoubleSide }));
+function downGlow(par, x, y, z, H) { return; if (!R) return; const h = Math.min(H, 6), m = new THREE.Mesh(new THREE.ConeGeometry(h * 0.32, h, 14, 1, true), mat('g_cone', WARM, { emissive: WARM, emissiveIntensity: 1, transparent: true, opacity: 0.13, depthWrite: false, side: THREE.DoubleSide }));
   m.position.set(x, y - h / 2, z); m.visible = !!R.night; m.userData.nightOnly = 1; par.add(m); (R.nl || (R.nl = [])).push(m); }
 const glow = c => mat('g_' + c.toString(16), c, { emissive: c, emissiveIntensity: 2.2, roughness: 1 });
 // wall lights on the structures and the parapet (full lighting)
-function wallLights(g, t) { const W = 0xFFE6C0, gm = glow(W), E = 0.75, add = (x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.3, 0.45), gm); m.position.set(x, y, z); g.add(m); const l = new THREE.PointLight(W, 1.6, 9, 2); l.position.set(x, y, z); g.add(l); };
+// 245 (owner): warm white (≈ 2700 K) everywhere; up-down lights = black cylinders on the walls (never by the door), parapet lights = small black step lights; no cones — only the glow they throw
+const WARM = 0xFFB15E, LENS = 0xFFC98A;
+function wallLights(g, t) { const W = WARM, gm = glow(LENS), blk = mat('lt_blk', 0x1E1E1E, { roughness: 0.45, metalness: 0.4 }), E = 0.75;
+  const updown = (x, y, z, nx, nz) => { const c = new THREE.Group(); c.position.set(x + nx * 0.16, y, z + nz * 0.16); g.add(c);   // a black cylinder on the wall, light out of both ends
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.75, 16), blk); c.add(body); [-1, 1].forEach(sg => { const ln = new THREE.Mesh(new THREE.CircleGeometry(0.1, 14), gm); ln.rotation.x = sg > 0 ? -Math.PI / 2 : Math.PI / 2; ln.position.y = sg * 0.376; c.add(ln); });
+    [-1, 1].forEach(sg => { const l = new THREE.PointLight(W, 1.1, 5.5, 2); l.position.set(x + nx * 0.35, y + sg * 1.4, z + nz * 0.35); g.add(l); }); };
+  const step = (x, y, z, nx, nz) => { const b = new THREE.Mesh(new THREE.BoxGeometry(nx ? 0.08 : 0.5, 0.22, nz ? 0.08 : 0.5), blk); b.position.set(x, y, z); g.add(b); const ln = new THREE.Mesh(new THREE.BoxGeometry(nx ? 0.02 : 0.36, 0.05, nz ? 0.02 : 0.36), gm); ln.position.set(x + nx * 0.05, y - 0.06, z + nz * 0.05); g.add(ln);
+    const l = new THREE.PointLight(W, 0.9, 5, 2); l.position.set(x + nx * 0.6, y - 0.6, z + nz * 0.6); g.add(l); };
   (t.blocks || []).filter(b => ['mumty', 'room', 'lift'].includes(b.type)).forEach(b => { const cx = b.x + b.w / 2, cz = b.z + b.d / 2, dx = t.pw / 2 - cx, dz = t.pd / 2 - cz;
-    if (Math.abs(dx) / t.pw > Math.abs(dz) / t.pd) { const x = dx > 0 ? b.x + b.w + 0.25 : b.x - 0.25; for (let z = b.z + 2; z < b.z + b.d - 1; z += 6) add(x, 6.5, z); } else { const z = dz > 0 ? b.z + b.d + 0.25 : b.z - 0.25; for (let x = b.x + 2; x < b.x + b.w - 1; x += 6) add(x, 6.5, z); } });
-  const par = (+t.par || 3) - 0.5; for (let x = 4; x < t.pw - 3; x += 9) add(x, par, E + 0.2); for (let z = 4; z < t.pd - 3; z += 9) { add(E + 0.2, par, z); add(t.pw - E - 0.2, par, z); } }
+    const door = b.door || (Math.abs(dx) / t.pw > Math.abs(dz) / t.pd ? (dx > 0 ? 'right' : 'left') : (dz > 0 ? 'front' : 'back')), dw = 2.8;
+    if (Math.abs(dx) / t.pw > Math.abs(dz) / t.pd) { const rt = dx > 0, x = rt ? b.x + b.w : b.x, nd = door === (rt ? 'right' : 'left'); for (let z = b.z + 1.5; z < b.z + b.d - 1; z += 5) { if (nd && Math.abs(z - cz) < dw) continue; updown(x, 6, z, rt ? 1 : -1, 0); } }
+    else { const fr = dz > 0, z = fr ? b.z + b.d : b.z, nd = door === (fr ? 'front' : 'back'); for (let x = b.x + 1.5; x < b.x + b.w - 1; x += 5) { if (nd && Math.abs(x - cx) < dw) continue; updown(x, 6, z, 0, fr ? 1 : -1); } } });
+  const par = (+t.par || 3) - 0.9; for (let x = 4; x < t.pw - 3; x += 9) step(x, par, E + 0.04, 0, 1); for (let z = 4; z < t.pd - 3; z += 9) { step(E + 0.04, par, z, 1, 0); step(t.pw - E - 0.04, par, z, -1, 0); } }
 // the setup's own lights: pergola profile, cove under bar / feature wall, spikes in planters, downlights on screens every 4 ft
-function itemLights(hd, it, P) { const lv = (P.site || {}).light; if (!lv) return; const W = 0xFFE6C0, gm = glow(W), w = it.w, d = it.d, h = +it.h || 3;
+function itemLights(hd, it, P) { const lv = (P.site || {}).light; if (!lv) return; const W = WARM, gm = glow(LENS), w = it.w, d = it.d, h = +it.h || 3;
   if (it.cat === 'pergola') { const y = Math.max(7, h) - 0.35; [[w, 0.12, 0, -d / 2 + 0.3], [w, 0.12, 0, d / 2 - 0.3]].forEach(([a, b, x, z]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(a - 0.6, 0.08, b), gm); m.position.set(x, y, z); hd.add(m); });
     [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, d - 0.6), gm); m.position.set(x, y, 0); hd.add(m); }); const l = new THREE.PointLight(W, 4, Math.max(w, d) * 1.2, 2); l.position.set(0, y - 0.5, 0); hd.add(l); }
   else if (it.cat === 'feature' || it.cat === 'bar') { const m = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.06, 0.1), gm); m.position.set(0, it.cat === 'bar' ? 3.3 : 0.35, d / 2 + 0.08); hd.add(m); const l = new THREE.PointLight(W, 2.2, 7, 2); l.position.set(0, it.cat === 'bar' ? 3 : 0.8, d / 2 + 0.8); hd.add(l); }
@@ -471,7 +488,7 @@ function finTex(k) { if (TEX[k]) return TEX[k]; const cv = document.createElemen
   else { x.fillStyle = '#D9D3C8'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 260; i++) { x.fillStyle = ['#B8B0A3', '#A9A194', '#C7BFB2', '#9E968A'][i % 4]; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 6 + Math.random() * 7, 5 + Math.random() * 5, Math.random() * 3, 0, 7); x.fill(); } }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return (TEX[k] = t); }
 // 241: pebbles only round the deck and in front of the feature wall (not the whole parapet)
-export function pebNear(t, items) { const out = [], E = 0.75, b = 1.25, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
+export function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
   (items || []).forEach(it => { if (!it || it.segs) return; const rot = +it.rot || 0, sw = rot % 180 ? it.d : it.w, sd = rot % 180 ? it.w : it.d, x = +it.x, z = +it.z;
     if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c) out.push(c); });
     else if (it.cat === 'feature') { const f = { 0: [x, z + sd, sw, b], 180: [x, z - b, sw, b], 90: [x - b, z, b, sd], 270: [x + sw, z, b, sd] }[rot % 360]; const c = f && cl(f); if (c) out.push(c); } });
@@ -481,7 +498,7 @@ function floorFin(g, t, items) {
   if (['plain', 'moroccan', 'stone', 'terracotta', 'grey'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
     const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const per = f.tile === 'moroccan' ? 3 : 2; tx.repeat.set(1 / per, 1 / per);
     const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
-  if (f.pebble) { const b = 1.25, pm = new THREE.MeshStandardMaterial({ map: finTex('pebble'), roughness: 1 });
+  if (f.pebble) { const b = 0.6, pm = new THREE.MeshStandardMaterial({ map: finTex('pebble'), roughness: 1 });
     (f.pebble === 'near' ? pebNear(t, items) : [[E, E, pw - 2 * E, b], [E, pd - E - b, pw - 2 * E, b], [E, E + b, b, pd - 2 * E - 2 * b], [pw - E - b, E + b, b, pd - 2 * E - 2 * b]]).forEach(([x, z, w, d]) => { const tx = pm.map.clone(); tx.needsUpdate = true; tx.repeat.set(w / 2, d / 2);
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04, z + d / 2); m.receiveShadow = true; g.add(m); }); }
 }
@@ -500,7 +517,9 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
         const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
         if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.2, (+it.h || 3) + 0.2, 0.6)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = (+it.h || 3) / 2; p.add(ln); }
         if (!k && P.labels !== false) { const tg = tag(it.label || 'Privacy screen'); tg.position.y = (+it.h || 3) + 1.4; p.add(tg); }
-        if ((P.site || {}).light !== '' ) { const gm = glow(0xFFE6C0), hh = +it.h || 3; for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4) { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 10), gm); m.position.set(u, hh - 0.1, 0.25); p.add(m); downGlow(p, u, hh - 0.15, 0.3, sg.y + hh); } } });   // 239: one-way down lights on every screen by default
+        if ((P.site || {}).light !== '') { const gm = glow(LENS), bk = mat('lt_blk', 0x1E1E1E, { roughness: 0.45, metalness: 0.4 }), hh = +it.h || 3; let n = 0;   // 245: one-way lights fixed on the screen's top rail — a black housing, the warm lens facing down, a soft wash on the screen
+          for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4, n++) { const hs = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.34), bk); hs.position.set(u, hh - 0.02, 0.3); p.add(hs); const ln = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.2), gm); ln.position.set(u, hh - 0.11, 0.36); p.add(ln);
+            if (n % 2 === 0) { const l = new THREE.PointLight(WARM, 0.9, 5, 2); l.position.set(u, hh - 0.9, 0.7); p.add(l); } } } });   // 239: one-way down lights on every screen by default
       return;
     }
     const [fw, fd] = foot(it), hd = new THREE.Group(); hd.userData.it = i; hd.position.set(+it.x + fw / 2, 0, +it.z + fd / 2); hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);

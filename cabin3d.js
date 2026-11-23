@@ -299,11 +299,20 @@ let CLAD = null;
 function cladMat() { if (CLAD) return CLAD; const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256; const x = cv.getContext('2d'); x.fillStyle = '#8E8174'; x.fillRect(0, 0, 256, 256);
   for (let r = 0; r < 8; r++) for (let c = 0; c < 4; c++) { const off = r % 2 ? 32 : 0, sh = 150 + ((r * 7 + c * 13) % 40); x.fillStyle = `rgb(${sh + 20},${sh + 8},${sh - 10})`; x.fillRect(c * 64 + off - 64 + 3, r * 32 + 3, 58, 26); x.fillRect(c * 64 + off + 3, r * 32 + 3, 58, 26); }
   const tx = new THREE.CanvasTexture(cv); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.repeat.set(3, 2); tx.colorSpace = THREE.SRGBColorSpace; return (CLAD = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.9 })); }
+// 245: the tiles already on the walls — brick look / plain 2 × 2 / 2 × 4 ft / stone, in the customer's colour
+const TCOL = { red: '#A4553A', beige: '#D8C7A8', grey: '#9A9A96', white: '#ECE9E2', charcoal: '#4A4A48', wood: '#8B6440' }, TMAT = {};
+function tileMat(wt) { const k = (wt.k || 'brick') + ':' + (wt.c || 'red'); if (TMAT[k]) return TMAT[k]; if (wt.k === 'stone') return (TMAT[k] = cladMat());
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256; const x = cv.getContext('2d'), base = TCOL[wt.c] || TCOL.red, jt = wt.c === 'white' || wt.c === 'beige' ? '#B9B2A6' : '#E8E2D6';
+  x.fillStyle = jt; x.fillRect(0, 0, 256, 256); const sh = (hex, d) => { const n = parseInt(hex.slice(1), 16), c = v => Math.max(0, Math.min(255, v + d)); return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`; };
+  let rep = [2, 4];
+  if (wt.k === 'brick') { for (let r = 0; r < 8; r++) for (let c = -1; c < 4; c++) { x.fillStyle = sh(base, ((r * 7 + c * 13) % 5 - 2) * 8); x.fillRect(c * 64 + (r % 2 ? 32 : 0) + 2, r * 32 + 2, 60, 28); } rep = [3, 3]; }
+  else { const tall = wt.k === 't24'; for (let r = 0; r < (tall ? 2 : 4); r++) for (let c = 0; c < 4; c++) { x.fillStyle = sh(base, ((r * 5 + c * 3) % 3 - 1) * 5); x.fillRect(c * 64 + 1.5, r * (tall ? 128 : 64) + 1.5, 61, (tall ? 128 : 64) - 3); } rep = tall ? [2, 1.5] : [2, 1.5]; }
+  const tx = new THREE.CanvasTexture(cv); tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.repeat.set(rep[0], rep[1]); tx.colorSpace = THREE.SRGBColorSpace; return (TMAT[k] = new THREE.MeshStandardMaterial({ map: tx, roughness: 0.6 })); }
 function drawPlot(tg, t) {
   const pw = +t.pw || 30, pd = +t.pd || 60, Y = -0.6, par = +t.par || 3, PT = 0.75, BH = 50, hi = t.high || {};
   const P = (n, col) => M[n] || (M[n] = new THREE.MeshStandardMaterial({ color: col, roughness: 0.95 }));
   const plaster = P('t_pl', 0xEAE5DC), tile = P('t_tile', 0xC4BDB1), side2 = P('t_side', 0xDCD3C4), dark = P('t_dark', 0x2F3437), road = P('t_road', 0x6E6C68), win = P('t_win', 0x55626B);
-  const wallm = t.wallFin === 'tiles' ? cladMat() : t.wallFin === 'paint' ? P('t_paint', 0xF7F2EA) : plaster;   // 237: the stairs room, parapet and other walls — paint / tiles / as they are
+  const wallm = t.wallFin === 'tiles' ? (t.wallTile ? tileMat(t.wallTile) : cladMat()) : t.wallFin === 'paint' ? P('t_paint', 0xF7F2EA) : plaster;   // 237: the stairs room, parapet and other walls — paint / tiles / as they are
   const OL = plotOutline(t), shaped = OL.length > 4;
   if (!shaped) {
     box(tg, pw, 0.5, pd, pw / 2, Y - 0.25, pd / 2, tile).userData.under = 1;
@@ -366,7 +375,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=31').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=32').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }

@@ -7,6 +7,34 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&am
 const f1 = v => (Math.round(v * 2) / 2).toString();
 export const ICON = { mumty: '🪜', lift: '🛗', room: '🚪', shaft: '⬛', ac: '❄️', cabin: '🏠', pergola: '⛱️', sofa: '🛋️', swing: '🪢', dining: '🍽️', chair: '🪑', bench: '🪵', table: '🟫', bar: '🍸', planter: '🪴',
   water: '⛲', sculpture: '🗿', deck: '🟧', railing: '🚧', privacy: '🎋', feature: '🧱', vgarden: '🌿', graffiti: '🎨', accover: '❄️', gate: '🚪', pathway: '🪨', turf: '🟩', firepit: '🔥', jacuzzi: '🛁', lights: '💡', umbrella: '☂️', fbench: '💺', counter: '🍳', shaftcover: '⬜' };
+// 245: line icons (24 × 24, stroke) everywhere instead of emojis — owner: "sare icons line icons banao"
+export const ICO = {
+  cabin: 'M3 10h18v10H3z M3 10l2-4h14l2 4 M8 20v-6h8v6 M12 14v6', pergola: 'M2 7h20 M3 10h18 M5 7v13 M19 7v13 M8 5v5 M12 5v5 M16 5v5',
+  sofa: 'M5 11V8a2 2 0 012-2h10a2 2 0 012 2v3 M3 11a2 2 0 012 2v2h14v-2a2 2 0 014 0v5H1v-5a2 2 0 012-2z M5 18v2 M19 18v2', swing: 'M4 3h16 M7 3v11 M17 3v11 M5 14h14v3H5z',
+  dining: 'M5 10h14 M8 10v9 M16 10v9 M2 7v12 M22 7v12 M2 14h3 M19 14h3', chair: 'M8 3v18 M8 12h9v9 M8 3h3',
+  bench: 'M3 7h18 M5 7v4 M19 7v4 M3 11h18v3H3z M5 14v5 M19 14v5', fbench: 'M3 7h18 M5 7v4 M19 7v4 M3 11h18v3H3z M5 14v5 M19 14v5', table: 'M3 9h18 M6 9v11 M18 9v11 M3 9l2-3h14l2 3',
+  bar: 'M3 12h18v8H3z M3 15h18 M9 3h6l-3 4z M12 7v5', planter: 'M6 13h12l-1.5 8h-9z M12 13V9 M12 9c0-3-3-5-6-5 0 3 2 5 6 5 M12 10c0-3 3-5 6-5 0 3-2 5-6 5',
+  water: 'M4 21h16 M6 21v-4h12v4 M12 17V8 M12 8c-2 3-5 3-6 1 M12 8c2 3 5 3 6 1 M12 3v2', sculpture: 'M8 21h8 M9 21v-3h6v3 M12 18c-3 0-4-3-3-6s4-3 3-7c3 2 4 5 3 8s-1 5-3 5',
+  deck: 'M3 5h18v14H3z M3 9.7h18 M3 14.3h18 M9 5v4.7 M15 9.7v4.6 M9 14.3V19', railing: 'M3 6h18 M3 18h18 M5 6v12 M9 6v12 M13 6v12 M17 6v12 M21 6v12',
+  privacy: 'M4 3v18 M20 3v18 M4 6h16 M4 10h16 M4 14h16 M4 18h16', feature: 'M4 4h16v16H4z M8 4v16 M12 4v16 M16 4v16 M3 21h18',
+  vgarden: 'M5 3h14v18H5z M8 8c1-2 3-2 3-2s-1 3-3 2 M16 12c-1-2-3-2-3-2s1 3 3 2 M8 16c1-2 3-2 3-2s-1 3-3 2', graffiti: 'M9 9h6v12H9z M10 9V6h4v3 M12 4v2 M17 5l2-1 M17 8h3 M17 11l2 1',
+  accover: 'M3 7h18v10H3z M3 10h18 M3 13h18 M3 16h18', pathway: 'M3 17h5v3H3z M9.5 12h5v3h-5z M16 7h5v3h-5z', turf: 'M3 20h18 M5 20c0-4 1-6 2-8 M8 20c0-3-1-5-2-7 M11 20c0-5 1-8 3-10 M14 20c0-3 1-5 2-6 M18 20c0-4-1-6-2-8',
+  counter: 'M3 10h18v10H3z M3 14h18 M8 3c0 2 2 2 2 5 M14 3c0 2 2 2 2 5', shaftcover: 'M4 6h16v12H4z M4 6l16 12 M20 6L4 18',
+  firepit: 'M5 18h14l-2 3H7z M12 3c2 3 4 5 4 8a4 4 0 01-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-4 0-7z', jacuzzi: 'M3 11h18v4a5 5 0 01-5 5H8a5 5 0 01-5-5z M6 11V6a2 2 0 014 0 M8 15h.01 M12 16h.01 M16 15h.01',
+  lights: 'M9 18h6 M10 21h4 M12 3a6 6 0 00-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0012 3z', umbrella: 'M3 11a9 9 0 0118 0z M12 11v8a2 2 0 01-4 0 M12 2v1',
+  gate: 'M3 21V6 M21 21V6 M3 9h18 M3 21h18 M8 9v12 M12 9v12 M16 9v12', mumty: 'M4 20h4v-4h4v-4h4V8h4V4', lift: 'M5 3h14v18H5z M12 3v18 M7.5 10l1.5-2 1.5 2 M13.5 14l1.5 2 1.5-2',
+  room: 'M6 21V3h12v18 M3 21h18 M14 12h.01', shaft: 'M5 5h14v14H5z M5 5l14 14', ac: 'M3 6h18v8H3z M6 10h12 M7 18l1-2 M12 19v-3 M17 18l-1-2',
+  chill: 'M4 9h12v5a5 5 0 01-5 5H9a5 5 0 01-5-5z M16 11h2a2 2 0 010 4h-2 M8 3v3 M12 3v3', party: 'M6 3h5l-1 6a2 2 0 01-3 0z M8.5 10v9 M6 21h5 M14 3h5l-1 6a2 2 0 01-3 0z M16.5 10v9 M14 21h5',
+  work: 'M5 5h14v10H5z M2 19h20l-2-4H4z', green: 'M5 20c0-9 5-15 15-15 0 10-6 15-15 15 M5 20l8-8', yoga: 'M12 3.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3 M12 8v5 M5 11l7 2 7-2 M8 20l4-7 4 7',
+  spa: 'M3 11h18v4a5 5 0 01-5 5H8a5 5 0 01-5-5z M8 3c0 2 2 2 2 5 M14 3c0 2 2 2 2 5', family: 'M12 21v-6 M12 15c-4 0-6-3-6-6a6 6 0 0112 0c0 3-2 6-6 6', choose: 'M9 11V5a1.5 1.5 0 013 0v6 M12 10V4a1.5 1.5 0 013 0v7 M15 11V6a1.5 1.5 0 013 0v8a6 6 0 01-6 6h-1a6 6 0 01-5-3l-3-5a1.5 1.5 0 012.5-1.5L9 13V8a1.5 1.5 0 010 0',
+  check: 'M5 12l5 5 9-10', sun: 'M12 7a5 5 0 110 10 5 5 0 010-10 M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1.5 1.5 M17.5 17.5L19 19 M5 19l1.5-1.5 M17.5 6.5L19 5', moon: 'M20 14A8 8 0 1110 4a6 6 0 0010 10z',
+  sparkle: 'M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z M19 15l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z', sprout: 'M12 21v-8 M12 13c0-4-3-6-7-6 0 4 3 6 7 6 M12 11c0-3 2-5 6-5 0 3-2 5-6 5',
+  lush: 'M4 21h16 M7 21c-1-5 0-9 3-12 M12 21c0-6 1-10 5-14 M17 21c1-4 0-7-2-9 M10 9c-3 0-5-2-5-5 3 0 5 2 5 5 M17 7c2 0 4-1 4-4-2 0-4 1-4 4', brush: 'M18 3l3 3-9 9-3-3z M9 12l-4 4c-1 1-1 3-3 4 3 1 5 0 6-1l4-4',
+  roller: 'M4 4h13v5H4z M17 6h3v6h-8v3 M11 15h2v6h-2z', tiles: 'M3 3h18v18H3z M3 12h18 M12 3v18', brick: 'M3 5h18v14H3z M3 9.7h18 M3 14.3h18 M8 5v4.7 M16 5v4.7 M12 9.7v4.6 M8 14.3V19 M16 14.3V19',
+  refresh: 'M20 7a8 8 0 10.5 7 M20 3v4h-4', plusbox: 'M4 4h16v16H4z M12 8v8 M8 12h8', door: 'M6 21V3h12v18 M3 21h18 M14 12h.01', straight: 'M3 10h18v4H3z', lshape: 'M4 5h4v11h12v4H4z',
+  curve: 'M4 19c0-8 6-14 16-14v4c-7 0-12 4-12 10z', none: 'M5 5l14 14 M19 5L5 19', grass: 'M3 20h18 M5 20c0-4 1-6 2-8 M8 20c0-3-1-5-2-7 M11 20c0-5 1-8 3-10 M14 20c0-3 1-5 2-6 M18 20c0-4-1-6-2-8' };
+export const ico = (k, cls) => ICO[k] ? `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>` : '';
+const icoG = (k, x, y, sz, col) => ICO[k] ? `<g transform="translate(${(x - sz / 2).toFixed(2)} ${(y - sz / 2).toFixed(2)}) scale(${(sz / 24).toFixed(4)})" fill="none" stroke="${col || '#5B544B'}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"><path d="${ICO[k]}"/></g>` : '';
 const NAME = { mumty: 'Stairs', lift: 'Lift', room: 'Room', shaft: 'Shaft', ac: 'AC' };
 const FILL = { deck: 'url(#p2wood)', turf: 'url(#p2turf)', pathway: 'url(#p2path)', cabin: '#E8E1D4', jacuzzi: '#CFE6EF', water: '#D6EAF2', planter: '#DCE8D0', vgarden: '#DCE8D0', feature: '#D8D2C8', bar: '#E9D9CC', lights: '#FFF1C9', firepit: '#F2D5C4', fbench: '#E3D6C2', counter: '#E9D9CC', shaftcover: 'rgba(244,244,242,.85)' };
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
@@ -54,7 +82,7 @@ function dim(x1, y1, x2, y2, off, txt, s, cls) {
 }
 
 // the whole plan. opts: { measure, sel: {k: 'blk'|'it', i}, north: 'back'|'front'|'left'|'right', road: [...sides], items, labels }
-function pebNear(t, items) { const out = [], E = 0.75, b = 1.25, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
+function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
   (items || []).forEach(it => { if (!it || it.segs) return; const rot = +it.rot || 0, sw = rot % 180 ? it.d : it.w, sd = rot % 180 ? it.w : it.d, x = +it.x, z = +it.z;
     if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c) out.push(c); });
     else if (it.cat === 'feature') { const f = { 0: [x, z + sd, sw, b], 180: [x, z - b, sw, b], 90: [x - b, z, b, sd], 270: [x + sw, z, b, sd] }[rot % 360]; const c = f && cl(f); if (c) out.push(c); } });
@@ -77,7 +105,7 @@ export function svg(t, opts) {
   // floor: tiles (plain / Moroccan) or bare, then a pebble border along the parapet
   h += `<polygon points="${poly}" fill="${({ moroccan: 'url(#p2moro)', plain: 'url(#p2tile)', grey: 'url(#p2grey)', stone: 'url(#p2stone)', terracotta: 'url(#p2terra)' })[fl.tile] || '#EADCC8'}"/>`;
   if (fl.pebble === 'near') h += pebNear(t, items).map(r => `<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" fill="url(#p2peb)"/>`).join('');   // 241: only round the deck / in front of the feature wall
-  else if (fl.pebble) { const b = fl.pebble === true ? 1.25 : +fl.pebble; h += `<clipPath id="p2clip"><polygon points="${poly}"/></clipPath><g clip-path="url(#p2clip)"><path d="M${E} ${E}H${pw - E}V${pd - E}H${E}Z M${E + b} ${E + b}V${pd - E - b}H${pw - E - b}V${E + b}Z" fill="url(#p2peb)" fill-rule="evenodd"/></g>`; }
+  else if (fl.pebble) { const b = fl.pebble === true ? 0.6 : +fl.pebble; h += `<clipPath id="p2clip"><polygon points="${poly}"/></clipPath><g clip-path="url(#p2clip)"><path d="M${E} ${E}H${pw - E}V${pd - E}H${E}Z M${E + b} ${E + b}V${pd - E - b}H${pw - E - b}V${E + b}Z" fill="url(#p2peb)" fill-rule="evenodd"/></g>`; }
   // neighbour walls that rise higher
   const hi = t.high || {}, hw = t.hw || {};
   ['left', 'right', 'back'].forEach(sd => { if (!hi[sd]) return; const L = Math.min(sd === 'back' ? pw : pd, +((hw[sd] || {}).l) || (sd === 'back' ? pw : pd));
@@ -89,7 +117,7 @@ export function svg(t, opts) {
     if (Lb) { const w = +it.w, d = +it.d, D = 2.2, th = -(+it.rot || 0) * Math.PI / 180, cx = x + f[0] / 2, cz = z + f[1] / 2, P = [[0, 0], [w, 0], [w, d], [w - D, d], [w - D, D], [0, D]].map(([a, b]) => { const lx = a - w / 2, lz = b - d / 2; return [cx + lx * Math.cos(th) + lz * Math.sin(th), cz - lx * Math.sin(th) + lz * Math.cos(th)]; });
       r += `<polygon points="${P.map(p => p.map(v => +v.toFixed(2)).join(',')).join(' ')}" fill="${FILL.bar || '#F1E3D8'}" stroke="${on ? '#C26445' : '#9B8E7E'}" stroke-width="${on ? s * 0.3 : s * 0.1}"/>`; }
     if (pg) for (let u = x + 1; u < x + f[0] - 0.4; u += 1.2) r += `<path d="M${u} ${z}V${z + f[1]}" stroke="#2E2E2E" stroke-width="${s * 0.05}" opacity=".35"/>`;
-    if (opts.labels !== false && !['pathway', 'lights'].includes(it.cat)) r += `<text x="${x + f[0] / 2}" y="${z + (pg ? lab * 0.9 : f[1] / 2)}" font-size="${lab}" class="p2lb">${ICON[it.cat] || ''}</text>`;
+    if (opts.labels !== false && !['pathway', 'lights'].includes(it.cat)) r += icoG(it.cat, x + f[0] / 2, z + (pg ? lab * 0.9 : f[1] / 2), Math.min(lab * 1.15, Math.min(f[0], f[1]) * 0.8));
     return r + '</g>'; };
   items.forEach((it, i) => { if (it && !it.segs && !it.box && ['deck', 'turf', 'pathway'].includes(it.cat)) h += drawn(it, i); });
   // the parapet
@@ -101,7 +129,7 @@ export function svg(t, opts) {
     h += `<g data-blk="${i}"><rect x="${b.x}" y="${b.z}" width="${b.w}" height="${b.d}" rx="0.2" fill="${b.type === 'ac' ? '#BFD9E6' : b.type === 'shaft' ? '#9C958A' : b.type === 'mumty' ? '#CFC7BA' : '#D6D2C7'}" stroke="${on ? '#C26445' : '#6F665A'}" stroke-width="${on ? s * 0.3 : s * 0.12}"/>`;
     if (b.type === 'mumty' || b.type === 'room' || b.type === 'lift') { const dr = b.door || 'front', dw = Math.min(3, (dr === 'front' || dr === 'back' ? b.w : b.d) * 0.5);
       h += dr === 'front' || dr === 'back' ? `<rect x="${b.x + (b.w - dw) / 2}" y="${dr === 'front' ? b.z + b.d - 0.25 : b.z - 0.05}" width="${dw}" height="0.3" fill="#8B5A2B"/>` : `<rect x="${dr === 'right' ? b.x + b.w - 0.25 : b.x - 0.05}" y="${b.z + (b.d - dw) / 2}" width="0.3" height="${dw}" fill="#8B5A2B"/>`; }
-    if (b.type !== 'ac') h += `<text x="${b.x + b.w / 2}" y="${b.z + b.d / 2}" font-size="${lab}" class="p2lb">${ICON[b.type] || ''} ${b.w >= 5 ? NAME[b.type] || '' : ''}</text>`;
+    if (b.type !== 'ac') { const nm = b.pent ? 'Penthouse' : b.w >= 5 ? NAME[b.type] || '' : '', ix = b.x + b.w / 2 - (nm ? nm.length * lab * 0.29 + lab * 0.1 : 0); h += icoG(b.type === 'room' && b.pent ? 'cabin' : b.type, ix, b.z + b.d / 2, lab * 1.1) + (nm ? `<text x="${ix + lab * 0.75}" y="${b.z + b.d / 2}" font-size="${lab}" class="p2lb" style="text-anchor:start">${nm}</text>` : ''); }
     h += '</g>'; });
   // the things that stand on it (pergolas last, as an outline over what is under them)
   items.forEach((it, i) => { if (it && !it.segs && !it.box && !['deck', 'turf', 'pathway', 'pergola'].includes(it.cat)) h += drawn(it, i); });
