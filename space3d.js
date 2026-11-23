@@ -6,7 +6,7 @@ import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel } from './cabin3d.js?v=34';
-import { pergolaModel } from './pergola3d.js?v=23';
+import { pergolaModel } from './pergola3d.js?v=24';
 import { outline } from './plan2d.js?v=9';
 
 let R = null, HANDLER = null;
@@ -403,7 +403,7 @@ function pgO(it) {   // 193g: the pergola as set up in its designer (finish, col
   return { l: it.w, w: it.d, height: String(+it.h || 8), colour: c.colour || 'Black', material: c.material, cover: gv(/roof|cover/i), layout: gv(/layout/i) };
 }
 function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w, d)
-  if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { const b = cabinModel(P.cabinCfg(it), P.cabinLay(it)); const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }
+  if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { const b = cabinModel(P.cabinCfg(it), P.cabinLay(it)); { const lb = b.g.getObjectByName('labels'); if (lb) lb.visible = false; } const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }   // 253: no "Wall / Swing door" tags in the plan
   if (it.cat === 'pergola' && !it.cfgId && !it.pick && !P.fullPergola) {   // 245 (owner): in the plan a light, simple pergola — 4 slim posts, a frame, thin rafters; the chosen design shows in full
     const h = new THREE.Group(), y0 = it.deck ? 0.6 : 0, H = (+it.h || 8), w = +it.w, d = +it.d, fm = mat('c_pgs', 0x2F2F2F, { metalness: 0.35, roughness: 0.5 }), sp = Math.max(w, d) > 16 ? 3 : 2;
     if (it.deck) { const dk = mat('c_pdeck', 0x8B6A4A); box(h, w, 0.6, d, w / 2, 0.3, d / 2, dk); }
@@ -421,7 +421,7 @@ const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 
 function build(P) {
   if (R) R.nl = []; const g = new THREE.Group(), t = P.site || {}, terr = t.kind === 'terrace';
-  if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; if (t.floor) try { floorFin(g, t, P.items || []); } catch (e) {} } else { lawn(g, t); R.plot = null; }
+  if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; if (P.labels !== false) (t.blocks || []).forEach(b => { const nm = b.type === 'mumty' ? 'Stairs' : b.type === 'shaft' ? 'Shaft' : b.type === 'lift' ? 'Lift' : ''; if (!nm) return; const tg = tag(nm); tg.position.set(+b.x + b.w / 2, (b.type === 'shaft' ? Math.max(+b.h || 0, 1) : (+b.h || 9)) + 2, +b.z + b.d / 2); g.add(tg); }); /* 253: what the roof's own blocks are */ if (t.floor) try { floorFin(g, t, P.items || []); } catch (e) {} } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   drawItems(items, R.holders, P);
   if (P.measure && terr) { try { g.add(measures(P)); } catch (e) {} }

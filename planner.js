@@ -4,7 +4,7 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=37';
+import * as S3 from './space3d.js?v=38';
 import * as P2 from './plan2d.js?v=9';
 import { cutHit } from './cabin3d.js?v=34';
 import * as TM from './terrace-match.js?v=5';
@@ -75,7 +75,7 @@ let S = null, EL = null, QUIET = false;
 function fresh() { const t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, par: 3, corner: '', high: {}, tanks: true, blocks: [] }; defBlocks(t); return { v: 1, step: 0, site: t, items: [], sel: null, view: '3d' }; }
 function defBlocks(t) { t.blocks = []; const sm = t.pw <= 25; addBlock(t, 'mumty', sm ? 8 : 10, sm ? 16 : 18, 'left'); const m = t.blocks[0]; if (m) addBlock(t, 'lift', 6, 6, 'left', [PAR, Math.max(PAR, m.z - 6)]); addBlock(t, 'shaft', 3, 4, 'right'); }
 function load() { try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && v.v === 1 && v.site) return Object.assign({ sel: null, view: '3d', step: 0 }, v); } catch (e) {} return fresh(); }
-function save() { if (QUIET) return; try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, su: S.su || null, pid: S.pid || null, pname: S.pname || '', source: S.source || '', ctabs: S.ctabs || [] })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
+function save() { if (QUIET) return; try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, su: S.su || null, bsel: S.bsel || null, pid: S.pid || null, pname: S.pname || '', source: S.source || '', ctabs: S.ctabs || [] })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
 // ---------------------------------------------------------------- 195: plans saved to the customer's account; sign-in asked 1 minute in
 const ev = (k, d) => { try { if (window.otrack) window.otrack(k, d || {}); } catch (e) {} };
 async function rpc(fn, args) {
@@ -733,12 +733,14 @@ function suRemApply() {   // blocks marked 'take down' leave the roof (kept asid
   t.blocks = all.filter(b => !su.rm['blk_' + b.id]); t.gone = all.filter(b => su.rm['blk_' + b.id]); }
 function shV(b) { return b.h != null && b.h !== '' && isFinite(+b.h) ? +b.h : 3; }   // 252: a shaft can be flush (0) or 6 in high
 function shH(b) { const v = shV(b); return v === 0 ? '0 in (flush)' : v < 1 ? Math.round(v * 12) + ' in' : v + ' ft'; }
-function pFaces() { const door = geo().door; return [['left', 'Left'], ['right', 'Right'], ['back', 'Back (away from road)'], ['front', 'Front (road side)']].map(f => f[0] === door ? [f[0], f[1] + ' — door side'] : f); }
+function pOpen(M, f) { const t = S.site, s = 1, r = f === 'left' ? { x: M.x - s, z: M.z, w: s, d: M.d } : f === 'right' ? { x: M.x + M.w, z: M.z, w: s, d: M.d } : f === 'back' ? { x: M.x, z: M.z - s, w: M.w, d: s } : { x: M.x, z: M.z + M.d, w: M.w, d: s };   // 253: a face with open terrace in front (not a wall of the next room)
+  return inside(r) && !(t.blocks || []).some(b => b !== M && b.type !== 'ac' && hit(r, b)); }
+function pFaces() { const door = geo().door, M = (S.site.blocks || []).find(b => b.type === 'mumty'); return [['left', 'Left'], ['right', 'Right'], ['back', 'Back (away from road)'], ['front', 'Front (road side)']].filter(f => !M || pOpen(M, f[0])).map(f => f[0] === door ? [f[0], f[1] + ' — door side'] : f); }
 function pFace() { const su = S.su; if (su.pipeFace) return su.pipeFace; return suPipes(true) || ''; }
 function suPipes(dry) {   // 246: the stairs-room face with the open pipes (not the door, facing the terrace) + an openable cover in front if asked
   const t = S.site, su = S.su, M = (t.blocks || []).find(b => b.type === 'mumty'), keepP = t.pipes; t.pipes = null; if (!M || !su.pipes) { if (dry) t.pipes = keepP; return; }
-  const door = geo().door, faces = [['left', M.x, M.z + M.d / 2], ['right', M.x + M.w, M.z + M.d / 2], ['back', M.x + M.w / 2, M.z], ['front', M.x + M.w / 2, M.z + M.d]].filter(f => f[0] !== door && inside({ x: f[1] - 1, z: f[2] - 1, w: 2, d: 2 }) && (f[0] === 'left' ? M.x > P0() + 2 : f[0] === 'right' ? M.x + M.w < t.pw - P0() - 2 : f[0] === 'back' ? M.z > P0() + 2 : M.z + M.d < t.pd - P0() - 2));
-  const all = [['left', M.x, M.z + M.d / 2], ['right', M.x + M.w, M.z + M.d / 2], ['back', M.x + M.w / 2, M.z], ['front', M.x + M.w / 2, M.z + M.d]], f = (su.pipeFace && all.find(x => x[0] === su.pipeFace)) || faces.sort((a, b) => Math.hypot(a[1] - t.pw / 2, a[2] - t.pd / 2) - Math.hypot(b[1] - t.pw / 2, b[2] - t.pd / 2))[0]; if (dry) { t.pipes = keepP; return f ? f[0] : ''; } if (!f) return; t.pipes = { face: f[0], cover: !!su.pipeScr };
+  const door = geo().door, faces = [['left', M.x, M.z + M.d / 2], ['right', M.x + M.w, M.z + M.d / 2], ['back', M.x + M.w / 2, M.z], ['front', M.x + M.w / 2, M.z + M.d]].filter(f => f[0] !== door && pOpen(M, f[0]) && inside({ x: f[1] - 1, z: f[2] - 1, w: 2, d: 2 }) && (f[0] === 'left' ? M.x > P0() + 2 : f[0] === 'right' ? M.x + M.w < t.pw - P0() - 2 : f[0] === 'back' ? M.z > P0() + 2 : M.z + M.d < t.pd - P0() - 2));
+  const all = [['left', M.x, M.z + M.d / 2], ['right', M.x + M.w, M.z + M.d / 2], ['back', M.x + M.w / 2, M.z], ['front', M.x + M.w / 2, M.z + M.d]], f = (su.pipeFace && pOpen(M, su.pipeFace) && all.find(x => x[0] === su.pipeFace)) || faces.sort((a, b) => Math.hypot(a[1] - t.pw / 2, a[2] - t.pd / 2) - Math.hypot(b[1] - t.pw / 2, b[2] - t.pd / 2))[0]; if (dry) { t.pipes = keepP; return f ? f[0] : ''; } if (!f) return; t.pipes = { face: f[0], cover: !!su.pipeScr };
   if (!su.pipeScr) return; const w = 3, d = 0.5, it = { cat: 'privacy', label: 'Pipe cover (opens)', pipe: true, h: 8, w, d, rot: { left: 90, right: 270, back: 180, front: 0 }[f[0]] };
   if (f[0] === 'left') { it.x = M.x - d; it.z = M.z + M.d / 2 - w / 2; } else if (f[0] === 'right') { it.x = M.x + M.w; it.z = M.z + M.d / 2 - w / 2; } else if (f[0] === 'back') { it.x = M.x + M.w / 2 - w / 2; it.z = M.z - d; } else { it.x = M.x + M.w / 2 - w / 2; it.z = M.z + M.d; }
   if (it.rot % 180) { it.x = f[0] === 'left' ? M.x - d : M.x + M.w; it.z = M.z + M.d / 2 - w / 2; } S.items.push(it); }
@@ -942,9 +944,24 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
     return !inside(sr) || (t.kind === 'terrace' ? t.blocks : []).some(b => hit(sr, b)) || S.items.some(o => !att(o) && o.cat !== 'pathway' && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && !UMB.has(o.cat) && hit(sr, rectI(o))) ? -30 : 0; };   // the cabin's glass front keeps 5 ft open
   const LEARNED = new Set(['pergola', 'bar', 'water', 'jacuzzi', 'turf']);
   const SHRINK = { pergola: [8, 8], deck: [6, 6], turf: [6, 5], sofa: [6, 5], dining: [4, 4], jacuzzi: [6, 6], counter: [4, 2.5] };
+  // 253 (owner's screenshot): nothing stands in the 5 ft in front of a cabin's glass front; bars / counters / fixed seating / racks / water never straddle a pergola's edge or hit its posts (fixed seating never under it)
+  const cabZ = () => all('cabin').map(o => { const r = rectI(o), v = FACE[(+o.rot || 0) % 360] || [0, 1], D = 5; return v[1] > 0 ? { x: r.x, z: r.z + r.d, w: r.w, d: D } : v[1] < 0 ? { x: r.x, z: r.z - D, w: r.w, d: D } : v[0] > 0 ? { x: r.x + r.w, z: r.z, w: D, d: r.d } : { x: r.x - D, z: r.z, w: D, d: r.d }; });
+  const STRAD = new Set(['bar', 'counter', 'fbench', 'rack', 'water', 'firepit', 'sculpture']);
+  const pgPosts = R => { const xs = [R.x + 0.2, R.x + R.w - 0.2].concat(R.w > 16 ? [R.x + R.w / 2] : []), zs = [R.z + 0.2, R.z + R.d - 0.2].concat(R.d > 16 ? [R.z + R.d / 2] : []), out = []; xs.forEach(x => zs.forEach(z => { const midx = Math.abs(x - (R.x + R.w / 2)) < 0.01, midz = Math.abs(z - (R.z + R.d / 2)) < 0.01; if (midx && midz) return; out.push([x, z]); })); return out; };
+  const pgPen = (r, R, k) => { const ix = Math.max(0, Math.min(r.x + r.w, R.x + R.w) - Math.max(r.x, R.x)) * Math.max(0, Math.min(r.z + r.d, R.z + R.d) - Math.max(r.z, R.z)); if (ix <= 0.01) return 0;
+    if (k === 'fbench') return 70; if (ix < r.w * r.d - 0.05) return 60; return pgPosts(R).some(([x, z]) => x > r.x - 1 && x < r.x + r.w + 1 && z > r.z - 1 && z < r.z + r.d + 1) ? 45 : 0; };
+  const rGap = (a, b) => Math.hypot(Math.max(0, a.x - (b.x + b.w), b.x - (a.x + a.w)), Math.max(0, a.z - (b.z + b.d), b.z - (a.z + a.d)));
+  const capA = (sz, z) => { const a = sz[0] * sz[1], m = z[0] * z[1] * 1.3; if (a <= m) return sz; const q = Math.sqrt(m / a); return [r2(sz[0] * q), r2(sz[1] * q)]; };
   const put = (k, score, opt) => { opt = opt || {}; const it = newItem(k); if (!it) return null; Object.assign(it, opt.set || {}); if (opt.pre) try { opt.pre(it); } catch (e) {} if (k === 'cabin' || k === 'pergola') it.label = it.label || CAT[k].t; const i = S.items.length; S.items.push(it);
-    const tg = LEARNED.has(k) && !opt.keepRule ? learned(k) : null, sc0 = tg && score ? (cx, cz, f, rot) => -1.6 * d2(cx, cz, tg[0], tg[1]) + 0.25 * score(cx, cz, f, rot) : score, sc = opt.bonus && sc0 ? (cx, cz, f, rot) => sc0(cx, cz, f, rot) + opt.bonus(cx, cz, f, rot) : sc0;
-    if (CAT[k].kind === 'wall') { it.x = r2(opt.at[0] - it.w / 2); it.z = r2(opt.at[1]); it.rot = opt.rot; if (!settle(it, i, [it.x, it.z])) { S.items.pop(); miss++; return null; } return it; }
+    const tg = LEARNED.has(k) && !opt.keepRule ? learned(k) : null, sc0 = tg && score ? (cx, cz, f, rot) => -1.6 * d2(cx, cz, tg[0], tg[1]) + 0.25 * score(cx, cz, f, rot) : score, sc1 = opt.bonus && sc0 ? (cx, cz, f, rot) => sc0(cx, cz, f, rot) + opt.bonus(cx, cz, f, rot) : sc0;
+    const KZ = k !== 'cabin' && CAT[k].kind !== 'floor' && k !== 'deck' ? cabZ() : [], PGs = STRAD.has(k) ? all('pergola').map(rectI) : [];
+    const sc = sc1 && (KZ.length || PGs.length) ? (cx, cz, f, rot) => { const r = { x: cx - f[0] / 2, z: cz - f[1] / 2, w: f[0], d: f[1] }; return sc1(cx, cz, f, rot) - (KZ.some(z => hit(r, z)) ? 90 : 0) - PGs.reduce((a, R) => a + pgPen(r, R, k), 0); } : sc1;
+    if (CAT[k].kind === 'wall') {   // 253: a wall panel stays on its wall — slides along it to a free stretch, else the next wall; never left standing in the open
+      const KW = cabZ(), dzw = g.dz, tries = [opt].concat(opt.alt === false ? [] : ['back', 'left', 'right', 'front'].filter(sd => !g.road.includes(sd)).map(sd => wallAt(sd, sd === 'back' || sd === 'front' ? t.pw / 2 : t.pd / 2, k)));
+      for (const o of tries) { const x0 = r2(o.at[0] - it.w / 2), z0 = r2(o.at[1]), vert = (+o.rot || 0) % 180 !== 0, run = vert ? t.pd : t.pw;
+        for (let s2 = 0; s2 <= run; s2 += 0.5) for (const sg of s2 ? [1, -1] : [1]) { it.rot = o.rot; it.x = vert ? x0 : r2(x0 + sg * s2); it.z = vert ? r2(z0 + sg * s2) : z0; const r = rectI(it);
+          if (!inside(r) || clashes(it, i) || KW.some(z => hit(r, z)) || (dzw && hit(r, dzw))) continue; return it; } }
+      S.items.pop(); miss++; return null; }
     const dz = g.dz && Object.assign({ fr: g.fr }, g.dz); let ok = spotBest(it, i, sc, opt.rots, dz);
     for (let tr = 0; !ok && tr < 5 && SHRINK[k]; tr++) { it.w = Math.max(SHRINK[k][0], r2(it.w * 0.85)); it.d = Math.max(SHRINK[k][1], r2(it.d * 0.85)); ok = spotBest(it, i, sc, opt.rots, dz); if (it.w === SHRINK[k][0] && it.d === SHRINK[k][1]) break; }   // too big → a little smaller, not left out
     if (!ok && k === 'cabin') { try { cabinSize(it, 10, 8); } catch (e) {} ok = spotBest(it, i, sc, opt.rots, dz); }
@@ -966,7 +983,8 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   // 2) pergolas (+ a deck under each) — 241: as many as asked, each sized for its own people
   const pgq = (S.su || {}).pgs || [], PR = [];
   for (let pi = 0; pi < Math.min(3, B.pergola || 0); pi++) { const zz = SZF(pgq[pi] || ppl).pergola || [12, 10], rp = takeR('pergola'), others = (cx, cz) => PR.reduce((a, r) => a + 0.4 * Math.min(25, d2(cx, cz, r.x + r.w / 2, r.z + r.d / 2)), 0), n0 = all('pergola').length;
-    if (rp) { const sz = pi ? zz : rsz(rp); put('pergola', (cx, cz, f) => -1.5 * d2(cx, cz, rp[1], rp[2]) + 9 * tch(cx, cz, f).n, { set: { w: cl(sz[0], 8, 30), d: cl(sz[1], 8, 30) }, rots: [0], keepRule: true }); if (!pi && all('pergola').length > n0) notes.push('Pergola where LifeWall placed it'); }
+    if (rp) { const sz = pi ? zz : capA(rsz(rp), zz);   // 253: as drawn, but never far bigger than the people asked for
+      put('pergola', (cx, cz, f) => -1.5 * d2(cx, cz, rp[1], rp[2]) + 9 * tch(cx, cz, f).n, { set: { w: cl(sz[0], 8, 30), d: cl(sz[1], 8, 30) }, rots: [0], keepRule: true }); if (!pi && all('pergola').length > n0) notes.push('Pergola where LifeWall placed it'); }
     if (all('pergola').length === n0) { const w = wh('pergola');
       put('pergola', (cx, cz, f) => sun(cx, cz, 0.35) + others(cx, cz) + (w === 'cabin' && cr && !pi ? -d2(cx, cz, cr.x + cr.w / 2, cr.z + cr.d + f[1] / 2) : w === 'back' ? -d2(cx, cz, farX(f[0]), P + f[1] / 2) : -d2(cx, cz, farX(f[0]), t.pd - P - f[1] / 2) + wallBonus(f, cx, cz, g.far) + wallBonus(f, cx, cz, 'front')), { set: { w: zz[0], d: zz[1] }, keepRule: w === 'cabin', bonus: (cx, cz, f) => tch(cx, cz, f).n * 14 }); }
     const np = all('pergola')[n0]; if (np) PR.push(rectI(np)); }
@@ -995,7 +1013,7 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   const fbq = (S.su || {}).fbs || [];
   for (let n = 0; n < (B.fbench || 0); n++) { const sh = fbq[n] || 'L', lt = learned('fbench');   // 247: straight along a wall / L in a corner / curved in a corner
     if (sh === 'L') { lSeat(g, SZ.L || [10, 6], lt, PR, notes) || miss++; continue; }
-    if (sh === 'straight') { put('fbench', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : -30) - (PR.some(r => inR(cx, cz, r)) ? 30 : 0) - (lt ? 0.3 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270], set: { w: (SZ.L || [10])[0], d: 2, label: 'Fixed seating' } }) || miss++; continue; }
+    if (sh === 'straight') { put('fbench', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : -30) - (PR.some(r => inR(cx, cz, r)) ? 30 : 0) - (lt ? 0.3 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270], set: { w: (SZ.L || [10])[0], d: 2.5, label: 'Fixed seating' } }) || miss++; continue; }
     const cs = Math.max(7, Math.min(10, (SZ.L || [10])[0] - 1)), CN = olOn() ? olCorners() : [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]], ROT = { bl: 0, br: 90, fr: 180, fl: 270 };
     let best = null; CN.forEach(([k, X, Z]) => { const it = newItem('fbench'); Object.assign(it, { w: cs, d: cs, shape: 'curve', label: 'Curved seating', rot: ROT[k], x: k[1] === 'l' ? X : X - cs, z: k[0] === 'b' ? Z : Z - cs });   // a quarter arc hugging that corner
       const i = S.items.length; S.items.push(it); const ok = !clashes(it, i) && !PR.some(r => hit(rectI(it), r)); S.items.pop(); if (!ok) return;
@@ -1048,7 +1066,10 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
     if (n === 0 && by('bar')) notes.push('Bar counter with room on both sides — by a wall, the seating or the pergola'); }
   all('bar').slice(0, B.rack || 0).forEach(b => {   // 247 (owner): a bottle rack only behind a bar — on the wall behind it when there is one, else standing behind it
     const r = rectI(b), FACE = { 0: [0, 1], 90: [-1, 0], 180: [0, -1], 270: [1, 0] }, v = FACE[(+b.rot || 0) % 360] || [0, 1], bx = -v[0], bz = -v[1], cx = r.x + r.w / 2, cz = r.z + r.d / 2, hw = v[1] ? r.d / 2 : r.w / 2;
-    const tx = cx + bx * (hw + 3.6), tz = cz + bz * (hw + 3.6); put('rack', (x, z) => -d2(x, z, tx, tz) * 2, { rots: [(+b.rot || 0) % 360], set: { label: 'Bottle rack' }, noFlush: false }); if (by('rack')) notes.push('Bottle rack behind the bar'); });
+    const tx = cx + bx * (hw + 3.6), tz = cz + bz * (hw + 3.6); let rk = put('rack', (x, z) => -d2(x, z, tx, tz) * 2, { rots: [(+b.rot || 0) % 360], set: { label: 'Bottle rack' }, noFlush: false });
+    if (rk && rGap(rectI(rk), r) > 2.5) { S.items.splice(S.items.indexOf(rk), 1); rk = put('rack', (x, z, f, rot) => -2 * d2(x, z, tx, tz) + 6 * faceTo(x, z, rot, cx, cz), { rots: [0, 90, 180, 270], set: { label: 'Bottle rack' } }); }   // 253: right behind the bar, else beside it — never away from it
+    if (rk && rGap(rectI(rk), r) > 2.5) { S.items.splice(S.items.indexOf(rk), 1); rk = null; notes.push('No room for the bottle rack by the bar — move the bar to make room'); }
+    if (rk) notes.push('Bottle rack behind the bar'); });
   for (let n = 0; n < (B.sculpture || 0); n++) { const pa = by('pathway'); put('sculpture', (cx, cz) => pa ? -d2(cx, cz, pa.x + 4.5, pa.z + pa.d - 1.5) : -d2(cx, cz, t.pw / 2, t.pd - 3)); }
   if (B.lights && !(S.su && S.su.light)) { const pa = by('pathway'), n = B.lights;
     for (let k = 0; k < n; k++) { const tgt = pa ? [k % 2 ? pa.x + pa.w + 0.6 : pa.x - 0.6, pa.z + pa.d * ((Math.floor(k / 2) + 0.5) / Math.ceil(n / 2))] : [P + 1 + (t.pw - 2) * ((k + 0.5) / n), t.pd - P - 1]; put('lights', (cx, cz) => -d2(cx, cz, tgt[0], tgt[1]), { rots: [0] }); } }
@@ -1058,7 +1079,7 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   if (B.accover && t.kind === 'terrace') coverAC();
   { const gq = (S.su || {}).gw || [], Mb = M && M.type === 'mumty' ? M : (t.blocks || []).find(b => b.type === 'mumty');   // 247 (owner): graffiti only on the wall the customer picked
     for (let n = 0; n < (B.graffiti || 0); n++) { const wv = gq[n] || (gWalls()[0] || [''])[0], [kd, sd] = wv.split(':'); if (!sd) { miss++; continue; } const it0 = newItem('graffiti');
-      if (kd === 'p') { const run = sd === 'back' ? t.pw : t.pd; put('graffiti', null, Object.assign(wallAt(sd, run / 2 + (n ? 6 : 0), 'graffiti'), { set: { wsel: wv } })); continue; }
+      if (kd === 'p') { const run = sd === 'back' ? t.pw : t.pd; put('graffiti', null, Object.assign(wallAt(sd, run / 2 + (n ? 6 : 0), 'graffiti'), { set: { wsel: wv }, alt: false })); continue; }
       if (!Mb) { miss++; continue; } const len = sd === 'left' || sd === 'right' ? Mb.d : Mb.w, w = Math.max(3, Math.min(+it0.w || 10, len - 1)), d = +it0.d || 0.3;
       const at = sd === 'right' ? [Mb.x + Mb.w + w / 2, Mb.z + (Mb.d - w) / 2, 270] : sd === 'left' ? [Mb.x - d + w / 2, Mb.z + (Mb.d - w) / 2, 90] : sd === 'back' ? [Mb.x + Mb.w / 2, Mb.z - d, 180] : [Mb.x + Mb.w / 2, Mb.z + Mb.d, 0];
       const gi = Object.assign(it0, { w, d, h: Math.min(+Mb.h || 9, 8) - 0.5, rot: at[2], wsel: wv, x: r2(at[0] - w / 2), z: r2(at[1]), on: { b: t.blocks.indexOf(Mb), face: { left: 'xmin', right: 'xmax', back: 'zmin', front: 'zmax' }[sd] } });
@@ -1230,7 +1251,11 @@ function toCart() {
 }
 function total() { let t = 0, n = 0; S.items.forEach(it => { const fp = fromPrice(it); if (fp && fp.price != null) { t += fp.price; n++; } }); return { t, n }; }
 
-function draw(rec) {
+const SUV = 253;   // 253: a setup made before the placement fixes is set up again once (same answers, existing things kept where they were put)
+function suMig() { const su = S.su; if (!su || su.cv === SUV) return false; su.cv = SUV; if (!(su.q >= SUQ.indexOf('eplan') || su.done) || !S.items.some(o => !o.old)) return false;
+  if (!S.bsel || !Object.keys(S.bsel).length) { const B = {}; S.items.forEach(o => { if (!o.old && CAT[o.cat] && !att(o) && o.cat !== 'pathway') B[o.cat] = (B[o.cat] || 0) + 1; }); if (S.items.some(o => o.cat === 'privacy' && o.mode === 'par')) B.privacy = 1; if (S.items.some(o => o.cat === 'accover')) B.accover = 1; S.bsel = B; }
+  try { suCompose(su.decorDone ? 'all' : 'el'); } catch (e) { return false; } return true; }
+function draw(rec) { if (suMig()) return;
   if (QUIET) return;
   if (S.items) { S.items.forEach((it, i) => { if (att(it)) attach(it, i); }); S.items = S.items.filter(it => it.mode !== 'ac' || it.box); S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); }); if (S.sel != null && !S.items[S.sel]) S.sel = null; }
   if (rec !== false) hist(); save();
