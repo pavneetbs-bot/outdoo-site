@@ -145,7 +145,8 @@ function snapEdge(it) {   // railings / gates: run along the nearest edge, again
 }
 function snapWall(it, far) {   // a panel near the parapet or a block (within 3 ft): turn to face out from it and stand against it
   const t = S.site, p = P0(), f = foot(it), cx = it.x + f[0] / 2, cz = it.z + f[1] / 2;
-  const faces = [['back', p, cz - p], ['front', t.pd - p, t.pd - p - cz], ['left', p, cx - p], ['right', t.pw - p, t.pw - p - cx]];
+  const faces = olOn() ? olWalls().filter(w => w.vert ? cz > w.lo + p && cz < w.hi - p : cx > w.lo + p && cx < w.hi - p).map(w => w.vert ? (w.dir > 0 ? ['left', w.at, cx - w.at] : ['right', w.at, w.at - cx]) : (w.dir > 0 ? ['back', w.at, cz - w.at] : ['front', w.at, w.at - cz]))   // 244: any shape
+    : [['back', p, cz - p], ['front', t.pd - p, t.pd - p - cz], ['left', p, cx - p], ['right', t.pw - p, t.pw - p - cx]];
   (t.kind === 'terrace' ? t.blocks : []).forEach((b, bi) => { if (b.type === 'ac') return; if (cx > b.x && cx < b.x + b.w) { faces.push(['front', b.z, cz - b.z, 1, bi, 'zmin']); faces.push(['back', b.z + b.d, b.z + b.d - cz, 1, bi, 'zmax']); }
     if (cz > b.z && cz < b.z + b.d) { faces.push(['right', b.x, cx - b.x, 1, bi, 'xmin']); faces.push(['left', b.x + b.w, b.x + b.w - cx, 1, bi, 'xmax']); } });
   const near = it.wside ? faces.find(q => q[0] === it.wside && !q[3]) : faces.filter(q => (far ? q[2] > -0.5 : Math.abs(q[2]) <= 3)).sort((a, b) => Math.abs(a[2]) - Math.abs(b[2]))[0]; if (!near) { it.on = null; return; }   // a chosen wall wins
@@ -154,6 +155,24 @@ function snapWall(it, far) {   // a panel near the parapet or a block (within 3 
   else { it.rot = sd === 'left' ? 270 : 90; it.z = r2(cz - it.w / 2); it.x = blk ? (sd === 'right' ? at - it.d : at) : (sd === 'left' ? at : at - it.d); }
   if (it.wside) { const f2 = foot(it); it.x = r2(Math.max(p, Math.min(t.pw - p - f2[0], it.x))); it.z = r2(Math.max(p, Math.min(t.pd - p - f2[1], it.z))); }   // kept on the plot along its wall
 }
+// 244 phase 2: a roof of any shape — its walls (straight outline edges, the parapet's inside face) and its inner corners, for the setup rules
+function olOn() { const t = S.site; return t.kind === 'terrace' && Array.isArray(t.outline) && t.outline.length >= 3; }
+function olWalls() { if (!olOn()) return null; const t = S.site, O = P2.outline(t), p = P0(), W = [];
+  O.forEach((a, i) => { const b = O[(i + 1) % O.length], vert = Math.abs(a[0] - b[0]) < 0.05, hor = Math.abs(a[1] - b[1]) < 0.05; if (!vert && !hor) return; const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+    const dir = vert ? (P2.inPolyP(O, mx + 0.3, mz) ? 1 : -1) : (P2.inPolyP(O, mx, mz + 0.3) ? 1 : -1);   // which way the terrace is
+    W.push({ vert, dir, at: (vert ? a[0] : a[1]) + dir * p, lo: Math.min(vert ? a[1] : a[0], vert ? b[1] : b[0]), hi: Math.max(vert ? a[1] : a[0], vert ? b[1] : b[0]) }); });
+  return W; }
+function olTouch(r, e) {   // which sides of rect r stand against a wall of the outline
+  const W = olWalls(), ov = (a0, a1, b0, b1) => a0 < b1 - 0.5 && a1 > b0 + 0.5, o = { L: false, R: false, Bk: false, F: false };
+  W.forEach(w => { if (w.vert) { if (!ov(r.z, r.z + r.d, w.lo, w.hi)) return; if (w.dir > 0 && Math.abs(r.x - w.at) < e) o.L = true; if (w.dir < 0 && Math.abs(r.x + r.w - w.at) < e) o.R = true; }
+    else { if (!ov(r.x, r.x + r.w, w.lo, w.hi)) return; if (w.dir > 0 && Math.abs(r.z - w.at) < e) o.Bk = true; if (w.dir < 0 && Math.abs(r.z + r.d - w.at) < e) o.F = true; } });
+  return o; }
+function olCorners() {   // inner corners of two walls (convex, 90°): [key, X, Z] at the parapet's inside face; key bl / br / fl / fr = which way the terrace opens
+  const t = S.site, O = P2.outline(t), p = P0(), out = [];
+  O.forEach((q, i) => { const a = O[(i + O.length - 1) % O.length], b = O[(i + 1) % O.length]; if (!((Math.abs(a[0] - q[0]) < 0.05 || Math.abs(a[1] - q[1]) < 0.05) && (Math.abs(b[0] - q[0]) < 0.05 || Math.abs(b[1] - q[1]) < 0.05))) return;
+    const ins = [[1, 1], [-1, 1], [1, -1], [-1, -1]].filter(([sx, sz]) => P2.inPolyP(O, q[0] + sx * 0.3, q[1] + sz * 0.3)); if (ins.length !== 1) return;
+    const [sx, sz] = ins[0]; out.push([(sz > 0 ? 'b' : 'f') + (sx > 0 ? 'l' : 'r'), q[0] + sx * p, q[1] + sz * p]); });
+  return out; }
 // 193c: a parapet side's free runs (cut corners trimmed; cabins, blocks and tall things standing against it left out)
 const SIDE_AX = { back: 'x', front: 'x', left: 'z', right: 'z' };
 function parRuns(side, skip, kinds) {
@@ -245,7 +264,9 @@ function flush(it, i) {   // within 1.5 ft of the parapet, a block or another th
   const t = S.site, p = P0(), fl = CAT[it.cat].kind === 'floor', obs = (t.kind === 'terrace' ? t.blocks : []).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d }))
     .concat(S.items.filter((o, j) => j !== i && !att(o) && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin')).map(rectI));
   const r = rectI(it), ov = (a0, a1, b0, b1) => a0 < b1 - 0.01 && a1 > b0 + 0.01;
-  const gx = [[r.x - p, -1], [t.pw - p - (r.x + r.w), 1]], gz = [[r.z - p, -1], [t.pd - p - (r.z + r.d), 1]];
+  const gx = olOn() ? [] : [[r.x - p, -1], [t.pw - p - (r.x + r.w), 1]], gz = olOn() ? [] : [[r.z - p, -1], [t.pd - p - (r.z + r.d), 1]];
+  if (olOn()) olWalls().forEach(w => { if (w.vert) { if (!ov(r.z, r.z + r.d, w.lo, w.hi)) return; if (w.dir > 0 && w.at <= r.x + 0.01) gx.push([r.x - w.at, -1]); if (w.dir < 0 && w.at >= r.x + r.w - 0.01) gx.push([w.at - (r.x + r.w), 1]); }
+    else { if (!ov(r.x, r.x + r.w, w.lo, w.hi)) return; if (w.dir > 0 && w.at <= r.z + 0.01) gz.push([r.z - w.at, -1]); if (w.dir < 0 && w.at >= r.z + r.d - 0.01) gz.push([w.at - (r.z + r.d), 1]); } });   // 244: the walls of any shape
   obs.forEach(o => { if (ov(r.z, r.z + r.d, o.z, o.z + o.d)) { if (o.x + o.w <= r.x + 0.01) gx.push([r.x - (o.x + o.w), -1]); if (o.x >= r.x + r.w - 0.01) gx.push([o.x - (r.x + r.w), 1]); }
     if (ov(r.x, r.x + r.w, o.x, o.x + o.w)) { if (o.z + o.d <= r.z + 0.01) gz.push([r.z - (o.z + o.d), -1]); if (o.z >= r.z + r.d - 0.01) gz.push([o.z - (r.z + r.d), 1]); } });
   for (const [g, ax] of [[gx, 'x'], [gz, 'z']]) { const m = g.filter(q => q[0] > 0.01 && q[0] <= 1.5).sort((a, b) => a[0] - b[0])[0]; if (!m) continue;
@@ -800,12 +821,14 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   const ppl = (S.su || {}).pg || (S.su || {}).people || '5-8', SZF = k => ({ '2-4': { sofa: [8, 7], dining: [5, 5], pergola: [10, 9], L: [8, 5] }, '5-8': { sofa: [10, 8], dining: [7, 6], pergola: [12, 10], L: [10, 6] }, '9-12': { sofa: [12, 9], dining: [10, 6], pergola: [16, 12], L: [12, 8] }, '12+': { sofa: [14, 10], dining: [12, 7], pergola: [18, 13], L: [14, 10] } }[k] || {}), SZ = SZF(ppl);
   const sun = (cx, cz, k) => g.sw ? k * ((cx - t.pw / 2) * g.sw[0] + (cz - t.pd / 2) * g.sw[1]) : 0;   // + toward the afternoon sun (south-west)
   const farX = w => g.far === 'right' ? t.pw - P - w / 2 : P + w / 2, by = k => S.items.find(o => o.cat === k), all = k => S.items.filter(o => o.cat === k);
-  const d2 = (x, z, X, Z) => Math.hypot(x - X, z - Z), wallBonus = (f, cx, cz, sd) => { const e = { left: cx - f[0] / 2 - P, right: t.pw - P - cx - f[0] / 2, back: cz - f[1] / 2 - P, front: t.pd - P - cz - f[1] / 2 }[sd]; return e < 0.6 ? 6 : 0; };
+  const d2 = (x, z, X, Z) => Math.hypot(x - X, z - Z), wallBonus = (f, cx, cz, sd) => { if (olOn()) return olTouch({ x: cx - f[0] / 2, z: cz - f[1] / 2, w: f[0], d: f[1] }, 0.6)[{ left: 'L', right: 'R', back: 'Bk', front: 'F' }[sd]] ? 6 : 0; const e = { left: cx - f[0] / 2 - P, right: t.pw - P - cx - f[0] / 2, back: cz - f[1] / 2 - P, front: t.pd - P - cz - f[1] / 2 }[sd]; return e < 0.6 ? 6 : 0; };
   const inR = (cx, cz, r) => r && cx > r.x && cx < r.x + r.w && cz > r.z && cz < r.z + r.d;
   const ov = (a0, a1, b0, b1) => a0 < b1 - 0.5 && a1 > b0 + 0.5;
   const tch = (cx, cz, f) => { const r = { x: cx - f[0] / 2, z: cz - f[1] / 2, w: f[0], d: f[1] }, e = 0.6, ob = (t.kind === 'terrace' ? t.blocks.filter(b => b.type !== 'ac') : []).concat(all('cabin').map(rectI)).filter(o => !(Math.abs(o.x - r.x) < 0.01 && Math.abs(o.z - r.z) < 0.01));
     const L = r.x - P < e || ob.some(o => Math.abs(o.x + o.w - r.x) < e && ov(r.z, r.z + r.d, o.z, o.z + o.d)), R = t.pw - P - (r.x + r.w) < e || ob.some(o => Math.abs(o.x - (r.x + r.w)) < e && ov(r.z, r.z + r.d, o.z, o.z + o.d));
     const Bk = r.z - P < e || ob.some(o => Math.abs(o.z + o.d - r.z) < e && ov(r.x, r.x + r.w, o.x, o.x + o.w)), F = t.pd - P - (r.z + r.d) < e || ob.some(o => Math.abs(o.z - (r.z + r.d)) < e && ov(r.x, r.x + r.w, o.x, o.x + o.w));
+    if (olOn()) { const w = olTouch(r, e); return { L: w.L || ob.some(o => Math.abs(o.x + o.w - r.x) < e && ov(r.z, r.z + r.d, o.z, o.z + o.d)), R: w.R || ob.some(o => Math.abs(o.x - (r.x + r.w)) < e && ov(r.z, r.z + r.d, o.z, o.z + o.d)),
+      Bk: w.Bk || ob.some(o => Math.abs(o.z + o.d - r.z) < e && ov(r.x, r.x + r.w, o.x, o.x + o.w)), F: w.F || ob.some(o => Math.abs(o.z - (r.z + r.d)) < e && ov(r.x, r.x + r.w, o.x, o.x + o.w)), get n() { return (this.L || this.R ? 1 : 0) + (this.Bk || this.F ? 1 : 0); } }; }   // 244: walls of any shape
     return { L, R, Bk, F, n: (L || R ? 1 : 0) + (Bk || F ? 1 : 0) }; };
   const backTo = (cx, cz, f, rot) => { const c = tch(cx, cz, f); return [c.Bk, c.L, c.F, c.R][[0, 270, 180, 90].indexOf(+rot % 360)] || false; };   // its back (−z of the model) against a wall
   const FACE = { 0: [0, 1], 90: [-1, 0], 180: [0, -1], 270: [1, 0] }, faceTo = (cx, cz, rot, X, Z) => { const v = FACE[+rot % 360] || [0, 1], dx = X - cx, dz = Z - cz, n = Math.hypot(dx, dz) || 1; return (v[0] * dx + v[1] * dz) / n; };
@@ -920,13 +943,15 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
     const quiet = (tg, far) => { const it = newItem('planter'); if (!it) return; const i = S.items.length; S.items.push(it); const near = (x, z) => S.items.some((o, j) => j !== i && o.cat === 'planter' && d2(x, z, o.x + 1, o.z + 1) < gap);
       const ok = spotBest(it, i, (cx, cz) => -d2(cx, cz, tg[0], tg[1]) - (near(cx, cz) ? 50 : 0), [0], g.dz && Object.assign({ fr: g.fr }, g.dz));
       if (!ok || near(it.x + 1, it.z + 1) || d2(it.x + 1, it.z + 1, tg[0], tg[1]) > (far || 4) || all('pergola').some(o => hit(rectI(it), rectI(o)))) { S.items.pop(); return; } flush(it, i); };   // never under the pergola
-    [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]].forEach(tg => quiet(tg));
+    (olOn() ? olCorners().map(([k, X, Z]) => [X + (k[1] === 'l' ? 1.2 : -1.2), Z + (k[0] === 'b' ? 1.2 : -1.2)]) : [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]]).forEach(tg => quiet(tg));
     if (n0 != null) { for (let k = 0, u = 0; k < n0; k++, u++) { const s2 = [P + 1, P + 1 + (t.pd - 2 * P - 2) * (u + 0.5) / n0]; quiet(g.far === 'right' ? [t.pw - P - 1, s2[1]] : s2, 5); } return; }
     if (lv === 'light') return;
     { const pts = []; LAY.slice(0, lv === 'lush' ? 3 : 2).forEach(L => L.els.forEach(e => { if (e[0] === 'planter') pts.push([e[1], e[2]]); })); pts.slice(0, lv === 'lush' ? 10 : 5).forEach(tg => quiet(tg, 5)); }
     const step = lv === 'lush' ? 5 : 7, fx = g.far === 'right' ? t.pw - C1 : C1, nx = g.far === 'right' ? C1 : t.pw - C1;   // 241: along the parapets
-    for (let z = P + 5; z < t.pd - 5; z += step) { quiet([fx, z], 2.5); quiet([nx, z + step / 2], 2.5); }
-    for (let x = P + 5; x < t.pw - 5; x += step) { if (!g.road.includes('back')) quiet([x, C1], 2.5); }
+    if (olOn()) olWalls().forEach(w => { if (w.hi - w.lo < 6) return; const sd = w.vert ? (w.dir > 0 ? 'left' : 'right') : (w.dir > 0 ? 'back' : 'front'); if (g.road.includes(sd) && !(w.vert ? false : w.dir < 0 && w.at < t.pd - P - 2)) return;   // 244: along every wall of the shape (not the road side)
+      for (let u = w.lo + P + 4; u < w.hi - P - 3; u += step) quiet(w.vert ? [w.at + w.dir * 1.2, u] : [u, w.at + w.dir * 1.2], 2.5); });
+    else { for (let z = P + 5; z < t.pd - 5; z += step) { quiet([fx, z], 2.5); quiet([nx, z + step / 2], 2.5); }
+    for (let x = P + 5; x < t.pw - 5; x += step) { if (!g.road.includes('back')) quiet([x, C1], 2.5); } }
     if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; for (let z = P + 8; z < t.pd - 6; z += 9) quiet([nx, z], 3); for (let x = P + 8; x < t.pw - 6; x += 9) { quiet([x, C1], 3); quiet([x, t.pd - C1], 3); } }
     if (pr) { const r = pr; [[r.x - 1, r.z - 1], [r.x + r.w + 1, r.z - 1], [r.x - 1, r.z + r.d + 1], [r.x + r.w + 1, r.z + r.d + 1]].forEach(tg => quiet(tg, 2.5)); }
     const cbs = all('cabin'); cbs.forEach(c => { const r = rectI(c); quiet([r.x - 1.2, r.z + r.d + 1], 2.5); quiet([r.x + r.w + 1.2, r.z + r.d + 1], 2.5); }); };
@@ -985,7 +1010,7 @@ function pathTo(g, door, tgs, notes, turfs) {   // 241: turfs → the path is ke
 }
 // 239: built-in seating as an L in a corner of two walls (parapet / the stairs room) — under the pergola when it stands in a corner
 function lSeat(g, sz, lt, PRS, notes) {   // 241: open to the sky (never under a pergola), best in a corner on the road side
-  const t = S.site, P = g.P, D = 2, cn = [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]];
+  const t = S.site, P = g.P, D = 2, cn = olOn() ? olCorners() : [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]];
   let best = null;
   for (const [k, X, Z] of cn) { const left = k[1] === 'l', back = k[0] === 'b';
     for (let s0 = 0; s0 < 4; s0++) { const La = Math.max(4, sz[0] - s0 * 2), Lb = Math.max(3, sz[1] - s0 * 1.5);
