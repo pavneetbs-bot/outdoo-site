@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=35';
-import { pergolaModel } from './pergola3d.js?v=25';
-import { outline } from './plan2d.js?v=10';
+import { cabinModel, plotModel } from './cabin3d.js?v=36';
+import { pergolaModel } from './pergola3d.js?v=26';
+import { outline } from './plan2d.js?v=11';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -525,9 +525,15 @@ function finTex(k) { if (TEX[k]) return TEX[k]; const cv = document.createElemen
   else { x.fillStyle = '#D9D3C8'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 260; i++) { x.fillStyle = ['#B8B0A3', '#A9A194', '#C7BFB2', '#9E968A'][i % 4]; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 6 + Math.random() * 7, 5 + Math.random() * 5, Math.random() * 3, 0, 7); x.fill(); } }
   const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return (TEX[k] = t); }
 // 241: pebbles only round the deck and in front of the feature wall (not the whole parapet)
+const PEB_SKIP = new Set(['deck', 'turf', 'pathway', 'pergola', 'planter', 'lights', 'stool', 'chair', 'umbrella']);
+function pOpenSide(t, items, r, c) { const E = 0.75, pw = +t.pw, pd = +t.pd; if (c[2] * c[3] < r[2] * r[3] * 0.6) return false;   // mostly clipped = against the parapet
+  if (c[0] <= E + 0.6 && c[2] < 1 || c[1] <= E + 0.6 && c[3] < 1 || c[0] + c[2] >= pw - E - 0.6 && c[2] < 1 || c[1] + c[3] >= pd - E - 0.6 && c[3] < 1) return false;
+  const ov = q => Math.max(0, Math.min(c[0] + c[2], q.x + q.w) - Math.max(c[0], q.x)) * Math.max(0, Math.min(c[1] + c[3], q.z + q.d) - Math.max(c[1], q.z)), A = c[2] * c[3];
+  if ((t.blocks || []).some(b => ov(b) > A * 0.3)) return false;
+  return !(items || []).some(o => o && !o.segs && !PEB_SKIP.has(o.cat) && ov({ x: +o.x, z: +o.z, w: (+o.rot || 0) % 180 ? +o.d : +o.w, d: (+o.rot || 0) % 180 ? +o.w : +o.d }) > A * 0.3); }
 export function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
   (items || []).forEach(it => { if (!it || it.segs) return; const rot = +it.rot || 0, sw = rot % 180 ? it.d : it.w, sd = rot % 180 ? it.w : it.d, x = +it.x, z = +it.z;
-    if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c) out.push(c); });
+    if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c && pOpenSide(t, items, r, c)) out.push(c); });   // 255 (owner): only on the open sides — not against the parapet, a wall or a built thing
     else if (it.cat === 'feature') { const f = { 0: [x, z + sd, sw, b], 180: [x, z - b, sw, b], 90: [x - b, z, b, sd], 270: [x + sw, z, b, sd] }[rot % 360]; const c = f && cl(f); if (c) out.push(c); } });
   return out; }
 function floorFin(g, t, items) {

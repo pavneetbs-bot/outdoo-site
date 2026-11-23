@@ -89,9 +89,15 @@ function dim(x1, y1, x2, y2, off, txt, s, cls) {
 }
 
 // the whole plan. opts: { measure, sel: {k: 'blk'|'it', i}, north: 'back'|'front'|'left'|'right', road: [...sides], items, labels }
+const PEB_SKIP = new Set(['deck', 'turf', 'pathway', 'pergola', 'planter', 'lights', 'stool', 'chair', 'umbrella']);
+function pOpenSide(t, items, r, c) { const E = 0.75, pw = +t.pw, pd = +t.pd; if (c[2] * c[3] < r[2] * r[3] * 0.6) return false;   // mostly clipped = against the parapet
+  if (c[0] <= E + 0.6 && c[2] < 1 || c[1] <= E + 0.6 && c[3] < 1 || c[0] + c[2] >= pw - E - 0.6 && c[2] < 1 || c[1] + c[3] >= pd - E - 0.6 && c[3] < 1) return false;
+  const ov = q => Math.max(0, Math.min(c[0] + c[2], q.x + q.w) - Math.max(c[0], q.x)) * Math.max(0, Math.min(c[1] + c[3], q.z + q.d) - Math.max(c[1], q.z)), A = c[2] * c[3];
+  if ((t.blocks || []).some(b => ov(b) > A * 0.3)) return false;
+  return !(items || []).some(o => o && !o.segs && !PEB_SKIP.has(o.cat) && ov({ x: +o.x, z: +o.z, w: (+o.rot || 0) % 180 ? +o.d : +o.w, d: (+o.rot || 0) % 180 ? +o.w : +o.d }) > A * 0.3); }
 function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
   (items || []).forEach(it => { if (!it || it.segs) return; const rot = +it.rot || 0, sw = rot % 180 ? it.d : it.w, sd = rot % 180 ? it.w : it.d, x = +it.x, z = +it.z;
-    if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c) out.push(c); });
+    if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c && pOpenSide(t, items, r, c)) out.push(c); });   // 255 (owner): only on the open sides — not against the parapet, a wall or a built thing
     else if (it.cat === 'feature') { const f = { 0: [x, z + sd, sw, b], 180: [x, z - b, sw, b], 90: [x - b, z, b, sd], 270: [x + sw, z, b, sd] }[rot % 360]; const c = f && cl(f); if (c) out.push(c); } });
   return out; }
 export function svg(t, opts) {
