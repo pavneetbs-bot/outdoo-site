@@ -628,8 +628,15 @@ function pDown(e) {
   if (i != null && f) { const it = R.P.items[i]; R.drag = { kind: 'item', i, obj: R.holders[i], f0: f.clone(), x0: +it.x, z0: +it.z, moved: false, fixed: !!(it.segs || it.box || it.lock || R.P.noDrag), pos0: R.holders[i].position.clone() }; R.controls.enabled = false; e.preventDefault(); }
   else R.tapEmpty = true;
 }
+let HOV = { i: null, t: 0 };
+function pHover(e) {   // 248: hovering a pergola / cabin → the planner shows a 'Customise' popover there
+  if (!R || !R.group || R.place || R.drag || e.pointerType !== 'mouse' || !R.renderer) return; const now = Date.now(); if (now - HOV.t < 70) return; HOV.t = now;
+  const r = R.renderer.domElement.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) { if (HOV.i != null) { HOV.i = null; (R.on || HANDLER || (() => {}))({ t: 'hover', i: null }); } return; }
+  const hits = rayAt(e).intersectObjects(R.holders.filter(Boolean), true); let i = null; if (hits[0]) { let o = hits[0].object; while (o && o.userData.it == null) o = o.parent; if (o) i = o.userData.it; }
+  const it = i != null && R.P.items ? R.P.items[i] : null; if (!it || !(it.cat === 'pergola' || it.cat === 'cabin') || it.old) i = null;
+  if (i !== HOV.i || i != null) { HOV.i = i; (R.on || HANDLER || (() => {}))({ t: 'hover', i, x: e.clientX - r.left, y: e.clientY - r.top }); } }
 function pMove(e) {
-  const d = R && R.drag; if (!d) return; const f = floorAt(e); if (!f) return;
+  pHover(e); const d = R && R.drag; if (!d) return; const f = floorAt(e); if (!f) return;
   if (d.fixed) return; const dx = f.x - d.f0.x, dz = f.z - d.f0.z; if (!d.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; d.moved = true;
   d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2;
   if (d.side === 'left' || d.side === 'right') d.nx = d.x0; if (d.side === 'back' || d.side === 'front') d.nz = d.z0;   // on a wall: slides along it only d.obj.position.set(d.pos0.x + (d.nx - d.x0), d.pos0.y, d.pos0.z + (d.nz - d.z0));
