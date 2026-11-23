@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=30';
+import { cabinModel, plotModel } from './cabin3d.js?v=31';
 import { pergolaModel } from './pergola3d.js?v=22';
-import { outline } from './plan2d.js?v=4';
+import { outline } from './plan2d.js?v=5';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -394,7 +394,8 @@ function measures(P) {
   const K = Math.max(1.2, Math.max(pw, pd) / 22), lab = (txt, x, y, z, s) => { const tg = tag(txt); tg.position.set(x, y, z); tg.scale.multiplyScalar((s || 1) * K); g.add(tg); };
   for (let z = 0; z < D; z++) { occ.push([]); for (let x = 0; x < W; x++) occ[z].push(x < E || z < E || x + 1 > pw - E || z + 1 > pd - E ? 1 : 0); }
   const mark = (r, v) => { for (let z = Math.max(0, Math.floor(r.z)); z < Math.min(D, Math.ceil(r.z + r.d)); z++) for (let x = Math.max(0, Math.floor(r.x)); x < Math.min(W, Math.ceil(r.x + r.w)); x++) occ[z][x] = v; };
-  const C = t.cuts || {}; Object.keys(C).forEach(k => { const c = C[k]; if (!c || !c.type) return; for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) { const px = k[1] === 'l' ? x + 0.5 : pw - x - 0.5, pz = k[0] === 'b' ? z + 0.5 : pd - z - 0.5;
+  if (Array.isArray(t.outline) && t.outline.length >= 3) { const O = outline(t); for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) { let c = false; for (let i = 0, j = O.length - 1; i < O.length; j = i++) { const [xi, zi] = O[i], [xj, zj] = O[j]; if ((zi > z + 0.5) !== (zj > z + 0.5) && x + 0.5 < (xj - xi) * (z + 0.5 - zi) / (zj - zi) + xi) c = !c; } if (!c) occ[z][x] = 1; } }
+  const C = t.outline ? {} : t.cuts || {}; Object.keys(C).forEach(k => { const c = C[k]; if (!c || !c.type) return; for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) { const px = k[1] === 'l' ? x + 0.5 : pw - x - 0.5, pz = k[0] === 'b' ? z + 0.5 : pd - z - 0.5;
     if (px < c.a && pz < c.b && (c.type !== 'slant' || px / c.a + pz / c.b < 1)) occ[z][x] = 1; } });
   (t.blocks || []).forEach(b => { mark(b, 1); lab(f1(b.w) + ' × ' + f1(b.d) + ' ft', b.x + b.w / 2, (+b.h || 9) + 2.2, b.z + b.d / 2, 0.8); });
   (P.items || []).forEach(it => { if (!it || it.segs || it.box) return; const f = foot(it), r = { x: +it.x, z: +it.z, w: f[0], d: f[1] };

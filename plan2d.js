@@ -12,8 +12,10 @@ const FILL = { deck: 'url(#p2wood)', turf: 'url(#p2turf)', pathway: 'url(#p2path
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 export const cellFt = (t) => Math.max(t.pw, t.pd);
 
+export function inPolyP(P, x, z) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, zi] = P[i], [xj, zj] = P[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; }
 // the plot outline with its corner cuts
 export function outline(t) {
+  if (Array.isArray(t.outline) && t.outline.length >= 3) return t.outline.map(q => [+q[0], +q[1]]);   // 244: any shape
   const C = t.cuts || {}, pw = t.pw, pd = t.pd, c = k => { const q = C[k]; return q && (q.type === 'notch' || q.type === 'slant') ? q : null; }; let P = [], q;
   q = c('bl'); P = P.concat(!q ? [[0, 0]] : q.type === 'notch' ? [[0, q.b], [q.a, q.b], [q.a, 0]] : [[0, q.b], [q.a, 0]]);
   q = c('br'); P = P.concat(!q ? [[pw, 0]] : q.type === 'notch' ? [[pw - q.a, 0], [pw - q.a, q.b], [pw, q.b]] : [[pw - q.a, 0], [pw, q.b]]);
@@ -27,7 +29,8 @@ export function freeRects(t, items, n) {
   const pw = +t.pw, pd = +t.pd, W = Math.floor(pw), D = Math.floor(pd), occ = [], out = [];
   for (let z = 0; z < D; z++) { occ.push([]); for (let x = 0; x < W; x++) occ[z].push(x < E || z < E || x + 1 > pw - E || z + 1 > pd - E ? 1 : 0); }
   const mark = r => { for (let z = Math.max(0, Math.floor(r.z)); z < Math.min(D, Math.ceil(r.z + r.d)); z++) for (let x = Math.max(0, Math.floor(r.x)); x < Math.min(W, Math.ceil(r.x + r.w)); x++) occ[z][x] = 1; };
-  const C = t.cuts || {}; Object.keys(C).forEach(k => { const c = C[k]; if (!c || !c.type) return; for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) { const px = k[1] === 'l' ? x + 0.5 : pw - x - 0.5, pz = k[0] === 'b' ? z + 0.5 : pd - z - 0.5;
+  if (Array.isArray(t.outline) && t.outline.length >= 3) { const O = outline(t); for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) if (!inPolyP(O, x + 0.5, z + 0.5)) occ[z][x] = 1; }
+  const C = t.outline ? {} : t.cuts || {}; Object.keys(C).forEach(k => { const c = C[k]; if (!c || !c.type) return; for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) { const px = k[1] === 'l' ? x + 0.5 : pw - x - 0.5, pz = k[0] === 'b' ? z + 0.5 : pd - z - 0.5;
     if (px < c.a && pz < c.b && (c.type !== 'slant' || px / c.a + pz / c.b < 1)) occ[z][x] = 1; } });
   (t.blocks || []).forEach(mark);
   (items || []).forEach(it => { if (!it || it.segs || it.box || ['deck', 'turf'].includes(it.cat)) return; const f = foot(it); mark({ x: +it.x, z: +it.z, w: f[0], d: f[1] }); });

@@ -632,8 +632,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=30').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=30'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=31').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=31'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -706,7 +706,26 @@
     if (side === 'left') b.x = P; else if (side === 'right') b.x = t.pw - P - b.w; else if (side === 'back') b.z = P; else if (side === 'front') b.z = t.pd - P - b.d;
     b.x = Math.max(P, Math.min(t.pw - P - b.w, b.x)); b.z = Math.max(P, Math.min(t.pd - P - b.d, b.z));
   }
+  // 244: a roof of any shape — t.outline [[x, z], …] ft (= cabin3d olPts / olRectOut); it wins over the 4 corner cuts
+  function olGet(t) { var O = t && t.outline; if (!O || O.length < 3) return null; var P = O.map(function (q) { return [num(q[0]), num(q[1])]; }), a = 0;
+    P.forEach(function (q, i) { var n = P[(i + 1) % P.length]; a += q[0] * n[1] - n[0] * q[1]; }); return a < 0 ? P.reverse() : P; }
+  function olIn(P, x, z) { var c = false; for (var i = 0, j = P.length - 1; i < P.length; j = i++) { var xi = P[i][0], zi = P[i][1], xj = P[j][0], zj = P[j][1]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; }
+  function olOut(P, r, M) { var x0 = r.x - M + 0.02, x1 = r.x + r.w + M - 0.02, z0 = r.z - M + 0.02, z1 = r.z + r.d + M - 0.02;
+    for (var i = 0; i <= 4; i++) for (var j = 0; j <= 4; j++) if (!olIn(P, x0 + (x1 - x0) * i / 4, z0 + (z1 - z0) * j / 4)) return true;
+    return P.some(function (q) { return q[0] > x0 && q[0] < x1 && q[1] > z0 && q[1] < z1; }); }
+  function olFromCuts(t) { var C = t.cuts || {}, pw = num(t.pw), pd = num(t.pd), P = [], q, c = function (k) { var x = C[k]; return x && (x.type === 'notch' || x.type === 'slant') ? { type: x.type, a: num(x.a), b: num(x.b) } : null; };
+    q = c('bl'); P = P.concat(!q ? [[0, 0]] : q.type === 'notch' ? [[0, q.b], [q.a, q.b], [q.a, 0]] : [[0, q.b], [q.a, 0]]);
+    q = c('br'); P = P.concat(!q ? [[pw, 0]] : q.type === 'notch' ? [[pw - q.a, 0], [pw - q.a, q.b], [pw, q.b]] : [[pw - q.a, 0], [pw, q.b]]);
+    q = c('fr'); P = P.concat(!q ? [[pw, pd]] : q.type === 'notch' ? [[pw, pd - q.b], [pw - q.a, pd - q.b], [pw - q.a, pd]] : [[pw, pd - q.b], [pw - q.a, pd]]);
+    q = c('fl'); P = P.concat(!q ? [[0, pd]] : q.type === 'notch' ? [[q.a, pd], [q.a, pd - q.b], [0, pd - q.b]] : [[q.a, pd], [0, pd - q.b]]);
+    return P; }
+  function olNorm(P) { var r = function (v) { return Math.round(v * 2) / 2; }, L = P.map(function (q) { return [r(q[0]), r(q[1])]; }), ch = true;
+    while (ch && L.length > 3) { ch = false; for (var i = 0; i < L.length; i++) { var a = L[(i + L.length - 1) % L.length], b = L[i], c = L[(i + 1) % L.length];
+      if ((a[0] === b[0] && a[1] === b[1]) || Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])) < 0.01) { L.splice(i, 1); ch = true; break; } } }
+    return L; }
+  function olArea(P) { var a = 0; P.forEach(function (q, i) { var n = P[(i + 1) % P.length]; a += q[0] * n[1] - n[0] * q[1]; }); return Math.abs(a / 2); }
   function tsCut(t, r) {   // = cabin3d.js cutHit: does rect r reach into a cut corner (with the parapet)?
+    var OP = olGet(t); if (OP) return olOut(OP, r, 0.75);
     var C = t && t.cuts, P = 0.75; if (!C) return false;
     return ['bl', 'br', 'fl', 'fr'].some(function (k) { var c = C[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return false; var a = num(c.a) || 0, b = num(c.b) || 0; if (!(a > 0 && b > 0)) return false;
       var x0 = k[1] === 'r' ? t.pw - (r.x + r.w) : r.x, z0 = k[0] === 'f' ? t.pd - (r.z + r.d) : r.z;
@@ -757,7 +776,7 @@
   // 202: the terrace one kind of question at a time — Quick: Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof
   // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
   var TMM = null, TMP = null;
-  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=4').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
+  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=5').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
   function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=5').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
   function tsTpl() {
     var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -1892,7 +1911,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=50').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=51').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2752,7 +2771,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=30').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=31').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -2901,12 +2920,7 @@
       return '<p class="tw-lrn">★ ' + X.pct + '% of the ' + S.similar + ' terraces we built with the stairs here have ' + (ty === 'lift' ? 'a lift' : ty === 'room' ? 'a room' : 'a shaft') + (ty !== 'lift' && X.n > 1 ? ' (usually ' + X.n + ')' : '') + (X.w ? ' · about ' + X.w + ' × ' + X.d + ' ft' : '') + (cc ? ' · mostly ' + (W[cc[0][0]] + ' ' + C[cc[0][2]]).replace('middle centre', 'in the middle') + ' (' + cc[1] + '%)' : '') + '. Filled in for you — change only what is different.</p>'; };
     var twDoor = function (t, b) { if (b.door) return b.door; var dx = t.pw / 2 - (b.x + b.w / 2), dz = t.pd / 2 - (b.z + b.d / 2); return Math.abs(dx) / t.pw > Math.abs(dz) / t.pd ? (dx > 0 ? 'right' : 'left') : (dz > 0 ? 'front' : 'back'); };   // = cabin3d: faces the middle unless set
     var twClip = function (t) {   // 229: the plot's outline with its corner cuts (straight = a notch, slant = a diagonal)
-      var C = t.cuts || {}, X = function (v) { return (v / t.pw * 100).toFixed(2) + '%'; }, Z = function (v) { return (v / t.pd * 100).toFixed(2) + '%'; }, pw = t.pw, pd = t.pd, P = [];
-      var c = function (k) { var q = C[k]; return q && (q.type === 'notch' || q.type === 'slant') ? q : null; }, q;
-      q = c('bl'); P = P.concat(!q ? [[0, 0]] : q.type === 'notch' ? [[0, q.b], [q.a, q.b], [q.a, 0]] : [[0, q.b], [q.a, 0]]);
-      q = c('br'); P = P.concat(!q ? [[pw, 0]] : q.type === 'notch' ? [[pw - q.a, 0], [pw - q.a, q.b], [pw, q.b]] : [[pw - q.a, 0], [pw, q.b]]);
-      q = c('fr'); P = P.concat(!q ? [[pw, pd]] : q.type === 'notch' ? [[pw, pd - q.b], [pw - q.a, pd - q.b], [pw - q.a, pd]] : [[pw, pd - q.b], [pw - q.a, pd]]);
-      q = c('fl'); P = P.concat(!q ? [[0, pd]] : q.type === 'notch' ? [[q.a, pd], [q.a, pd - q.b], [0, pd - q.b]] : [[q.a, pd], [0, pd - q.b]]);
+      var X = function (v) { return (v / t.pw * 100).toFixed(2) + '%'; }, Z = function (v) { return (v / t.pd * 100).toFixed(2) + '%'; }, P = olGet(t) || olFromCuts(t);   // 244: or any shape
       return 'polygon(' + P.map(function (p) { return X(p[0]) + ' ' + Z(p[1]); }).join(',') + ')'; };
     var twCutFix = function () {   // blocks inside a new cut move out towards the middle
       var t = st.site, bad = 0; t.blocks.forEach(function (b, i) { if (!/corner/.test(twHit(t, b, i))) return; var x0 = b.x, z0 = b.z, cx = t.pw / 2 - (b.x + b.w / 2), cz = t.pd / 2 - (b.z + b.d / 2), n = Math.hypot(cx, cz) || 1, ok = false;
@@ -2931,6 +2945,7 @@
     var TWD = { mumty: [10, 16, 9], lift: [6, 8, 11], shaft: [4, 6, 3], room: [8, 12, 9], ac: [1.2, 3, 2.5] };   // 223: a new block's size (ft)
     var twHit = function (t, b, j) { var P = 0.75; if (b.x < P - 0.01 || b.z < P - 0.01 || b.x + b.w > t.pw - P + 0.01 || b.z + b.d > t.pd - P + 0.01) return 'It doesn\'t fit inside the terrace there';
       if (t.blocks.some(function (o, k) { return k !== j && b.x < o.x + o.w - 0.01 && o.x < b.x + b.w - 0.01 && b.z < o.z + o.d - 0.01 && o.z < b.z + b.d - 0.01; })) return 'It can\'t go on top of another one';
+      var OP = olGet(t); if (OP) return olOut(OP, b, 0.75) ? 'That part of the roof is cut — it can\'t go there' : '';
       var CU = t.cuts || {}; if (Object.keys(CU).some(function (k) { var c = CU[k]; if (!c || !c.type) return false; var cx = k[1] === 'l' ? 0 : t.pw - c.a, cz = k[0] === 'b' ? 0 : t.pd - c.b; if (!(b.x < cx + c.a && cx < b.x + b.w && b.z < cz + c.b && cz < b.z + b.d)) return false;
         if (c.type !== 'slant') return true; var px = k[1] === 'l' ? b.x : t.pw - (b.x + b.w), pz = k[0] === 'b' ? b.z : t.pd - (b.z + b.d); return px / c.a + pz / c.b < 1 - 0.01; })) return 'That corner is cut — it can\'t go there'; return ''; };
     var twSnap = function (t, b) { var P = 0.75; if (b.side === 'left') b.x = P; else if (b.side === 'right') b.x = t.pw - P - b.w; else if (b.side === 'back') b.z = P; else if (b.side === 'front') b.z = t.pd - P - b.d;
@@ -2968,7 +2983,9 @@
       var t = { kind: 'terrace', plot: a.plot || '', pw: pw, pd: pd, par: a.par === '4' ? 4 : 3, rail: a.par === 'rail', corner: a.road === 'cl' ? 'left' : a.road === 'cr' ? 'right' : '', road_front: true, road_back: a.road === 'both', high: Object.assign({}, a.high || {}), tanks: !!a.tanks, blocks: B, start: 'wiz' };
       var clamp = function (v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }, hit = function (p, q) { return p.x < q.x + q.w - 0.01 && q.x < p.x + p.w - 0.01 && p.z < q.z + q.d - 0.01 && q.z < p.z + p.d - 0.01; };
       var put = function (b, spots) { for (var i = 0; i < spots.length; i++) { var c = Object.assign({}, b, { x: Math.round(clamp(spots[i][0], P, pw - P - b.w) * 2) / 2, z: Math.round(clamp(spots[i][1], P, pd - P - b.d) * 2) / 2 }); if (!B.some(function (o) { return hit(o, c); }) && !inCut(c)) { B.push(c); return c; } } return null; };
-      var inCut = function (q) { var CU = a.cuts || {}; return Object.keys(CU).some(function (k) { var c = CU[k]; if (!c || !c.type) return false; var cx = k[1] === 'l' ? 0 : pw - c.a, cz = k[0] === 'b' ? 0 : pd - c.b; return q.x < cx + +c.a && cx < q.x + q.w && q.z < cz + +c.b && cz < q.z + q.d; }); };
+      var OL = olGet(a) ? olGet(a) : null; if (OL) { var ox = Math.max.apply(null, OL.map(function (q) { return q[0]; })), oz = Math.max.apply(null, OL.map(function (q) { return q[1]; }));   // 244: the shape follows a new plot size
+        if (ox > 0 && oz > 0 && (Math.abs(ox - pw) > 0.01 || Math.abs(oz - pd) > 0.01)) OL = olNorm(OL.map(function (q) { return [q[0] * pw / ox, q[1] * pd / oz]; })); t.outline = OL; }
+      var inCut = function (q) { if (OL) return olOut(OL, q, 0.75); var CU = a.cuts || {}; return Object.keys(CU).some(function (k) { var c = CU[k]; if (!c || !c.type) return false; var cx = k[1] === 'l' ? 0 : pw - c.a, cz = k[0] === 'b' ? 0 : pd - c.b; return q.x < cx + +c.a && cx < q.x + q.w && q.z < cz + +c.b && cz < q.z + q.d; }); };
       var m = null, g = a.mpos || 'm-l';
       if (g !== 'none') { var row = g[0], col = g[2], onSide = col !== 'c', w = +a.mw, d = +a.md; if (!onSide || row === 'b' && col === 'c') { var lo = Math.max(w, d), sh = Math.min(w, d); w = row === 'b' ? lo : sh; d = row === 'b' ? sh : lo; } else { w = Math.min(+a.mw, +a.md); d = Math.max(+a.mw, +a.md); }
         m = put({ id: id(), type: 'mumty', w: w, d: d, h: 9, side: 'free', door: a.door || '' }, [[col === 'l' ? P : col === 'r' ? pw - P - w : (pw - w) / 2, row === 'b' ? P : row === 'f' ? pd - P - d : (pd - d) / 2]]); }
@@ -2987,13 +3004,13 @@
         var fr0 = AS === 'front', ap = a.al[0].pos || '', f0 = bk || fr0 ? ({ l: 0.1, c: 0.5, r: 0.9 })[ap[2]] : ({ b: 0.1, m: 0.5, f: 0.9 })[ap[0]]; if (f0 == null) f0 = 0.5; bk = bk || fr0;
         put({ id: id(), type: 'ac', w: bk ? aL : 1.2, d: bk ? 1.2 : aL, h: 2.5, side: AS }, [f0, f0 - 0.15, f0 + 0.15, f0 - 0.3, f0 + 0.3, 0.5, 0.05, 0.95].map(function (f) { f = Math.max(0, Math.min(1, f)); return bk ? [(pw - aL) * f, fr0 ? pd - P - 1.2 : P] : [AS === 'right' ? pw - P - 1.2 : P, (pd - aL) * f]; })); }
       else if (a.ac) { var n = Math.max(1, +a.acn || 2), al = Math.min(pd * 0.6, n * 3), sideR = m ? m.x + m.w / 2 < pw / 2 : true, aw = 1.2; put({ id: id(), type: 'ac', w: aw, d: al, h: 2.5, side: sideR ? 'right' : 'left' }, [0.3, 0.55, 0.15, 0.7, 0.42, 0.85, 0.05].map(function (f) { return [sideR ? pw - P - aw : P, pd * f]; }).concat([0.3, 0.55, 0.15, 0.7, 0.85].map(function (f) { return [sideR ? P : pw - P - aw, pd * f]; }))); }
-      var CU = a.cuts || {}; Object.keys(CU).forEach(function (k) { var c = CU[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return; t.cuts = t.cuts || {}; t.cuts[k] = { type: c.type, a: Math.round(+c.a * 2) / 2, b: Math.round(+c.b * 2) / 2 };   // 223: any corner, straight or slant
+      var CU = OL ? {} : a.cuts || {}; Object.keys(CU).forEach(function (k) { var c = CU[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return; t.cuts = t.cuts || {}; t.cuts[k] = { type: c.type, a: Math.round(+c.a * 2) / 2, b: Math.round(+c.b * 2) / 2 };   // 223: any corner, straight or slant
         var cx = k[1] === 'l' ? 0 : pw - c.a, cz = k[0] === 'b' ? 0 : pd - c.b; for (var i = B.length - 1; i >= 0; i--) { var q = B[i]; if (q.x < cx + +c.a && cx < q.x + q.w && q.z < cz + +c.b && cz < q.z + q.d) B.splice(i, 1); } });
       B.forEach(function (q) { var L = q.x <= P + 0.3, R = q.x + q.w >= pw - P - 0.3, Bk = q.z <= P + 0.3, F = q.z + q.d >= pd - P - 0.3; if (q.type === 'ac') { if (q.side !== 'back') q.side = q.x + q.w / 2 < pw / 2 ? 'left' : 'right'; return; } q.side = (L || R) && !Bk && !F ? (L ? 'left' : 'right') : Bk && !L && !R ? 'back' : F && !L && !R ? 'front' : 'free'; });
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=30').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=31').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
@@ -3043,15 +3060,16 @@
         if (!st.site) { twLearn(); st.site = twSite(); }
         var t = st.site, sb = t.blocks[st.sel], IC = { mumty: '🪜 Stairs', lift: '🛗 Lift', room: '🚪 Room', shaft: '⬛ Shaft', ac: '❄️ AC' };
         h += '<h2>Your roof</h2>' + (st.fromPdf ? '<div class="tw-pdf"><b>📄 Drawn from your layout</b> — check it against your drawing' + (st.bg ? ' (shown behind)' : '') + '. <b>Built anything after this drawing?</b> Add it with the + buttons below.' + (st.fromPdf.team || st.fromPdf.left == null ? '' : '<small>' + st.fromPdf.left + ' of 2 layout uploads left on this account</small>') + '</div>' : '') +
-          '<p class="sp-sub">Drag to move · tap to resize · ✂ corner cut · 🧱 higher wall next door</p><div class="tw-chips tw-sm2" style="margin:-6px 0 4px">' + chip('pmeas', !!st.pmeas, '📏 ' + (st.pmeas ? 'Hide' : 'Show') + ' measurements') + (st.bg ? chip('pbg', !!st.bgOn, '👁 ' + (st.bgOn ? 'Hide' : 'Show') + ' my drawing') : '') + '</div>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
-          '<div class="tw-plw' + (st.pmeas ? ' tw-meas' : '') + '" style="aspect-ratio:' + t.pw + '/' + t.pd + ';height:min(50vh,' + Math.round(330 * t.pd / t.pw) + 'px)">' + TS_CUTS.map(function (ck) { var on = t.cuts && t.cuts[ck[0]]; return '<button type="button" class="tw-ck tw-ck-' + ck[0] + (on ? ' cut' : '') + (st.csel === ck[0] ? ' on' : '') + '" data-sp="w:csel:' + ck[0] + '" aria-label="' + ck[1] + ' corner">✂</button>'; }).join('') +
-          ['back', 'left', 'right'].filter(function (sd) { return twRoads().indexOf(sd) < 0; }).map(function (sd) { var on = !!(t.high || {})[sd];   // 230: tap a wall → the neighbour's wall there is higher
+          (st.shp ? '<p class="sp-sub">The outline of your roof — cut any wall, move corners, or start from a shape.</p>' : '<p class="sp-sub">Drag to move · tap to resize · ✏ shape of the roof · 🧱 higher wall next door</p>') + '<div class="tw-chips tw-sm2" style="margin:-6px 0 4px">' + chip('shp', !!st.shp, st.shp ? '✓ Shape done' : '✏ Change shape') + (st.shp ? '' : chip('pmeas', !!st.pmeas, '📏 ' + (st.pmeas ? 'Hide' : 'Show') + ' measurements')) + (st.bg ? chip('pbg', !!st.bgOn, '👁 ' + (st.bgOn ? 'Hide' : 'Show') + ' my drawing') : '') + '</div>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
+          '<div class="tw-plw' + (st.pmeas ? ' tw-meas' : '') + (st.shp ? ' tw-plw-shp' : '') + '" style="aspect-ratio:' + t.pw + '/' + t.pd + ';height:min(50vh,' + Math.round((st.shp ? 270 : 330) * t.pd / t.pw) + 'px)">' + (st.shp ? shSvg(t) : '') +
+          ['back', 'left', 'right'].filter(function (sd) { return !st.shp && twRoads().indexOf(sd) < 0; }).map(function (sd) { var on = !!(t.high || {})[sd];   // 230: tap a wall → the neighbour's wall there is higher
             var hl = ((t.hw || {})[sd] || {}).l, full = sd === 'back' ? t.pw : t.pd, pc = Math.min(100, (hl || full) / full * 100);
             return '<i class="tw-hw tw-hw-' + sd + (on ? ' on' : '') + '" style="' + (sd === 'back' ? 'right:auto;width:' + pc + '%' : 'bottom:auto;height:' + pc + '%') + '"></i><button type="button" class="tw-hb tw-hb-' + sd + (on ? ' on' : '') + '" data-sp="w:phigh:' + sd + '" aria-pressed="' + on + '">🧱' + (on ? ' High' : '') + '</button>'; }).join('') +
-          (st.pmeas && p2Get(function () { paint(); }) ? P2M.dimsSvg(t, []) : '') +
-          (st.bg && st.bgOn ? '<img class="tw-bg" src="' + st.bg + '" alt="">' : '') + '<div class="tw-pl" style="clip-path:' + twClip(t) + '">' + t.blocks.map(function (b, i) {
-            return '<div data-blk="' + i + '" class="tw-b tw-' + b.type + (i === st.sel ? ' on' : '') + '" style="left:' + (b.x / t.pw * 100) + '%;top:' + (b.z / t.pd * 100) + '%;width:' + (b.w / t.pw * 100) + '%;height:' + (b.d / t.pd * 100) + '%"><span>' + (IC[b.type] || b.type) + '</span>' + (b.type === 'mumty' || b.type === 'room' || b.type === 'lift' ? '<i class="tw-door tw-door-' + twDoor(t, b) + '"></i>' : '') + '</div>'; }).join('') +
+          (st.pmeas && !st.shp && p2Get(function () { paint(); }) ? P2M.dimsSvg(t, []) : '') +
+          (st.bg && st.bgOn ? '<img class="tw-bg" src="' + st.bg + '" alt="">' : '') + '<div class="tw-pl' + (st.shp ? ' tw-pl-dim' : '') + '" style="clip-path:' + twClip(t) + '">' + t.blocks.map(function (b, i) {
+            return '<div data-blk="' + i + '" class="tw-b tw-' + b.type + (i === st.sel ? ' on' : '') + '" style="left:' + (b.x / t.pw * 100) + '%;top:' + (b.z / t.pd * 100) + '%;width:' + (b.w / t.pw * 100) + '%;height:' + (b.d / t.pd * 100) + '%"><span>' + (b.pent ? '🏠 Penthouse' : IC[b.type] || b.type) + '</span>' + (b.type === 'mumty' || b.type === 'room' || b.type === 'lift' ? '<i class="tw-door tw-door-' + twDoor(t, b) + '"></i>' : '') + '</div>'; }).join('') +
           '</div><i class="tw-rd">▼ road</i>' + (a.road === 'cl' ? '<i class="tw-rd tw-rl">road ◀</i>' : a.road === 'cr' ? '<i class="tw-rd tw-rr">▶ road</i>' : a.road === 'both' ? '<i class="tw-rd tw-rb">▲ road</i>' : '') + '</div>';
+        if (st.shp) h += shPanel(t); else {
         if (st.hsel && (t.high || {})[st.hsel]) { var ho = (t.hw || {})[st.hsel] || {}, hf = st.hsel === 'back' ? t.pw : t.pd;
           h += '<div class="tw-ed"><b>🧱 ' + ({ left: 'Left', right: 'Right', back: 'Back' })[st.hsel] + ' neighbour wall</b><span>Height</span><button type="button" data-sp="w:phz:h:-">−</button><em>' + (+ho.h || 12) + '</em><button type="button" data-sp="w:phz:h:+">+</button><span>Length</span><button type="button" data-sp="w:phz:l:-">−</button><em>' + Math.min(+ho.l || hf, hf) + '</em><button type="button" data-sp="w:phz:l:+">+</button>' +
             '<div class="tw-chips tw-sm2" style="width:100%"><span style="align-self:center;font-size:12px;color:#7A7268">ft · length from the ' + (st.hsel === 'back' ? 'left' : 'back') + '</span>' + chip('phoff:' + st.hsel, false, 'Not higher') + '</div><button type="button" data-sp="w:phigh:' + st.hsel + '" aria-label="Done">✓</button></div>'; }
@@ -3059,12 +3077,13 @@
           h += '<div class="tw-ed"><b>✂ ' + cn + '</b><div class="tw-chips tw-sm2">' + chip('pcut:' + st.csel + ':', !cc.type, 'No cut') + chip('pcut:' + st.csel + ':notch', cc.type === 'notch', '⌐ Straight') + chip('pcut:' + st.csel + ':slant', cc.type === 'slant', '◸ Slant') + '</div>' +
             (cc.type ? '<span>Across</span><button type="button" data-sp="w:pcz:a:-">−</button><em>' + cc.a + '</em><button type="button" data-sp="w:pcz:a:+">+</button><span>Deep</span><button type="button" data-sp="w:pcz:b:-">−</button><em>' + cc.b + '</em><button type="button" data-sp="w:pcz:b:+">+</button>' : '') +
             '<button type="button" data-sp="w:csel:' + st.csel + '" aria-label="Done">✓</button></div>'; }
-        if (sb) h += '<div class="tw-ed"><b>' + (IC[sb.type] || '') + '</b>' + (sb.type === 'ac' ? '<span>Units</span><button type="button" data-sp="w:bz:n:-">−</button><em>' + Math.max(1, Math.round(sb.d / 3)) + '</em><button type="button" data-sp="w:bz:n:+">+</button>'
+        if (sb) h += '<div class="tw-ed"><b>' + (sb.pent ? '🏠 Penthouse' : IC[sb.type] || '') + '</b>' + (sb.type === 'ac' ? '<span>Units</span><button type="button" data-sp="w:bz:n:-">−</button><em>' + Math.max(1, Math.round(sb.d / 3)) + '</em><button type="button" data-sp="w:bz:n:+">+</button>'
           : '<span>W</span><button type="button" data-sp="w:bz:w:-">−</button><em>' + sb.w + '</em><button type="button" data-sp="w:bz:w:+">+</button><span>L</span><button type="button" data-sp="w:bz:d:-">−</button><em>' + sb.d + '</em><button type="button" data-sp="w:bz:d:+">+</button>') +
           (sb.type === 'mumty' || sb.type === 'room' || sb.type === 'lift' ? '<div class="tw-chips tw-sm2" style="width:100%;margin:4px 0"><span style="align-self:center;font-size:12px;color:#7A7268">Door</span>' + [['back', '⬆'], ['left', '⬅'], ['right', '➡'], ['front', '⬇ road side']].map(function (z) { return chip('pdoor:' + z[0], twDoor(t, sb) === z[0], z[1]); }).join('') + '</div>' : '') +
           '<button type="button" data-sp="w:brot" aria-label="Turn">↻</button><button type="button" data-sp="w:bdel" aria-label="Remove">🗑</button><button type="button" data-sp="w:bx" aria-label="Done">✓</button></div>';
         h += '<div class="tw-chips tw-sm2 tw-add">' + ['mumty', 'lift', 'room', 'shaft', 'ac'].map(function (k) { return chip('badd:' + k, false, '+ ' + IC[k]); }).join('') + '</div>' +
           '<div class="tw-chips tw-sm2 tw-add">' + chip('ptank', t.tanks, '💧 Tanks on stairs') + [['3', 'Wall 3 ft'], ['4', 'Wall 4 ft+'], ['rail', 'Railing']].map(function (z) { return chip('ppar:' + z[0], a.par === z[0], z[1]); }).join('') + '</div>';
+        }
       }
       else { if (!st.site) st.site = twSite();
         h += '<h2>Your terrace</h2><div id="tw3d" class="tw3d"></div>';
@@ -3072,9 +3091,87 @@
       h += '<div class="tw-ft' + (q === 'view' ? ' tw-fs' : '') + '"><button type="button" class="tw-next" data-sp="w:next">' + (q === 'view' ? '✓ Looks right →' : q === 'plan' ? 'See it in 3D →' : 'Next →') + '</button></div>';
       return h;
     };
+    // 244: ✏ Shape — a roof of any shape: ready shapes, a cut anywhere along a wall (straight / slant), corners dragged / added / removed, penthouse roofs (one plan, terrace in front + behind)
+    var SHP = [['rect', '▭ Rectangle'], ['L', '⌐ L shape'], ['U', '⊔ U shape'], ['T', '⊤ T shape'], ['plus', '✚ Plus'], ['fb', '🏠 Front + back (penthouse)'], ['mid', '🏠 Penthouse in the middle']];
+    var shPre = function (k, W, D) { var P = { L: [[0, 0], [W * .55, 0], [W * .55, D * .4], [W, D * .4], [W, D], [0, D]], U: [[0, 0], [W * .3, 0], [W * .3, D * .4], [W * .7, D * .4], [W * .7, 0], [W, 0], [W, D], [0, D]],
+        T: [[0, 0], [W, 0], [W, D * .45], [W * .75, D * .45], [W * .75, D], [W * .25, D], [W * .25, D * .45], [0, D * .45]],
+        plus: [[W * .3, 0], [W * .7, 0], [W * .7, D * .3], [W, D * .3], [W, D * .7], [W * .7, D * .7], [W * .7, D], [W * .3, D], [W * .3, D * .7], [0, D * .7], [0, D * .3], [W * .3, D * .3]] }[k] || [[0, 0], [W, 0], [W, D], [0, D]];
+      return olNorm(P); };
+    var shSeg = function (p, q, r, s2) { var d1 = function (a, b, c) { return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]); }; return d1(p, q, r) * d1(p, q, s2) < -1e-6 && d1(r, s2, p) * d1(r, s2, q) < -1e-6; };
+    var shOk = function (P) { if (!P || P.length < 3 || olArea(P) < 40) return false; var n = P.length;   // a simple outline (no wall crossing another)
+      for (var i = 0; i < n; i++) for (var j = i + 2; j < n; j++) { if (i === 0 && j === n - 1) continue; if (shSeg(P[i], P[(i + 1) % n], P[j], P[(j + 1) % n])) return false; } return true; };
+    var shCut = function (P0, e, c) {   // cut into wall e: from f ft (from its red-dot end), w wide, d deep; slant = a V (or a chamfer at a corner)
+      var P = P0.map(function (q) { return q.slice(); }), a = P[e], b = P[(e + 1) % P.length]; if (!a) return null; var L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.5) return null;
+      var ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L, nx = -uz, nz = ux, mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2; if (!olIn(P, mx + nx * 0.3, mz + nz * 0.3)) { nx = -nx; nz = -nz; }
+      var f = Math.max(0, Math.min(L - 0.5, +c.f || 0)), w = Math.max(0.5, Math.min(L - f, +c.w || 1)), dp = Math.max(0.5, +c.d || 1), at = function (u, v) { return [a[0] + ux * u + nx * v, a[1] + uz * u + nz * v]; };
+      var tp = at(f + w / 2, dp - 0.05); if (!olIn(P0, tp[0], tp[1])) return null;
+      var endC = c.t === 'slant' && f + w >= L - 0.01, startC = c.t === 'slant' && f <= 0.01 && !endC;
+      var ins = c.t !== 'slant' ? [at(f, 0), at(f, dp), at(f + w, dp), at(f + w, 0)] : endC ? [at(f, 0), at(L, dp)] : startC ? [at(0, dp), at(w, 0)] : [at(f, 0), at(f + w / 2, dp), at(f + w, 0)];
+      var out = [], bi = (e + 1) % P.length; P.forEach(function (q, i) { if (i === e) { if (!startC) out.push(q); ins.forEach(function (z) { out.push(z); }); } else if (!(i === bi && endC)) out.push(q); });
+      out = olNorm(out); return shOk(out) && olArea(out) < olArea(P0) - 0.1 ? out : null; };
+    var shPush = function () { var t = st.site; (st.shH = st.shH || []).push(JSON.stringify({ o: t.outline, b: t.blocks })); if (st.shH.length > 30) st.shH.shift(); };
+    var shFit = function (t) {   // things now outside the shape (or under the penthouse) move to the nearest free spot; nothing free → taken off
+      var gone = 0, ord = t.blocks.map(function (b, i) { return i; }).sort(function (i, j) { return (t.blocks[i].pent ? 1 : 0) - (t.blocks[j].pent ? 1 : 0); });
+      ord.forEach(function (i) { var b = t.blocks[i]; if (!twHit(t, b, i)) return; var x0 = b.x, z0 = b.z, best = null;
+        for (var zz = 0.75; zz + b.d <= t.pd - 0.74; zz += 1) for (var xx = 0.75; xx + b.w <= t.pw - 0.74; xx += 1) { b.x = xx; b.z = zz; if (!twHit(t, b, i)) { var dd = Math.hypot(xx - x0, zz - z0); if (!best || dd < best[0]) best = [dd, xx, zz]; } }
+        if (!best && b.pent) { var w0 = b.w, d0 = b.d;   // the penthouse shrinks to the space left instead of going
+          for (var sh = 1; sh <= 40 && !best; sh++) { b.w = Math.max(6, Math.round(w0 * (1 - sh * 0.02) * 2) / 2); b.d = Math.max(6, Math.round(d0 * (1 - sh * 0.02) * 2) / 2);
+            for (var z2 = 0.75; !best && z2 + b.d <= t.pd - 0.74; z2 += 1) for (var x2 = 0.75; !best && x2 + b.w <= t.pw - 0.74; x2 += 1) { b.x = x2; b.z = z2; if (!twHit(t, b, i)) best = [0, x2, z2]; } }
+          if (!best) { b.w = w0; b.d = d0; } }
+        if (best) { b.x = best[1]; b.z = best[2]; if (b.type !== 'ac') b.side = 'free'; } else { b.x = x0; b.z = z0; b._gone = 1; gone++; } });
+      t.blocks = t.blocks.filter(function (b) { return !b._gone; }); return gone; };
+    var shSave = function (P) { var t = st.site; t.outline = olNorm(P); delete t.cuts; st.a.cuts = {}; st.a.outline = JSON.parse(JSON.stringify(t.outline)); var g = shFit(t); st.sel = null;
+      st.msg = g ? g + ' of the things on the roof didn\'t fit the new shape — add them again with + if needed' : ''; };
+    var shPent = function (t, mode) {   // the penthouse = a built block on the roof; the terrace in front, behind or all round it
+      var P = 0.75, r = function (v) { return Math.round(v * 2) / 2; }, id = 'b' + Math.random().toString(36).slice(2, 8), nb;
+      if (mode === 'fb' || mode === 'mid') { t.blocks = t.blocks.filter(function (b) { return !b.pent; });
+        nb = mode === 'fb' ? { x: P, z: r(t.pd * 0.32), w: r(t.pw - 2 * P), d: r(t.pd * 0.36) } : { x: r(t.pw * 0.25), z: r(t.pd * 0.25), w: r(t.pw * 0.5), d: r(t.pd * 0.45) };
+        t.blocks.push(Object.assign(nb, { id: id, type: 'room', pent: true, h: 10, side: 'free', door: 'front' })); return true; }
+      for (var f = 0.5; f >= 0.2; f -= 0.1) { nb = { id: id, type: 'room', pent: true, h: 10, side: 'free', door: 'front', w: r(t.pw * f), d: r(t.pd * f) };
+        for (var zz = P; zz + nb.d <= t.pd - P; zz += 1) for (var xx = P; xx + nb.w <= t.pw - P; xx += 1) { nb.x = xx; nb.z = zz; if (!twHit(t, nb, -1)) { t.blocks.push(nb); st.sel = null; return true; } } }
+      return false; };
+    var shSvg = function (t) {
+      var P = t.outline || olFromCuts(t), n = P.length, k = Math.max(t.pw, t.pd) / 26, f1 = function (v) { return String(Math.round(v * 2) / 2); }, h = '<svg class="tw-shs" viewBox="0 0 ' + t.pw + ' ' + t.pd + '" preserveAspectRatio="none">', pts = function (Q) { return Q.map(function (q) { return q.join(','); }).join(' '); };
+      var Q = st.shm !== 'pts' && st.se != null && st.sc ? shCut(P, st.se, st.sc) : null;
+      if (Q) h += '<polygon points="' + pts(P) + '" fill="rgba(194,100,69,.45)"/><polygon points="' + pts(Q) + '" fill="#EADCC8" stroke="#C26445" stroke-width="2" stroke-dasharray="5 3" vector-effect="non-scaling-stroke"/>';
+      h += '<polygon points="' + pts(P) + '" fill="none" stroke="#55634A" stroke-width="3" vector-effect="non-scaling-stroke"/>';
+      P.forEach(function (a, i) { var b = P[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.2) return; var mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, nx = (b[1] - a[1]) / L, nz = -(b[0] - a[0]) / L;
+        if (olIn(P, mx + nx * 0.3, mz + nz * 0.3)) { nx = -nx; nz = -nz; } var on = st.se === i && st.shm !== 'pts';
+        if (on) h += '<line x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="#C26445" stroke-width="5" vector-effect="non-scaling-stroke"/><circle cx="' + a[0] + '" cy="' + a[1] + '" r="' + (k * 0.35) + '" fill="#C26445"/>';
+        if (L >= 2.5) h += '<text x="' + (mx + nx * k * 1.05) + '" y="' + (mz + nz * k * 1.05 + k * 0.32) + '" font-size="' + (k * 0.85) + '" text-anchor="middle" fill="' + (on ? '#C26445' : '#5B544B') + '" font-weight="' + (on ? 800 : 600) + '">' + f1(L) + '′</text>';
+        if (st.shm !== 'pts') h += '<line data-sp="w:sedge:' + i + '" x1="' + a[0] + '" y1="' + a[1] + '" x2="' + b[0] + '" y2="' + b[1] + '" stroke="rgba(0,0,0,0)" stroke-width="22" vector-effect="non-scaling-stroke" style="cursor:pointer"/>';
+        else if (L > 3) h += '<g data-sp="w:sadd:' + i + '" style="cursor:pointer"><circle cx="' + mx + '" cy="' + mz + '" r="' + (k * 0.5) + '" fill="#fff" stroke="#55634A" stroke-width="1.5" vector-effect="non-scaling-stroke"/><text x="' + mx + '" y="' + (mz + k * 0.3) + '" font-size="' + (k * 0.9) + '" text-anchor="middle" fill="#55634A" font-weight="700">+</text></g>'; });
+      if (st.shm === 'pts') P.forEach(function (q, i) { var on = st.sv === i; h += '<circle data-vtx="' + i + '" cx="' + q[0] + '" cy="' + q[1] + '" r="' + (k * (on ? 0.62 : 0.48)) + '" fill="' + (on ? '#C26445' : '#fff') + '" stroke="#C26445" stroke-width="2.5" vector-effect="non-scaling-stroke" style="cursor:grab"/>'; });
+      return h + '</svg>'; };
+    var shPanel = function (t) {
+      var P = t.outline || [], h = '<div class="tw-shp"><div class="tw-chips tw-sm2">' + chip('shm:cut', st.shm !== 'pts', '✂ Cut a wall') + chip('shm:pts', st.shm === 'pts', '✎ Move corners') + chip('shu', false, '↶ Undo') + '</div>';
+      if (st.shm !== 'pts' && st.se != null && P[st.se]) { var a = P[st.se], b = P[(st.se + 1) % P.length], L = Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2) / 2, c = st.sc, ok = !!shCut(P, st.se, c);
+        var row = function (k, lab) { return '<div class="tw-pm"><span>' + lab + '</span><button type="button" data-sp="w:shc:' + k + ':-" aria-label="Less">−</button><input type="number" step="0.5" min="0" inputmode="decimal" data-shc="' + k + '" value="' + c[k] + '"><button type="button" data-sp="w:shc:' + k + ':+" aria-label="More">+</button><small>ft</small></div>'; };
+        h += '<div class="tw-ed tw-shc"><b>✂ Cut this wall (' + L + ' ft)</b><p class="tw-tip" style="margin:0 0 4px;width:100%">Measured from the red dot end.</p>' + row('f', 'From the end') + row('w', 'Cut width') + row('d', 'Cut depth (inwards)') +
+          '<div class="tw-chips tw-sm2" style="width:100%">' + chip('sct:notch', c.t !== 'slant', '⊓ Straight') + chip('sct:slant', c.t === 'slant', '◺ Slant') + '</div>' + (ok ? '' : '<p class="tw-msg" style="width:100%">That cut doesn\'t fit this wall — make it smaller.</p>') +
+          '<div class="tw-chips tw-sm2" style="width:100%">' + chip('shx', false, 'Cancel') + '<button type="button" class="tw-shok" data-sp="w:shok"' + (ok ? '' : ' disabled') + '>Apply cut</button></div></div>'; }
+      else if (st.shm === 'pts') h += '<p class="tw-tip">Drag a corner (½ ft steps) · tap + to add a corner' + (st.sv != null ? '' : ' · tap a corner to pick it') + '</p>' + (st.sv != null && P.length > 3 ? '<div class="tw-chips tw-sm2">' + chip('sdel', false, '🗑 Remove this corner') + '</div>' : '');
+      else h += '<p class="tw-tip">👆 Tap any wall to cut into it — as many cuts as you need, even in the middle of a wall.</p>';
+      h += '<p class="tw-h">Start from a shape</p><div class="tw-chips tw-sm2">' + SHP.map(function (z) { return chip('spre:' + z[0], false, z[1]); }).join('') + chip('spent', false, '+ 🏠 Penthouse / built area') + '</div>';
+      return h + '<p class="tw-tip">Open terrace ≈ ' + Math.round(olArea(P) - t.blocks.filter(function (b) { return b.pent; }).reduce(function (s0, b) { return s0 + b.w * b.d; }, 0)) + ' sq ft · ' + P.length + ' corners</p></div>'; };
+    var shGo = function (p) { var t = st.site; if (!t) return false;
+      if (p[0] === 'shp') { st.shp = !st.shp; st.se = null; st.sv = null; st.sel = null; st.csel = null; st.hsel = null; st.msg = ''; if (st.shp) { if (!t.outline) { t.outline = olNorm(olFromCuts(t)); delete t.cuts; st.a.cuts = {}; st.a.outline = JSON.parse(JSON.stringify(t.outline)); } st.shm = st.shm || 'cut'; } return true; }
+      if (p[0] === 'shm') { st.shm = p[1]; st.se = null; st.sv = null; return true; }
+      if (p[0] === 'sedge') { var P = t.outline, i = +p[1], a = P[i], b = P[(i + 1) % P.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); st.se = i; st.sc = { f: Math.max(0, Math.round(L / 2 - 3)), w: Math.min(6, Math.floor(L)), d: 4, t: 'notch' }; return true; }
+      if (p[0] === 'shc' && st.sc) { st.sc[p[1]] = Math.max(p[1] === 'f' ? 0 : 0.5, (+st.sc[p[1]] || 0) + (p[2] === '+' ? 1 : -1)); return true; }
+      if (p[0] === 'sct' && st.sc) { st.sc.t = p[1]; return true; }
+      if (p[0] === 'shx') { st.se = null; return true; }
+      if (p[0] === 'shok' && st.sc && st.se != null) { var Q = shCut(t.outline, st.se, st.sc); if (Q) { shPush(); shSave(Q); st.se = null; } return true; }
+      if (p[0] === 'sadd') { var P2 = t.outline, j = +p[1], a2 = P2[j], b2 = P2[(j + 1) % P2.length]; shPush(); P2.splice(j + 1, 0, [Math.round(a2[0] + b2[0]) / 2, Math.round(a2[1] + b2[1]) / 2]); st.sv = j + 1; return true; }
+      if (p[0] === 'sdel' && st.sv != null && t.outline.length > 3) { var P3 = t.outline.slice(); P3.splice(st.sv, 1); if (shOk(P3)) { shPush(); shSave(P3); } else st.msg = 'Removing that corner would cross the walls'; st.sv = null; return true; }
+      if (p[0] === 'shu') { var H = st.shH && st.shH.pop(); if (H) { var o = JSON.parse(H); t.outline = o.o; t.blocks = o.b; st.a.outline = JSON.parse(JSON.stringify(o.o)); st.se = null; st.sv = null; st.msg = ''; } return true; }
+      if (p[0] === 'spre') { shPush(); var pent = p[1] === 'fb' || p[1] === 'mid'; if (!pent) t.blocks = t.blocks.filter(function (b) { return !b.pent; }); else shPent(t, p[1]); shSave(shPre(pent ? 'rect' : p[1], t.pw, t.pd)); st.se = null; st.sv = null; return true; }
+      if (p[0] === 'spent') { shPush(); if (!shPent(t, 'add')) st.msg = 'No free space left for a penthouse'; return true; }
+      return false; };
     var twDone = function (site) { try { if (window.otrack) window.otrack('plan_tpl', { ref: 'wizard' }); } catch (e) {} cb({ kind: 'terrace', site: site, had: list.length > 0 }); setTimeout(close, 900); };   // 235: the planner opens over it first — no flash of the home page
     var twGo = function (k) {
       var a = st.a, p = k.split(':'), t = st.site, bi = st.sel;
+      if (['shp', 'shm', 'sedge', 'shc', 'sct', 'shx', 'shok', 'sadd', 'sdel', 'shu', 'spre', 'spent'].indexOf(p[0]) >= 0) { shGo(p); return paint(); }
       if (p[0] === 'phigh' && t) { t.high = t.high || {}; if (!t.high[p[1]]) { t.high[p[1]] = true; st.hsel = p[1]; } else st.hsel = st.hsel === p[1] ? null : p[1]; st.sel = null; st.csel = null; a.high = JSON.parse(JSON.stringify(t.high)); return paint(); }
       if (p[0] === 'phoff' && t) { t.high = t.high || {}; t.high[p[1]] = false; st.hsel = null; a.high = JSON.parse(JSON.stringify(t.high)); return paint(); }
       if (p[0] === 'phz' && t && st.hsel) { t.hw = t.hw || {}; var hs = st.hsel, full = hs === 'back' ? t.pw : t.pd, o = t.hw[hs] = t.hw[hs] || { h: 12, l: full }; o.l = Math.min(o.l || full, full);
@@ -3099,7 +3196,7 @@
           if (p[0] === 'blk') b.lock = !b.lock;
           else if (p[0] === 'bdel') { t.blocks.splice(bi, 1); st.sel = null; }
           else if (p[0] === 'bwall') twTry(bi, function (q) { q.side = p[1]; });
-          else if (p[0] === 'bz') twTry(bi, function (q) { var s = p[2] === '+' ? 1 : -1; if (p[1] === 'n') q.d = Math.max(1, Math.round(q.d / 3) + s) * 3; else if (p[1] === 'h') q.h = Math.max(2, Math.min(30, (+q.h || TS_BH[q.type] || 9) + s * 0.5)); else q[p[1]] = Math.max(1, Math.min(60, q[p[1]] + s * (TWQ[st.q] === 'plan' ? 1 : 0.5))); }); }
+          else if (p[0] === 'bz') twTry(bi, function (q) { var s = p[2] === '+' ? 1 : -1; if (p[1] === 'n') q.d = Math.max(1, Math.round(q.d / 3) + s) * 3; else if (p[1] === 'h') q.h = Math.max(2, Math.min(30, (+q.h || TS_BH[q.type] || 9) + s * 0.5)); else q[p[1]] = Math.max(1, Math.min(q.pent ? 300 : 60, q[p[1]] + s * (TWQ[st.q] === 'plan' ? 1 : 0.5))); }); }
         return TWQ[st.q] === 'plan' ? paint() : twRef(); }
       if (['plot', 'road', 'mpos', 'msz', 'door', 'par', 'high', 'cut', 'lift', 'tanks', 'room', 'shaft', 'ac', 'ip'].indexOf(p[0]) >= 0) { st.site = null; st.sel = null; }
       var T = a._t = a._t || {}; if (p[0] === 'mpos') T.mpos = 1; if (['lift', 'room', 'shaft'].indexOf(p[0]) >= 0) T[p[0]] = 1;
@@ -3124,9 +3221,16 @@
       paint(); if (TWQ[st.q] === 'view') tw3d();
     };
     if (!d.dataset.twp) { d.dataset.twp = 1;   // 228: drag a block on the plan; a tap picks it
-      d.addEventListener('pointerdown', function (e) { var el = e.target.closest && e.target.closest('[data-blk]'); if (!el || !d._pd) return; d._pd.down(e, el); });
-      d.addEventListener('pointermove', function (e) { if (d._pd) d._pd.move(e); });
-      d.addEventListener('pointerup', function (e) { if (d._pd) d._pd.up(e); }); d.addEventListener('pointercancel', function (e) { if (d._pd) d._pd.up(e); }); }
+      d.addEventListener('pointerdown', function (e) { var vx = e.target.closest && e.target.closest('[data-vtx]'); if (vx && d._vd) return d._vd.down(e, vx); var el = e.target.closest && e.target.closest('[data-blk]'); if (!el || !d._pd) return; d._pd.down(e, el); });
+      d.addEventListener('pointermove', function (e) { if (d._vd && d._vd.D) return d._vd.move(e); if (d._pd) d._pd.move(e); });
+      d.addEventListener('pointerup', function (e) { if (d._vd && d._vd.D) return d._vd.up(e); if (d._pd) d._pd.up(e); }); d.addEventListener('pointercancel', function (e) { if (d._vd && d._vd.D) return d._vd.up(e); if (d._pd) d._pd.up(e); });
+      d.addEventListener('change', function (e) { var k = e.target && e.target.dataset && e.target.dataset.shc; if (!k || !st.sc) return; var v = Math.round(+e.target.value * 2) / 2; if (!(v >= 0 && v <= 400)) return; st.sc[k] = k === 'f' ? v : Math.max(0.5, v); paint(); }); }
+    d._vd = { down: function (e, el) { var t = st.site; if (!t || !t.outline) return; e.preventDefault(); shPush(); var i = +el.getAttribute('data-vtx'); this.D = { i: i, svg: el.ownerSVGElement, q0: t.outline[i].slice(), mv: false, x0: e.clientX, y0: e.clientY }; st.sv = i; },
+      move: function (e) { var D = this.D, t = st.site; if (!D || !t) return; if (!D.mv && Math.hypot(e.clientX - D.x0, e.clientY - D.y0) < 4) return; D.mv = true; e.preventDefault(); var r = D.svg.getBoundingClientRect();
+        t.outline[D.i] = [Math.round(Math.max(0, Math.min(t.pw, (e.clientX - r.left) / r.width * t.pw)) * 2) / 2, Math.round(Math.max(0, Math.min(t.pd, (e.clientY - r.top) / r.height * t.pd)) * 2) / 2];
+        var sv = d.querySelector('.tw-shs'), pl = d.querySelector('.tw-pl'); if (sv) { sv.outerHTML = shSvg(t); D.svg = d.querySelector('.tw-shs'); } if (pl) pl.style.clipPath = twClip(t); },
+      up: function () { var D = this.D, t = st.site; this.D = null; if (!D || !t) return; if (!D.mv) { if (st.shH) st.shH.pop(); return paint(); }
+        if (shOk(olNorm(t.outline))) { shSave(t.outline); st.sv = null; } else { t.outline[D.i] = D.q0; if (st.shH) st.shH.pop(); st.msg = 'Walls can\'t cross — try a smaller move'; } paint(); } };
     d._pd = { down: function (e, el) { var t = st.site, i = +el.getAttribute('data-blk'), b = t && t.blocks[i]; if (!b) return; e.preventDefault(); var r = el.parentNode.getBoundingClientRect();
         this.D = { i: i, el: el, x0: e.clientX, y0: e.clientY, bx: b.x, bz: b.z, kx: t.pw / r.width, kz: t.pd / r.height, mv: false }; try { el.setPointerCapture(e.pointerId); } catch (er) {} },
       move: function (e) { var D = this.D; if (!D) return; if (!D.mv && Math.hypot(e.clientX - D.x0, e.clientY - D.y0) < 5) return; D.mv = true; var t = st.site, b = t.blocks[D.i], P = 0.75;
@@ -3163,7 +3267,7 @@
     };
     d.classList.add('open'); document.body.classList.add('sp-on'); paint();
     var openRoof = function (site) { d._go('k:terrace'); var t0 = JSON.parse(JSON.stringify(site)); (t0.blocks || []).forEach(function (b) { b.lock = false; });
-      Object.assign(st.a, { pw: +t0.pw, pd: +t0.pd, plot: t0.plot || '', road: t0.road_back ? 'both' : t0.corner === 'left' ? 'cl' : t0.corner === 'right' ? 'cr' : 'front', tanks: t0.tanks !== false, par: t0.rail ? 'rail' : String(t0.par || 3), high: t0.high || {}, cuts: t0.cuts || {} });
+      Object.assign(st.a, { pw: +t0.pw, pd: +t0.pd, plot: t0.plot || '', road: t0.road_back ? 'both' : t0.corner === 'left' ? 'cl' : t0.corner === 'right' ? 'cr' : 'front', tanks: t0.tanks !== false, par: t0.rail ? 'rail' : String(t0.par || 3), high: t0.high || {}, cuts: t0.cuts || {}, outline: t0.outline || null });
       st.a._t = { mpos: 1, lift: 1, room: 1, shaft: 1, lpos: 1, lsz: 1, rn: 1, sn: 1 }; st.a._m0 = 1; st.site = t0; st.q = 1; return paint(); };
     // ---------------------------------------------------------------- 243: the customer's own CAD layout (PDF) → the as-built roof
     var lqLoad = function () { st.lq = null; if (window.ASSIST && window.ASSIST.token) { st.lq = { team: true }; return; } if (!window.acToken || !localStorage.getItem('outrr_session')) { st.lq = { signed_in: false, left: 2 }; return; }
@@ -3214,7 +3318,7 @@
         st.bg = o.toDataURL('image/jpeg', 0.72); st.bgOn = true; if (st.step === 'w' && TWQ[st.q] === 'plan') paint(); }).catch(function () {}); };
     if (opts && opts.site && opts.site.kind === 'terrace') {   // 234: back to the roof plan of a terrace already set up (planner "Change the roof")
       d._go('k:terrace'); var t0 = JSON.parse(JSON.stringify(opts.site)); (t0.blocks || []).forEach(function (b) { b.lock = false; });
-      Object.assign(st.a, { pw: +t0.pw, pd: +t0.pd, plot: t0.plot || '', road: t0.road_back ? 'both' : t0.corner === 'left' ? 'cl' : t0.corner === 'right' ? 'cr' : 'front', tanks: t0.tanks !== false, par: t0.rail ? 'rail' : String(t0.par || 3), high: t0.high || {}, cuts: t0.cuts || {} });
+      Object.assign(st.a, { pw: +t0.pw, pd: +t0.pd, plot: t0.plot || '', road: t0.road_back ? 'both' : t0.corner === 'left' ? 'cl' : t0.corner === 'right' ? 'cr' : 'front', tanks: t0.tanks !== false, par: t0.rail ? 'rail' : String(t0.par || 3), high: t0.high || {}, cuts: t0.cuts || {}, outline: t0.outline || null });
       st.a._t = { mpos: 1, lift: 1, room: 1, shaft: 1, lpos: 1, lsz: 1, rn: 1, sn: 1 }; st.a._m0 = 1; st.site = t0; st.q = 1; return paint(); }
     var lp = null; try { lp = JSON.parse(localStorage.getItem('outrr_plan') || 'null'); } catch (e) {}
     var its = arr(lp && lp.items).filter(function (o) { return o && !o._me; });
@@ -3269,6 +3373,7 @@
     '.sp-hd{display:flex;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #E7DFD3}.sp-hd b{flex:1;font-size:15px}.sp-hd button{border:1px solid #ddd;background:#fff;border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:15px}' +
     '.sp-bd{flex:1;overflow:auto;padding:40px 18px;max-width:720px;width:100%;margin:0 auto;box-sizing:border-box}.sp-bd h2{font-size:26px;margin:0 0 6px}.sp-sub{font-size:14px;color:#6A6258;margin:0 0 20px}' +
     '.sp-list{display:flex;flex-direction:column;gap:10px}.sp-list button,.sp-kinds button{display:flex;gap:14px;align-items:center;text-align:left;border:1.5px solid #E2D6C4;background:#fff;border-radius:16px;padding:14px 16px;font:inherit;color:#2E2E2E;cursor:pointer}.sp-list button:hover,.sp-kinds button:hover{border-color:#C26445;background:#FFF8F2}' +
+    '.tw-plw.tw-plw-shp{max-width:calc(100% - 64px);margin:26px auto 34px}.tw-shs{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:4;touch-action:none}.tw-shs text{pointer-events:none;font-family:Inter,system-ui,sans-serif}.tw-pl-dim .tw-b{opacity:.45;pointer-events:none}.tw-shp{margin-top:4px}.tw-shc .tw-pm{width:100%;display:flex;align-items:center;gap:6px}.tw-shc .tw-pm span{flex:1;font-size:13px}.tw-shc .tw-pm input{width:62px;text-align:center;border:1px solid #D6D2C7;border-radius:8px;padding:6px 4px;font-size:14px}.tw-shc .tw-pm small{color:#7A7268}.tw-shok{background:#C26445;color:#fff;border:0;border-radius:18px;padding:7px 16px;font-weight:700;cursor:pointer}.tw-shok[disabled]{opacity:.4}' +
     '.tw-pdf{background:#FBF3EC;border:1px solid #EBCDB9;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;margin:0 0 10px}.tw-pdf small{display:block;color:#7A7268;margin-top:4px}.tw-plw{position:relative}.tw-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:.45;pointer-events:none;z-index:3;mix-blend-mode:multiply;border-radius:6px}' +
     '.sp-busy{display:flex;flex-direction:column;align-items:center;gap:6px;padding:30px 10px;text-align:center}.sp-busy i{width:34px;height:34px;border-radius:50%;border:3px solid #E2D6C4;border-top-color:#C26445;animation:spin 0.9s linear infinite}.sp-busy small{color:#7A7268}@keyframes spin{to{transform:rotate(360deg)}}.sp-list button[disabled]{opacity:.55;cursor:not-allowed}' +
     '.sp-row{display:flex;flex-direction:column;gap:4px}.sp-row>button{width:100%}.sp-acts{display:flex;gap:8px;justify-content:flex-end;padding:0 6px}.sp-list .sp-acts button{border:0;background:none;padding:4px 6px;font-size:12.5px;color:#7A7268;border-radius:8px}.sp-list .sp-acts button:hover{color:#C26445}' +

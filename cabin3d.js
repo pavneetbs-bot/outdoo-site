@@ -256,7 +256,17 @@ function site(g, L, W) {
 // 'site' (at the cabin's centre, turned) holds 'plot' (in plot coords), so every drag converts with plot.worldToLocal().
 const BH_ = { mumty: 9, lift: 11, shaft: 3, room: 9, ac: 2.4 };
 // 193: a terrace may have its corners cut (t.cuts {bl|br|fl|fr: {type: notch | slant, a: ft across, b: ft deep}}; b = back, f = front / road, l / r = left / right)
+// 244: or any shape — t.outline [[x, z], …] (ft, plot coords; mid-side cuts, L / U / T / plus, penthouse roofs); it wins over cuts
+export function olPts(t) { const O = t && t.outline; if (!Array.isArray(O) || O.length < 3) return null; let P = O.map(q => [+q[0], +q[1]]), a = 0;
+  P.forEach((q, i) => { const n = P[(i + 1) % P.length]; a += q[0] * n[1] - n[0] * q[1]; }); return a < 0 ? P.reverse() : P; }   // same turn as the corner walk below
+export function inPoly(P, x, z) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const [xi, zi] = P[i], [xj, zj] = P[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; }
+export function olRectOut(P, r, M) {   // does rect r (grown by M) reach outside polygon P?
+  const x0 = r.x - M + 0.02, x1 = r.x + r.w + M - 0.02, z0 = r.z - M + 0.02, z1 = r.z + r.d + M - 0.02;
+  for (let i = 0; i <= 4; i++) for (let j = 0; j <= 4; j++) if (!inPoly(P, x0 + (x1 - x0) * i / 4, z0 + (z1 - z0) * j / 4)) return true;
+  return P.some(q => q[0] > x0 && q[0] < x1 && q[1] > z0 && q[1] < z1);   // a notch corner poking in
+}
 export function plotOutline(t) {
+  const OP = olPts(t); if (OP) return OP;
   const pw = +t.pw || 30, pd = +t.pd || 60, C = t.cuts || {}, pts = [];
   const cut = k => { const c = C[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return null; const a = Math.max(0.5, Math.min(pw - 2, +c.a || 0)), b = Math.max(0.5, Math.min(pd - 2, +c.b || 0)); return { type: c.type, a, b }; };
   const corner = (k, X, Z, sx, sz, first) => {   // walking round: back-left → back-right → front-right → front-left; (sx, sz) point into the plot
@@ -268,7 +278,8 @@ export function plotOutline(t) {
   return pts;
 }
 export function cutHit(t, r, P) {   // does rect r (x, z, w, d) reach into a cut corner (grown by the parapet P)?
-  const C = t && t.cuts; if (!C || t.kind === 'ground') return false; const pw = +t.pw, pd = +t.pd;
+  if (!t || t.kind === 'ground') return false; const OP = olPts(t); if (OP) return olRectOut(OP, r, P);
+  const C = t.cuts; if (!C) return false; const pw = +t.pw, pd = +t.pd;
   return ['bl', 'br', 'fl', 'fr'].some(k => { const c = C[k]; if (!c || (c.type !== 'notch' && c.type !== 'slant')) return false; const a = +c.a || 0, b = +c.b || 0; if (!(a > 0 && b > 0)) return false;
     const x0 = k[1] === 'r' ? pw - (r.x + r.w) : r.x, z0 = k[0] === 'f' ? pd - (r.z + r.d) : r.z;
     return c.type === 'notch' ? x0 < a + P - 0.01 && z0 < b + P - 0.01 : x0 / a + z0 / b < 1 + P * Math.hypot(1 / a, 1 / b) - 0.001; });
@@ -355,7 +366,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=30').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=31').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }

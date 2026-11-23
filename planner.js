@@ -4,9 +4,9 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=30';
-import * as P2 from './plan2d.js?v=4';
-import { cutHit } from './cabin3d.js?v=30';
+import * as S3 from './space3d.js?v=31';
+import * as P2 from './plan2d.js?v=5';
+import { cutHit } from './cabin3d.js?v=31';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -161,6 +161,9 @@ function parRuns(side, skip, kinds) {
   const cutAt = k => { const c = C[k]; return c && (c.type === 'notch' || c.type === 'slant') ? (ax === 'x' ? +c.a : +c.b) || 0 : 0; };
   const ends = { back: ['bl', 'br'], front: ['fl', 'fr'], left: ['bl', 'fl'], right: ['br', 'fr'] }[side];
   let runs = [[p + cutAt(ends[0]) + (cutAt(ends[0]) ? p : 0), len - p - cutAt(ends[1]) - (cutAt(ends[1]) ? p : 0)]];
+  if (t.kind === 'terrace' && Array.isArray(t.outline) && t.outline.length >= 3) {   // 244: any shape — the side's wall = the outline edges lying on it (a cut breaks it)
+    const O = P2.outline(t), lv = { back: 0, front: t.pd, left: 0, right: t.pw }[side], cz = ax === 'x' ? 1 : 0, ca = ax === 'x' ? 0 : 1;
+    runs = O.map((q, i) => [q, O[(i + 1) % O.length]]).filter(([a, b]) => Math.abs(a[cz] - lv) < 0.05 && Math.abs(b[cz] - lv) < 0.05).map(([a, b]) => [Math.min(a[ca], b[ca]) + p, Math.max(a[ca], b[ca]) - p]).filter(([u0, u1]) => u1 - u0 >= 1); }
   const near = r => side === 'back' ? r.z < p + 1.6 : side === 'front' ? r.z + r.d > t.pd - p - 1.6 : side === 'left' ? r.x < p + 1.6 : r.x + r.w > t.pw - p - 1.6;
   const obs = (t.kind === 'terrace' ? t.blocks.filter(b => kinds.blocks.includes(b.type)) : []).concat(S.items.filter((o, j) => j !== skip && !att(o) && kinds.items(o)).map(rectI));
   if (t.kind !== 'terrace' && side === 'front') obs.push({ x: t.pw * 0.38 + 0.3, z: t.pd - 1, w: t.pw * 0.24 - 0.6, d: 1 });   // the lawn's gateway
@@ -525,6 +528,7 @@ function siteSecs() {
     '<p class="pl-h">In front / at the back</p><div class="pl-tabs">' + btn('data-pl="rfront"', t.road_front !== false, (t.road_front !== false ? '✓ ' : '') + 'Road in front') + btn('data-pl="rback"', !!t.road_back, (t.road_back ? '✓ ' : '') + 'Road at the back') + '</div>']);
   L.push(['Boundary wall', 'The low wall round the roof (parapet)', '<div class="pl-tabs">' + btn('data-pl="par:3"', +t.par === 3, '3 ft') + btn('data-pl="par:4"', +t.par === 4, '4 ft') + '</div>']);
   const C = t.cuts || {};
+  if (Array.isArray(t.outline) && t.outline.length >= 3) L.push(['Shape', 'Your roof\'s outline', '<p class="pl-h">' + t.outline.length + ' corners — change it on the roof plan (✏ Shape)</p>']); else
   L.push(['Corners cut?', 'Front = the road side', CUTS.map(([k, lbl]) => { const c = C[k] || {}, on = c.type === 'notch' || c.type === 'slant';
     return `<div class="pl-blk"><b>${lbl}</b><div class="pl-tabs" style="gap:5px">${btn(`data-pl="cut:${k}:"`, !on, 'No cut')}${btn(`data-pl="cut:${k}:notch"`, c.type === 'notch', '⌐ Straight')}${btn(`data-pl="cut:${k}:slant"`, c.type === 'slant', '◸ Slant')}</div>` +
       (on ? `<div class="pl-row" style="width:100%;margin:2px 0 0">${nIn('ca:' + k, c.a, 'Across (ft)', 1, t.pw - 4)}${nIn('cb:' + k, c.b, 'Deep (ft)', 1, t.pd - 4)}</div>` : '') + '</div>'; }).join('')]);
@@ -1270,7 +1274,7 @@ export function open(seed) {
     if (seed.fresh && S.step === 0) S.pend = seed.items; else { S.step = 1; putPieces(seed.items); }
     if (!S.pid) S.source = 'planner';
   } else if (seed && seed.item) {   // 193: from the cabin studio / pergola designer
-    if (seed.site && seed.site.kind === 'terrace') { const t = seed.site; S.site = { kind: 'terrace', plot: t.plot || '', pw: +t.pw, pd: +t.pd, par: +t.par || 3, corner: t.corner || '', road_front: t.road_front, road_back: !!t.road_back, high: t.high || {}, tanks: t.tanks !== false, cuts: t.cuts, blocks: (t.blocks || []).map(b => Object.assign({ type: BLK[b.type] ? b.type : 'room', side: b.side || 'free', w: +b.w, d: +b.d, x: +b.x, z: +b.z }, +b.h > 0 ? { h: +b.h } : {})) }; }
+    if (seed.site && seed.site.kind === 'terrace') { const t = seed.site; S.site = { kind: 'terrace', plot: t.plot || '', pw: +t.pw, pd: +t.pd, par: +t.par || 3, corner: t.corner || '', road_front: t.road_front, road_back: !!t.road_back, high: t.high || {}, tanks: t.tanks !== false, cuts: t.cuts, outline: t.outline, blocks: (t.blocks || []).map(b => Object.assign({ type: BLK[b.type] ? b.type : 'room', side: b.side || 'free', w: +b.w, d: +b.d, x: +b.x, z: +b.z }, +b.h > 0 ? { h: +b.h } : {})) }; }
     else if (seed.site && seed.site.kind === 'ground' && S.site.kind !== 'ground') { S.site.kind = 'ground'; }
     const it = Object.assign({}, seed.item), same = S.items.findIndex(o => o.cat === it.cat && (o.pick === it.pick || o.sku === it.pick));
     if (same >= 0) S.items.splice(same, 1);
