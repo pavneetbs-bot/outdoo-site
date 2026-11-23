@@ -4,9 +4,9 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=36';
+import * as S3 from './space3d.js?v=37';
 import * as P2 from './plan2d.js?v=9';
-import { cutHit } from './cabin3d.js?v=33';
+import { cutHit } from './cabin3d.js?v=34';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -731,10 +731,14 @@ function suOld() {   // 249: what is already built (and kept) placed once on the
 function suRemApply() {   // blocks marked 'take down' leave the roof (kept aside in site.gone so 'Keep' brings them back)
   const t = S.site, su = S.su; if (t.kind !== 'terrace') return; t.gone = t.gone || []; const all = t.blocks.concat(t.gone);
   t.blocks = all.filter(b => !su.rm['blk_' + b.id]); t.gone = all.filter(b => su.rm['blk_' + b.id]); }
-function suPipes() {   // 246: the stairs-room face with the open pipes (not the door, facing the terrace) + an openable cover in front if asked
-  const t = S.site, su = S.su, M = (t.blocks || []).find(b => b.type === 'mumty'); t.pipes = null; if (!M || !su.pipes) return;
+function shV(b) { return b.h != null && b.h !== '' && isFinite(+b.h) ? +b.h : 3; }   // 252: a shaft can be flush (0) or 6 in high
+function shH(b) { const v = shV(b); return v === 0 ? '0 in (flush)' : v < 1 ? Math.round(v * 12) + ' in' : v + ' ft'; }
+function pFaces() { const door = geo().door; return [['left', 'Left'], ['right', 'Right'], ['back', 'Back (away from road)'], ['front', 'Front (road side)']].map(f => f[0] === door ? [f[0], f[1] + ' — door side'] : f); }
+function pFace() { const su = S.su; if (su.pipeFace) return su.pipeFace; return suPipes(true) || ''; }
+function suPipes(dry) {   // 246: the stairs-room face with the open pipes (not the door, facing the terrace) + an openable cover in front if asked
+  const t = S.site, su = S.su, M = (t.blocks || []).find(b => b.type === 'mumty'), keepP = t.pipes; t.pipes = null; if (!M || !su.pipes) { if (dry) t.pipes = keepP; return; }
   const door = geo().door, faces = [['left', M.x, M.z + M.d / 2], ['right', M.x + M.w, M.z + M.d / 2], ['back', M.x + M.w / 2, M.z], ['front', M.x + M.w / 2, M.z + M.d]].filter(f => f[0] !== door && inside({ x: f[1] - 1, z: f[2] - 1, w: 2, d: 2 }) && (f[0] === 'left' ? M.x > P0() + 2 : f[0] === 'right' ? M.x + M.w < t.pw - P0() - 2 : f[0] === 'back' ? M.z > P0() + 2 : M.z + M.d < t.pd - P0() - 2));
-  const f = faces.sort((a, b) => Math.hypot(a[1] - t.pw / 2, a[2] - t.pd / 2) - Math.hypot(b[1] - t.pw / 2, b[2] - t.pd / 2))[0]; if (!f) return; t.pipes = { face: f[0], cover: !!su.pipeScr };
+  const all = [['left', M.x, M.z + M.d / 2], ['right', M.x + M.w, M.z + M.d / 2], ['back', M.x + M.w / 2, M.z], ['front', M.x + M.w / 2, M.z + M.d]], f = (su.pipeFace && all.find(x => x[0] === su.pipeFace)) || faces.sort((a, b) => Math.hypot(a[1] - t.pw / 2, a[2] - t.pd / 2) - Math.hypot(b[1] - t.pw / 2, b[2] - t.pd / 2))[0]; if (dry) { t.pipes = keepP; return f ? f[0] : ''; } if (!f) return; t.pipes = { face: f[0], cover: !!su.pipeScr };
   if (!su.pipeScr) return; const w = 3, d = 0.5, it = { cat: 'privacy', label: 'Pipe cover (opens)', pipe: true, h: 8, w, d, rot: { left: 90, right: 270, back: 180, front: 0 }[f[0]] };
   if (f[0] === 'left') { it.x = M.x - d; it.z = M.z + M.d / 2 - w / 2; } else if (f[0] === 'right') { it.x = M.x + M.w; it.z = M.z + M.d / 2 - w / 2; } else if (f[0] === 'back') { it.x = M.x + M.w / 2 - w / 2; it.z = M.z - d; } else { it.x = M.x + M.w / 2 - w / 2; it.z = M.z + M.d; }
   if (it.rot % 180) { it.x = f[0] === 'left' ? M.x - d : M.x + M.w; it.z = M.z + M.d / 2 - w / 2; } S.items.push(it); }
@@ -798,8 +802,8 @@ function suPaint() { if (S.magic) return;
     h += '<h2>Keep or take down?</h2><p class="pl-sub">What we take down is gone from your new design (and our team adds the dismantling).</p>' + L.map(z => `<div class="pl-rmr"><span><i>${P2.ico(z.ic)}</i>${esc(z.t)}</span><div class="pl-subig">${chip('rm:' + z.k + ':0', !su.rm[z.k], 'Keep')}${chip('rm:' + z.k + ':1', !!su.rm[z.k], 'Take down')}</div></div>`).join('') + next(); }
   else if (q === 'existing') { const bl = S.site.blocks || [];
     h += '<h2>What is already there</h2><p class="pl-h">The floor now</p><div class="pl-subig">' + FLOOR0.map(z => big('fl0:' + z[0], su.floor0 === z[0], P2.ico(z[0] === 'cement' ? 'none' : z[0] === 'tiles' ? 'tiles' : 'brick'), z[1], z[2])).join('') + '</div>' +
-      (bl.some(b => b.type === 'mumty') ? '<p class="pl-h">Plumbing pipes open on the stairs-room wall?</p><div class="pl-subig">' + chip('pipes:1', su.pipes === true, 'Yes') + chip('pipes:0', su.pipes === false, 'No') + '</div>' + (su.pipes ? '<p class="pl-h">Hide them behind a cover that opens (for repairs)?</p><div class="pl-subig">' + chip('pscr:1', su.pipeScr === true, 'Yes, cover them') + chip('pscr:0', su.pipeScr === false, 'Leave them') + '</div>' : '') : '') +
-      (bl.some(b => b.type === 'shaft') ? '<p class="pl-h">Shaft height' + (bl.filter(b => b.type === 'shaft').length > 1 ? 's' : '') + '</p>' + bl.map((b, i) => b.type !== 'shaft' ? '' : `<div class="pl-cnts"><span>${P2.ico('shaft')} Shaft ${bl.filter(x => x.type === 'shaft').indexOf(b) + 1}</span><button type="button" data-su="shh:${i}:-1">−</button><b>${(+b.h || 3)} ft</b><button type="button" data-su="shh:${i}:1">+</button></div>`).join('') : '') +
+      (bl.some(b => b.type === 'mumty') ? '<p class="pl-h">Plumbing pipes open on the stairs-room wall?</p><div class="pl-subig">' + chip('pipes:1', su.pipes === true, 'Yes') + chip('pipes:0', su.pipes === false, 'No') + '</div>' + (su.pipes ? '<p class="pl-h">Which wall of the stairs room are they on?</p><div class="pl-subig">' + pFaces().map(f => chip('pface:' + f[0], pFace() === f[0], f[1])).join('') + '</div>' : '') + (su.pipes ? '<p class="pl-h">Hide them behind a cover that opens (for repairs)?</p><div class="pl-subig">' + chip('pscr:1', su.pipeScr === true, 'Yes, cover them') + chip('pscr:0', su.pipeScr === false, 'Leave them') + '</div>' : '') : '') +
+      (bl.some(b => b.type === 'shaft') ? '<p class="pl-h">Shaft height' + (bl.filter(b => b.type === 'shaft').length > 1 ? 's' : '') + '</p>' + bl.map((b, i) => b.type !== 'shaft' ? '' : `<div class="pl-cnts"><span>${P2.ico('shaft')} Shaft ${bl.filter(x => x.type === 'shaft').indexOf(b) + 1}</span><button type="button" data-su="shh:${i}:-1">−</button><b>${shH(b)}</b><button type="button" data-su="shh:${i}:1">+</button></div>`).join('') : '') +
       '<p class="pl-h">The walls — stairs room, parapet and the rest</p><div class="pl-subig">' + big('walls:paint', su.walls === 'paint', P2.ico('roller'), 'Paint') + big('walls:tiles', su.walls === 'tiles', P2.ico('brick'), 'Tiles / cladding') + big('walls:none', su.walls === 'none', P2.ico('check'), 'Nothing') + '</div>';
     if (su.walls === 'tiles') { const wt = su.wtile || (su.wtile = { k: 'brick', c: 'red' });   // 245 (owner): which tiles are on the walls now, and their colour — the 3D shows them
       h += '<p class="pl-h">Which tiles?</p><div class="pl-subig">' + [['brick', 'Brick look'], ['t22', 'Plain 2 × 2 ft'], ['t24', 'Plain 2 × 4 ft'], ['stone', 'Stone cladding']].map(z => chip('wtk:' + z[0], wt.k === z[0], z[1])).join('') + '</div>' +
@@ -863,7 +867,8 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'fl0': su.floor0 = a[1]; su.dirty = true; break;
     case 'pipes': su.pipes = a[1] === '1'; su.dirty = true; break;
     case 'pscr': su.pipeScr = a[1] === '1'; su.dirty = true; break;
-    case 'shh': { const b = (S.site.blocks || [])[+a[1]]; if (b) b.h = Math.max(1, Math.min(14, (+b.h || 3) + (+a[2] || 0))); su.dirty = true; break; }
+    case 'shh': { const b = (S.site.blocks || [])[+a[1]]; if (b) { const c = shV(b), dd = +a[2] || 0; b.h = Math.max(0, Math.min(14, c + dd * (c < 1 || (c === 1 && dd < 0) ? 0.5 : 1))); } su.dirty = true; break; }   // 252: 0 in / 6 in below 1 ft
+    case 'pface': su.pipeFace = a[1]; su.dirty = true; break;
     case 'wtk': (su.wtile = su.wtile || { c: 'red' }).k = a[1]; su.dirty = true; break;
     case 'wtc': (su.wtile = su.wtile || { k: 'brick' }).c = a[1]; su.dirty = true; break;
     case 'shaft': su.shaft = a[1]; su.dirty = true; break;

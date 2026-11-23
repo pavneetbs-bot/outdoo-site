@@ -351,7 +351,7 @@ function drawPlot(tg, t) {
     [-0.7, 0, 0.7].forEach((u, k) => { const r = k === 1 ? 0.22 : 0.16, cx = f === 'left' ? M0.x - 0.3 : f === 'right' ? M0.x + M0.w + 0.3 : M0.x + M0.w / 2 + u, cz = f === 'back' ? M0.z - 0.3 : f === 'front' ? M0.z + M0.d + 0.3 : M0.z + M0.d / 2 + u;
       const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, H0 + 0.6, 12), pv); c.position.set(cx, Y + (H0 + 0.6) / 2, cz); c.castShadow = true; tg.add(c); }); } }
   (t.blocks || []).forEach((bk, i) => {
-    const bg = new THREE.Group(); bg.userData.st = { i }; tg.add(bg); const x = +bk.x + bk.w / 2, z = +bk.z + bk.d / 2, h = (bk.type !== 'ac' && +bk.h > 0 ? +bk.h : 0) || BH_[bk.type] || 9;   // a height the customer typed
+    const bg = new THREE.Group(); bg.userData.st = { i }; tg.add(bg); const x = +bk.x + bk.w / 2, z = +bk.z + bk.d / 2, h = bk.type === 'shaft' && bk.h != null && bk.h !== '' && +bk.h >= 0 && +bk.h < 1 ? Math.max(0.08, +bk.h) : (bk.type !== 'ac' && +bk.h > 0 ? +bk.h : 0) || BH_[bk.type] || 9;   // a height the customer typed
     if (bk.type === 'ac') {   // 222: split AC outdoor units of a standard size (~2.75 × 1 × 2 ft) on low stands, one per 3 ft of the block, fans facing the open terrace
       const acm = P('t_ac', 0xD9DCDD), grill = P('t_acg', 0x3A3F44), alongX = bk.w >= bk.d, L = alongX ? bk.w : bk.d, n = Math.max(1, Math.round(L / 3)), ul = Math.min(2.75, L / n - 0.25), ud = Math.min(1.05, alongX ? bk.d : bk.w), uh = Math.min(2, h - 0.4);
       const dx = pw / 2 - x, dz = pd / 2 - z, sx = alongX ? 0 : Math.sign(dx || 1) * ((bk.w - ud) / 2), sz = alongX ? Math.sign(dz || 1) * ((bk.d - ud) / 2) : 0;
@@ -378,7 +378,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=36').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=37').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
