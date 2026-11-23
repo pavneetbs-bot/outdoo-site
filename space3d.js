@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=32';
+import { cabinModel, plotModel } from './cabin3d.js?v=33';
 import { pergolaModel } from './pergola3d.js?v=22';
-import { outline } from './plan2d.js?v=7';
+import { outline } from './plan2d.js?v=8';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -484,6 +484,9 @@ const TEX = {};
 function finTex(k) { if (TEX[k]) return TEX[k]; const cv = document.createElement('canvas'); cv.width = cv.height = 256; const x = cv.getContext('2d');
   const flat = { plain: ['#EFEBE4', '#CFC8BD'], grey: ['#B9B8B4', '#9E9C97'], stone: ['#D8C9A8', '#BBAA86'], terracotta: ['#C98B63', '#A86E4B'] }[k];
   if (flat) { x.fillStyle = flat[0]; x.fillRect(0, 0, 256, 256); if (k === 'stone') for (let i = 0; i < 90; i++) { x.fillStyle = 'rgba(120,100,70,.12)'; x.fillRect(Math.random() * 256, Math.random() * 256, 3 + Math.random() * 10, 2 + Math.random() * 4); } x.strokeStyle = flat[1]; x.lineWidth = 4; x.strokeRect(0, 0, 256, 256); }
+  else if (k === 'kota') { x.fillStyle = '#9AA596'; x.fillRect(0, 0, 256, 256); [[128, 0], [0, 128]].forEach(([a, b], j) => { x.fillStyle = j ? '#8F9A8B' : '#A7B1A2'; x.fillRect(a, b, 128, 128); }); x.strokeStyle = '#7E887A'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke(); }
+  else if (k === 'marble') { x.fillStyle = '#F2F0EC'; x.fillRect(0, 0, 256, 256); x.strokeStyle = 'rgba(160,150,135,.5)'; x.lineWidth = 2; for (let i = 0; i < 4; i++) { x.beginPath(); x.moveTo(0, 40 + i * 60); x.bezierCurveTo(80, 20 + i * 70, 160, 90 + i * 40, 256, 60 + i * 55); x.stroke(); } x.strokeStyle = '#DCD8D0'; x.strokeRect(0, 0, 256, 256); }
+  else if (k === 'cement') { x.fillStyle = '#C9C5BE'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 500; i++) { x.fillStyle = `rgba(90,85,78,${Math.random() * 0.08})`; x.fillRect(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 6, 2 + Math.random() * 6); } }
   else if (k === 'terrazzo') { x.fillStyle = '#EFE8DC'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 380; i++) { x.fillStyle = ['#C9B99E', '#9FA89A', '#D2B48F', '#B7AE9F', '#A9B3A4'][i % 5]; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 1.5 + Math.random() * 4, 1.2 + Math.random() * 3, Math.random() * 3, 0, 7); x.fill(); } x.strokeStyle = '#DED5C6'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); }
   else if (k === 'checker') { x.fillStyle = '#E9E6E0'; x.fillRect(0, 0, 256, 256); x.fillStyle = '#8F8D88'; x.fillRect(0, 0, 128, 128); x.fillRect(128, 128, 128, 128); x.strokeStyle = '#C9C5BD'; x.lineWidth = 3; x.strokeRect(0, 0, 256, 256); x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke(); }
   else if (k === 'moroccan') { x.fillStyle = '#F3EEE6'; x.fillRect(0, 0, 256, 256); x.fillStyle = '#2F6F7E'; x.globalAlpha = 0.75; const c = 128, r = 90;
@@ -499,7 +502,7 @@ export function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r =>
   return out; }
 function floorFin(g, t, items) {
   const f = t.floor || {}, pw = +t.pw, pd = +t.pd, E = 0.75;
-  if (['plain', 'moroccan', 'stone', 'terracotta', 'grey', 'terrazzo', 'checker'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
+  if (['plain', 'moroccan', 'stone', 'terracotta', 'grey', 'terrazzo', 'checker', 'kota', 'marble', 'cement'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
     const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const per = f.tile === 'moroccan' ? 3 : f.tile === 'checker' ? 4 : 2; tx.repeat.set(1 / per, 1 / per);
     const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
   if (f.border) { const bw = 1.25, bm = mat('fl_bord' + f.preset, f.preset === 'greek' ? 0x8FA38A : 0x4A4A48, { roughness: 0.8 }), O = outline(t);   // 245: the floor look's border band along the parapet
