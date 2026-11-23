@@ -2986,8 +2986,13 @@ function pdGrid(x){ const pdp=document.getElementById('pdp'), g=window.PDG, col=
   el.className='pdgrid n'+show.length;
   el.innerHTML=n>1?show.map((u,i)=>`<div class="gi" data-gi="${i}"><img src="${i?bigImg(u,900):u}" alt="${String(x.n).replace(/"/g,'')} photo ${i+1}" loading="${i?'lazy':'eager'}">${i===show.length-1&&n>show.length?`<span class="more">+${n-show.length} more · view all</span>`:''}</div>`).join(''):''; }
 // 164: product photos — swipe, arrows, counter, tap for full screen with zoom
+// photo swap without the old picture lingering: show the small copy the browser already has at once, swap in the sharp one when it has loaded
+function swapImg(im, lo, hi){ if(!im) return; const tok=(im._tok=(im._tok||0)+1); if(im.getAttribute('src')!==hi){ im.src=lo||hi; if(!im.complete){ im.style.opacity='0'; im.onload=()=>{ im.style.opacity=''; }; } }
+  if(lo&&lo!==hi){ const pre=new Image(); pre.onload=()=>{ if(im._tok===tok) im.src=hi; }; pre.src=hi; } }
+function preImg(u){ if(u){ const p=new Image(); p.src=u; } }
 function pdGo(i){ const g=window.PDG; if(!g||!g.list.length) return; g.i=(i+g.list.length)%g.list.length;
-  const im=document.getElementById('pdImg'); im.src=bigImg(g.list[g.i],1600);   // 1600 px, never the 2–4 MB original
+  const im=document.getElementById('pdImg'); swapImg(im, bigImg(g.list[g.i],240), bigImg(g.list[g.i],1600));   // 1600 px, never the 2–4 MB original; the 240 px thumb shows at once
+  if(g.list.length>1){ preImg(bigImg(g.list[(g.i+1)%g.list.length],1600)); }
   document.querySelectorAll('#pdp .thumbs .th').forEach((t,k)=>t.classList.toggle('on',k===g.i));
   const th=document.querySelectorAll('#pdp .thumbs .th')[g.i]; if(th&&th.scrollIntoView) try{th.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}
   pdGalUI(); if(document.getElementById('lbx')&&document.getElementById('lbx').classList.contains('open')) lbxShow(); }
@@ -3016,7 +3021,8 @@ function lbxOpen(){ const g0=window.PDG; if(g0&&g0.list[g0.i]===MTO_CTA&&mtoCtaG
 function lbxClose(){ const b=document.getElementById('lbx'); if(b&&b.classList.contains('open')){ b.classList.remove('open'); document.body.classList.remove('flt-open'); } if(window.PDG0){ window.PDG=window.PDG0; window.PDG0=null; } }
 window.lbxOne=function(url){ if(!window.PDG0) window.PDG0=window.PDG; window.PDG={id:null,list:[url],i:0}; lbxOpen(); };   // 176: one photo (a part) in the viewer
 function lbxShow(){ const b=document.getElementById('lbx'), g=window.PDG; if(!b||!g) return; LZ={s:1,x:0,y:0};
-  const im=b.querySelector('.lstage img'); im.src=bigImg(g.list[g.i]); lbxApply(); b.querySelector('.lc').textContent=(g.i+1)+' / '+g.list.length+(matchMedia('(min-width:900px) and (hover:hover)').matches?' · move the mouse to zoom':'');
+  const im=b.querySelector('.lstage img'), u0=g.list[g.i]; swapImg(im, /render\/image/.test(u0)?u0:bigImg(u0,1600), bigImg(u0,2000));   // full screen: what is already on the page at once, then 2000 px (webp, ~0.2 MB) — never the 2–6 MB original
+  if(g.list.length>1){ preImg(bigImg(g.list[(g.i+1)%g.list.length],2000)); preImg(bigImg(g.list[(g.i-1+g.list.length)%g.list.length],2000)); } lbxApply(); b.querySelector('.lc').textContent=(g.i+1)+' / '+g.list.length+(matchMedia('(min-width:900px) and (hover:hover)').matches?' · move the mouse to zoom':'');
   let th=b.querySelector('.lthumbs'); if(!th){ th=document.createElement('div'); th.className='lthumbs'; b.appendChild(th); th.addEventListener('click',e=>{ const t=e.target.closest('[data-li]'); if(t) pdGo(+t.getAttribute('data-li')); }); }
   th.innerHTML=g.list.length>1?g.list.map((u,i)=>`<img loading="lazy" src="${bigImg(u,300)}" data-li="${i}" class="${i===g.i?'on':''}" alt="">`).join(''):''; const on=th.querySelector('.on'); if(on) th.scrollLeft=Math.max(0,on.offsetLeft-th.clientWidth/2+28);
   b.classList.toggle('one', g.list.length<2); }
