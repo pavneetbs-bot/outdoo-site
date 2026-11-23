@@ -143,12 +143,12 @@ function snapEdge(it) {   // railings / gates: run along the nearest edge, again
   else { it.rot = sd === 'left' ? 90 : 270; it.z = r2(Math.max(p, Math.min(t.pd - p - it.w, cz - it.w / 2))); it.x = sd === 'left' ? p : t.pw - p - it.d; }
   it.side = sd;
 }
-function snapWall(it) {   // a panel near the parapet or a block (within 3 ft): turn to face out from it and stand against it
+function snapWall(it, far) {   // a panel near the parapet or a block (within 3 ft): turn to face out from it and stand against it
   const t = S.site, p = P0(), f = foot(it), cx = it.x + f[0] / 2, cz = it.z + f[1] / 2;
   const faces = [['back', p, cz - p], ['front', t.pd - p, t.pd - p - cz], ['left', p, cx - p], ['right', t.pw - p, t.pw - p - cx]];
   (t.kind === 'terrace' ? t.blocks : []).forEach((b, bi) => { if (b.type === 'ac') return; if (cx > b.x && cx < b.x + b.w) { faces.push(['front', b.z, cz - b.z, 1, bi, 'zmin']); faces.push(['back', b.z + b.d, b.z + b.d - cz, 1, bi, 'zmax']); }
     if (cz > b.z && cz < b.z + b.d) { faces.push(['right', b.x, cx - b.x, 1, bi, 'xmin']); faces.push(['left', b.x + b.w, b.x + b.w - cx, 1, bi, 'xmax']); } });
-  const near = it.wside ? faces.find(q => q[0] === it.wside && !q[3]) : faces.filter(q => Math.abs(q[2]) <= 3).sort((a, b) => Math.abs(a[2]) - Math.abs(b[2]))[0]; if (!near) { it.on = null; return; }   // a chosen wall wins
+  const near = it.wside ? faces.find(q => q[0] === it.wside && !q[3]) : faces.filter(q => (far ? q[2] > -0.5 : Math.abs(q[2]) <= 3)).sort((a, b) => Math.abs(a[2]) - Math.abs(b[2]))[0]; if (!near) { it.on = null; return; }   // a chosen wall wins
   const [sd, at, , blk, bi, face] = near; it.on = blk ? { b: bi, face } : { side: sd };   // a parapet side: the panel's back to it; a block: its face
   if (sd === 'back' || sd === 'front') { it.rot = sd === 'back' ? 0 : 180; it.x = r2(cx - it.w / 2); it.z = blk ? (sd === 'front' ? at - it.d : at) : (sd === 'back' ? at : at - it.d); }
   else { it.rot = sd === 'left' ? 270 : 90; it.z = r2(cz - it.w / 2); it.x = blk ? (sd === 'right' ? at - it.d : at) : (sd === 'left' ? at : at - it.d); }
@@ -778,6 +778,7 @@ function suMove(e) { const D = SUD; if (!D) return; if (!D.mv && Math.hypot(e.cl
 function suUp() { const D = SUD; SUD = null; if (!D) return; S.msg = '';
   if (!D.mv) { S.sel = S.sel === D.i ? null : D.i; return suPaint(); }
   const it = S.items[D.i], keep = JSON.stringify(it); it.x = r2(D.x0 + (D.dx || 0)); it.z = r2(D.z0 + (D.dz || 0)); delete it.wside;
+  if (CAT[it.cat] && CAT[it.cat].kind === 'wall') snapWall(it, true);   // 242: a wall panel dropped anywhere goes onto the nearest wall at that spot
   if (clashes(it, D.i)) { if (!settle(it, D.i, [it.x, it.z])) { Object.assign(it, JSON.parse(keep)); S.msg = 'It can\'t go there'; } } else if (CAT[it.cat] && CAT[it.cat].kind === 'wall') settle(it, D.i, [it.x, it.z]);
   S.sel = D.i; draw(true); suPaint(); }
 // 224: the setup, placed the way our terraces are — big things first, each at the best free spot for its "where"

@@ -1892,7 +1892,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=48').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=49').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2609,7 +2609,7 @@
   async function authRpc(fn, args) {
     var t = window.acToken && await window.acToken(); if (!t) return null; var A = window.OUTRR_SUPA || {};
     var r = await fetch(A.url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify(args || {}) });
-    return r.ok ? r.json() : null;
+    return r.ok ? r.text().then(function (x) { return x ? JSON.parse(x) : true; }) : null;   // 242: void functions (plan_delete) answer with no body
   }
   var propT = null;
   function propSave(extra) {
@@ -2869,7 +2869,7 @@
       if (st.step === 'w') h += twPaint();
       else if (st.step === 'load') h += '<p class="sp-sub">Loading your plans…</p>';
       else if (st.step === 'plans') h += '<h2>Which space is ' + esc(W) + ' for?</h2><p class="sp-sub">Pick one of your plans — ' + (what === 'planner' ? 'it opens as you left it' : 'it goes on that terrace / lawn, with the things around it') + '. Or start a new one, for another home or client.</p><div class="sp-list">' +
-        list.map(function (p, i) { return '<button type="button" data-sp="p:' + i + '"><i>' + (p.kind === 'lawn' ? '🌳' : '🏙') + '</i><span><b>' + esc(p.name) + '</b><small>' + esc([p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace', p.size, p.n ? p.n + ' thing' + (p.n > 1 ? 's' : '') : '', p.local ? 'open on this device' : p.at ? 'saved ' + new Date(p.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')) + '</small></span></button>'; }).join('') +
+        list.map(function (p, i) { return '<div class="sp-row"><button type="button" data-sp="p:' + i + '"><i>' + (p.kind === 'lawn' ? '🌳' : '🏙') + '</i><span><b>' + esc(p.name) + '</b><small>' + esc([p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace', p.size, p.n ? p.n + ' thing' + (p.n > 1 ? 's' : '') : '', p.local ? 'open on this device' : p.at ? 'saved ' + new Date(p.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')) + '</small></span></button>' + (p.local ? '' : '<div class="sp-acts"><button type="button" data-sp="pdup:' + i + '">⧉ Duplicate</button><button type="button" data-sp="pdel:' + i + '">🗑 Delete</button></div>') + '</div>'; }).join('') +   // 242: duplicate / delete a saved plan (own plans only — the server checks)
         '<button type="button" data-sp="new" class="sp-new"><i>＋</i><span><b>A new space</b><small>Another home, a client’s site… — your plans stay saved</small></span></button></div>';
       else h += (list.length ? '<button type="button" class="sp-back" data-sp="back">← My plans</button>' : '') + '<h2>Where will ' + esc(W) + ' go?</h2><p class="sp-sub">We set up the space first' + (what === 'planner' ? '' : ', then you design ' + esc(W) + ' on it in 3D') + '.</p><div class="sp-kinds">' +
         '<button type="button" data-sp="k:ground"><i>🌳</i><b>Lawn / garden</b><small>Ground level — a lawn, garden, farmhouse or courtyard</small></button>' +
@@ -3148,6 +3148,8 @@
       if (k === 'new') { st.step = 'kind'; return paint(); }
       if (k === 'back') { st.step = 'plans'; return paint(); }
       if (k.indexOf('p:') === 0) { var p = list[+k.slice(2)]; close(); return cb({ plan: p, had: true }); }
+      if (k.indexOf('pdup:') === 0) { var pi = +k.slice(5), pp = list[pi]; if (!pp || pp.local) return; authRpc('plan_duplicate', { p_id: pp.id }).then(function (r) { if (r && r.id) { list.splice(pi + 1, 0, { id: r.id, name: r.name, size: pp.size, kind: pp.kind, n: pp.n, at: r.updated_at }); paint(); } else alert('Could not copy the plan — 50 plans is the limit'); }, function (e) { alert((e && e.message) || 'Could not copy the plan'); }); return; }
+      if (k.indexOf('pdel:') === 0) { var di = +k.slice(5), dp = list[di]; if (!dp || dp.local || !confirm('Delete "' + dp.name + '"? This cannot be undone.')) return; authRpc('plan_delete', { p_id: dp.id }).then(function (ok) { if (!ok) return alert('Could not delete the plan'); list.splice(di, 1); st.step = list.length ? 'plans' : 'kind'; paint(); }, function (e) { alert((e && e.message) || 'Could not delete the plan'); }); return; }
       if (k === 'k:terrace') { st.step = 'w'; st.q = 0; st.a = st.a || { pw: 30, pd: 60, plot: '200', shape: 'rect', la: 12, lb: 18, road: 'front', mpos: 'm-l', mw: 10, md: 16, door: 'right', lift: false, lw: 6, ld: 8, tanks: true, room: false, rw: 8, rd: 12, shaft: false, sw: 4, sd: 6, ac: false, acn: 2, rn: 1, sn: 1, high: {}, cuts: {}, par: '3' }; tmGet(); if (TMP) TMP.then(function () { if (st.step === 'w') paint(); }); return paint(); }
       if (k.indexOf('k:') === 0) { close(); return cb({ kind: k.slice(2), had: list.length > 0 }); }
       if (k.indexOf('w:') === 0) return twGo(k.slice(2));
@@ -3210,6 +3212,7 @@
     '.sp-hd{display:flex;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #E7DFD3}.sp-hd b{flex:1;font-size:15px}.sp-hd button{border:1px solid #ddd;background:#fff;border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:15px}' +
     '.sp-bd{flex:1;overflow:auto;padding:40px 18px;max-width:720px;width:100%;margin:0 auto;box-sizing:border-box}.sp-bd h2{font-size:26px;margin:0 0 6px}.sp-sub{font-size:14px;color:#6A6258;margin:0 0 20px}' +
     '.sp-list{display:flex;flex-direction:column;gap:10px}.sp-list button,.sp-kinds button{display:flex;gap:14px;align-items:center;text-align:left;border:1.5px solid #E2D6C4;background:#fff;border-radius:16px;padding:14px 16px;font:inherit;color:#2E2E2E;cursor:pointer}.sp-list button:hover,.sp-kinds button:hover{border-color:#C26445;background:#FFF8F2}' +
+    '.sp-row{display:flex;flex-direction:column;gap:4px}.sp-row>button{width:100%}.sp-acts{display:flex;gap:8px;justify-content:flex-end;padding:0 6px}.sp-list .sp-acts button{border:0;background:none;padding:4px 6px;font-size:12.5px;color:#7A7268;border-radius:8px}.sp-list .sp-acts button:hover{color:#C26445}' +
     '.sp-list i,.sp-kinds i{font-style:normal;font-size:26px;flex:none}.sp-list b{display:block;font-size:15px}.sp-list small,.sp-kinds small{display:block;font-size:12.5px;color:#7A7268;margin-top:2px}.sp-new{border-style:dashed!important}' +
     '.sp-kinds{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sp-kinds button{flex-direction:column;align-items:flex-start;padding:22px 18px;min-height:170px}.sp-kinds i{font-size:40px}.sp-kinds b{font-size:18px;margin-top:6px}' +
     '.sp-back{border:0;background:none;color:#8a3a1f;font:700 13px inherit;font-family:inherit;cursor:pointer;padding:0;margin:0 0 14px}' +
