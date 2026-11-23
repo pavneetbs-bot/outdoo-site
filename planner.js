@@ -688,7 +688,7 @@ function builder() {   // 231: one screen — a mood ticks things, tap tiles to 
 }
 // 234: terrace setup on a blank screen — mood → what → how many people → north → floor (grass / tiles) → the 2D plan (drag, size, 📏) → See it in 3D.
 // Structures stay locked; things move only on the 2D plan (the 3D only shows). Changing an answer sets it all up again.
-const SUQ = ['have', 'existing', 'remove', 'asbuilt', 'ab3d', 'mood', 'want', 'cabin', 'bar', 'fbs', 'wtr', 'ftr', 'gfw', 'seats', 'floor', 'north', 'eplan', 'decor', 'green', 'lights', 'plan'];   // 245 (owner): round 1 roof → round 2 the big pieces (eplan) → round 3 furniture, plants, lamps (plan)
+const SUQ = ['have', 'existing', 'remove', 'asbuilt', 'ab3d', 'mood', 'want', 'cabin', 'bar', 'fbs', 'wtr', 'ftr', 'gfw', 'seats', 'floor', 'north', 'eplan', 'e3d', 'decor', 'green', 'lights', 'plan'];   // 245 (owner): round 1 roof → round 2 the big pieces (eplan) → round 3 furniture, plants, lamps (plan)
 // 246 (owner): round 1 also asks what is ALREADY built on the roof (kept as 'Existing' things on the plan, never priced) and what is to be taken down
 const HAVE = [['pergola', 'Pergola'], ['bar', 'Bar counter'], ['cabin', 'Cabin / room'], ['planter', 'Built-in planters'], ['fbench', 'Fixed seating'], ['jacuzzi', 'Pool / jacuzzi'], ['water', 'Water feature'], ['deck', 'Deck'], ['privacy', 'Privacy screen']];
 const FLOOR0 = [['cement', 'Cement / PCC', 'raw, plastered'], ['tiles', 'Tiles', 'ceramic / vitrified'], ['kota', 'Kota stone', 'grey-green stone slabs'], ['marble', 'Marble / granite', 'polished stone']];
@@ -792,6 +792,7 @@ function suPaint() { if (S.magic) return;
   else if (q === 'asbuilt') { suOld();   // 249 (owner): the roof as it stands — 2D (drag the existing things to where they really are), then 3D, before anything new
     h += '<h2>Your roof as it stands</h2><p class="pl-sub">' + (S.items.some(o => o.old) ? 'Drag the existing things to where they really are.' : 'What is built on it now — check it before we plan.') + '</p>' + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d">${suPlan()}</div>` +
       '<div class="pl-sucs">' + chip('roof', false, '✎ Change the roof') + '</div>' + next('See it in 3D →'); }
+  else if (q === 'e3d') h += '<h2>Your layout in 3D</h2><p class="pl-sub">The big pieces as you set them — next, furniture and plants.</p><div id="suab3d" class="pl-ab3d"></div>' + next('Next: furniture & plants →');   // 251 (owner): see round 2 in 3D before round 3
   else if (q === 'ab3d') { suOld(); h += '<h2>Your roof in 3D</h2><p class="pl-sub">As it stands today — next, what you want on it.</p><div id="suab3d" class="pl-ab3d"></div>' + next('Looks right →'); }
   else if (q === 'remove') { const L = suRemList();
     h += '<h2>Keep or take down?</h2><p class="pl-sub">What we take down is gone from your new design (and our team adds the dismantling).</p>' + L.map(z => `<div class="pl-rmr"><span><i>${P2.ico(z.ic)}</i>${esc(z.t)}</span><div class="pl-subig">${chip('rm:' + z.k + ':0', !su.rm[z.k], 'Keep')}${chip('rm:' + z.k + ':1', !!su.rm[z.k], 'Take down')}</div></div>`).join('') + next(); }
@@ -822,9 +823,9 @@ function suPaint() { if (S.magic) return;
     if (it) { const c = CAT[it.cat] || {}; h += `<div class="pl-sued"><b>${c.e || ''} ${esc(it.label || c.t || '')}</b>` + (c.size && c.size !== 'fixed' ? `<span>W</span><button type="button" data-su="rs:w:-1">−</button><em>${it.w}</em><button type="button" data-su="rs:w:1">+</button>` + (c.size === 'wd' ? `<span>L</span><button type="button" data-su="rs:d:-1">−</button><em>${it.d}</em><button type="button" data-su="rs:d:1">+</button>` : '') : '') +
       (!att(it) && !it.segs ? '<button type="button" data-su="rot" aria-label="Turn">↻</button>' : '') + '<button type="button" data-su="del" aria-label="Remove">🗑</button><button type="button" data-su="unsel" aria-label="Done">✓</button></div>'; }
     h += '<div class="pl-sucs">' + chip('meas', !!su.meas, '📏 Measurements') + chip('again', false, '↺ Set up again') + chip('roof', false, '✎ Change the roof') + '</div>' +
-      (q === 'eplan' ? `<div class="pl-subar"><button type="button" class="pl-go" data-su="next">Next: furniture & plants →</button></div>` : `<div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>`); }
+      (q === 'eplan' ? `<div class="pl-subar"><button type="button" class="pl-go" data-su="next">See it in 3D →</button></div>` : `<div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>`); }
   SUEL.innerHTML = h + '</div>';
-  if (q === 'ab3d') setTimeout(() => { const el = document.getElementById('suab3d'); if (!el) return; try { S3.show(el, { site: S.site, items: S.items, sel: null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW', noDrag: true, theme: (S.su && S.su.theme) || 'natural' }, { view: '3d' }); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 80); } catch (e) {} }, 30);
+  if (q === 'ab3d' || q === 'e3d') setTimeout(() => { const el = document.getElementById('suab3d'); if (!el) return; try { S3.show(el, { site: S.site, items: S.items, sel: null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW', noDrag: true, theme: (S.su && S.su.theme) || 'natural' }, { view: '3d' }); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 80); } catch (e) {} }, 30);
 }
 const WT_COL = { red: ['#A4553A', 'Brick red'], beige: ['#D8C7A8', 'Beige'], grey: ['#9A9A96', 'Grey'], white: ['#ECE9E2', 'White'], charcoal: ['#4A4A48', 'Charcoal'], wood: ['#8B6440', 'Wood brown'] };
 // 245 (owner): while the setup is made, a short "creating" screen instead of a frozen one
