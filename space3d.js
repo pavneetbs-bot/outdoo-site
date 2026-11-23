@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=36';
-import { pergolaModel } from './pergola3d.js?v=26';
+import { cabinModel, plotModel } from './cabin3d.js?v=37';
+import { pergolaModel } from './pergola3d.js?v=27';
 import { outline } from './plan2d.js?v=11';
 
 let R = null, HANDLER = null;
@@ -15,26 +15,28 @@ const mat = (k, c, o) => M[k] || (M[k] = new THREE.MeshStandardMaterial(Object.a
 function box(g, w, h, d, x, y, z, m, sh = true) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = sh; b.receiveShadow = true; g.add(b); return b; }
 function cyl(g, r1, r2, h, x, y, z, m, seg = 20) { const c = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg), m); c.position.set(x, y, z); c.castShadow = c.receiveShadow = true; g.add(c); return c; }
 
+const LITE = (() => { try { return matchMedia('(pointer: coarse)').matches || (window.innerWidth || 1000) < 760; } catch (e) { return false; } })();
 function ensure(el) {
-  if (R && R.el === el) return;
-  if (R) { el.appendChild(R.renderer.domElement); R.el = el; size(); return; }
-  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  if (R && R.el === el) { R.dirty = true; return; }
+  if (R) { el.appendChild(R.renderer.domElement); R.el = el; size(); R.dirty = true; return; }
+  const renderer = new THREE.WebGLRenderer({ antialias: !LITE, preserveDrawingBuffer: true });   // 256 (owner: heavy on the phone): lighter on phones — fewer pixels, softer shadows off, frames only when something changes
+  renderer.setPixelRatio(Math.min(LITE ? 1.5 : 2, window.devicePixelRatio || 1)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = LITE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping;
   el.appendChild(renderer.domElement);
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0xeef0ea);
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
   const cam = new THREE.PerspectiveCamera(40, 1, 0.3, 1500), controls = new OrbitControls(cam, renderer.domElement);
   controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 6; controls.maxDistance = 260; controls.screenSpacePanning = true;
   const hemi = new THREE.HemisphereLight(0xffffff, 0xb8ad98, 0.75), sun = new THREE.DirectionalLight(0xffffff, 1.8);
-  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 80, bottom: -80, far: 400 });
+  sun.castShadow = true; sun.shadow.mapSize.set(LITE ? 1024 : 2048, LITE ? 1024 : 2048); Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 80, bottom: -80, far: 400 });
   scene.add(hemi, sun, sun.target);
   R = { renderer, scene, cam, controls, sun, hemi, el, group: null, key: '', view: '3d', ray: new THREE.Raycaster(), floor: new THREE.Plane(new THREE.Vector3(0, 1, 0), 0) };
   const cv = renderer.domElement; cv.style.touchAction = 'none';
   cv.addEventListener('pointerdown', pDown); window.addEventListener('pointermove', pMove); window.addEventListener('pointerup', pUp);
-  size(); const loop = () => { R.raf = requestAnimationFrame(loop); controls.update(); renderer.render(scene, cam); }; loop();
+  controls.addEventListener('change', () => { R.dirty = true; }); R.dirty = true; R.t0 = 0;
+  size(); const loop = t => { R.raf = requestAnimationFrame(loop); const moved = controls.update(); if (moved || R.dirty || (t || 0) - R.t0 > 700) { R.dirty = false; R.t0 = t || 0; renderer.render(scene, cam); } }; loop();
   window.addEventListener('resize', size);
 }
-function size() { if (!R || !R.el) return; const w = R.el.clientWidth || 600, h = R.el.clientHeight || 400; R.renderer.setSize(w, h, false); R.renderer.domElement.style.width = '100%'; R.renderer.domElement.style.height = '100%'; R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); }
+function size() { if (!R || !R.el) return; R.dirty = true; const w = R.el.clientWidth || 600, h = R.el.clientHeight || 400; R.renderer.setSize(w, h, false); R.renderer.domElement.style.width = '100%'; R.renderer.domElement.style.height = '100%'; R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); }
 
 // ---- the plot: a terrace (slab, parapet, building, blocks — from the cabin studio) or a lawn with a low boundary
 function lawn(g, t) {
@@ -454,7 +456,7 @@ function measures(P) {
 }
 
 // 235: night view — the lights show
-function night(on) { if (!R || R.night === on) return; R.night = on; (R.nl || []).forEach(m => { m.visible = on; }); R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.12 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
+function night(on) { if (!R || R.night === on) return; R.night = on; R.dirty = true; (R.nl || []).forEach(m => { m.visible = on; }); R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.12 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
 // 241: tropical planting in a pot — areca palm / big-leaf (monstera, bird of paradise) / round bush, size varies from pot to pot
 function tropical(g, w, d, it) { const sd = Math.abs(Math.round((+(it && it.x) || 1) * 13 + (+(it && it.z) || 1) * 7)), rnd = (k => () => (k = (k * 16807) % 2147483647) / 2147483647)(sd + 11), r = Math.min(w, d) / 2, sz = 0.8 + rnd() * 0.9, ty = sd % 3;
   const pot = sd % 2 ? mat('c_potc', 0x3A3836, { roughness: 0.7 }) : mat('c_pott', 0xB06A47, { roughness: 0.9 }); cyl(g, r * 0.92, r * 0.72, r * 1.7, 0, r * 0.85, 0, pot, 20); const y0 = r * 1.7;
@@ -602,7 +604,7 @@ function camHome(t, view) {
   C.update();
 }
 export function show(el, P, opts) {
-  opts = opts || {}; ensure(el); R.P = P; R.place = !!opts.place; R.on = opts.on || null; THEME = P.theme || 'natural'; night(!!P.night);   // 223: a screen may take the 3D's events for itself (the terrace wizard)
+  opts = opts || {}; ensure(el); R.dirty = true; R.P = P; R.place = !!opts.place; R.on = opts.on || null; THEME = P.theme || 'natural'; night(!!P.night);   // 223: a screen may take the 3D's events for itself (the terrace wizard)
   const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels, P.measure, P.theme]), dims = [t.kind, t.pw, t.pd].join('x');
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
@@ -612,15 +614,15 @@ export function show(el, P, opts) {
   if (dims !== R.dims || (opts.view || '3d') !== R.view) { R.dims = dims; R.view = opts.view || '3d'; camHome(t, R.view); }
 }
 export function onEvent(f) { HANDLER = f; }
-export function zoom(f) { if (!R) return; const C = R.controls, v = R.cam.position.clone().sub(C.target); R.cam.position.copy(C.target).add(v.multiplyScalar(f)); C.update(); }
-export function home() { if (R && R.P) camHome(R.P.site || {}, R.view); }
+export function zoom(f) { if (!R) return; R.dirty = true; const C = R.controls, v = R.cam.position.clone().sub(C.target); R.cam.position.copy(C.target).add(v.multiplyScalar(f)); C.update(); }
+export function home() { if (R) R.dirty = true; if (R && R.P) camHome(R.P.site || {}, R.view); }
 export function resize() { size(); }
-export function snapshot() { return R ? R.renderer.domElement.toDataURL('image/jpeg', 0.85) : null; }
+export function snapshot() { if (R) R.renderer.render(R.scene, R.cam); return R ? R.renderer.domElement.toDataURL('image/jpeg', 0.85) : null; }
 
 // ---- picking and dragging: items (step 2) or the blocks already on the roof (step 1)
 function rayAt(e) { const r = R.renderer.domElement.getBoundingClientRect(); R.ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), R.cam); return R.ray; }
 function floorAt(e) { const p = new THREE.Vector3(); return rayAt(e).ray.intersectPlane(R.floor, p) ? p : null; }
-function pDown(e) {
+function pDown(e) { if (R) R.dirty = true;
   if (!R || !R.group || !(R.on || HANDLER) || (e.pointerType === 'mouse' && e.button !== 0)) return;
   const ray = rayAt(e), f = floorAt(e); R.down = { x: e.clientX, y: e.clientY };
   if (R.place && R.plot) {   // step 1: a block on the roof
@@ -641,13 +643,13 @@ function pHover(e) {   // 248: hovering a pergola / cabin → the planner shows 
   const hits = rayAt(e).intersectObjects(R.holders.filter(Boolean), true); let i = null; if (hits[0]) { let o = hits[0].object; while (o && o.userData.it == null) o = o.parent; if (o) i = o.userData.it; }
   const it = i != null && R.P.items ? R.P.items[i] : null; if (!it || !(it.cat === 'pergola' || it.cat === 'cabin') || it.old) i = null;
   if (i !== HOV.i || i != null) { HOV.i = i; (R.on || HANDLER || (() => {}))({ t: 'hover', i, x: e.clientX - r.left, y: e.clientY - r.top }); } }
-function pMove(e) {
+function pMove(e) { if (R) R.dirty = true;
   pHover(e); const d = R && R.drag; if (!d) return; const f = floorAt(e); if (!f) return;
   if (d.fixed) return; const dx = f.x - d.f0.x, dz = f.z - d.f0.z; if (!d.moved && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) return; d.moved = true;
   d.nx = Math.round((d.x0 + dx) * 2) / 2; d.nz = Math.round((d.z0 + dz) * 2) / 2;
   if (d.side === 'left' || d.side === 'right') d.nx = d.x0; if (d.side === 'back' || d.side === 'front') d.nz = d.z0;   // on a wall: slides along it only d.obj.position.set(d.pos0.x + (d.nx - d.x0), d.pos0.y, d.pos0.z + (d.nz - d.z0));
 }
-function pUp(e) {
+function pUp(e) { if (R) R.dirty = true;
   if (!R) return; const d = R.drag; R.drag = null; R.controls.enabled = true;
   const H = R.on || HANDLER;
   if (d) { if (d.moved) H({ t: d.kind === 'block' ? 'block' : 'move', i: d.i, x: d.nx, z: d.nz }); else if (d.kind === 'item') H({ t: 'sel', i: d.i }); else if (d.kind === 'block') H({ t: 'bsel', i: d.i }); return; }
@@ -662,8 +664,8 @@ let PV = null;
 export function preview(el, items) {
   if (!PV || PV.el !== el) {
     if (PV) { try { PV.renderer.dispose(); PV.ro && PV.ro.disconnect(); } catch (e) {} }
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-    renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    const renderer = new THREE.WebGLRenderer({ antialias: !LITE, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(LITE ? 1.5 : 2, window.devicePixelRatio || 1)); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping;
     el.innerHTML = ''; el.appendChild(renderer.domElement); renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none';
     const scene = new THREE.Scene(); scene.background = new THREE.Color(0xF1ECE3);
     const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
