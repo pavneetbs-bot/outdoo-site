@@ -7,7 +7,7 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel } from './cabin3d.js?v=33';
 import { pergolaModel } from './pergola3d.js?v=22';
-import { outline } from './plan2d.js?v=8';
+import { outline } from './plan2d.js?v=9';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -304,6 +304,16 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     box(g, w, 0.2, d * 0.8, 0, 1.5, 0, K.wood); [-w / 2 + 0.4, w / 2 - 0.4].forEach(x => box(g, 0.25, 1.4, d * 0.7, x, 0.7, 0, K.frame));
   } else if (cat === 'table') {
     box(g, w, 0.15, d, 0, 2.4, 0, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.2, 2.35, 0.2, a * (w / 2 - 0.3), 1.18, b * (d / 2 - 0.3), K.frame));
+  } else if (cat === 'rack') {   // 247 (owner): a bottle rack behind the bar — dark frame, shelves of bottles, a glow on top
+    const H = h || 7, D0 = Math.max(0.8, d), fr = mat('c_rackw', 0x5B3E2B); box(g, w, H, 0.15, 0, H / 2, -D0 / 2 + 0.08, K.dark); [-1, 1].forEach(a => box(g, 0.15, H, D0, a * (w / 2 - 0.08), H / 2, 0, fr));
+    const cols = [0x2E5E3A, 0x7A3B1F, 0xC9A46A, 0x3B3F5C, 0xD9D2C3]; for (let y = 1; y < H - 0.4; y += 1.2) { box(g, w - 0.3, 0.1, D0, 0, y, 0, fr); const n = Math.floor((w - 0.6) / 0.45); for (let k = 0; k < n; k++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.85, 8), mat('c_btl' + (k % 5), cols[(k + Math.round(y)) % 5], { roughness: 0.2, metalness: 0.2 })); b.position.set(-w / 2 + 0.45 + k * 0.45, y + 0.48, 0); g.add(b); } }
+    box(g, w - 0.4, 0.06, 0.1, 0, H - 0.15, D0 / 2 - 0.1, mat('c_cove', 0xFFD9A0, { emissive: 0xFFB15E, emissiveIntensity: 1.8 }));
+  } else if (cat === 'bar' && it && it.shape === 'curve') {   // 247: a curved bar — an arc of counter, stools outside the curve
+    const R = Math.max(w, d) * 0.62, n = 12, A = Math.PI * 0.75; for (let k = 0; k < n; k++) { const a = -A / 2 + A * (k + 0.5) / n, x = Math.sin(a) * R, z = Math.cos(a) * R - R + d / 2 - 1.2, sl = new THREE.Group(); sl.position.set(x, 0, z); sl.rotation.y = a; g.add(sl); box(sl, R * A / n + 0.05, 3.4, 2, 0, 1.7, 0, K.stone); box(sl, R * A / n + 0.12, 0.15, 2.5, 0, 3.5, 0.1, K.wood2); }
+  } else if (cat === 'fbench' && it && it.shape === 'curve') {   // 247: curved built-in seating — an arc hugging the corner, facing the terrace
+    const R = Math.min(w, d) - 1.2, n = 10, cx = -w / 2 + 0.2 + R, cz = -d / 2 + 0.2 + R, seg = R * (Math.PI / 2) / n + 0.12;
+    for (let k = 0; k < n; k++) { const a = (Math.PI / 2) * (k + 0.5) / n, sl = new THREE.Group(); sl.position.set(cx - R * Math.cos(a), 0, cz - R * Math.sin(a)); g.add(sl); sl.lookAt(cx, 0, cz);
+      box(sl, seg, 1.4, 1.7, 0, 0.7, 0, K.stone); box(sl, seg - 0.03, 0.25, 1.5, 0, 1.52, 0.05, K.cush); box(sl, seg, 1.5, 0.3, 0, 2.15, -0.75, K.stone); }
   } else if (cat === 'bar') {   // 241: island bar — free on both sides, stools at the front; L = a return arm on the right
     const L = it && it.shape === 'L', D = L ? 2.2 : d * 0.7, arm = (bw, bd, x, z, st) => { box(g, bw, 3.4, bd, x, 1.7, z, K.stone); box(g, bw + 0.3, 0.15, bd + 0.5, x, 3.5, z + 0.1, K.wood2); };
     if (L) { arm(w, D, 0, -d / 2 + D / 2); arm(D, d - D, w / 2 - D / 2, D / 2); } else arm(w, D, 0, -d * 0.15);
@@ -313,6 +323,16 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     planterModel(g, w, d, h, it, K);
   } else if (cat === 'planter') {
     tropical(g, w, d, it);   // 241: a mix of tropical plants — palms, big leaves, bushes — big and small
+  } else if (cat === 'water' && it && it.mech) {   // 247 (owner): water feature by its mechanism — cascade / wall fall / rain curtain / geyser jets
+    const sheet = mat('c_wsheet', 0xA9DCEB, { transparent: true, opacity: 0.55, roughness: 0.05, metalness: 0.1, emissive: 0x2E6F86, emissiveIntensity: 0.15, side: THREE.DoubleSide }), m = it.mech;
+    const pool = (pw, pd, z0) => { box(g, pw, 0.9, pd, 0, 0.45, z0, K.stone); box(g, pw - 0.3, 0.06, pd - 0.3, 0, 0.88, z0, K.water); };
+    const fall = (fw, top, bot, z0) => { const p0 = new THREE.Mesh(new THREE.PlaneGeometry(fw, top - bot), sheet); p0.position.set(0, (top + bot) / 2, z0); g.add(p0); };
+    if (m === 'cascade') { pool(w, d * 0.45, d / 2 - d * 0.225); [[3.6, 0.32], [2.5, 0.18], [1.5, 0.05]].forEach(([hh, zf], k) => { const tw = w * (0.86 - k * 0.12), tz = -d / 2 + d * (0.18 + k * 0.17); box(g, tw, hh, d * 0.3, 0, hh / 2, tz, K.stone); box(g, tw - 0.3, 0.05, d * 0.3 - 0.3, 0, hh + 0.02, tz, K.water); fall(tw * 0.7, hh, k === 2 ? 0.9 : hh - 1.1, tz + d * 0.15 + 0.04); }); }
+    else if (m === 'wall') { const H = 6; box(g, w, H, 0.6, 0, H / 2, -d / 2 + 0.3, K.stone); box(g, w, 0.18, 0.9, 0, H + 0.09, -d / 2 + 0.45, K.dark); fall(w - 0.6, H - 0.1, 0.9, -d / 2 + 0.66); pool(w, d - 0.6, 0.3); }
+    else if (m === 'rain') { const H = 7; [-1, 1].forEach(a => box(g, 0.3, H, 0.3, a * (w / 2 - 0.15), H / 2, 0, K.frame)); box(g, w, 0.35, 0.7, 0, H, 0, K.frame); pool(w, d, 0);
+      const n = Math.max(12, Math.round(w * 6)); for (let k = 0; k < n; k++) { const c0 = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, H - 1.1, 4), sheet); c0.position.set(-w / 2 + 0.4 + (w - 0.8) * k / (n - 1), (H + 0.9) / 2 - 0.1, ((k * 37) % 5 - 2) * 0.06); g.add(c0); } }
+    else { const R = Math.min(w, d) / 2; cyl(g, R, R, 0.5, 0, 0.25, 0, K.stone, 36); cyl(g, R - 0.25, R - 0.25, 0.06, 0, 0.5, 0, K.water, 36);
+      [[0, 0, 3.2], [R * 0.45, 0, 2.2], [-R * 0.45, 0, 2.2], [0, R * 0.45, 2.4], [0, -R * 0.45, 2.4]].forEach(([x, z, hh]) => { const j = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.12, hh, 8), sheet); j.position.set(x, 0.5 + hh / 2, z); g.add(j); const top = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 8), sheet); top.position.set(x, 0.5 + hh, z); g.add(top); }); }
   } else if (cat === 'water') {
     cyl(g, Math.min(w, d) / 2, Math.min(w, d) / 2, 1.2, 0, 0.6, 0, K.stone, 32); cyl(g, Math.min(w, d) / 2 - 0.3, Math.min(w, d) / 2 - 0.3, 0.1, 0, 1.15, 0, K.water, 32);
     cyl(g, 0.5, 0.7, 2.6, 0, 1.3, 0, K.stone); cyl(g, 1.2, 0.9, 0.35, 0, 2.7, 0, K.stone); cyl(g, 1.0, 1.0, 0.06, 0, 2.86, 0, K.water); cyl(g, 0.25, 0.35, 1, 0, 3.3, 0, K.stone);
@@ -330,8 +350,18 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     if (it && /^MTO-P[ST]-/.test(String(it.cfgId || it.pick || ''))) { screenModel(g, w, h, it, K); return g; }
     const H = h || 6, n = Math.max(3, Math.round(w / 0.45)); box(g, w, 0.2, 0.3, 0, H, 0, K.frame); box(g, w, 0.2, 0.3, 0, 0.3, 0, K.frame);
     for (let i = 0; i < n; i++) box(g, 0.28, H - 0.4, 0.15, -w / 2 + w * (i + 0.5) / n, H / 2, 0, K.wood);
+  } else if (cat === 'feature' && it && it.fdesign && it.fdesign !== 'stone') {   // 247 (owner): designer feature walls — light and a bit of green
+    const H = h || 8, D0 = Math.max(0.4, d), led = mat('c_cove', 0xFFD9A0, { emissive: 0xFFB15E, emissiveIntensity: 1.8 }), fd = it.fdesign;
+    if (fd === 'fluted') { box(g, w, H, D0, 0, H / 2, -0.05, mat('c_flbase', 0xD8CFC2)); const n = Math.max(6, Math.round(w / 0.35)); for (let k = 0; k < n; k++) { const c0 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, H - 1.6, 10, 1, false, 0, Math.PI), mat('c_flute', 0xE6DED2)); c0.rotation.y = -Math.PI / 2; c0.position.set(-w / 2 + w * (k + 0.5) / n, H / 2 + 0.4, D0 / 2 - 0.05); g.add(c0); }
+      box(g, w - 0.2, 0.06, 0.1, 0, H - 0.35, D0 / 2 + 0.1, led); box(g, w, 1.0, 1.1, 0, 0.5, D0 / 2 + 0.55, K.stone); for (let x = -w / 2 + 0.5; x < w / 2; x += 0.8) { const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 0), x % 1.6 > 0.8 ? K.leaf : K.leaf2); lf.position.set(x, 1.2, D0 / 2 + 0.55); g.add(lf); } }
+    else if (fd === 'slats') { box(g, w, H, D0, 0, H / 2, -0.1, K.dark); box(g, w - 0.4, H - 0.8, 0.05, 0, H / 2, D0 / 2 - 0.05, led); const n = Math.max(6, Math.round(w / 0.45)); for (let k = 0; k < n; k++) box(g, 0.22, H - 0.2, 0.18, -w / 2 + w * (k + 0.5) / n, H / 2, D0 / 2 + 0.1, K.wood);
+      for (let y = 1; y < H - 1; y += 1.4) { const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), K.leaf2); lf.position.set(w / 2 - 0.4 - (y % 2.8 > 1.4 ? 0.3 : 0), y, D0 / 2 + 0.3); g.add(lf); } }
+    else { box(g, w, H, D0, 0, H / 2, -0.05, mat('c_plast', 0xEDE7DD)); const gw = w * 0.5; box(g, gw, H - 1, 0.3, -w / 2 + gw / 2 + 0.2, H / 2, D0 / 2 + 0.1, K.wood2);
+      for (let x = -w / 2 + 0.6; x < -w / 2 + gw; x += 0.75) for (let y = 0.9; y < H - 0.6; y += 0.75) { const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), (x + y) % 1.5 > 0.75 ? K.leaf : K.leaf2); lf.position.set(x, y, D0 / 2 + 0.35); g.add(lf); }
+      [0.25, 0.55, 0.85].forEach(f => { box(g, 0.25, 0.25, 0.3, -w / 2 + w * f + gw * 0.5 * (1 - f) + 0.6, 0.4, D0 / 2 + 0.2, K.dark); }); box(g, w - gw - 0.6, 0.06, 0.1, gw / 2 + 0.1, H - 0.4, D0 / 2 + 0.1, led); }
   } else if (cat === 'feature') {
     const H = h || 8; box(g, w, H, Math.max(0.4, d), 0, H / 2, 0, K.stone); for (let y = 0.5; y < H; y += 0.8) box(g, w + 0.02, 0.06, Math.max(0.4, d) + 0.02, 0, y, 0, mat('c_joint', 0x9C958A), false);
+    if (it && it.fdesign === 'stone') { [-0.35, 0, 0.35].forEach(f => box(g, 0.3, 0.2, 0.3, w * f, 0.1, Math.max(0.4, d) / 2 + 0.25, K.dark)); for (let y = 0.4; y < H - 0.5; y += 0.45) { const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3 + (y % 0.9) * 0.2, 0), y % 0.9 > 0.45 ? K.leaf : K.leaf2); lf.position.set(-w / 2 + 0.35 + Math.sin(y * 3) * 0.25, y, Math.max(0.4, d) / 2 + 0.2); g.add(lf); } }
   } else if (cat === 'vgarden') {
     const H = h || 6; box(g, w, H, 0.3, 0, H / 2, -0.1, K.wood2);
     for (let x = -w / 2 + 0.5; x < w / 2; x += 0.9) for (let y = 0.6; y < H; y += 0.9) { const s = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 0), (x + y) % 2 > 1 ? K.leaf : K.leaf2); s.position.set(x, y, 0.2); g.add(s); }
