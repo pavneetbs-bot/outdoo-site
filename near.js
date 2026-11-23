@@ -339,6 +339,7 @@ function hasCh(x){ var c = (x && x.ch) || {}; return [c.pk, c.l, c.s, c.i].some(
 // per piece: { zone, pack, ship, fee }; without a place: the lowest it can be (from: true)
 function charge(x, loc){ var pk = num((x.ch || {}).pk) || 0;
   // 219: no place yet → the highest it can be (was the lowest: the price went up once the city was set and carts were left)
+  if (!loc && x.sp === false) { var lr = rateOf(x, 'local'); return { zone: null, pack: pk, ship: lr, fee: pk + lr, from: true } }   // 218: local-only products (landscape plants) never ship state / India-wide
   if (!loc) { var lo = Math.max.apply(null, ['local', 'state', 'india'].map(function (z) { return rateOf(x, z) }).filter(function (v) { return isFinite(v) }).concat([0])); return { zone: null, pack: pk, ship: lo, fee: pk + lo, from: true } }
   var z = zoneOf(x, loc), sh = rateOf(x, z); return { zone: z, pack: pk, ship: sh, fee: pk + sh } }
 /* 178: prices shown everywhere include packaging + delivery to the visitor's pincode (no separate delivery line).

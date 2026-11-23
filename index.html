@@ -2221,7 +2221,7 @@ header{position:static!important}
       <div class="adslot" id="adP1" data-slot="P1" hidden></div>
       <div class="pcard setsec" id="setSec" style="display:none"></div>
       <div class="pcard">
-      <div class="chips"><div id="pdBun"></div><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip" id="pdMto" hidden title="Made for you after you order. It can't be cancelled once ordered and can be returned only if it arrives damaged, defective or not as ordered.">Made to order · returns only for defects</span><span class="chip" id="pdDlv">Free delivery</span><span class="chip terra">Self-assembly</span></div>
+      <div class="chips"><div id="pdBun"></div><span class="chip" id="pdShip">Ships in 10 days</span><span class="chip" id="pdMto" hidden title="Made for you after you order. It can't be cancelled once ordered and can be returned only if it arrives damaged, defective or not as ordered.">Made to order · returns only for defects</span><span class="chip" id="pdDlv">Free delivery</span><span class="chip terra" id="pdAsmChip">Self-assembly</span></div>
       <p class="pdp-desc" id="pdDesc">Powder-coated aluminium frame with UV-stabilised weave and quick-dry cushions — built for Indian summers and monsoons alike.</p>
       
 <div class="trustrow">
@@ -2282,13 +2282,13 @@ header{position:static!important}
             <div class="acc"><div class="acc-h" onclick="accT(this)">All offers<span class="pm">+</span></div>
         <div class="acc-b"><ul class="speclist">
           <li><b>OUTRR5</b> — extra 5% off, auto-applied at cart</li>
-          <li><b>Room package pricing</b> — up to 7% off when you buy a full space</li>
+          <li id="pdOfferLi"><b>Order offer</b> — 10% off orders of ₹25,000+ (up to ₹250, more on bigger orders)</li>
           <li><b>Bulk &amp; trade</b> — special pricing on 10+ units <a onclick="enqOpen('bulk')" style="color:var(--terra-deep);font-weight:700;cursor:pointer">enquire →</a></li>
         </ul></div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Manufacturer &amp; brand<span class="pm">+</span></div>
         <div class="acc-b" id="pdMfr"></div></div>
       <div class="acc"><div class="acc-h" onclick="accT(this)">Delivery, assembly &amp; returns<span class="pm">+</span></div>
-        <div class="acc-b"><ul class="speclist">
+        <div class="acc-b"><ul class="speclist" id="pdDar">
           <li>Weather-safe packing, delivered across India</li>
           <li>Self-assembly — fittings and a step-by-step guide ship with every piece</li>
           <li>Damage at unboxing is replaced free — report within 48 hours with photos</li>
@@ -3087,6 +3087,7 @@ function openProduct(id){ window.PDID=id; try{ recentDraw(id); recentPush(id); }
   const off = x.m>x.p ? Math.round((1-x.p/x.m)*100) : 0;
   document.getElementById('pdPrice').innerHTML = soon(x) ? soonH() : inr(x.p) + (off?`<span class="mrplab">MRP</span><span class="mrp">${inr(x.m)}</span><span class="off">${off}% OFF</span>`:'');
   document.getElementById('pdShip').textContent=x.ship; document.getElementById('pdMto').hidden=!x.mto;
+  pdDarPaint(x);
   document.getElementById('pdDesc').textContent=x.ds||COLDESC[x.col]||'';   // the product's own description first
   document.getElementById('pdImg').src=bigImg(IMGS[x.img],1600); document.getElementById('pdImg').alt=x.alt||x.n;
   try{ document.title=x.n+' | outrr'; const md=document.querySelector('meta[name=description]'); if(md&&x.md) md.setAttribute('content',x.md); }catch(e){}
@@ -3160,7 +3161,7 @@ function vRender(id){const box=document.getElementById('vSec'); if(!box) return;
     if(o&&o.values) vals=vals.sort((a,b)=>{const ia=o.values.findIndex(v=>v.toLowerCase()===a.toLowerCase()), ib=o.values.findIndex(v=>v.toLowerCase()===b.toLowerCase()); return (ia<0?99:ia)-(ib<0?99:ib);});
     // price per value (shown on size / material buttons when it differs)
     const lowOf=v=>Math.min(...sib.filter(i=>(PRODS[i][k]||'').toLowerCase()===v.toLowerCase()).map(i=>PRODS[i].p));
-    const showP=k!=='vc'&&new Set(vals.map(lowOf)).size>1;
+    const showP=k!=='vc'&&!soon(x)&&new Set(vals.map(lowOf)).size>1;   // Coming soon: no prices on the size buttons either
     const opt=v=>{const on=(x[k]||'').toLowerCase()===v.toLowerCase();
       // with the other choices kept: does it exist, and is it in stock?
       const hit=sib.find(i=>(PRODS[i][k]||'').toLowerCase()===v.toLowerCase() && keys.every(([k2])=>k2===k||(PRODS[i][k2]||'')===(x[k2]||'')));
@@ -3247,6 +3248,8 @@ const COLDET = {
  planters:   {mat:'Fibre clay / ceramic, frost-proof',            asm:'No assembly required', dim:'See pack details',     warr:'6 months'},
  furnishings:{mat:'Olefin / PET all-weather fabric',              asm:'No assembly required', dim:'See pack details',     warr:'6 months'},
  'fire-pits':{mat:'Heat-resistant metal, outdoor finish',          asm:'Simple self-assembly', dim:'See pack details',     warr:'As per maker'},
+ 'landscape-plants':{mat:'Live plant in a nursery grow bag',       asm:'Ready to plant — no assembly', dim:'Height + bag size — see options', warr:'7-day replacement'},
+ plants:     {mat:'Live plant',                                   asm:'No assembly required', dim:'See options',          warr:'As per seller'},
  _any:       {mat:'See description',                              asm:'See description',      dim:'See pack details',     warr:'As per maker'}
 };
 function goCats(){ showHome(); setTimeout(()=>document.querySelector('.catgrid').scrollIntoView({behavior:'smooth'}),60); }
@@ -3455,6 +3458,12 @@ var OFFER={steps:[{min:25000,pct:10,max:250},{min:50000,pct:10,max:500},{min:100
 (function(){try{var S=window.OUTRR_SUPA||{};if(!S.url)return;fetch(S.url+'/rest/v1/rpc/company_public',{method:'POST',headers:{apikey:S.anon,'Content-Type':'application/json'},body:'{}'}).then(function(r){return r.json()}).then(function(j){
   if(!j)return; if(Array.isArray(j.order_offer))OFFER.steps=j.order_offer.map(function(x){return{min:+x.min,pct:+x.pct,max:+x.max}}); if(j.mto_combo_pct!=null)OFFER.combo=+j.mto_combo_pct; if(j.combo_map&&typeof j.combo_map==='object')OFFER.map=j.combo_map;
   try{if(document.getElementById('cart').style.display==='block')renderCart();}catch(e){} }).catch(function(){});}catch(e){}})();
+// PDP "Offers" line = the real order offer (215); "Delivery, assembly & returns" for local-only plants (218)
+function pdOfferPaint(){const el=document.getElementById('pdOfferLi'); if(!el) return; const st=OFFER.steps.slice().sort((a,b)=>a.min-b.min);
+  if(!st.length){el.hidden=true;return;} el.hidden=false; el.innerHTML='<b>Order offer</b> — '+st[0].pct+'% off orders of '+inr(st[0].min)+'+ (up to '+st.map(x=>inr(x.max)+(x===st[0]?'':' on '+inr(x.min)+'+')).join(', ')+')';}
+var PD_DAR=null;
+function pdDarPaint(x){const ac=document.getElementById('pdAsmChip'); if(ac) ac.textContent=x&&/plants$/.test(x.col)?'Ready to plant':'Self-assembly'; const ul=document.getElementById('pdDar'); if(!ul) return; if(PD_DAR==null) PD_DAR=ul.innerHTML;
+  ul.innerHTML=x&&x.col==='landscape-plants'?'<li>Delivered upright by a local vehicle in Delhi NCR (Delhi, Gurugram, Noida, Ghaziabad, Faridabad) — not by courier</li><li>Comes in its nursery grow bag, ready to plant</li><li>7-day replacement — if the plant dies within 7 days of delivery, send a photo and we replace it free</li><li>Plants can\'t be returned for change of mind</li><li>Care questions? Our team is on WhatsApp</li>':PD_DAR; pdOfferPaint();}
 function offerStep(v){return OFFER.steps.filter(function(x){return v>=x.min}).sort(function(a,b){return b.min-a.min})[0]||null;}
 function offerOf(v){var st=offerStep(v);return st?Math.min(Math.round(v*st.pct/100),st.max):0;}
 function offerNext(v){return OFFER.steps.filter(function(x){return x.min>v}).sort(function(a,b){return a.min-b.min})[0]||null;}
@@ -4678,7 +4687,7 @@ async function shareProduct(){
 <script src="/account.js?v=11"></script>
 <script src="/track.js?v=4"></script>
 <script src="/store.js?v=7"></script>
-<script src="/near.js?v=12"></script>
+<script src="/near.js?v=13"></script>
 <script src="/mto.js?v=107"></script>
 <script>/* 218: back to the plan after signing in, even when the page reloaded meanwhile (mobile: switching to the email app) */window.outrrResume=function(){var r=null;try{r=JSON.parse(localStorage.getItem('outrr_resume')||'null');}catch(e){}if(!r)return false;if(Date.now()-(+r.t||0)>3600000){try{localStorage.removeItem('outrr_resume');}catch(e){}return false;}if(!localStorage.getItem('outrr_session'))return false;try{localStorage.removeItem('outrr_resume');}catch(e){}var n=0;(function go(){if(window.mtoUnlock&&window.outrrPlan){try{if(typeof showHome==='function')showHome();}catch(e){}window.mtoUnlock(function(){window.outrrPlan({reload:true});});}else if(n++<40)setTimeout(go,250);})();return true;};addEventListener('load',function(){setTimeout(function(){try{window.outrrResume();}catch(e){}},600);});</script>
 <script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){var go=function(sd){return import('/planner.js?v=65').then(function(m){m.open(sd&&(sd.item||sd.items||sd.reload||sd.load||sd.sload||sd.fresh)?sd:null);});};var q=new URLSearchParams(location.search).get('plan')||'';if(!seed&&window.mtoSpaceAsk&&q.length<10&&!(window.ASSIST&&window.ASSIST.name)){window.mtoSpaceAsk('planner',function(r){go(r.plan?(r.plan.local?null:{load:r.plan.id}):{fresh:true,kind:r.kind,site:r.site});});return Promise.resolve();}return go(seed);};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}var tp=new URLSearchParams(location.search).get('tpl');if(tp&&!new URLSearchParams(location.search).get('plan')){fetch('/terrace-templates.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(j){var t=(j.templates||[]).filter(function(x){return x.id===tp;})[0];if(!t)return;var b=btoa(unescape(encodeURIComponent(JSON.stringify({v:1,site:t.site,items:[]})))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');try{history.replaceState(history.state,'',location.pathname+'?plan='+b);}catch(e){}go();}).catch(function(){});return;}/* ?tpl=T01: a terrace template (terrace-templates.json) */if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
