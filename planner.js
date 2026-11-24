@@ -123,14 +123,15 @@ const rectI = it => { const f = foot(it); return { x: +it.x, z: +it.z, w: f[0], 
 const hit = (a, b) => a.x < b.x + b.w - 0.01 && a.x + a.w > b.x + 0.01 && a.z < b.z + b.d - 0.01 && a.z + a.d > b.z + 0.01;
 function inside(r) { const t = S.site, p = P0(); return r.x >= p - 0.01 && r.z >= p - 0.01 && r.x + r.w <= t.pw - p + 0.01 && r.z + r.d <= t.pd - p + 0.01 && !(t.kind === 'terrace' && cutHit(t, r, PAR)); }
 const att = it => !!(it && (it.mode === 'par' || it.mode === 'tank' || it.mode === 'ac' || it.mode === 'shaft'));   // 193c: screens fixed on the parapet / on the mumty — no floor footprint
+const OVSH = new Set(['deck', 'pergola', 'cabin']);   // 258
 function clashes(it, i) {   // what it would sit on
   if (att(it)) return '';
   const r = rectI(it), fl = CAT[it.cat] && CAT[it.cat].kind === 'floor';
   if (!inside(r)) return 'edge';
-  if ((S.site.kind === 'terrace' ? S.site.blocks : []).some(b => hit(r, b))) return 'block';
+  if ((S.site.kind === 'terrace' ? S.site.blocks : []).some(b => hit(r, b) && !(b.type === 'shaft' && OVSH.has(it.cat)))) return 'block';   // 258 (owner): a deck, pergola or cabin can go over a shaft
   const under = (a, b) => (UMB.has(a.cat) && !UMB.has(b.cat) && b.cat !== 'cabin') || (UMB.has(b.cat) && !UMB.has(a.cat) && a.cat !== 'cabin');   // 203: seating, a bar, planters… can stand under a pergola
   if (S.items.some((o, j) => j !== i && !att(o) && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin') && !under(it, o) && hit(r, rectI(o)))) return 'item';
-  if (S.items.some((o, j) => j !== i && !att(o) && (fl ? FLX.has(it.cat) && FLX.has(o.cat) && it.cat !== o.cat : o.cat === 'pathway') && hit(r, rectI(o)))) return 'item';   // 224: nothing stands on the pathway; pathway / grass / deck don't overlap   // decking goes under things, never under a cabin
+  if (S.items.some((o, j) => j !== i && !att(o) && (fl ? FLX.has(it.cat) && FLX.has(o.cat) && it.cat !== o.cat : false) && hit(r, rectI(o)))) return 'item';   // 224: nothing stands on the pathway; pathway / grass / deck don't overlap   // decking goes under things, never under a cabin
   return '';
 }
 function placeFree(it, i, from) {   // nearest free spot to where it was dropped (spiral), keeping its turn
@@ -955,6 +956,8 @@ function suUp() { const D = SUD; SUD = null; if (!D) return;
     S.msg = 'Tap ✓ Done first, then pick the next thing'; return suPaint(); }
   if (!D.drag) return; S.msg = '';
   const keep = D.G.map(j => JSON.stringify(S.items[j])); D.G.forEach((j, k) => { const o = S.items[j]; o.x = r2(D.xs[k][0] + (D.dx || 0)); o.z = r2(D.xs[k][1] + (D.dz || 0)); delete o.wside; });
+  { const R1 = D.G.map(j => rectI(S.items[j])), p = P0(), t = S.site, x0 = Math.min(...R1.map(r => r.x)), x1 = Math.max(...R1.map(r => r.x + r.w)), z0 = Math.min(...R1.map(r => r.z)), z1 = Math.max(...R1.map(r => r.z + r.d));   // 258: dragged past the parapet → sits flush inside it (the border band included)
+    const dx = x0 < p ? p - x0 : x1 > +t.pw - p ? +t.pw - p - x1 : 0, dz = z0 < p ? p - z0 : z1 > +t.pd - p ? +t.pd - p - z1 : 0; if (dx || dz) D.G.forEach(j => { S.items[j].x = r2(S.items[j].x + dx); S.items[j].z = r2(S.items[j].z + dz); }); }
   if (D.G.length === 1) { const i = D.G[0], it = S.items[i];
     if (CAT[it.cat] && CAT[it.cat].kind === 'wall') snapWall(it, true);   // 242: a wall panel dropped anywhere goes onto the nearest wall at that spot
     if (clashes(it, i)) { if (!settle(it, i, [it.x, it.z])) { Object.assign(it, JSON.parse(keep[0])); S.msg = 'It can\'t go there'; } } else if (CAT[it.cat] && CAT[it.cat].kind === 'wall') settle(it, i, [it.x, it.z]); }
@@ -1037,8 +1040,26 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
     if (!ok) { S.items.pop(); miss++; return null; } if (!opt.noFlush) flush(it, i); if (opt.wside) it.wside = opt.wside; if (tg) it.learned = true; return it; };
   const mumtyFace = () => { if (!M) return [t.pw / 2, P + 2]; return g.door === 'right' ? [M.x + M.w, M.z + M.d / 2] : g.door === 'left' ? [M.x, M.z + M.d / 2] : g.door === 'front' ? [M.x + M.w / 2, M.z + M.d + 1.5] : [M.x + M.w / 2, M.z - 1.5]; };
   // 1) the cabin: in a corner (two walls — parapet, the stairs room or another cabin), at the back, away from the road (owner: "mostly in corners or at the back or joining the pergola")
+  let J = null;   // 258 (owner): cabin + pergola joined in one band across the terrace — the cabin behind the stairs room / room, the pergola on the open side
   if (B.cabin) { const w = wh('cabin'), CS = { '1-2': [10, 8], '3-4': [12, 10], '5-8': [16, 10] }[(S.su || {}).cs], cabs = (S.su || {}).cab || [];
-    for (let ci = 0; ci < Math.min(3, B.cabin || 1); ci++) { const rc = takeR('cabin'), lt = rc ? [rc[1], rc[2]] : learned('cabin'), cq = cabs[ci] || {}, csk = cabSkuFor(cq.glaze || 'mostly'), drot = cq.door && cq.door !== 'auto' ? CAB_ROT[cq.door] : null;   // 256: the walls picked + which way the door faces
+    if (B.pergola && opt.phase !== 'old') try { const cq = cabs[0] || {}, drot0 = cq.door && cq.door !== 'auto' ? CAB_ROT[cq.door] : null, csk0 = cabSkuFor(cq.glaze || 'mostly');
+      const c0 = newItem('cabin'); if (csk0 && c0.sku !== csk0) { c0.sku = csk0; delete c0.layout; delete c0.lsku; cabinFoot(c0); } try { if (CS) cabinSize(c0, CS[0], CS[1]); } catch (e) {} c0.rot = 0;
+      const L = rectI(c0).w, D = rectI(c0).d, BLK = (t.blocks || []).filter(b => b.type !== 'shaft'), BM = BLK.filter(b => b.type === 'mumty' || b.type === 'room'), pz = (SZF((S.su || {}).pgs && (S.su || {}).pgs[0] || ppl).pergola || [12, 10]);
+      const zs = [P, r2(t.pd - P - D)]; BM.forEach(b => zs.push(r2(b.z), r2(b.z + b.d - D)));
+      let best = null;
+      zs.map(z => Math.max(P, Math.min(z, t.pd - P - D))).filter((z, k, A) => A.indexOf(z) === k).forEach(z => {   // a band D deep at this z: its free stretches across the width
+        const cut = BLK.filter(b => b.z < z + D - 0.01 && b.z + b.d > z + 0.01).map(b => [b.x, b.x + b.w]).sort((a, b) => a[0] - b[0]), iv = []; let x = P;
+        cut.forEach(([a, b]) => { if (a - x > 0.5) iv.push([x, a]); x = Math.max(x, b); }); if (t.pw - P - x > 0.5) iv.push([x, t.pw - P]);
+        iv.forEach(([a, b]) => { if (b - a < L + 8) return; const touch = e => BM.some(k => Math.abs((e === 'l' ? a : b) - (e === 'l' ? k.x + k.w : k.x)) < 0.3 && k.z < z + D && k.z + k.d > z);
+          ['l', 'r'].forEach(e => { const back = z <= P + 0.1, front = z + D >= t.pd - P - 0.1, rot = back ? 0 : front ? 180 : (z + D / 2 < t.pd / 2 ? 0 : 180); if (drot0 != null && drot0 !== rot) return;
+            const sc = (touch(e) ? 30 : 0) + (back ? 20 : 0) + (g.road.includes(front ? 'front' : back ? 'back' : '') ? -25 : 0) - Math.abs(Math.min(30, b - a - L) * D - pz[0] * pz[1] * 1.6) * 0.05;
+            if (!best || sc > best.sc) best = { sc, z, a, b, e, rot }; }); }); });
+      if (best) { const { z, a, b, e, rot } = best, c = c0; c.rot = rot; c.x = e === 'l' ? a : r2(b - L); c.z = z; S.items.push(c);
+        if (!clashes(c, S.items.length - 1)) { const p = newItem('pergola'); S.items.push(p);
+          for (let pw = Math.min(30, r2(b - a - L)); pw >= 8; pw -= 1) { Object.assign(p, { w: pw, d: D, rot: 0, x: e === 'l' ? r2(a + L) : r2(b - L - pw), z }); if (!clashes(p, S.items.length - 1)) { J = { c, p }; break; } }
+          if (!J) S.items.pop(); }
+        if (!J) S.items.pop(); else notes.push('Cabin and pergola joined across the terrace'); } } catch (e) { J = null; }
+    for (let ci = J ? 1 : 0; ci < Math.min(3, B.cabin || 1); ci++) { const rc = takeR('cabin'), lt = rc ? [rc[1], rc[2]] : learned('cabin'), cq = cabs[ci] || {}, csk = cabSkuFor(cq.glaze || 'mostly'), drot = cq.door && cq.door !== 'auto' ? CAB_ROT[cq.door] : null;   // 256: the walls picked + which way the door faces
       const skuPre = sz => o => { if (csk && o.sku !== csk) { o.sku = csk; delete o.layout; delete o.lsku; cabinFoot(o); o.label = prodName(csk, 'Cabin'); } if (sz) cabinSize(o, sz[0], sz[1]); };
       if (rc) { const sz = rsz(rc), wide = sz[0] >= sz[1], Lc = Math.max(sz[0], sz[1]) - 0.6, Wc = Math.min(sz[0], sz[1]) - 0.6;   // 240: where and how big LifeWall drew it; the glass front looks at the terrace
         put('cabin', (cx, cz, f, rot) => { const c = tch(cx, cz, f); return -1.2 * d2(cx, cz, lt[0], lt[1]) + 12 * faceTo(cx, cz, rot, ctr[0], ctr[1]) + frontClear(cx, cz, f, rot) + (c.n === 2 ? 26 : c.n * 12); }, { rots: drot != null ? [drot] : wide ? [0, 180] : [90, 270], keepRule: true, pre: skuPre([CS ? CS[0] : cl(Lc, 10, 20), CS ? CS[1] : cl(Wc, 8, 14)]) }); continue; }
@@ -1052,7 +1073,7 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   const cab = by('cabin'), cr = cab ? rectI(cab) : null;
   // 2) pergolas (+ a deck under each) — 241: as many as asked, each sized for its own people
   const pgq = (S.su || {}).pgs || [], PR = [];
-  for (let pi = 0; pi < Math.min(3, B.pergola || 0); pi++) { const zz = SZF(pgq[pi] || ppl).pergola || [12, 10], rp = takeR('pergola'), others = (cx, cz) => PR.reduce((a, r) => a + 0.4 * Math.min(25, d2(cx, cz, r.x + r.w / 2, r.z + r.d / 2)), 0), n0 = all('pergola').length;
+  for (let pi = 0; pi < Math.min(3, B.pergola || 0); pi++) { if (J && pi === 0) { PR.push(rectI(J.p)); continue; } const zz = SZF(pgq[pi] || ppl).pergola || [12, 10], rp = takeR('pergola'), others = (cx, cz) => PR.reduce((a, r) => a + 0.4 * Math.min(25, d2(cx, cz, r.x + r.w / 2, r.z + r.d / 2)), 0), n0 = all('pergola').length;
     if (rp) { const sz = pi ? zz : capA(rsz(rp), zz);   // 253: as drawn, but never far bigger than the people asked for
       put('pergola', (cx, cz, f) => -1.5 * d2(cx, cz, rp[1], rp[2]) + 9 * tch(cx, cz, f).n, { set: { w: cl(sz[0], 8, 30), d: cl(sz[1], 8, 30) }, rots: [0], keepRule: true }); if (!pi && all('pergola').length > n0) notes.push('Pergola where LifeWall placed it'); }
     if (all('pergola').length === n0) { const w = wh('pergola');
@@ -1080,20 +1101,27 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
       : w === 'bar' && by('bar') ? -d2(cx, cz, rectI(by('bar')).x + rectI(by('bar')).w / 2, rectI(by('bar')).z + rectI(by('bar')).d / 2 + 5) : -d2(cx, cz, farX(f[0]), t.pd * (wk || 0.55)))
       + (face ? 9 * faceTo(cx, cz, rot, gc[0], gc[1]) : 0), { set: zz ? { w: zz[0], d: zz[1] } : {}, rots: face ? [0, 90, 180, 270] : [0, 90] }); };
   for (let n = 0; n < (B.sofa || 0); n++) seat('sofa', 0.55, n); if (by('sofa') && wh('sofa') === 'pergola') notes.push('Sofa under the pergola, facing the garden');
+  // 258 (owner): corners — the road side and the stairs door side / its opposite first; open space = the biggest free patch
+  const CNR = olOn() ? olCorners() : [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]], OPP = { left: 'right', right: 'left', front: 'back', back: 'front' };
+  const PREF = new Set(g.road.concat(g.door ? [g.door, OPP[g.door]] : []));
+  const cornerPull = (cx, cz, f, only) => { let b = -99; CNR.forEach(([k, X, Z]) => { const pf = PREF.has(k[0] === 'b' ? 'back' : 'front') || PREF.has(k[1] === 'l' ? 'left' : 'right'); if (only && !pf) return;
+    const qx = k[1] === 'l' ? cx - f[0] / 2 : cx + f[0] / 2, qz = k[0] === 'b' ? cz - f[1] / 2 : cz + f[1] / 2; b = Math.max(b, (pf ? 30 : 18) - 1.5 * Math.hypot(qx - X, qz - Z)); }); return b; };
+  const crowd = (cx, cz, f, m) => { const r = { x: cx - f[0] / 2 - m, z: cz - f[1] / 2 - m, w: f[0] + 2 * m, d: f[1] + 2 * m }; return S.items.filter(o => !att(o) && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && !UMB.has(o.cat) && hit(r, rectI(o))).length; };   // things within m ft (a walkway round it)
+  const openC = () => { try { const fr = (P2.freeRects(t, S.items, 3) || [])[0]; if (fr && fr.w) return [fr.x + fr.w / 2, fr.z + fr.d / 2]; } catch (e) {} return gc; };
   const fbq = (S.su || {}).fbs || [];
   for (let n = 0; n < (B.fbench || 0); n++) { const sh = fbq[n] || 'L', lt = learned('fbench');   // 247: straight along a wall / L in a corner / curved in a corner
     if (sh === 'L') { lSeat(g, SZ.L || [10, 6], lt, PR, notes) || miss++; continue; }
-    if (sh === 'straight') { put('fbench', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : -30) - (PR.some(r => inR(cx, cz, r)) ? 30 : 0) - (lt ? 0.3 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270], set: { w: (SZ.L || [10])[0], d: 2.5, label: 'Fixed seating' } }) || miss++; continue; }
+    if (sh === 'straight') { put('fbench', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : -30) - (PR.some(r => inR(cx, cz, r)) ? 30 : 0) + cornerPull(cx, cz, f, true) - (lt ? 0.1 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270], set: { w: (SZ.L || [10])[0], d: 2.5, label: 'Fixed seating' } }) || miss++; continue; }
     const cs = Math.max(7, Math.min(10, (SZ.L || [10])[0] - 1)), CN = olOn() ? olCorners() : [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]], ROT = { bl: 0, br: 90, fr: 180, fl: 270 };
     let best = null; CN.forEach(([k, X, Z]) => { const it = newItem('fbench'); Object.assign(it, { w: cs, d: cs, shape: 'curve', label: 'Curved seating', rot: ROT[k], x: k[1] === 'l' ? X : X - cs, z: k[0] === 'b' ? Z : Z - cs });   // a quarter arc hugging that corner
       const i = S.items.length; S.items.push(it); const ok = !clashes(it, i) && !PR.some(r => hit(rectI(it), r)); S.items.pop(); if (!ok) return;
       const sc = (g.road.includes(k[0] === 'b' ? 'back' : 'front') ? 20 : 0) - (g.dz ? (d2(it.x + cs / 2, it.z + cs / 2, g.dz.x + g.dz.w / 2, g.dz.z + g.dz.d / 2) < 10 ? 15 : 0) : 0) - (lt ? 0.2 * d2(it.x + cs / 2, it.z + cs / 2, lt[0], lt[1]) : 0); if (!best || sc > best[0]) best = [sc, it]; });
     if (best) { S.items.push(best[1]); if (n === 0) notes.push('Curved seating hugging a corner'); } else miss++; }
   for (let n = 0; n < (B.dining || 0); n++) seat('dining', 0.7, n);
-  for (let n = 0; n < (B.swing || 0); n++) seat('swing', 0.3, n);
+  for (let n = 0; n < (B.swing || 0); n++) { const oc = openC(); put('swing', (cx, cz, f, rot) => Math.max(cornerPull(cx, cz, f), 25 - 1.2 * d2(cx, cz, oc[0], oc[1])) + 9 * faceTo(cx, cz, rot, gc[0], gc[1]) - 25 * crowd(cx, cz, f, 2.5), { rots: [0, 90, 180, 270] }); }   // 258: a corner or the open space
   for (let n = 0; n < (B.bench || 0); n++) put('bench', (cx, cz, f) => -d2(cx, cz, farX(f[0]), t.pd * 0.25) + wallBonus(f, cx, cz, g.far));
   for (let n = 0; n < (B.counter || 0); n++) { const nr = by('dining') || pg || by('fbench'), lt = learned('counter');   // food counter: its back to a wall, near where people eat
-    put('counter', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : 0) - (nr ? 0.8 * d2(cx, cz, rectI(nr).x + rectI(nr).w / 2, rectI(nr).z + rectI(nr).d / 2) : lt ? 0.5 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270] });
+    put('counter', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : -90) + cornerPull(cx, cz, f, true) - (nr ? 0.2 * d2(cx, cz, rectI(nr).x + rectI(nr).w / 2, rectI(nr).z + rectI(nr).d / 2) : lt ? 0.15 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270] });   // 258: always against a wall, in a front corner
     if (!n && by('counter')) notes.push('Food counter against the wall, near the seating'); }
   // walls: the feature wall faces the stairs, the water feature stands in front of it
   const wallAt = (sd, u, k) => { const it = newItem(k), w = it.w, run = sd === 'back' || sd === 'front' ? t.pw : t.pd, uu = Math.max(P, Math.min(run - P - w, u - w / 2));
@@ -1114,10 +1142,12 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
     if (!n && by('water')) notes.push('Water feature facing the stairs'); }
   for (let k = 0; k < (B.vgarden || 0); k++) { const w = wh('vgarden'), sd = w === 'back' ? 'back' : g.far, run = sd === 'back' ? t.pw : t.pd; put('vgarden', null, wallAt(sd, run * (k + 1) / ((B.vgarden || 1) + 1), 'vgarden')); }   // 239: only when picked
   for (let n = 0; n < (B.firepit || 0); n++) { const fb = all('fbench').slice(n * 2, n * 2 + 2), so = all('sofa')[n] || by('sofa') || pg;   // in the middle of the L seating, else in front of the sofa
-    const tg = fb.length === 2 ? (() => { const a = rectI(fb[0]), b = rectI(fb[1]), cx = (Math.min(a.x, b.x) + Math.max(a.x + a.w, b.x + b.w)) / 2, cz = (Math.min(a.z, b.z) + Math.max(a.z + a.d, b.z + b.d)) / 2; return [cx, cz]; })()
+    const tg = fb.length === 2 ? (() => { const a = rectI(fb[0]), b = rectI(fb[1]), x0 = Math.min(a.x, b.x), x1 = Math.max(a.x + a.w, b.x + b.w), z0 = Math.min(a.z, b.z), z1 = Math.max(a.z + a.d, b.z + b.d), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;   // 258: off the L's corner by seat + 2.5 ft walkway + half the pit
+      const inn = (r, X, Z) => X >= r.x - 0.2 && X <= r.x + r.w + 0.2 && Z >= r.z - 0.2 && Z <= r.z + r.d + 0.2, oc = [[x0, z0], [x1, z0], [x0, z1], [x1, z1]].find(([X, Z]) => inn(a, X, Z) && inn(b, X, Z)) || [x0, z0], k = 2.5 + 2.5 + 1.75;
+      return [oc[0] + Math.sign(cx - oc[0]) * Math.min(k, (x1 - x0) - 1.75), oc[1] + Math.sign(cz - oc[1]) * Math.min(k, (z1 - z0) - 1.75)]; })()
       : fb.length ? [rectI(fb[0]).x + rectI(fb[0]).w / 2, rectI(fb[0]).z + rectI(fb[0]).d / 2] : so ? [rectI(so).x + rectI(so).w / 2 + (g.far === 'right' ? -1 : 1) * (rectI(so).w / 2 + 2.5), rectI(so).z + rectI(so).d / 2] : [t.pw / 2, t.pd * 0.6];
     put('firepit', (cx, cz) => -d2(cx, cz, tg[0], tg[1])); }
-  for (let n = 0; n < (B.umbrella || 0); n++) { put('umbrella', (cx, cz) => -d2(cx, cz, gc[0], gc[1])); }
+  for (let n = 0; n < (B.umbrella || 0); n++) { const oc = openC(); put('umbrella', (cx, cz, f) => Math.max(cornerPull(cx, cz, f), 25 - 1.2 * d2(cx, cz, oc[0], oc[1])) - 25 * crowd(cx, cz, f, 0.5)); }   // 258: a corner or the open space
   // 241: bar counters are islands — open on both sides (stools in front, the bartender behind), straight or L as asked; never against a wall
   const brq = (S.su || {}).bars || [], gc0 = [t.pw / 2, t.pd / 2];
   const clearBoth = (cx, cz, f, rot) => { const r = { x: cx - f[0] / 2, z: cz - f[1] / 2, w: f[0], d: f[1] }, D = 3, al = +rot % 180 === 0, strips = al ? [{ x: r.x, z: r.z - D, w: r.w, d: D }, { x: r.x, z: r.z + r.d, w: r.w, d: D }] : [{ x: r.x - D, z: r.z, w: D, d: r.d }, { x: r.x + r.w, z: r.z, w: D, d: r.d }];
@@ -1140,7 +1170,9 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
     if (rk && rGap(rectI(rk), r) > 2.5) { S.items.splice(S.items.indexOf(rk), 1); rk = put('rack', (x, z, f, rot) => -2 * d2(x, z, tx, tz) + 6 * faceTo(x, z, rot, cx, cz), { rots: [0, 90, 180, 270], set: { label: 'Bottle rack' } }); }   // 253: right behind the bar, else beside it — never away from it
     if (rk && rGap(rectI(rk), r) > 2.5) { S.items.splice(S.items.indexOf(rk), 1); rk = null; notes.push('No room for the bottle rack by the bar — move the bar to make room'); }
     if (rk) notes.push('Bottle rack behind the bar'); });
-  for (let n = 0; n < (B.sculpture || 0); n++) { const pa = by('pathway'); put('sculpture', (cx, cz) => pa ? -d2(cx, cz, pa.x + 4.5, pa.z + pa.d - 1.5) : -d2(cx, cz, t.pw / 2, t.pd - 3)); }
+  for (let n = 0; n < (B.sculpture || 0); n++) { const fw = all('feature')[n] || by('feature'), pa = by('pathway');   // 258: in front of the feature wall
+    const tg = fw ? (() => { const r = rectI(fw), v = FACE[(+fw.rot || 0) % 360] || [0, 1], dep = v[0] ? r.w : r.d; return [r.x + r.w / 2 + v[0] * (dep / 2 + 2.5), r.z + r.d / 2 + v[1] * (dep / 2 + 2.5)]; })() : pa ? [pa.x + 4.5, pa.z + pa.d - 1.5] : [t.pw / 2, t.pd - 3];
+    put('sculpture', (cx, cz, f) => -2 * d2(cx, cz, tg[0], tg[1]) - 10 * crowd(cx, cz, f, 1.5)); }
   if (B.lights && !(S.su && S.su.light)) { const pa = by('pathway'), n = B.lights;
     for (let k = 0; k < n; k++) { const tgt = pa ? [k % 2 ? pa.x + pa.w + 0.6 : pa.x - 0.6, pa.z + pa.d * ((Math.floor(k / 2) + 0.5) / Math.ceil(n / 2))] : [P + 1 + (t.pw - 2) * ((k + 0.5) / n), t.pd - P - 1]; put('lights', (cx, cz) => -d2(cx, cz, tgt[0], tgt[1]), { rots: [0] }); } }
   if (B.privacy) { const w = wh('privacy');
