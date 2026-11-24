@@ -168,7 +168,7 @@ export function svg(t, opts) {
       `<text x="${cx + v[0] * r * 1.75}" y="${cy + v[1] * r * 1.75}" font-size="${s * 1.1}" class="p2lb">N</text></g>`; }
   if (opts.measure) h += dims(t, items, s);
   if (opts.wl != null && items[opts.wl] && !items[opts.wl].segs) { const it = items[opts.wl], f = foot(it), x = +it.x, z = +it.z, tw = (+it.rot || 0) % 180 === 0;   // 254: which side is W and which is L, on the plan itself
-    const W = 'W ' + f1(+it.w) + "'", L = 'L ' + f1(+it.d) + "'";
+    const W = opts.wlab ? opts.wlab[0] : 'W ' + f1(+it.w) + "'", L = opts.wlab ? opts.wlab[1] : 'L ' + f1(+it.d) + "'";   // 259: a cabin's arrows say its own L × W (= the size panel)
     h += tw ? dim(x, z, x + f[0], z, s * 2, W, s * 0.95) + dim(x + f[0], z, x + f[0], z + f[1], -s * 2, L, s * 0.95) : dim(x, z, x + f[0], z, s * 2, L, s * 0.95) + dim(x + f[0], z, x + f[0], z + f[1], -s * 2, W, s * 0.95); }
   return h + '</svg>';
 }

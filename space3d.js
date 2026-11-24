@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=38';
-import { pergolaModel } from './pergola3d.js?v=28';
-import { outline } from './plan2d.js?v=13';
+import { cabinModel, plotModel } from './cabin3d.js?v=40';
+import { pergolaModel } from './pergola3d.js?v=30';
+import { outline } from './plan2d.js?v=14';
 import { plantModel } from './plants3d.js?v=1';
 
 let R = null, HANDLER = null;
@@ -26,7 +26,7 @@ function ensure(el) {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0xeef0ea);
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
   const cam = new THREE.PerspectiveCamera(40, 1, 0.3, 1500), controls = new OrbitControls(cam, renderer.domElement);
-  controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 6; controls.maxDistance = 260; controls.screenSpacePanning = true;
+  controls.enableDamping = !LITE; controls.dampingFactor = 0.25; controls.maxPolarAngle = Math.PI * 0.47;   /* 259 (owner): no gliding on after the finger lifts */ controls.minDistance = 6; controls.maxDistance = 260; controls.screenSpacePanning = true;
   const hemi = new THREE.HemisphereLight(0xffffff, 0xb8ad98, 0.75), sun = new THREE.DirectionalLight(0xffffff, 1.8);
   sun.castShadow = true; sun.shadow.mapSize.set(LITE ? 1024 : 2048, LITE ? 1024 : 2048); Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 80, bottom: -80, far: 400 });
   scene.add(hemi, sun, sun.target);
@@ -354,7 +354,8 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'sculpture') {
     box(g, w * 0.7, 1.4, d * 0.7, 0, 0.7, 0, K.stone); const k = new THREE.Mesh(new THREE.TorusKnotGeometry(Math.min(w, d) * 0.28, Math.min(w, d) * 0.08, 80, 12), mat('c_bronze', 0x8C6A3F, { metalness: 0.7, roughness: 0.35 })); k.position.y = 1.4 + Math.min(w, d) * 0.5; k.castShadow = true; g.add(k);
   } else if (cat === 'deck') {
-    const n = Math.max(1, Math.round(d / 0.5)); for (let i = 0; i < n; i++) box(g, w, 0.12, d / n - 0.04, 0, 0.06, -d / 2 + d * (i + 0.5) / n, i % 2 ? K.wood : K.wood2, false);
+    const lv = Math.max(0, +(it && it.lvl) || 0), n = Math.max(1, Math.round(d / 0.5)); if (lv) box(g, w, lv - 0.1, d, 0, (lv - 0.1) / 2, 0, K.wood2);   // 259: joined to a cabin → at the cabin floor's level, with a skirting
+    for (let i = 0; i < n; i++) box(g, w, 0.12, d / n - 0.04, 0, lv + 0.06, -d / 2 + d * (i + 0.5) / n, i % 2 ? K.wood : K.wood2, false);
   } else if (cat === 'railing' || cat === 'gate') {
     const H = h || 3.5, n = Math.max(2, Math.round(w / 4) + 1);
     for (let i = 0; i < n; i++) box(g, 0.2, H, 0.2, -w / 2 + w * i / (n - 1), H / 2, 0, K.frame);
@@ -423,7 +424,13 @@ function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w
     const h = new THREE.Group(), y0 = it.deck ? 0.6 : 0, H = (+it.h || 8), w = +it.w, d = +it.d, fm = mat('c_pgs', 0x2F2F2F, { metalness: 0.35, roughness: 0.5 }), sp = Math.max(w, d) > 16 ? 3 : 2;
     if (it.deck) { const dk = mat('c_pdeck', 0x8B6A4A); box(h, w, 0.6, d, w / 2, 0.3, d / 2, dk); }
     const px = [0.2, w - 0.2].concat(w > 16 ? [w / 2] : []), pz = [0.2, d - 0.2].concat(d > 16 ? [d / 2] : []);
-    px.forEach(x => pz.forEach(z => { if ((x === w / 2 && z !== 0.2 && z !== d - 0.2) || (z === d / 2 && x !== 0.2 && x !== w - 0.2)) return; const p0 = box(h, 0.3, H, 0.3, x, y0 + H / 2, z, fm); p0.userData.post = 1; }));
+    const st = P.site || {}, sh = st.kind === 'terrace' ? (st.blocks || []).filter(b => b.type === 'shaft') : [], E = 0.75, par = +st.par || 3, f0 = foot(it), cx0 = +it.x + f0[0] / 2, cz0 = +it.z + f0[1] / 2, ph = -(+it.rot || 0) * Math.PI / 180, cs = Math.cos(ph), sn = Math.sin(ph);
+    const toW = (x, z) => { const a = x - w / 2, b = z - d / 2; return [cx0 + a * cs + b * sn, cz0 - a * sn + b * cs]; }, toL = (X, Z) => { const a = X - cx0, b = Z - cz0; return [a * cs - b * sn + w / 2, a * sn + b * cs + d / 2]; };
+    const post = (x, z) => { let [X, Z] = toW(x, z), base = y0; const s0 = sh.find(b => X > +b.x - 0.15 && X < +b.x + +b.w + 0.15 && Z > +b.z - 0.15 && Z < +b.z + +b.d + 0.15);   // 259 (owner): a post never stands in a shaft — it goes just outside it, or onto the parapet when the shaft is against it
+      if (s0) { const c = [[+s0.x - 0.3, Z], [+s0.x + +s0.w + 0.3, Z], [X, +s0.z - 0.3], [X, +s0.z + +s0.d + 0.3]].map(([a, b]) => { const out = a < E || a > (+st.pw || 30) - E || b < E || b > (+st.pd || 60) - E; return [Math.max(E / 2, Math.min((+st.pw || 30) - E / 2, a)), Math.max(E / 2, Math.min((+st.pd || 60) - E / 2, b)), out]; }).sort((p, q) => Math.hypot(p[0] - X, p[1] - Z) - Math.hypot(q[0] - X, q[1] - Z))[0];
+        X = c[0]; Z = c[1]; if (c[2]) base = par; }
+      const [lx, lz] = toL(X, Z), hh = Math.max(0.5, y0 + H - base); const p0 = box(h, 0.3, hh, 0.3, lx, base + hh / 2, lz, fm); p0.userData.post = 1; };
+    px.forEach(x => pz.forEach(z => { if ((x === w / 2 && z !== 0.2 && z !== d - 0.2) || (z === d / 2 && x !== 0.2 && x !== w - 0.2)) return; post(x, z); }));
     box(h, w, 0.35, 0.18, w / 2, y0 + H - 0.18, 0.2, fm); box(h, w, 0.35, 0.18, w / 2, y0 + H - 0.18, d - 0.2, fm); box(h, 0.18, 0.35, d, 0.2, y0 + H - 0.18, d / 2, fm); box(h, 0.18, 0.35, d, w - 0.2, y0 + H - 0.18, d / 2, fm);
     for (let x = 1.2; x < w - 0.6; x += 1.2) box(h, 0.1, 0.22, d - 0.2, x, y0 + H + 0.05, d / 2, fm, false);
     h.userData.pg = { top: H + y0 }; return h; }
@@ -441,6 +448,8 @@ function build(P) {
   drawItems(items, R.holders, P);
   if (P.measure && terr) { try { g.add(measures(P)); } catch (e) {} }
   if (terr && t.light === 'full') try { wallLights(g, t); } catch (e) {}
+  { const L = []; g.traverse(o => { if (o.isLight && !o.isDirectionalLight && !o.isHemisphereLight && !o.isAmbientLight) L.push(o); });   // 259 (owner: heavy, keeps moving): lamps only at night, and only so many on a phone
+    const mx = LITE ? 10 : 24; L.forEach((o, k) => { if (L.length > mx && k % Math.ceil(L.length / mx)) { o.parent.remove(o); return; } o.intensity *= LITE ? 6 : 4; o.visible = !!R.night; o.userData.nightOnly = 1; (R.nl || (R.nl = [])).push(o); }); }   /* night lamps read as lamps (fewer of them, brighter) */
   return g;
 }
 // 233: sizes of the roof, every structure and thing, and the biggest free spaces left (1 ft grid, largest empty rectangles first)
@@ -521,7 +530,7 @@ function wallLights(g, t) { const W = WARM, gm = glow(LENS), blk = mat('lt_blk',
 function itemLights(hd, it, P) { const lv = (P.site || {}).light; if (!lv) return; const W = WARM, gm = glow(LENS), w = it.w, d = it.d, h = +it.h || 3;
   if (['deck', 'bar', 'counter', 'fbench'].includes(it.cat) && it.shape !== 'curve') {   // 258 (owner): cove light under the edge — a warm glow on the floor round it + a soft lamp low down
     coveStrip(hd, w, d, 0, 0, 0.06); const l = new THREE.PointLight(COVE, it.cat === 'deck' ? 1.6 : 1.1, Math.max(w, d) * 0.9 + 3, 2); l.position.set(0, 0.35, 0); hd.add(l); }
-  if (it.cat === 'pergola') { const y = Math.max(7, h) - 0.35; [[w, 0.12, 0, -d / 2 + 0.3], [w, 0.12, 0, d / 2 - 0.3]].forEach(([a, b, x, z]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(a - 0.6, 0.08, b), gm); m.position.set(x, y, z); hd.add(m); });
+  if (it.cat === 'pergola') { const y = (it.deck ? 0.6 : 0) + (+it.h || 8) - 0.45;   /* 259 (owner): on the beams, not in the air */ [[w, 0.12, 0, -d / 2 + 0.3], [w, 0.12, 0, d / 2 - 0.3]].forEach(([a, b, x, z]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(a - 0.6, 0.08, b), gm); m.position.set(x, y, z); hd.add(m); });
     [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, d - 0.6), gm); m.position.set(x, y, 0); hd.add(m); }); const l = new THREE.PointLight(W, 4, Math.max(w, d) * 1.2, 2); l.position.set(0, y - 0.5, 0); hd.add(l); }
   else if (it.cat === 'feature' || it.cat === 'bar') { const m = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.06, 0.1), gm); m.position.set(0, it.cat === 'bar' ? 3.3 : 0.35, d / 2 + 0.08); hd.add(m); const l = new THREE.PointLight(W, 2.2, 7, 2); l.position.set(0, it.cat === 'bar' ? 3 : 0.8, d / 2 + 0.8); hd.add(l); }
   else if (it.cat === 'planter' || it.cat === 'vgarden') { const m = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 8), gm); m.position.set(w / 2 - 0.3, 0.3, d / 2 + 0.15); hd.add(m); const l = new THREE.SpotLight(W, 3, 7, 0.6, 0.6); l.position.set(w / 2 - 0.3, 0.4, d / 2 + 0.3); l.target.position.set(0, h, 0); hd.add(l, l.target); }
@@ -588,7 +597,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
             if (n % 2 === 0) { const l = new THREE.PointLight(WARM, 0.9, 5, 2); l.position.set(u, hh - 0.9, 0.7 * sn); p.add(l); } } } });   // 239: one-way down lights on every screen by default
       return;
     }
-    const [fw, fd] = foot(it), hd = new THREE.Group(); hd.userData.it = i; hd.position.set(+it.x + fw / 2, 0, +it.z + fd / 2); hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);
+    const [fw, fd] = foot(it), hd = new THREE.Group(), cxI = +it.x + fw / 2, czI = +it.z + fd / 2, lvI = ['deck', 'pergola', 'cabin', 'turf', 'pathway', 'privacy'].includes(it.cat) ? 0 : (((P.items || []).find(o => o.cat === 'deck' && +o.lvl > 0 && (q => cxI > +o.x && cxI < +o.x + q[0] && czI > +o.z && czI < +o.z + q[1])(foot(o)))) || {}).lvl || 0; hd.userData.it = i; hd.position.set(cxI, +lvI || 0, czI);   /* 259: things on a raised deck stand on it */ hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);
     try { itemLights(hd, it, P); } catch (e) {}
     const m = model(it, P), ex = it.cat === 'cabin' && it.ex ? it.ex : null; m.position.set(-it.w / 2 + (ex ? ex.l : 0), 0, -it.d / 2 + (ex ? ex.b : 0)); hd.add(m);   // a cabin's body sits inside its plinth / projections
     const hit = new THREE.Mesh(new THREE.BoxGeometry(Math.max(it.w, 0.8), Math.max(+it.h || 3, 2), Math.max(it.d, 0.8)), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = Math.max(+it.h || 3, 2) / 2; hit.userData.hit = i; hd.add(hit);
@@ -631,6 +640,9 @@ export function show(el, P, opts) {
 }
 export function onEvent(f) { HANDLER = f; }
 export function zoom(f) { if (!R) return; R.dirty = true; const C = R.controls, v = R.cam.position.clone().sub(C.target); R.cam.position.copy(C.target).add(v.multiplyScalar(f)); C.update(); }
+export function panMode(on) { if (!R) return R; R.pan = !!on; const C = R.controls; C.touches.ONE = on ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE; C.mouseButtons.LEFT = on ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE; return R.pan; }   // 259: ✋ move the view instead of turning it
+export function nightMode(on) { night(!!on); }
+export function topView(on) { if (!R || !R.P) return; R.view = on ? 'top' : '3d'; camHome(R.P.site || {}, R.view); R.dirty = true; }
 export function home() { if (R) R.dirty = true; if (R && R.P) camHome(R.P.site || {}, R.view); }
 export function resize() { size(); }
 export function snapshot() { if (R) R.renderer.render(R.scene, R.cam); return R ? R.renderer.domElement.toDataURL('image/jpeg', 0.85) : null; }
@@ -649,6 +661,7 @@ function pDown(e) { if (R) R.dirty = true;
   if (R.place) return;
   const hits = ray.intersectObjects(R.holders.filter(Boolean), true), h = hits.find(z => z.object.userData.hit != null) || hits[0];
   let i = null; if (h) { let o = h.object; while (o && o.userData.it == null) o = o.parent; if (o) i = o.userData.it; }
+  if (i != null && f && (R.pan || R.P.noDrag || (() => { const q = R.P.items[i] || {}; return q.segs || q.box || q.lock; })())) { R.tapItem = i; return; }   // 259 (owner): a finger on a thing still turns / zooms the view — it is only a tap if it doesn't move
   if (i != null && f) { const it = R.P.items[i]; R.drag = { kind: 'item', i, obj: R.holders[i], f0: f.clone(), x0: +it.x, z0: +it.z, moved: false, fixed: !!(it.segs || it.box || it.lock || R.P.noDrag), pos0: R.holders[i].position.clone() }; R.controls.enabled = false; e.preventDefault(); }
   else R.tapEmpty = true;
 }
@@ -669,10 +682,12 @@ function pUp(e) { if (R) R.dirty = true;
   if (!R) return; const d = R.drag; R.drag = null; R.controls.enabled = true;
   const H = R.on || HANDLER;
   if (d) { if (d.moved) H({ t: d.kind === 'block' ? 'block' : 'move', i: d.i, x: d.nx, z: d.nz }); else if (d.kind === 'item') H({ t: 'sel', i: d.i }); else if (d.kind === 'block') H({ t: 'bsel', i: d.i }); return; }
-  if (R.tapEmpty && R.down && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5) H({ t: 'sel', i: null });
+  const tap = R.down && Math.hypot(e.clientX - R.down.x, e.clientY - R.down.y) < 5;
+  if (R.tapItem != null) { const i = R.tapItem; R.tapItem = null; if (tap && H) H({ t: 'sel', i }); R.tapEmpty = false; return; }
+  if (R.tapEmpty && tap) H({ t: 'sel', i: null });
   R.tapEmpty = false;
 }
-window.Space3D = { show, onEvent, zoom, home, resize, snapshot, _r: () => R };
+window.Space3D = { show, onEvent, zoom, home, resize, snapshot, panMode, nightMode, topView, _r: () => R };
 
 // 199b: a small 3D preview of one design (planters…) on a plain patio — the customiser shows it next to the photo.
 // items: [{cat, cfgId, pick, cfg, w, d, h}] — drawn side by side (0.5 ft apart), front to the camera.

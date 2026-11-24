@@ -632,8 +632,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=38').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=38'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=40').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=40'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -776,7 +776,7 @@
   // 202: the terrace one kind of question at a time — Quick: Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof
   // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
   var TMM = null, TMP = null;
-  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=13').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
+  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=14').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
   function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=5').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
   function tsTpl() {
     var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -1860,6 +1860,23 @@
     cbResize(c, l); arr(l.places).forEach(function (p) { cbClamp(c, l, p); }); cbSync(c, l);
     return Object.assign({ lay: l }, lim);
   };
+  // 259 (owner): a cabin side against a wall is solid (no glass / door there, even an all-glass cabin); doors on the sides asked for
+  // spec.solid = { side: [[a, e] ft along that side — front / back from the left end, left / right from the front end]] }, spec.doors = [sides]
+  window.mtoCabinFix = function (id, lay, spec) {
+    var x = PRODS[id], c = x && x.cz && x.cz.cabin; if (!c || !lay || !lay.walls) return null; var l = cbClone(lay), bay = num(c.bay) || 4;
+    var sol = cbBay(c, 'puf') ? 'puf' : (arr(c.bays).filter(function (b) { return b.solid && !b.door; })[0] || {}).key; if (!sol) return null;
+    var solid = (spec && spec.solid) || {}, inS = function (sd, a, e) { return arr(solid[sd]).some(function (r) { return Math.min(e, r[1]) - Math.max(a, r[0]) > 0.3; }); };
+    var dk = null; SIDES.forEach(function (sd) { arr(l.walls[sd]).forEach(function (k) { var b = cbBay(c, k); if (!dk && b && b.door) dk = k; }); }); if (!dk) dk = cbBay(c, 'gdoor') ? 'gdoor' : 'door';
+    var hasDoor = function (sd) { return arr(l.walls[sd]).some(function (k) { var b = cbBay(c, k); return b && b.door; }); };
+    arr(spec && spec.doors).forEach(function (sd) { if (!l.walls[sd] || hasDoor(sd)) return; var n = cbN(c, l, sd), len = cbLen(c, l, sd), sp = cbSpan(c, dk), best = null;
+      for (var i = 0; i + sp <= n; i++) { if (inS(sd, i * bay, Math.min((i + sp) * bay, len))) continue; var m = Math.abs((i + sp / 2) * bay - len / 2); if (!best || m < best[1]) best = [i, m]; }
+      if (best) cbSet(c, l, sd, best[0], dk); });
+    SIDES.forEach(function (sd) { var ks = arr(l.walls[sd]), len = cbLen(c, l, sd), i = 0;
+      while (i < ks.length) { var k = ks[i], b = cbBay(c, k), sp = cbSpan(c, k); if (k !== sol && k !== '-' && b && (b.glass || b.door || !b.solid || /window|vent/.test(k)) && inS(sd, i * bay, Math.min((i + sp) * bay, len))) { cbSet(c, l, sd, i, sol); ks = l.walls[sd]; continue; } i += sp; } });
+    if (!SIDES.some(hasDoor)) { var fs = SIDES.slice().sort(function (p, q) { return arr(solid[p]).length - arr(solid[q]).length; }); for (var s2 = 0; s2 < fs.length && !SIDES.some(hasDoor); s2++) { var sd = fs[s2], n2 = cbN(c, l, sd), len2 = cbLen(c, l, sd), sp2 = cbSpan(c, dk);
+      for (var j = Math.max(0, Math.floor((n2 - sp2) / 2)), t2 = 0; t2 < n2; t2++) { var jj = (j + t2) % n2; if (jj + sp2 <= n2 && !inS(sd, jj * bay, Math.min((jj + sp2) * bay, len2))) { cbSet(c, l, sd, jj, dk); break; } } } }
+    try { cbSync(c, l); } catch (e) {} return l;
+  };
   // 193: from a cabin studio / pergola designer into "Plan your space" with this design (and the studio's terrace) already on it
   // 193g: designers ↔ planner. Rotation: the studio turns the cabin / pergola by +rot on the plot, the planner by −rot.
   function planRot(r) { return (360 - (num(r) || 0)) % 360; }
@@ -1923,7 +1940,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=71').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=72').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2375,7 +2392,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=28').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=30').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -2783,7 +2800,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=43').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=44').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -3022,7 +3039,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=43').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=44').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
