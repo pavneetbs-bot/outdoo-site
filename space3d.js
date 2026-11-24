@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=46';
-import { pergolaModel } from './pergola3d.js?v=36';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=47';
+import { pergolaModel } from './pergola3d.js?v=37';
 import { outline, sofaLayout } from './plan2d.js?v=18';
 import { plantModel } from './plants3d.js?v=2';
 
@@ -692,7 +692,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
       hd.updateMatrixWorld(true); const gone = [], v = new THREE.Vector3(), inZ = (q, z) => q.x >= z.x - 0.05 && q.x <= z.x + z.w + 0.05 && q.z >= z.z - 0.05 && q.z <= z.z + z.d + 0.05;
       hd.traverse(o => { if (o.isMesh && (o.userData.post || o.userData.plate)) { o.getWorldPosition(v); if (it.att.some(z => inZ(v, z))) gone.push(o); } }); gone.forEach(o => o.parent.remove(o));
       const top = (+it.h || 8) + (it.deck ? 0.6 : 0), fm = mat('c_ledger', 0x2E2E2E, { metalness: 0.4, roughness: 0.5 });
-      it.att.forEach(z => { const b = box(items, z.w, 0.6, z.d, z.x + z.w / 2, top - 0.3, z.z + z.d / 2, fm); b.userData.it = i; });
+      if (it.cfgId || it.pick || P.fullPergola) it.att.forEach(z => { const lx = z.w >= z.d, b = box(items, lx ? z.w : 0.18, 0.35, lx ? 0.18 : z.d, z.x + z.w / 2, top - 0.18, z.z + z.d / 2, fm); b.userData.it = i; });   /* 265 (owner): no heavy ledger — the simple pergola's own frame meets the wall; a designed one gets a frame-sized beam */
     }
     if (it.cat === 'pergola') try { creepers(hd, it); } catch (e) {}
     H[i] = hd;
