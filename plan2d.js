@@ -142,8 +142,9 @@ export function svg(t, opts) {
       r += `<polyline points="${P.map(p => p.map(v => +v.toFixed(2)).join(',')).join(' ')}" fill="none" stroke="${on ? '#C26445' : '#9B8E7E'}" stroke-width="${it.cat === 'bar' ? 2.3 : 1.9}" stroke-linecap="round" stroke-linejoin="round"/><polyline points="${P.map(p => p.map(v => +v.toFixed(2)).join(',')).join(' ')}" fill="none" stroke="${FILL[it.cat] || '#E9D9CC'}" stroke-width="${it.cat === 'bar' ? 1.9 : 1.5}" stroke-linecap="round" stroke-linejoin="round"/>`; }
     else if (Lb) { const w = +it.w, d = +it.d, D = 2.2, th = -(+it.rot || 0) * Math.PI / 180, cx = x + f[0] / 2, cz = z + f[1] / 2, P = [[w - D, 0], [w, 0], [w, d], [0, d], [0, d - D], [w - D, d - D]].map(([a, b]) => { const lx = (a - w / 2) * (it.flip ? -1 : 1), lz = b - d / 2; /* 258: main counter at the front (chairs outside), return arm on the right — left when flipped */ return [cx + lx * Math.cos(th) + lz * Math.sin(th), cz - lx * Math.sin(th) + lz * Math.cos(th)]; });
       r += `<polygon points="${P.map(p => p.map(v => +v.toFixed(2)).join(',')).join(' ')}" fill="${FILL.bar || '#F1E3D8'}" stroke="${on ? '#C26445' : '#9B8E7E'}" stroke-width="${on ? s * 0.3 : s * 0.1}"/>`; }
+    if (it.cat === 'sofa') { const L = sofaLayout(it.sconf); r += `<g transform="translate(${x + f[0] / 2} ${z + f[1] / 2}) rotate(${+it.rot || 0}) scale(${(+it.w / L.w) || 1} ${(+it.d / L.d) || 1})" fill="none" stroke="${on ? '#C26445' : '#6E6357'}" stroke-width="0.14" stroke-linejoin="round" pointer-events="none">${sofaSvg(it.sconf, 'g')}</g>`; }   // 261: the set's own pieces
     if (pg) for (let u = x + 1; u < x + f[0] - 0.4; u += 1.2) r += `<path d="M${u} ${z}V${z + f[1]}" stroke="#2E2E2E" stroke-width="${s * 0.05}" opacity=".35"/>`;
-    if (opts.labels !== false && !['pathway', 'lights'].includes(it.cat)) r += icoG(it.cat, x + f[0] / 2, z + (pg ? lab * 0.9 : f[1] / 2), Math.min(lab * 1.15, Math.min(f[0], f[1]) * 0.8));
+    if (opts.labels !== false && !['pathway', 'lights', 'sofa'].includes(it.cat)) r += icoG(it.cat, x + f[0] / 2, z + (pg ? lab * 0.9 : f[1] / 2), Math.min(lab * 1.15, Math.min(f[0], f[1]) * 0.8));
     return r + '</g>'; };
   items.forEach((it, i) => { if (it && !it.segs && !it.box && ['deck', 'turf', 'pathway'].includes(it.cat)) h += drawn(it, i); });
   // the parapet
@@ -194,3 +195,34 @@ export function dimsSvg(t, items) { const pw = +t.pw, pd = +t.pd, s = Math.max(0
 // pointer position → plan feet (for dragging on the SVG)
 export function toFt(svgEl, e) { const p = svgEl.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const m = svgEl.getScreenCTM(); if (!m) return null; const q = p.matrixTransform(m.inverse()); return { x: q.x, z: q.y }; }
 window.Plan2D = { svg, dimsSvg, freeRects, outline, toFt };
+
+// 261 (owner): sofa sets made of the pieces the customer ticks — single / 2 / 3 seater, L (5 seater), U (7 seater); one or more
+export const SOFA_OPTS = [['1', 'Single seater'], ['2', '2 seater'], ['3', '3 seater'], ['5', 'L · 5 seater'], ['7', 'U · 7 seater']];
+const SEAT = 2.2, SD = 2.6, GAP = 1.4;
+const sLen = n => n === 1 ? 2.8 : n * SEAT + 0.5;
+export function sofaLayout(conf) {
+  const C = (Array.isArray(conf) && conf.length ? conf : ['5']).map(String), mods = [], loose = [];
+  const base = C.includes('7') ? '7' : C.includes('5') ? '5' : null; if (base) { mods.push({ n: 3, pos: 'back' }, { n: 2, pos: 'right', att: true }); if (base === '7') mods.push({ n: 2, pos: 'left', att: true }); }
+  C.forEach((k, i) => { if (k === base && C.indexOf(k) === i) return; if (k === '5') loose.push(3, 2); else if (k === '7') loose.push(3, 2, 2); else loose.push(+k); });
+  loose.sort((a, b) => b - a); const used = new Set(mods.map(m => m.pos)), order = ['back', 'front', 'right', 'left'];
+  loose.forEach(n => { const p = order.find(o => !used.has(o)); if (p) { used.add(p); mods.push({ n, pos: p }); } else mods.push({ n, pos: 'extra' }); });
+  const back = mods.find(m => m.pos === 'back'), arms = mods.filter(m => m.att).length, td = 2, P = [];
+  const tw = Math.max(3, Math.min(5, (back ? sLen(back.n) : 5) * 0.55)), bl = back ? Math.max(sLen(back.n), arms ? arms * SD + tw + 2 * 1.2 : 0) : 0; if (back) back.len = bl;   // an L / U: room for the table between the arms
+  const tx = arms === 1 ? -SD / 2 : 0;
+  const zb = -(td / 2 + GAP + SD / 2), xr = tw / 2 + GAP + SD / 2;
+  let ex = 0; mods.forEach(m => { const L = m.len || sLen(m.n);
+    if (m.pos === 'back') P.push({ n: m.n, len: L, x: 0, z: zb, ry: 0 });
+    else if (m.pos === 'front') P.push({ n: m.n, len: L, x: 0, z: -zb, ry: Math.PI });
+    else if (m.pos === 'right') P.push(m.att ? { n: m.n, len: L, x: bl / 2 - SD / 2, z: zb + SD / 2 + L / 2, ry: -Math.PI / 2 } : { n: m.n, len: L, x: xr, z: 0, ry: -Math.PI / 2 });
+    else if (m.pos === 'left') P.push(m.att ? { n: m.n, len: L, x: -bl / 2 + SD / 2, z: zb + SD / 2 + L / 2, ry: Math.PI / 2 } : { n: m.n, len: L, x: -xr, z: 0, ry: Math.PI / 2 });
+    else { P.push({ n: m.n, len: L, x: -zb + SD + 0.6 + ex, z: -zb + SD, ry: Math.PI }); ex += L + 0.5; } });
+  const bb = P.map(p => { const sw = Math.abs(Math.cos(p.ry)) > 0.5, hw = (sw ? p.len : SD) / 2, hd = (sw ? SD : p.len) / 2; return [p.x - hw, p.z - hd, p.x + hw, p.z + hd]; }).concat([[tx - tw / 2, -td / 2, tx + tw / 2, td / 2]]);
+  const x0 = Math.min(...bb.map(b => b[0])), z0 = Math.min(...bb.map(b => b[1])), x1 = Math.max(...bb.map(b => b[2])), z1 = Math.max(...bb.map(b => b[3])), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  return { w: Math.round((x1 - x0) * 2) / 2, d: Math.round((z1 - z0) * 2) / 2, table: { w: tw, d: td, x: tx - cx, z: -cz }, pieces: P.map(p => Object.assign(p, { x: p.x - cx, z: p.z - cz })), seats: P.reduce((a, p) => a + p.n, 0) }; }
+export function sofaSvg(conf, opt) {   // a line drawing of the set (top view), for the question screen and the 2D plan
+  const L = sofaLayout(conf), m = 0.6, vb = `${-L.w / 2 - m} ${-L.d / 2 - m} ${L.w + 2 * m} ${L.d + 2 * m}`; let g = '';
+  L.pieces.forEach(p => { const n = Math.max(1, p.n); let u = `<rect x="${-p.len / 2}" y="${-SD / 2}" width="${p.len}" height="${SD}" rx="0.35"/><line x1="${-p.len / 2 + 0.3}" y1="${-SD / 2 + 0.55}" x2="${p.len / 2 - 0.3}" y2="${-SD / 2 + 0.55}"/>`;
+    for (let k = 1; k < n; k++) { const x = -p.len / 2 + 0.25 + (p.len - 0.5) * k / n; u += `<line x1="${x}" y1="${-SD / 2 + 0.55}" x2="${x}" y2="${SD / 2 - 0.15}"/>`; }
+    g += `<g transform="translate(${p.x} ${p.z}) rotate(${-p.ry * 180 / Math.PI})">${u}</g>`; });
+  g += `<rect x="${L.table.x - L.table.w / 2}" y="${L.table.z - L.table.d / 2}" width="${L.table.w}" height="${L.table.d}" rx="0.2" stroke-dasharray="0.25 0.18"/>`;
+  return opt === 'g' ? g : `<svg viewBox="${vb}" class="sofath" fill="none" stroke="currentColor" stroke-width="0.12" stroke-linejoin="round" aria-hidden="true">${g}</svg>`; }

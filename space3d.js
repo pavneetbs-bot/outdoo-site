@@ -5,14 +5,21 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=42';
-import { pergolaModel } from './pergola3d.js?v=32';
-import { outline } from './plan2d.js?v=14';
+import { cabinModel, plotModel } from './cabin3d.js?v=43';
+import { pergolaModel } from './pergola3d.js?v=33';
+import { outline, sofaLayout } from './plan2d.js?v=15';
 import { plantModel } from './plants3d.js?v=2';
 
 let R = null, HANDLER = null;
 const M = {};
 const mat = (k, c, o) => M[k] || (M[k] = new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.8 }, o || {})));
+let ROPE_TX = null; const ROPE_M = {};
+function ropeMat(pw, ph) {   // 261: woven rope (vertical cords with gaps) as a cut-out texture, repeated ~7 cords a foot
+  const k = Math.round(pw * 4) + 'x' + Math.round(ph * 4); if (ROPE_M[k]) return ROPE_M[k];
+  if (!ROPE_TX) { const c = document.createElement('canvas'); c.width = 64; c.height = 64; const x = c.getContext('2d'); x.clearRect(0, 0, 64, 64);
+    for (let i = 0; i < 4; i++) { const gr = x.createLinearGradient(i * 16, 0, i * 16 + 11, 0); gr.addColorStop(0, '#9C8464'); gr.addColorStop(0.5, '#D8C6A4'); gr.addColorStop(1, '#9C8464'); x.fillStyle = gr; x.fillRect(i * 16, 0, 11, 64); x.fillStyle = 'rgba(80,60,40,.35)'; for (let j = 0; j < 64; j += 6) x.fillRect(i * 16, j, 11, 1.5); }
+    ROPE_TX = new THREE.CanvasTexture(c); ROPE_TX.wrapS = ROPE_TX.wrapT = THREE.RepeatWrapping; if ('colorSpace' in ROPE_TX) ROPE_TX.colorSpace = THREE.SRGBColorSpace; }
+  const t = ROPE_TX.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, pw * 7 / 4), Math.max(1, ph * 2)); return (ROPE_M[k] = new THREE.MeshStandardMaterial({ map: t, alphaTest: 0.4, transparent: false, side: THREE.DoubleSide, roughness: 0.9 })); }
 function box(g, w, h, d, x, y, z, m, sh = true) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = sh; b.receiveShadow = true; g.add(b); return b; }
 function cyl(g, r1, r2, h, x, y, z, m, seg = 20) { const c = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg), m); c.position.set(x, y, z); c.castShadow = c.receiveShadow = true; g.add(c); return c; }
 
@@ -273,14 +280,18 @@ function coveStrip(g, bw, bd, x, z, y) { if (!R) return; const m = new THREE.Mes
   m.rotation.x = -Math.PI / 2; m.position.set(x, y || 0.05, z); m.visible = !!R.night; m.userData.nightOnly = 1; g.add(m); (R.nl || (R.nl = [])).push(m); }
 export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
-  if (cat === 'sofa') {   // 193d: a 3-seater along the back, a 2-seater on the right, a coffee table in front
-    const seat = (len, x, z, ry) => { const u = new THREE.Group(); u.position.set(x, 0, z); u.rotation.y = ry; g.add(u); const D = 2.7, sh = 1.4;
-      box(u, len, sh, D, 0, sh / 2, 0, K.frame); box(u, len - 0.9, 0.45, D - 0.4, 0, sh + 0.2, 0.15, K.cush); box(u, len - 0.5, 1.5, 0.45, 0, sh + 0.75, -D / 2 + 0.25, K.cush);
-      [-1, 1].forEach(a => box(u, 0.45, 0.9, D, a * (len / 2 - 0.22), sh + 0.45, 0, K.frame)); const n = Math.max(2, Math.round(len / 2)); for (let k = 0; k < n; k++) box(u, 1.0, 1.0, 0.3, -len / 2 + 0.7 + (len - 1.4) * (k + 0.5) / n, sh + 0.95, -D / 2 + 0.65, k % 2 ? K.cush : K.cush2); };
-    const L3 = Math.min(6.5, w - 3), L2 = Math.min(4.6, d - 3.2);
-    seat(L3, -w / 2 + L3 / 2, -d / 2 + 1.35, 0);
-    if (L2 >= 3) seat(L2, w / 2 - 1.35, -d / 2 + 2.9 + L2 / 2, -Math.PI / 2);
-    const tw = Math.min(3.2, L3 * 0.55), td = 1.8; box(g, tw, 0.12, td, -w / 2 + L3 / 2, 1.3, -d / 2 + 2.7 + 0.9 + td / 2, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.14, 1.25, 0.14, -w / 2 + L3 / 2 + a * (tw / 2 - 0.2), 0.62, -d / 2 + 3.6 + td / 2 + b * (td / 2 - 0.2), K.frame));
+  if (cat === 'sofa') {   // 261 (owner): a sleek rope sofa set — slim charcoal frame, woven rope back and arms, off-white cushions; pieces as ticked (sofaLayout)
+    const L = sofaLayout(it && it.sconf), sx = w / (L.w || w), sz = d / (L.d || d), root = new THREE.Group(); root.scale.set(sx, 1, sz); g.add(root); const SD = 2.6;
+    const fr = mat('c_ropefr', 0x2B2B2B, { roughness: 0.5, metalness: 0.3 }), cu = mat('c_ropecu', 0xEEE9DF, { roughness: 0.95 }), ac1 = mat('c_ropeac1', 0xC26445, { roughness: 0.95 }), ac2 = mat('c_ropeac2', 0x55634A, { roughness: 0.95 });
+    const panel = (u, pw, ph, x, y, z, ry) => { const m = ropeMat(pw, ph), p = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), m); p.position.set(x, y, z); p.rotation.y = ry || 0; p.castShadow = true; u.add(p); };
+    L.pieces.forEach(pc => { const u = new THREE.Group(); u.position.set(pc.x, 0, pc.z); u.rotation.y = pc.ry; root.add(u); const len = pc.len, bz = -SD / 2 + 0.12;
+      box(u, len, 0.12, SD, 0, 0.5, 0, fr); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(u, 0.09, 0.45, 0.09, a * (len / 2 - 0.1), 0.23, b * (SD / 2 - 0.1), fr));   // slim seat frame on thin legs
+      box(u, len - 0.3, 0.42, SD - 0.45, 0, 0.77, 0.18, cu);   // seat cushion
+      box(u, len, 0.07, 0.07, 0, 2.45, bz, fr); panel(u, len - 0.1, 1.7, 0, 1.6, bz, 0);   // back: top rail + rope weave
+      [-1, 1].forEach(a => { box(u, 0.07, 0.07, SD, a * (len / 2 - 0.04), 1.6, 0, fr); panel(u, SD - 0.15, 1.0, a * (len / 2 - 0.04), 1.1, 0, Math.PI / 2); });   // arms: rail + rope
+      const n = Math.max(1, pc.n); for (let k = 0; k < n; k++) { const x = -len / 2 + 0.2 + (len - 0.4) * (k + 0.5) / n, bw = Math.min(1.9, (len - 0.4) / n - 0.15); const c = box(u, bw, 1.15, 0.35, x, 1.55, bz + 0.3, cu); c.rotation.x = -0.12;
+        if (n > 1 && (k === 0 || k === n - 1)) { const q = box(u, 0.95, 0.95, 0.22, x + (k === 0 ? 0.25 : -0.25), 1.45, bz + 0.58, k === 0 ? ac1 : ac2); q.rotation.x = -0.15; } } });
+    const T = L.table, tg = new THREE.Group(); tg.position.set(T.x, 0, T.z); root.add(tg); box(tg, T.w, 0.1, T.d, 0, 1.2, 0, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(tg, 0.08, 1.15, 0.08, a * (T.w / 2 - 0.15), 0.58, b * (T.d / 2 - 0.15), fr));
   } else if (cat === 'swing') {   // a hanging bench swing on an A-frame
     const H = h || 7, sw = Math.min(w - 1.6, 4.5), m = K.frame;
     [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { rodA(g, [x, 0, -d / 2 + 0.2], [x, H, 0], m); rodA(g, [x, 0, d / 2 - 0.2], [x, H, 0], m); });
