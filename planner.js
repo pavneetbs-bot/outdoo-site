@@ -29,7 +29,7 @@ const CATS = [
   { k: 'table', t: 'Table', e: '🟫', col: 'furniture', sb: /table/i, kind: 'free', w: 3, d: 3, h: 2.5, size: 'fixed' },
   { k: 'bar', t: 'Bar counter', e: '🍸', col: 'bar-counters', kind: 'free', w: 8, d: 2.5, h: 3.6, min: [4, 2.5], max: [24, 2.5], size: 'w' },
   { k: 'planter', t: 'Planter', e: '🪴', col: 'planters', kind: 'free', w: 2, d: 2, h: 3.5, size: 'wd' },
-  { k: 'plant', t: 'Plant', e: '🌴', col: 'landscape-plants', kind: 'free', w: 2, d: 2, h: 5, size: 'fixed', always: true, rts: true, nolabel: true },   // 218b: a real Landscape Plant (ready to ship, Delhi NCR) — species + size, its own 3D model   // 199: outrr planters are made to your length × width
+  { k: 'plant', t: 'Plant', e: '🌴', col: 'plants', kind: 'free', w: 2, d: 2, h: 5, size: 'fixed', always: true, rts: true, nolabel: true },   // 218b: a real Landscape Plant (ready to ship, Delhi NCR) — species + size, its own 3D model   // 199: outrr planters are made to your length × width
   { k: 'water', t: 'Water feature', e: '⛲', col: 'water-features', kind: 'free', w: 4, d: 4, h: 3.8, size: 'fixed' },
   { k: 'sculpture', t: 'Sculpture', e: '🗿', col: 'sculptures', kind: 'free', w: 2, d: 2, h: 4, size: 'fixed' },
   { k: 'deck', t: 'Decking', e: '🟧', col: 'decking', kind: 'floor', w: 10, d: 8, h: 0.2, min: [4, 4], max: [80, 80], size: 'wd' },
@@ -328,7 +328,7 @@ function designs(c) {
   return out;
 }
 // 218b: Landscape Plants — species (SKU LP-<PLANT>-<ft>) and their sizes, from the store catalogue
-function plantList() { const P = PR(), G = {}; for (const id in P) { const p = P[id]; if (!p || p.col !== 'landscape-plants' || p.cz) continue; const k = String(id).split('-')[1]; if (k) (G[k] = G[k] || []).push(id); }
+function plantList() { const P = PR(), G = {}; for (const id in P) { const p = P[id]; if (!p || !/^LP-/.test(id) || p.cz) continue;   /* 222: nursery plants live in Plants now, found by their LP- SKU */ const k = String(id).split('-')[1]; if (k) (G[k] = G[k] || []).push(id); }
   Object.values(G).forEach(a => a.sort((x, y) => plantH(x) - plantH(y))); return G; }
 function plantH(id) { const p = PR()[id] || {}, m = String(p.vs || p.n || '').match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)\s*ft|(\d+(?:\.\d+)?)\s*ft/); return m ? (m[2] ? (+m[1] + +m[2]) / 2 : +m[3]) : 4; }
 const plantName = id => String((PR()[id] || {}).n || '').replace(/ — .*$/, '');

@@ -2971,7 +2971,7 @@ function pdColList(id){ const c=window.mtoColourOf&&mtoColourOf(id), l=(GALC[id]
 function pdThumbs(id){
   const x=PRODS[id]; if(!x) return; const cl=pdColList(id), list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
   if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg?v=2');
-  if(x.col==='landscape-plants') list.push('/img/trust/lp-assurance.jpg');   // 218: local nursery, delivered upright, 7-day replacement
+  if(lpOf(x)) list.push('/img/trust/lp-assurance.jpg');   // 218/222: local nursery, delivered upright, 7-day replacement
   if(/^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(id)) list.push('/img/trust/cb-assurance.jpg');   // cabins: factory-made, kit, 2–5 day assembly, 10-year warranty
   if(x.cz&&!['furniture','vertical-gardens'].includes(x.col)&&!/^MTO-PL-\d/.test(id)) list.push(MTO_CTA);   // last photo of Made to Order designs: "Customise & order now" (tapping it opens the customiser)
   window.PDG={id,list,i:0};
@@ -3101,7 +3101,7 @@ function openProduct(id){ window.PDID=id; try{ recentDraw(id); recentPush(id); }
   try{const cb=document.querySelector('#pdp .cashback')||document.querySelector('.cashback'); if(cb) cb.style.display=soon(x)?'none':''; document.getElementById('pdHurry').style.display=soon(x)?'none':''; const tl=document.querySelector('.taxline'); if(tl) tl.style.display=soon(x)?'none':'';}catch(e){}
   document.getElementById('pdRevAvg').textContent = x.r;
   document.getElementById('pdRevCnt').textContent = x.c + ' ratings';
-  const d = COLDET[x.col] || COLDET._any;   // a category made in the admin later has no write-up of its own
+  const d = COLDET[lpOf(x)?'landscape-plants':x.col] || COLDET._any;   // a category made in the admin later has no write-up of its own
   fillPDPv2(x, d, document.getElementById('pdSku').textContent.split(' · ')[0].replace('SKU ',''));
   const sims = Object.keys(PRODS).filter(i=>PRODS[i].col===x.col && PRODS[i]!==x).slice(0,6);
   document.getElementById('simRow').innerHTML = sims.map(i=>{const y=PRODS[i];
@@ -3204,7 +3204,7 @@ function similarFor(id,n){const x=PRODS[id], sb=subOf(id), R=(typeof MENU!=='und
     return [i,s];}).sort((a,b)=>b[1]-a[1]).slice(0,n||4).map(a=>a[0]);}
 function cmpRender(id){const box=document.getElementById('cmpSec'); if(!box) return;
   const ids=[id,...similarFor(id,4)]; if(ids.length<2){box.innerHTML='';return;}
-  const P=ids.map(i=>PRODS[i]), d=COLDET[PRODS[id].col]||{};
+  const P=ids.map(i=>PRODS[i]), d=COLDET[lpOf(PRODS[id])?'landscape-plants':PRODS[id].col]||{};
   const low=Math.min(...P.filter(y=>!soon(y)).map(y=>y.p));
   const off=y=>y.m>y.p?Math.round((1-y.p/y.m)*100):0;
   const rows=[
@@ -3386,11 +3386,11 @@ function renderCart(){
 // 215: "Complete your setup" — only things that go with what is in the cart: related ready-to-ship categories (one per sub-category),
 // soil / fertiliser only when a pot is in the cart, + up to 2 Made to Order designs that earn the combo offer
 const XS_REL={'fire-pits':['furniture','lighting','furnishings'],furniture:['furnishings','lighting','planters','fire-pits'],lighting:['furniture','planters'],
-  planters:['planters','landscape-plants','lighting'],'landscape-plants':['landscape-plants','planters','lighting'],furnishings:['furniture','lighting'],art:['lighting','planters'],'vertical-gardens':['planters','lighting'],'water-features':['lighting','planters']};
+  planters:['planters','plants','garden-care','lighting'],plants:['plants','planters','garden-care'],'garden-care':['garden-care','plants','planters'],furnishings:['furniture','lighting'],art:['lighting','planters'],'vertical-gardens':['planters','lighting'],'water-features':['lighting','planters']};
 const isCons=x=>/potting|soil|fertil|plant food|compost|seed/i.test((x.sb||'')+' '+(x.n||''));
 function cartXsell(){
  const inCart=new Set(CART.map(c=>c.id)), cols=[...new Set(CART.map(c=>PRODS[c.id]&&PRODS[c.id].col).filter(Boolean))];
- const pot=CART.some(c=>{const x=PRODS[c.id];return x&&((x.col==='planters'&&!isCons(x))||x.col==='landscape-plants');});   // soil / fertiliser only with a pot or a plant
+ const pot=CART.some(c=>{const x=PRODS[c.id];return x&&((x.col==='planters'&&!isCons(x))||x.col==='plants');});   // soil / fertiliser only with a pot or a plant
  const rel=[]; cols.forEach(c=>(XS_REL[c]||[c]).forEach(r=>{if(rel.indexOf(r)<0)rel.push(r);}));
  const top=Math.max(15000,...CART.map(c=>(PRODS[c.id]||{}).p||0).map(p=>p*0.5)), seen=new Set(), xs=[];
  Object.keys(PRODS).filter(i=>{const x=PRODS[i];return !inCart.has(i)&&!x.cz&&!x.bun&&!x.pv&&!soon(i)&&x.p>0&&x.p<=top&&rel.indexOf(x.col)>=0&&(!isCons(x)||pot)&&(!window.IMGS||IMGS[x.img]);})
@@ -3463,7 +3463,7 @@ function pdOfferPaint(){const el=document.getElementById('pdOfferLi'); if(!el) r
   if(!st.length){el.hidden=true;return;} el.hidden=false; el.innerHTML='<b>Order offer</b> — '+st[0].pct+'% off orders of '+inr(st[0].min)+'+ (up to '+st.map(x=>inr(x.max)+(x===st[0]?'':' on '+inr(x.min)+'+')).join(', ')+')';}
 var PD_DAR=null;
 function pdDarPaint(x){const ac=document.getElementById('pdAsmChip'); if(ac) ac.textContent=x&&/plants$/.test(x.col)?'Ready to plant':'Self-assembly'; const ul=document.getElementById('pdDar'); if(!ul) return; if(PD_DAR==null) PD_DAR=ul.innerHTML;
-  ul.innerHTML=x&&x.col==='landscape-plants'?'<li>Delivered upright by a local vehicle in Delhi NCR (Delhi, Gurugram, Noida, Ghaziabad, Faridabad) — not by courier</li><li>Comes in its nursery grow bag, ready to plant</li><li>7-day replacement — if the plant dies within 7 days of delivery, send a photo and we replace it free</li><li>Plants can\'t be returned for change of mind</li><li>Care questions? Our team is on WhatsApp</li>':PD_DAR; pdOfferPaint();}
+  ul.innerHTML=lpOf(x)?'<li>Delivered upright by a local vehicle in Delhi NCR (Delhi, Gurugram, Noida, Ghaziabad, Faridabad) — not by courier</li><li>Comes in its nursery grow bag, ready to plant</li><li>7-day replacement — if the plant dies within 7 days of delivery, send a photo and we replace it free</li><li>Plants can\'t be returned for change of mind</li><li>Care questions? Our team is on WhatsApp</li>':PD_DAR; pdOfferPaint();}
 function offerStep(v){return OFFER.steps.filter(function(x){return v>=x.min}).sort(function(a,b){return b.min-a.min})[0]||null;}
 function offerOf(v){var st=offerStep(v);return st?Math.min(Math.round(v*st.pct/100),st.max):0;}
 function offerNext(v){return OFFER.steps.filter(function(x){return x.min>v}).sort(function(a,b){return a.min-b.min})[0]||null;}
@@ -4002,7 +4002,7 @@ function mmCat(k){const p=document.getElementById('navPanel'); if(!p) return;
 }
 function openSub(k,t){openCol(k); FLT.sub=new Set([t]); buildChips(); renderPLP();}
 // ---- 2026-11: categories once (menu + home grid): photo, count, sub-categories; built once per catalogue load ----
-const CAT_ORDER=['furniture','fire-pits','lighting','planters','plants','landscape-plants','shade','bar-counters','cabins','sculptures','water-features','vertical-gardens','privacy-screens','feature-walls','gates','railings','decking','graffiti','art'];
+const CAT_ORDER=['furniture','fire-pits','lighting','planters','plants','garden-care','shade','bar-counters','cabins','sculptures','water-features','vertical-gardens','privacy-screens','feature-walls','gates','railings','decking','graffiti','art'];
 const CAT_PIC={'bar-counters':'MTO-BR-ARCH','cabins':'MTO-CB-GLASS','shade':'MTO-PG-AL','sculptures':'MTO-SC-ABS-KNOT-FRP','vertical-gardens':'MTO-VG-PVC-WALL','water-features':'MTO-WC-TRIPLE'};
 let _CATS=null,_CATS_N=-1;
 // categories everywhere (menu, home grid, top categories, mobile chips / circles / drawer) follow one order:
@@ -4010,7 +4010,10 @@ let _CATS=null,_CATS_N=-1;
 // search ranking (best-ranked product) → else how many products. Built from the live catalogue, so a new
 // category / sub-category shows as soon as it has a listed product and one that empties disappears.
 window.HOMECATS=window.HOMECATS||[];
-function catScore(k){ const i=HOMECATS.indexOf(k); if(i>=0) return i;
+const CAT_AFTER={plants:['planters',0.1],'garden-care':['planters',0.2]};   // 222: Plants and Garden Care always right after Planters
+function lpOf(x){ return !!x&&x.col==='plants'&&x.sp===false; }   // 222: a Delhi NCR-only nursery plant (was the Landscape Plants category)
+function catScore(k){ const A=CAT_AFTER[k]; if(A&&A[0]!==k&&COLS[A[0]]) return catScore(A[0])+A[1];
+  const i=HOMECATS.indexOf(k); if(i>=0) return i;
   const R=MENU.rank; if(R){ let m=1e9; for(const id in PRODS) if(PRODS[id].col===k&&id in R&&R[id]<m) m=R[id]; if(m<1e9) return 100+m/10; }
   const j=CAT_ORDER.indexOf(k); return 1000+(j<0?99:j); }
 function catsRefresh(){ _CATS=null;
@@ -4688,9 +4691,9 @@ async function shareProduct(){
 <script src="/track.js?v=4"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=13"></script>
-<script src="/mto.js?v=117"></script>
+<script src="/mto.js?v=118"></script>
 <script>/* 218: back to the plan after signing in, even when the page reloaded meanwhile (mobile: switching to the email app) */window.outrrResume=function(){var r=null;try{r=JSON.parse(localStorage.getItem('outrr_resume')||'null');}catch(e){}if(!r)return false;if(Date.now()-(+r.t||0)>3600000){try{localStorage.removeItem('outrr_resume');}catch(e){}return false;}if(!localStorage.getItem('outrr_session'))return false;try{localStorage.removeItem('outrr_resume');}catch(e){}var n=0;(function go(){if(window.mtoUnlock&&window.outrrPlan){try{if(typeof showHome==='function')showHome();}catch(e){}window.mtoUnlock(function(){window.outrrPlan({reload:true});});}else if(n++<40)setTimeout(go,250);})();return true;};addEventListener('load',function(){setTimeout(function(){try{window.outrrResume();}catch(e){}},600);});</script>
-<script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){var go=function(sd){return import('/planner.js?v=79').then(function(m){m.open(sd&&(sd.item||sd.items||sd.reload||sd.load||sd.sload||sd.fresh)?sd:null);});};var q=new URLSearchParams(location.search).get('plan')||'';if(!seed&&window.mtoSpaceAsk&&q.length<10&&!(window.ASSIST&&window.ASSIST.name)){window.mtoSpaceAsk('planner',function(r){go(r.plan?(r.plan.local?null:{load:r.plan.id}):{fresh:true,kind:r.kind,site:r.site});});return Promise.resolve();}return go(seed);};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}var tp=new URLSearchParams(location.search).get('tpl');if(tp&&!new URLSearchParams(location.search).get('plan')){fetch('/terrace-templates.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(j){var t=(j.templates||[]).filter(function(x){return x.id===tp;})[0];if(!t)return;var b=btoa(unescape(encodeURIComponent(JSON.stringify({v:1,site:t.site,items:[]})))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');try{history.replaceState(history.state,'',location.pathname+'?plan='+b);}catch(e){}go();}).catch(function(){});return;}/* ?tpl=T01: a terrace template (terrace-templates.json) */if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
+<script>/* 193 Plan your space: ?plan or window.outrrPlan() */window.outrrPlan=function(seed){var go=function(sd){return import('/planner.js?v=80').then(function(m){m.open(sd&&(sd.item||sd.items||sd.reload||sd.load||sd.sload||sd.fresh)?sd:null);});};var q=new URLSearchParams(location.search).get('plan')||'';if(!seed&&window.mtoSpaceAsk&&q.length<10&&!(window.ASSIST&&window.ASSIST.name)){window.mtoSpaceAsk('planner',function(r){go(r.plan?(r.plan.local?null:{load:r.plan.id}):{fresh:true,kind:r.kind,site:r.site});});return Promise.resolve();}return go(seed);};(function(){function go(){var sp=(location.hash.match(/splan=([0-9a-f-]{36})/)||[])[1];if(sp){try{history.replaceState(history.state,'',location.pathname+location.search);}catch(e){}var k=0;(function w2(){if(window.ASSIST&&window.ASSIST.name)window.outrrPlan({sload:sp});else if(k++<60)setTimeout(w2,250);})();return;}var tp=new URLSearchParams(location.search).get('tpl');if(tp&&!new URLSearchParams(location.search).get('plan')){fetch('/terrace-templates.json',{cache:'no-cache'}).then(function(r){return r.json();}).then(function(j){var t=(j.templates||[]).filter(function(x){return x.id===tp;})[0];if(!t)return;var b=btoa(unescape(encodeURIComponent(JSON.stringify({v:1,site:t.site,items:[]})))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');try{history.replaceState(history.state,'',location.pathname+'?plan='+b);}catch(e){}go();}).catch(function(){});return;}/* ?tpl=T01: a terrace template (terrace-templates.json) */if(!new URLSearchParams(location.search).has('plan'))return;var n=0;(function w(){var ok=false;try{for(var k in PRODS){if(PRODS[k].cz){ok=true;break;}}}catch(e){}if(ok||++n>40)window.outrrPlan();else setTimeout(w,250);})();}if(document.readyState==='complete')go();else addEventListener('load',go);})();</script>
 <script src="/assist.js?v=1"></script>
 <script src="/ads.js?v=8x" defer></script>
 <script>/* 177: product page layout — desktop: details go under the photos (left), the shorter column sticks; mobile: back in place */
