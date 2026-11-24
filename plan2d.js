@@ -9,6 +9,7 @@ export const ICON = { plant: '🌴', mumty: '🪜', lift: '🛗', room: '🚪', 
   water: '⛲', sculpture: '🗿', deck: '🟧', railing: '🚧', privacy: '🎋', feature: '🧱', vgarden: '🌿', graffiti: '🎨', accover: '❄️', gate: '🚪', pathway: '🪨', turf: '🟩', firepit: '🔥', jacuzzi: '🛁', lights: '💡', umbrella: '☂️', fbench: '💺', counter: '🍳', shaftcover: '⬜' };
 // 245: line icons (24 × 24, stroke) everywhere instead of emojis — owner: "sare icons line icons banao"
 export const ICO = {
+  stairs: 'M3 20h4v-4h4v-4h4V8h4V4h2 M3 20h18',
   plant: 'M12 21v-9 M12 12c-1-4-5-6-9-5 3 1 6 3 9 5 M12 12c1-4 5-6 9-5-3 1-6 3-9 5 M12 10c-2-3-2-6 0-8 2 2 2 5 0 8 M9 21h6',
   cabin: 'M3 10h18v10H3z M3 10l2-4h14l2 4 M8 20v-6h8v6 M12 14v6', pergola: 'M2 7h20 M3 10h18 M5 7v13 M19 7v13 M8 5v5 M12 5v5 M16 5v5',
   sofa: 'M5 11V8a2 2 0 012-2h10a2 2 0 012 2v3 M3 11a2 2 0 012 2v2h14v-2a2 2 0 014 0v5H1v-5a2 2 0 012-2z M5 18v2 M19 18v2', swing: 'M4 3h16 M7 3v11 M17 3v11 M5 14h14v3H5z',
