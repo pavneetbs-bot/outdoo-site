@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=41';
-import { pergolaModel } from './pergola3d.js?v=31';
+import { cabinModel, plotModel } from './cabin3d.js?v=42';
+import { pergolaModel } from './pergola3d.js?v=32';
 import { outline } from './plan2d.js?v=14';
 import { plantModel } from './plants3d.js?v=2';
 
@@ -362,6 +362,13 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     box(g, w, 0.18, 0.25, 0, H, 0, K.frame); box(g, w, 0.12, 0.12, 0, 0.4, 0, K.frame);
     if (cat === 'gate') { box(g, w / 2 - 0.2, H - 0.8, 0.12, -w / 4, H / 2, 0, mat('c_gate', 0x55595C, { metalness: 0.5, roughness: 0.4 })); box(g, w / 2 - 0.2, H - 0.8, 0.12, w / 4, H / 2, 0, mat('c_gate', 0x55595C)); }
     else box(g, w - 0.3, H - 0.8, 0.06, 0, H / 2 + 0.1, 0, K.glass);
+  } else if (cat === 'privacy' && it && it.pipe) {   // 260 (owner): pipe cover in the picked material, with a door that opens for repairs
+    const H = h || 8, m = it.pmat || 'cement', fr = K.frame, T = 0.12; box(g, w, 0.15, T, 0, H - 0.075, 0, fr); box(g, w, 0.15, T, 0, 0.075, 0, fr); box(g, 0.15, H, T, -w / 2 + 0.075, H / 2, 0, fr); box(g, 0.15, H, T, w / 2 - 0.075, H / 2, 0, fr); box(g, 0.08, H - 0.3, T, 0, H / 2, 0, fr);
+    const iw = w - 0.3, ih = H - 0.3;
+    if (m === 'cement') { const cb = mat('c_cboard', 0xD9D6CF, { roughness: 0.95 }); box(g, iw, ih, 0.05, 0, H / 2, 0.02, cb); box(g, 0.05, 0.4, 0.08, -0.25, H * 0.5, 0.08, fr); box(g, 0.05, 0.4, 0.08, 0.25, H * 0.5, 0.08, fr); }
+    else if (m === 'jali') { const n = Math.max(4, Math.round(iw / 0.35)), r = Math.round(ih / 0.35); for (let i = 1; i < n; i++) box(g, 0.04, ih, 0.04, -iw / 2 + iw * i / n, H / 2, 0, fr); for (let j = 1; j < r; j++) box(g, iw, 0.04, 0.04, 0, 0.15 + ih * j / r, 0, fr); }
+    else if (m === 'louvre') { const al = mat('c_alu', 0xB9BCC0, { metalness: 0.5, roughness: 0.4 }), r = Math.round(ih / 0.3); for (let j = 0; j < r; j++) { const b2 = box(g, iw, 0.22, 0.03, 0, 0.3 + ih * (j + 0.5) / r, 0, al); b2.rotation.x = -0.6; } }
+    else { const n = Math.max(3, Math.round(iw / 0.4)); for (let i = 0; i < n; i++) box(g, 0.28, ih, 0.1, -iw / 2 + iw * (i + 0.5) / n, H / 2, 0, K.wood); }
   } else if (cat === 'privacy') {
     if (it && /^MTO-P[ST]-/.test(String(it.cfgId || it.pick || ''))) { screenModel(g, w, h, it, K); return g; }
     const H = h || 6, n = Math.max(3, Math.round(w / 0.45)); box(g, w, 0.2, 0.3, 0, H, 0, K.frame); box(g, w, 0.2, 0.3, 0, 0.3, 0, K.frame);
