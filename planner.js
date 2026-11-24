@@ -509,11 +509,12 @@ function deckLevels() {   // 259 (owner): a deck joined to a cabin is at the cab
     if (j || pd) o.lvl = 0.6; else delete o.lvl; }); }
 function cabWalls(it) {
   if (!it || it.cat !== 'cabin' || it.old || !window.mtoCabinFix) return; const t = S.site, P = P0(), R = rectI(it), L0 = cabinLay(it);
-  if (!it.layBase || it.lsku !== it.sku) it.layBase = JSON.parse(JSON.stringify(L0)); const base = it.layBase, L = +base.L || 12, W = +base.W || 10, e = it.ex || { l: 0.3, r: 0.3, b: 0.3, f: 0.3 }, rot = it.rot || 0;
+  if (!it.layBase || it.lsku !== it.sku) { it.layBase = JSON.parse(JSON.stringify(L0)); it.exB = null; } const base = it.layBase, L = +base.L || 12, W = +base.W || 10, e = it.ex || { l: 0.3, r: 0.3, b: 0.3, f: 0.3 }, rot = it.rot || 0;
+  if (!it.exB) it.exB = Object.assign({}, e); const eT = k => Math.max(e[k] || 0.3, it.exB[k] || 0.3);   // 267: the full projection's reach, so a dropped projection isn't put back on the next pass
   const Cw = [R.x + R.w / 2, R.z + R.d / 2], Lc = [(L + e.r - e.l) / 2, (W + e.f - e.b) / 2], loc = p => { const v = rotV([p[0] - Cw[0], p[1] - Cw[1]], -rot); return [Lc[0] + v[0], Lc[1] + v[1]]; };
   const obs = (t.blocks || []).filter(b => b.type !== 'shaft' && b.type !== 'ac' && (+b.h || 8) >= 4).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d })).concat(S.items.filter(o => o !== it && o.cat === 'cabin').map(rectI));
   const solid = {};
-  Object.keys(LSN).forEach(sd => { const ws = cabWorld(sd, rot), tol = (e[{ front: 'f', back: 'b', left: 'l', right: 'r' }[sd]] || 0.3) + 0.8, iv = [];
+  Object.keys(LSN).forEach(sd => { const ws = cabWorld(sd, rot), tol = eT({ front: 'f', back: 'b', left: 'l', right: 'r' }[sd]) + 0.8, iv = [];
     const xs = ws === 'left' || ws === 'right', u0 = xs ? R.z : R.x, u1 = xs ? R.z + R.d : R.x + R.w, edge = ws === 'left' ? R.x : ws === 'right' ? R.x + R.w : ws === 'back' ? R.z : R.z + R.d;
     const par = ws === 'left' ? edge - P : ws === 'right' ? t.pw - P - edge : ws === 'back' ? edge - P : t.pd - P - edge; if (par <= tol) iv.push([u0, u1]);
     obs.forEach(o => { const gap = ws === 'left' ? edge - (o.x + o.w) : ws === 'right' ? o.x - edge : ws === 'back' ? edge - (o.z + o.d) : o.z - edge; if (gap < -0.6 || gap > tol) return;
@@ -523,7 +524,7 @@ function cabWalls(it) {
   it.wallSides = Object.keys(solid);
   // 262 (owner): no projection on a side against a wall (most of it) or where a pergola joins on — the pergola runs right up to the cabin instead
   const PG = S.items.filter(o => o.cat === 'pergola' && !o.old).map(o => [o, rectI(o)]), pgTouch = {}, sideLen = sd => sd === 'front' || sd === 'back' ? L : W;
-  Object.keys(LSN).forEach(sd => { const ws = cabWorld(sd, rot), tol = (e[{ front: 'f', back: 'b', left: 'l', right: 'r' }[sd]] || 0.3) + 0.8, xs = ws === 'left' || ws === 'right', u0 = xs ? R.z : R.x, u1 = xs ? R.z + R.d : R.x + R.w, edge = ws === 'left' ? R.x : ws === 'right' ? R.x + R.w : ws === 'back' ? R.z : R.z + R.d;
+  Object.keys(LSN).forEach(sd => { const ws = cabWorld(sd, rot), tol = eT({ front: 'f', back: 'b', left: 'l', right: 'r' }[sd]) + 0.8, xs = ws === 'left' || ws === 'right', u0 = xs ? R.z : R.x, u1 = xs ? R.z + R.d : R.x + R.w, edge = ws === 'left' ? R.x : ws === 'right' ? R.x + R.w : ws === 'back' ? R.z : R.z + R.d;
     PG.forEach(([o, q]) => { const gap = ws === 'left' ? edge - (q.x + q.w) : ws === 'right' ? q.x - edge : ws === 'back' ? edge - (q.z + q.d) : q.z - edge; const ov = Math.min(u1, xs ? q.z + q.d : q.x + q.w) - Math.max(u0, xs ? q.z : q.x); if (gap > -0.6 && gap <= tol && ov > 2) (pgTouch[sd] = pgTouch[sd] || []).push([o, ws]); }); });
   const ps = (base.proj && Array.isArray(base.proj.sides)) ? base.proj.sides : [], drop = ps.filter(sd => pgTouch[sd] || (solid[sd] || []).reduce((a, r) => a + Math.max(0, Math.min(sideLen(sd), r[1]) - Math.max(0, r[0])), 0) >= sideLen(sd) * 0.5);
   const base2 = drop.length ? Object.assign(JSON.parse(JSON.stringify(base)), { proj: Object.assign({}, base.proj, { sides: ps.filter(sd => !drop.includes(sd)) }) }) : base;
@@ -788,7 +789,7 @@ const FLOORS = [['garden', 'Garden walk', 'Soft grass with stepping stones, a Mo
 const THEME_T = { modern: ['Modern', 'grey'], natural: ['Natural', 'stone'], moroccan: ['Moroccan', 'moroccan'], tropical: ['Tropical', 'terracotta'] };
 const CAB_USE = ['Lounge', 'WFH office', 'Gym', 'Bedroom', 'Guest room', 'Home theatre', 'Yoga studio', 'Kids\' play', 'Bar lounge', 'Store room'];
 let SUEL = null;
-function suNeed() { return S.step === 1 && S.site.kind === 'terrace' && !S.items.length && !S.bskip && !(S.su && S.su.done); }
+function suNeed() { return S.step === 1 && S.site.kind === 'terrace' && !(S.su && S.su.done) && (!S.items.length && !S.bskip || !!(S.su && S.su.left)); }   // 267: left mid-way → opens again where it was left
 function suOpen(q) { S.su = Object.assign({ q: 0, pg: '5-8', cs: '3-4', north: '', turf: null, green: 'balanced', light: 'soft', stairs: 'keep', roomRef: null, cab: [], theme: 'natural', walls: 'paint', tankHas: null, tankScr: true, shaft: 'keep', have: {}, rm: {}, floor0: 'cement', pipes: null, pipeScr: true }, S.su || {}); if (q != null) S.su.q = q; S.su.on = true;
   if (!SUEL) { SUEL = document.createElement('div'); SUEL.className = 'pl-su'; EL.appendChild(SUEL); SUEL.addEventListener('click', suClick); SUEL.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.sd && S.su) (S.su.selOpen = S.su.selOpen || {})[d.dataset.sd] = d.open; }, true); SUEL.addEventListener('pointerdown', suDown); SUEL.addEventListener('pointermove', suMove); SUEL.addEventListener('pointerup', suUp); SUEL.addEventListener('pointercancel', suCancel); SUEL.addEventListener('touchmove', e => { if (SUD && SUD.drag) e.preventDefault(); }, { passive: false }); }
   try { splitPar(); } catch (e) {} SUEL.style.display = 'block'; suPaint(); }
@@ -839,11 +840,18 @@ function suRemList() { const su = S.su || {}, L = [], hv = su.have || {}, t = S.
   if (su.pipes && !su.pipeScr) L.push({ k: 'pipes', t: 'Open plumbing pipes (to be shifted / boxed)', ic: 'mumty' });
   if (su.walls === 'tiles') L.push({ k: 'walltiles', t: 'Tiles on the walls', ic: 'brick' }); if (['tiles', 'kota', 'marble'].includes(su.floor0)) L.push({ k: 'floor0', t: 'The floor (' + (FLOOR0.find(z => z[0] === su.floor0) || [0, ''])[1] + ')', ic: 'tiles' });
   return L; }
-function suOld() {   // 249: what is already built (and kept) placed once on the plan; placed again only when those answers change
-  const su = S.su; suRemApply(); if (su.oldPlaced && !su.oldDirty) return; S.items = S.items.filter(o => !o.old);
+function suOld(keepNew) {   // 249: what is already built (and kept) placed once on the plan; placed again only when those answers change
+  const su = S.su; suRemApply(); if (su.oldPlaced && !su.oldDirty) return;
   const OB = {}; HAVE.forEach(([k]) => { const n = (su.have || {})[k]; if (n && !su.rm['old_' + k]) OB[k] = n; });
-  if (Object.keys(OB).length) { const keep = S.items; S.items = []; compose({ B: OB, phase: 'old' }); S.items.forEach(o => { o.old = true; o.label = 'Existing ' + (CAT[o.cat] ? CAT[o.cat].t.toLowerCase() : o.cat); }); let np = 0; S.items = S.items.filter(o => o.cat !== 'planter' || ++np <= (OB.planter || 0)).concat(keep); }
-  if (su.pgDeck && OB.pergola && !su.rm.old_pgdeck) S.items.filter(o => o.old && o.cat === 'pergola').forEach(p => { if (!S.items.some(o => o.cat === 'deck' && Math.abs(o.x - p.x) < 0.7 && Math.abs(o.z - p.z) < 0.7)) S.items.push({ cat: 'deck', old: true, label: 'Existing deck (under the pergola)', x: p.x, z: p.z, w: p.w, d: p.d, rot: p.rot || 0, h: 0.5 }); });   // 265
+  const isPD = o => o.old && o.cat === 'deck' && /under the pergola/.test(o.label || ''), mark = o => { o.old = true; o.label = 'Existing ' + (CAT[o.cat] ? CAT[o.cat].t.toLowerCase() : o.cat); };
+  if (keepNew && su.oldPlaced) {   // 267 (owner): changed later — keep every existing thing where it was put; take off / add only the difference, into free spots round the layout
+    const miss = {}; HAVE.forEach(([k]) => { const gs = []; S.items.forEach(o => { if (o.old && o.cat === k && !isPD(o)) { const g = o.grp ? 'g' + o.grp : o; if (!gs.includes(g)) gs.push(g); } });
+      const n = OB[k] || 0; gs.slice(n).forEach(g => { S.items = S.items.filter(o => !(o.old && o.cat === k && (o.grp ? 'g' + o.grp : o) === g)); }); if (gs.length < n) miss[k] = n - gs.length; });
+    if (Object.keys(miss).length) { const n0 = S.items.length; compose({ B: miss, phase: 'old', noPlants: false }); let np = 0; const add = S.items.splice(n0).filter(o => o.cat !== 'planter' || ++np <= (miss.planter || 0)); add.forEach(mark); S.items = add.concat(S.items); } }
+  else { S.items = S.items.filter(o => !o.old);
+    if (Object.keys(OB).length) { const keep = S.items; S.items = []; compose({ B: OB, phase: 'old' }); S.items.forEach(mark); let np = 0; S.items = S.items.filter(o => o.cat !== 'planter' || ++np <= (OB.planter || 0)).concat(keep); } }
+  if (!(su.pgDeck && OB.pergola && !su.rm.old_pgdeck)) S.items = S.items.filter(o => !isPD(o));
+  else S.items.filter(o => o.old && o.cat === 'pergola').forEach(p => { if (!S.items.some(o => o.cat === 'deck' && Math.abs(o.x - p.x) < 0.7 && Math.abs(o.z - p.z) < 0.7)) S.items.push({ cat: 'deck', old: true, label: 'Existing deck (under the pergola)', x: p.x, z: p.z, w: p.w, d: p.d, rot: p.rot || 0, h: 0.5 }); });   // 265
   su.oldPlaced = true; su.oldDirty = false; save(); }
 function suRemApply() {   // blocks marked 'take down' leave the roof (kept aside in site.gone so 'Keep' brings them back)
   const t = S.site, su = S.su; if (t.kind !== 'terrace') return; t.gone = t.gone || []; const all = t.blocks.concat(t.gone);
@@ -864,16 +872,60 @@ function suPipes(dry) {   // 246: the stairs-room face with the open pipes (not 
   if (!su.pipeScr) return; const pm = su.pipeMat || 'cement', w = 3, d = 0.5, it = { cat: 'privacy', label: (PMAT.find(z => z[0] === pm) || [0, 0, 'Pipe cover'])[2], pmat: pm, pipe: true, h: 8, w, d, rot: { left: 90, right: 270, back: 180, front: 0 }[f[0]] };
   if (f[0] === 'left') { it.x = M.x - d; it.z = M.z + M.d / 2 - w / 2; } else if (f[0] === 'right') { it.x = M.x + M.w; it.z = M.z + M.d / 2 - w / 2; } else if (f[0] === 'back') { it.x = M.x + M.w / 2 - w / 2; it.z = M.z - d; } else { it.x = M.x + M.w / 2 - w / 2; it.z = M.z + M.d; }
   if (it.rot % 180) { it.x = f[0] === 'left' ? M.x - d : M.x + M.w; it.z = M.z + M.d / 2 - w / 2; } if (off) { if (f[0] === 'left' || f[0] === 'right') it.z += off; else it.x += off; } S.items.push(it); }
+function suSiteApply() { const su = S.su;
+  S.site.floor = { tile: su.flr === 'keep' ? ({ tiles: 'plain', kota: 'kota', marble: 'marble' }[su.floor0] || 'cement') : su.flr === 'greek' ? 'terrazzo' : su.flr === 'geometric' ? 'checker' : (THEME_T[su.theme] || THEME_T.natural)[1], pebble: 'near', preset: su.flr || 'garden', border: su.flr === 'greek' || su.flr === 'geometric' }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls === 'tiles' && su.rm.walltiles ? 'paint' : su.walls || 'none'; S.site.floor0 = su.rm.floor0 ? 'cement' : su.floor0 || 'cement'; S.site.remove = Object.keys(su.rm || {}).filter(k => su.rm[k]); S.site.wallTile = su.walls === 'tiles' ? Object.assign({ k: 'brick', c: 'red' }, su.wtile || {}) : undefined; S.site.tankScreen = su.tankHas === true && !su.tankScr && !(su.rm || {}).tankscr ? 'existing' : ''; }
+function suShaftCov() { const su = S.su;
+  S.items = S.items.filter(o => o.cat !== 'shaftcover');
+  if (su.shaft === 'new' || su.shaft === 'change') (S.site.blocks || []).filter(b => b.type === 'shaft').forEach(b => S.items.push({ cat: 'shaftcover', mode: 'shaft', smat: su.shaftNew || 'poly', label: 'Shaft cover — ' + (SMAT.find(z => z[0] === (su.shaftNew || 'poly')) || [0, 'polycarbonate'])[1].toLowerCase(), x: b.x, z: b.z, w: b.w, d: b.d, h: (+b.h || 3) + 0.4, rot: 0 }));
+  else if (su.shaft === 'keep' && su.shaftNow && su.shaftNow !== 'none' && !(su.rm || {}).shaftcov) (S.site.blocks || []).filter(b => b.type === 'shaft').forEach(b => S.items.push({ cat: 'shaftcover', mode: 'shaft', old: true, smat: su.shaftNow, label: 'Existing shaft cover', x: b.x, z: b.z, w: b.w, d: b.d, h: (+b.h || 3) + 0.4, rot: 0 }));   // 262: what is on it now, drawn (not priced)
+}
+// 267 (owner): going back to change an answer never throws the layout away — only what changed is updated (the rest stays where it was put); "↺ Set up again" still starts fresh
+const NOMERGE = new Set(['privacy', 'accover', 'shaftcover', 'pathway', 'turf', 'mstair', 'lights', 'deck', 'planter', 'plant']);
+function pfOf(k, n) { const su = S.su; return JSON.stringify(k === 'cabin' ? [(su.cab || [])[n] || null, su.cs || null] : k === 'fbench' ? [(su.fbs || [])[n] || null, (su.fbp || [])[n] || null] : ((su[(PREFK[k] || [])[0]] || [])[n] || null)); }
+function suFill() { const B = S.bsel || {}; try { suCab(); suBars(); suPgs(); suSofa(); suArr('fbs', B.fbench || 0, 'L'); suArr('fbp', B.fbench || 0, 'none'); suArr('wm', B.water || 0, 'cascade'); suArr('fd', B.feature || 0, 'fluted'); } catch (e) {} }
+function pfAll() { suFill(); const o = {}; Object.keys(PREFK).forEach(k => { o[k] = grpsOf(k).map((g, n) => pfOf(k, n)); }); return o; }
+function fitNew() { let mv = 0, gone = 0; for (let i = 0; i < S.items.length; i++) { const it = S.items[i]; if (it.old || att(it) || !clashes(it, i)) continue; const k = JSON.stringify(it); if (settle(it, i, [it.x, it.z])) { if (JSON.stringify(it) !== k) mv++; } else { S.items.splice(i, 1); i--; gone++; } } return [mv, gone]; }
+function mergeCat(k, n, phase) { const gs = grpsOf(k); let ch = 0;
+  for (let m = gs.length - 1; m >= n; m--) { const G = grpOf(gs[m].ix[0]); S.items = S.items.filter((o, j) => !G.includes(j)); ch++; }
+  suFill(); const pf = (S.su.pf || {})[k] || []; for (let m = 0; m < Math.min(gs.length, n); m++) if (PREFK[k] && pf[m] != null && pf[m] !== pfOf(k, m)) { editApply(k, m); ch++; }
+  const have = grpsOf(k).length; if (have < n) { if (ADDQ[k] || k === 'sofa') for (let m = have; m < n; m++) { const ok = addWith(k, m); if (ok && k === 'pergola' && (S.bsel || {}).deck) { const p = S.items[S.sel]; if (p) S.items.push({ cat: 'deck', x: p.x, z: p.z, w: p.w, d: p.d, rot: p.rot || 0, h: 0.5, label: 'Decking' }); } ch++; }
+    else { compose({ B: { [k]: n - have }, phase, noPlants: true }); ch++; } }
+  S.sel = null; S.suMv = false; return ch; }
+function suMergeEl(refit) { const su = S.su, B = S.bsel || {}; S.sel = null; let ch = 0;
+  if (su.oldDirty) { suOld(true); ch++; } suSiteApply();
+  const cats = new Set(Object.keys(B).concat(S.items.filter(o => !o.old).map(o => o.cat)).filter(k => CAT[k] && !DECOR.has(k) && !NOMERGE.has(k)));
+  cats.forEach(k => { ch += mergeCat(k, B[k] || 0, 'el'); });
+  const turfOn = S.items.some(o => o.cat === 'turf' && !o.old); if (su.turf === true && !turfOn) { compose({ B: { turf: 1, pathway: 1 }, phase: 'el', noPlants: true }); ch++; } else if (su.turf === false && turfOn) { S.items = S.items.filter(o => o.old || (o.cat !== 'turf' && !(o.cat === 'pathway' && o.onTurf))); ch++; }
+  S.items = S.items.filter(o => !o.pipe); suPipes();
+  if (su.tankScr && mumtyTanks()) { if (!S.items.some(o => o.mode === 'tank')) { const it2 = { cat: 'privacy', mode: 'tank', label: 'Screen on the stairs room', h: 4.5, w: 0, d: 0.3, x: 0, z: 0, rot: 0 }; S.items.push(it2); attach(it2, S.items.length - 1); if (!it2.w) S.items.pop(); } } else S.items = S.items.filter(o => !(o.mode === 'tank' && !o.old));
+  suShaftCov(); try { suMst(); } catch (e) {}
+  S.items.forEach((o, i) => { if (att(o)) try { attach(o, i); } catch (e) {} });
+  const [mv, gone] = fitNew(); deckLevels(); cabFixAll(); su.dirty = false; su.elSig = suSig(); su.pf = pfAll();
+  if (su.decorDone) { decorFit(); su.dSig = suSig(); } save(); draw(true);
+  return 'Your layout is kept — ' + (ch ? 'only what you changed was updated' : 'nothing to change') + (mv ? ` · ${mv} moved to fit` : '') + (gone ? ` · ${gone} taken off (no room)` : ''); }
+function suMergeDec() { const su = S.su, B = S.bsel || {}; S.sel = null; S.site.light = su.light === 'none' ? '' : su.light; let ch = 0;
+  const cats = new Set(Object.keys(B).concat(S.items.filter(o => !o.old).map(o => o.cat)).filter(k => CAT[k] && DECOR.has(k) && !NOMERGE.has(k)));
+  cats.forEach(k => { ch += mergeCat(k, B[k] || 0, 'decor'); });
+  if (su.pfGreen !== undefined && su.pfGreen !== su.green) { S.items = S.items.filter(o => o.old || !['planter', 'plant'].includes(o.cat) || o.pick || o.cfgId); compose({ B: {}, phase: 'decor' }); su.pfGreen = su.green; ch++; }
+  const [mv, gone] = fitNew(); floorRugs(); su.ddirty = false; su.decorDone = true; su.dSig = suSig(); save(); draw(true);
+  return 'Your layout is kept — ' + (ch ? 'only what you changed was updated' : 'nothing to change') + (mv ? ` · ${mv} moved to fit` : '') + (gone ? ` · ${gone} taken off (no room)` : ''); }
+function hasLay() { return S.su && S.su.elSig && S.items.some(o => !o.old); }
+function suRefresh(q2) {   // reaching a 2D plan: keep the layout, update only what changed (a first visit still sets it up)
+  const su = S.su; let msg = '';
+  if (q2 !== 'eplan' && q2 !== 'plan') return false;
+  if (suChE()) { if (!hasLay()) { suMagic(q2 === 'plan' ? 'all' : 'el'); return true; } msg = suMergeEl(); }
+  if (q2 === 'plan' && suChD()) { if (!su.decorDone) { suMagic('decor'); return true; } msg = suMergeDec(); }
+  if (msg) setTimeout(() => suToast(msg), 50); return false; }
 function suCompose(ph) {   // a fresh setup from the answers — 245: ph 'el' = round 2 (the big pieces), 'decor' = round 3 on the kept layout, 'all' / none = both
   ph = ph || 'all'; if (ph === 'all') { suCompose('el'); return suCompose('decor'); }
   const su = S.su; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; S.bsel.feature = S.bsel.feature || 1; delete S.bsel.planter;
   if (ph === 'decor') { const keep = S.items.filter(o => !DECOR.has(o.cat) || o.old); S.items = keep; const BD = {}; Object.keys(S.bsel).forEach(k => { if (DECOR.has(k) && k !== 'planter') BD[k] = S.bsel[k]; });
     if (!su.flr) su.flr = 'keep';
     let lay = null; try { lay = (TM.layout ? TM.layout(S.site, 14) : [])[0] || null; } catch (e) {} S.site.light = su.light === 'none' ? '' : su.light;
-    compose({ lay, B: BD, phase: 'decor' }); floorRugs(); su.ddirty = false; su.decorDone = true; su.dSig = suSig(); su.elPos = suElPos(); S.bskip = true; ev('plan_build', { ref: 'decor', n: S.items.length }); draw(true); return; }
+    compose({ lay, B: BD, phase: 'decor' }); floorRugs(); su.ddirty = false; su.decorDone = true; su.dSig = suSig(); su.pfGreen = su.green; su.elPos = suElPos(); S.bskip = true; ev('plan_build', { ref: 'decor', n: S.items.length }); draw(true); return; }
   S.items = S.items.filter(o => o.old); su.decorDone = false;   // 249: the existing things stay where they were put
   if (su.turf === true) S.bsel.turf = 1; else if (su.turf === false) delete S.bsel.turf;
-  S.site.floor = { tile: su.flr === 'keep' ? ({ tiles: 'plain', kota: 'kota', marble: 'marble' }[su.floor0] || 'cement') : su.flr === 'greek' ? 'terrazzo' : su.flr === 'geometric' ? 'checker' : (THEME_T[su.theme] || THEME_T.natural)[1], pebble: 'near', preset: su.flr || 'garden', border: su.flr === 'greek' || su.flr === 'geometric' }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls === 'tiles' && su.rm.walltiles ? 'paint' : su.walls || 'none'; S.site.floor0 = su.rm.floor0 ? 'cement' : su.floor0 || 'cement'; S.site.remove = Object.keys(su.rm || {}).filter(k => su.rm[k]); S.site.wallTile = su.walls === 'tiles' ? Object.assign({ k: 'brick', c: 'red' }, su.wtile || {}) : undefined; S.site.tankScreen = su.tankHas === true && !su.tankScr && !(su.rm || {}).tankscr ? 'existing' : '';
+  suSiteApply();
   // 241 (owner): ONE setup — the closest LifeWall layout that has the wanted things, then the rules
   const B = S.bsel, want = k => ({ cabin: B.cabin, pergola: B.pergola, turf: B.turf, deck: B.deck, seating: B.sofa || B.fbench || B.dining, fbench: B.fbench || B.sofa, bar: B.bar, counter: B.counter || B.bar, jacuzzi: B.jacuzzi, water: B.water })[k];
   let lay = null; try { lay = (TM.layout ? TM.layout(S.site, 14) : []).map((L, r) => ({ L, n: L.els.filter(e => e.length > 3 && want(e[0])).length, r })).filter(z => z.n).sort((a, b) => b.n - a.n || a.r - b.r).map(z => z.L)[0] || null; } catch (e) { lay = null; }
@@ -881,12 +933,10 @@ function suCompose(ph) {   // a fresh setup from the answers — 245: ph 'el' = 
   suOld(); S.items = S.items.filter(o => o.old);   // 246 / 249: what is already built (and kept) stands first — where the customer put it on 'as it stands'
   suPipes(); compose(Object.assign({ B: BE, phase: 'el' }, lay ? { lay } : {}));
   if (su.tankScr && mumtyTanks() && !S.items.some(o => o.mode === 'tank')) { const it2 = { cat: 'privacy', mode: 'tank', label: 'Screen on the stairs room', h: 4.5, w: 0, d: 0.3, x: 0, z: 0, rot: 0 }; S.items.push(it2); attach(it2, S.items.length - 1); if (!it2.w) S.items.pop(); }
-  S.items = S.items.filter(o => o.cat !== 'shaftcover');
-  if (su.shaft === 'new' || su.shaft === 'change') (S.site.blocks || []).filter(b => b.type === 'shaft').forEach(b => S.items.push({ cat: 'shaftcover', mode: 'shaft', smat: su.shaftNew || 'poly', label: 'Shaft cover — ' + (SMAT.find(z => z[0] === (su.shaftNew || 'poly')) || [0, 'polycarbonate'])[1].toLowerCase(), x: b.x, z: b.z, w: b.w, d: b.d, h: (+b.h || 3) + 0.4, rot: 0 }));
-  else if (su.shaft === 'keep' && su.shaftNow && su.shaftNow !== 'none' && !(su.rm || {}).shaftcov) (S.site.blocks || []).filter(b => b.type === 'shaft').forEach(b => S.items.push({ cat: 'shaftcover', mode: 'shaft', old: true, smat: su.shaftNow, label: 'Existing shaft cover', x: b.x, z: b.z, w: b.w, d: b.d, h: (+b.h || 3) + 0.4, rot: 0 }));   // 262: what is on it now, drawn (not priced)
+  suShaftCov();
   try { suMst(); } catch (e) {}
   try { parResplit(); } catch (e) {}
-  deckLevels(); su.opts = null; su.dirty = false; su.elSig = suSig(); su.dSig = null; floorRugs();
+  deckLevels(); su.opts = null; su.dirty = false; su.elSig = suSig(); su.dSig = null; su.pf = pfAll(); floorRugs();
  S.bskip = true; ev('plan_build', { ref: S.bth || 'own', n: S.items.length }); draw(true); }
 function suPlan() { const su = S.su, t = S.site, rd = ['front'].concat(t.road_back ? ['back'] : [], t.corner ? [t.corner] : []).filter(x => t.road_front !== false || x !== 'front');
   const el = SUQ[su.q] === 'eplan';   // 266 (owner): round 2 shows only the big pieces
@@ -1001,7 +1051,7 @@ const SMAT_NOW = [['none', 'Nothing / open'], ['poly', 'Polycarbonate'], ['glass
 const SMAT = [['poly', 'Polycarbonate (MS frame)'], ['glass', 'Toughened glass, walk-on'], ['grill', 'MS grating'], ['louvre', 'Aluminium louvres']];
 const PMAT = [['cement', 'Cement board (painted)', 'Pipe cover — cement board, opens'], ['jali', 'MS jali', 'Pipe cover — MS jali, opens'], ['louvre', 'Aluminium louvres', 'Pipe cover — louvres, opens'], ['wpc', 'WPC slats', 'Pipe cover — WPC slats, opens']];
 const ADDQ = { sofa: 'sofa', cabin: 'cabin', bar: 'bar', fbench: 'fbs', water: 'wtr', feature: 'ftr', pergola: 'seats' };
-function suSigNow() { const su = S.su; if (!su) return; if (!su.dirty) su.elSig = suSig(); if (!su.dirty && !su.ddirty && su.decorDone) su.dSig = suSig(); }
+function suSigNow() { const su = S.su; if (!su) return; if (!su.dirty) { su.elSig = suSig(); su.pf = pfAll(); } if (!su.dirty && !su.ddirty && su.decorDone) su.dSig = suSig(); }
 function suToast(tx, bad) { if (!SUEL) return; let d = SUEL.querySelector('.pl-toast'); if (!d) { d = document.createElement('div'); d.className = 'pl-toast'; SUEL.appendChild(d); } d.textContent = tx; d.classList.toggle('bad', !!bad); d.classList.add('on'); clearTimeout(d._t); d._t = setTimeout(() => d.classList.remove('on'), tx.length > 40 ? 3800 : 2200); }
 function suElPos() { return JSON.stringify(S.items.filter(o => !DECOR.has(o.cat)).map(o => [o.cat, o.x, o.z, o.w, o.d, o.rot || 0])); }
 function decorFit() {   // 260 (owner): the main pieces changed on their 2D plan → furniture / plants that now clash move to the nearest free spot (or come off)
@@ -1027,20 +1077,19 @@ function addPut(it) { const i = S.items.length; S.items.push(it); const c = CAT[
 function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disabled) return; const a = b.getAttribute('data-su').split(':'), su = S.su, adv = () => { su.dirty = true; suStep(1); };
   const toPlan = () => { if (SUQ[su.q] === 'plan' && suChE()) suCompose(); };
   switch (a[0]) {
-    case 'x': return exitAsk(() => { su.done = true; suClose(); });
+    case 'x': return exitAsk(() => { if (su.edK) { edRestore(); su.q = su.addRet; } if (su.addK) { S.bsel[su.addK] = Math.max(0, (S.bsel[su.addK] || 1) - 1); su.q = su.addRet; } su.edK = null; su.addK = null; su.edSnap = null; if (su.decorDone) su.done = true; else su.left = true; save(); suClose(); close(); });   // 267: exit mid-way keeps the step; next time it opens there
     case 'back': if (su.edK) { edRestore(); su.q = su.addRet; su.edK = null; su.edSnap = null; [su.dirty, su.ddirty] = su.addD || [false, false]; break; }   // 266: ← cancels the change
       if (su.addK) { const k = su.addK; S.bsel[k] = Math.max(0, (S.bsel[k] || 1) - 1); su.q = su.addRet; su.addK = null; [su.dirty, su.ddirty] = su.addD || [false, false]; suSigNow(); break; }
       if (SUQ[su.q] === 'existing' && (su.exq || 0) > 0) { su.exq--; break; }
       if (su.q > 0) { suStep(-1); if (SUQ[su.q] === 'existing') su.exq = 99; } else return suRoof(); break;
     case 'next': if (su.edK) { const k = su.edK, n = +su.edN || 0, ret = su.addRet, ch = su.edSnap !== edSnap(); su.edK = null; su.edSnap = null; su.q = ret; const q2 = SUQ[ret];
         if (k[0] !== '@') { [su.dirty, su.ddirty] = su.addD || [false, false]; const ok = ch ? editApply(k, n) : true; suSigNow(); cabFixAll(); draw(true); suPaint(); suToast(ok ? (ch ? 'Changed ✓' : 'No change') : (S.msg || 'It doesn\'t fit there'), !ok); return; }
-        if (!ch) break; su.dirty = true; if (k === '@have') { su.oldDirty = true; suOld(); }
-        if (q2 === 'asbuilt') { draw(true); break; } if (q2 === 'eplan' && suChE()) return suMagic('el'); if (q2 === 'plan' && (suChE() || suChD())) return suMagic(suChE() ? 'all' : 'decor'); break; }
+        if (!ch) break; su.dirty = true; if (k === '@have') { su.oldDirty = true; if (q2 === 'asbuilt') suOld(); }
+        if (q2 === 'asbuilt') { draw(true); break; } if (suRefresh(q2)) return; break; }
       if (su.addK) { const k = su.addK, n = Math.max(0, (S.bsel[k] || 1) - 1); su.addK = null; su.q = su.addRet; [su.dirty, su.ddirty] = su.addD || [false, false]; const ok = addWith(k, n); if (!ok) S.bsel[k] = n; suSigNow(); cabFixAll(); draw(true); suPaint(); suToast(ok ? 'Added ✓ — move it where you want it' : (S.msg || 'No free room for it'), !ok); return; }
       if (SUQ[su.q] === 'existing' && (su.exq || 0) < (S._exn || 1) - 1) { su.exq = (su.exq || 0) + 1; break; }
       { const from = SUQ[su.q]; suStep(1); const q2 = SUQ[su.q]; if (q2 === 'existing') su.exq = 0;
-      if (q2 === 'eplan' && suChE()) return suMagic('el');
-      if (q2 === 'plan' && (suChE() || suChD())) return suMagic(suChE() ? 'all' : 'decor');
+      if (suRefresh(q2)) return;
       if (q2 === 'plan' && su.elPos && su.elPos !== suElPos()) { const m = decorFit(); su.elPos = suElPos(); if (m) setTimeout(() => suToast(m), 50); } break; }
     case 'mood': { const x = SETUPS.find(z => z.k === a[1]); if (x && S.bth === x.k && Object.keys(S.bsel || {}).length) { suStep(1); break; }   // 255: the same mood again (coming back) keeps what was picked
       su.dirty = true; S.bth = x ? x.k : null; S.bsel = {}; if (x) x.items.forEach(k => { if (CAT[k] && (designs(CAT[k]).length || CAT[k].always)) S.bsel[k] = 1; }); S.bsel.feature = 1; if (S.bsel.pergola) S.bsel.deck = 1; if (S.site.blocks.some(b2 => b2.type === 'ac') && designs(CAT.accover).length) S.bsel.accover = 1; if (S.bsel.turf) su.turf = true; delete S.bsel.dining; delete S.bsel.firepit; if (S.bsel.bar) S.bsel.stool = 1; delete S.bsel.bench;
@@ -1087,8 +1136,8 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'green': su.green = a[1]; su.ddirty = true; break;
     case 'light': su.light = a[1]; su.ddirty = true; break;
     case 'turf': su.turf = a[1] === '1'; adv(); break;
-    case 'flr': if (su.flr === a[1]) { suStep(1); if (SUQ[su.q] === 'eplan' && suChE()) return suMagic('el'); break; } su.flr = a[1]; su.turf = a[1] === 'garden'; adv(); break;
-    case 'north': if (su.north === a[1] && a[1]) suStep(1); else { su.north = a[1]; adv(); } if (SUQ[su.q] === 'eplan' && suChE()) return suMagic('el'); break;
+    case 'flr': if (su.flr === a[1]) { suStep(1); if (suRefresh(SUQ[su.q])) return; break; } su.flr = a[1]; su.turf = a[1] === 'garden'; adv(); break;
+    case 'north': if (su.north === a[1] && a[1]) suStep(1); else { su.north = a[1]; adv(); } if (suRefresh(SUQ[su.q])) return; break;
     case 'v3': {   // 259 (owner): the setup's 3D can be looked round — zoom, move, top view, night — but nothing is edited there
       const k = a[1]; if (k === 'zin') S3.zoom(0.8); else if (k === 'zout') S3.zoom(1.25); else if (k === 'home') { S3.home(); }
       else if (k === 'pan') b.classList.toggle('on', !!S3.panMode(!b.classList.contains('on'))); else if (k === 'night') { const on = !b.classList.contains('on'); S3.nightMode(on); b.classList.toggle('on', on); b.textContent = on ? '☀️' : '🌙'; }
@@ -1158,7 +1207,7 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
 }
 function suRoof() {   // back to the roof plan; a changed roof sets the terrace up again
   if (!window.mtoSpaceAsk) return; if (!SUEL) suOpen(SUQ.length - 1); SUEL.style.display = 'none'; EL.style.display = 'none'; save();
-  window.mtoSpaceAsk('planner', r => { EL.style.display = 'flex'; if (r && r.site) { S.site = Object.assign({}, S.site, r.site); S.su.dirty = true; S.su.oldDirty = true; if (S.su.q >= SUQ.indexOf('eplan')) suCompose(SUQ[S.su.q] === 'eplan' ? 'el' : 'all'); } SUEL.style.display = 'block'; suPaint(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60); }, { site: S.site });
+  window.mtoSpaceAsk('planner', r => { EL.style.display = 'flex'; if (r && r.site) { S.site = Object.assign({}, S.site, r.site); S.su.dirty = true; S.su.oldDirty = true; if (S.su.q >= SUQ.indexOf('eplan')) { if (hasLay()) { const m = suMergeEl(); setTimeout(() => suToast(m), 80); } else suCompose(SUQ[S.su.q] === 'eplan' ? 'el' : 'all'); } } SUEL.style.display = 'block'; suPaint(); setTimeout(() => { try { S3.resize(); } catch (e) {} }, 60); }, { site: S.site });
 }
 let SUD = null;
 // 254 (owner): tap a thing to pick it (a small toolbar over it, like Google Sheets); only the picked thing — and what moves with it — can be dragged; the rest is faded and can't be picked until ✓ Done / a tap on empty floor; a swipe anywhere else scrolls the page
@@ -1237,7 +1286,9 @@ function editApply(k, n) {   // the new answers on that one thing — kept where
   const gs = grpsOf(k), G = gs[n] && gs[n].ix; if (!G) return false; const keep = S.items.slice(), o0 = S.items[G[0]], at = G[0], x = o0.x, z = o0.z;
   S.items = S.items.filter((o, j) => !G.includes(j)); const n0 = S.items.length, sel0 = S.sel; S.sel = null; const ok = addWith(k, n);
   if (!ok) { S.items = keep; S.sel = sel0; return false; } const add = S.items.splice(n0); S.items.splice(Math.min(at, S.items.length), 0, ...add); const it = add[0], i = S.items.indexOf(it);
+  if (k === 'cabin' && !suDoors(suCab()[n] || {}).length && o0.rot != null && it.rot !== o0.rot) { it.rot = o0.rot; cabinFoot(it); it.ldoors = []; it.layBase = null; }   // 267: Auto entrance keeps the cabin's turn
   if (add.length === 1 && k !== 'fbench') { const px = it.x, pz = it.z; it.x = x; it.z = z; if (clashes(it, i)) { it.x = px; it.z = pz; } }
+  if (k === 'cabin') try { cabWalls(it); } catch (e) {}
   S.sel = i; S.suMv = false; return true; }
 function suAddHtml(q) { if (S.sel != null || (q !== 'eplan' && q !== 'plan')) return ''; const L = CATS.filter(c => !NOADD.has(c.k) && (!c.lawn || S.site.kind !== 'terrace') && (designs(c).length || c.always) && (q === 'plan' || !DECOR.has(c.k)));
   return '<p class="pl-h" style="margin-top:14px">Add more</p><div class="pl-sucs">' + L.map(c => `<button type="button" class="pl-chip" data-su="sadd:${c.k}">${P2.ico(c.k)} ${esc(c.t)}${S.items.some(o => o.cat === c.k) ? ' <small>+1</small>' : ''}</button>`).join('') + '</div>'; }
@@ -1507,7 +1558,7 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
     if (pr) { const r = pr; [[r.x - 1, r.z - 1], [r.x + r.w + 1, r.z - 1], [r.x - 1, r.z + r.d + 1], [r.x + r.w + 1, r.z + r.d + 1]].forEach(tg => quiet(tg, 2.5)); }
     const cbs = all('cabin'); cbs.forEach(c => { const r = rectI(c); quiet([r.x - 1.2, r.z + r.d + 1], 2.5); quiet([r.x + r.w + 1.2, r.z + r.d + 1], 2.5); }); };
   if (B.turf && PH !== 'decor') grassFill(g, B.pathway, notes, mumtyFace());   // 245: the grass fills the open space left once the big pieces stand
-  if (PH === 'old') { if (B.planter) plants('light', B.planter); } else if (PH !== 'el') { if (S.su && S.su.green) { plants(S.su.green); notes.push('Plants in the corners and along the walls, spaced out'); } else if (B.planter) plants('light', B.planter); }
+  if (PH === 'old') { if (B.planter) plants('light', B.planter); } else if (PH !== 'el' && !(opt && opt.noPlants)) { if (S.su && S.su.green) { plants(S.su.green); notes.push('Plants in the corners and along the walls, spaced out'); } else if (B.planter) plants('light', B.planter); }
   if (B.stool) all('bar').forEach(b => barStools(b));
   S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); });
   S.bnote = notes; return miss;
@@ -1678,7 +1729,7 @@ function draw(rec) { if (suMig()) return;
   if (rec !== false) hist(); save();
   document.getElementById('plSt').innerHTML = S.su && S.su.done ? (S.step === 2 ? btn('data-pl="step:1"', false, '← Back to my plan') : '') : btn('data-pl="step:0"', S.step === 0, '1 · <span class="pl-l">Your </span>space') + btn('data-pl="step:1"', S.step === 1, '2 · Add<span class="pl-l"> things</span>') + btn('data-pl="step:2"', S.step === 2, '3 · Pick<span class="pl-l"> designs</span>');
   if (gateDue() && !priceOk()) S.gate = true;
-  if (suNeed() && !(S.su && S.su.on)) setTimeout(() => suOpen(0), 0);
+  if (suNeed() && !(S.su && S.su.on)) setTimeout(() => { const q = S.su && S.su.left ? S.su.q : 0; if (S.su) S.su.left = false; suOpen(q); }, 0);
   document.getElementById('plPn').innerHTML = S.gate && !priceOk() ? gateCard() : S.step === 0 ? stepSite() : S.step === 2 ? stepPick() : stepPlace();
   EL.classList.toggle('pl-locked', !!(S.gate && !priceOk())); paintSaved();
   const T = total(), lock = !priceOk();
