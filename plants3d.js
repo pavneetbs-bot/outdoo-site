@@ -37,11 +37,13 @@ const SP = {
   FOXTAIL:      { f: 'trunk', frond: 'fox', trunk: 0x9A968C, smooth: 1, crown: 0x6E8A3A, tH: 0.4, tr: 0.75, leaf: [0x4E8A34, 0x5E9A3C, 0x427A2E], n: 9, flen: 0.55, spread: 0.85 },
   TRAVELLER:    { f: 'ravenala', trunk: 0x8A8478, leaf: [0x4E7A3A, 0x5A8A42], spread: 0.95 },
   BANANA:       { f: 'banana', stem: 0x7E8E44, leaf: [0x5E9A3A, 0x6EAA44, 0x4E8A32], spread: 0.85 },
+  BLACKFICUS:   { f: 'bush', tree: 0.32, trunk: 0x8A8478, core: 0x14280F, leaf: [0x1A3418, 0x22401E, 0x2A4A24], flN: 0, dense: 1, shape: [0.5, 0.6], spread: 0.7 },
+  PACHIRA:      { f: 'pachira', trunk: 0x8E8A6A, leaf: [0x3A7A2E, 0x478A36, 0x326E28], spread: 0.6 },
   CHAMPA:       { f: 'champa', trunk: 0x7A7268, leaf: [0x3C7A2E, 0x4A8A36, 0x356E2A], fl: [0xFFF8F0, 0xFFF8F0, 0xF4B8C8], spread: 1.0 },
 };
 export const PLANT_KEYS = Object.keys(SP);
 // light each plant wants (S = full sun, SS = semi-shade, B = either) — the planner's auto setup puts sun plants in the open, semi-shade ones by walls / under shade
-export const PLANT_LIGHT = { ARECA: 'B', RHAPIS: 'SS', FISHTAIL: 'B', BAMBOO: 'B', PHOENIX: 'B', LIVISTONA: 'B', CYCAS: 'B', FOXTAIL: 'S', TRAVELLER: 'S', BANANA: 'S', HIBISCUS: 'S', IXORA: 'B', MOGRA: 'S', CHANDNI: 'B', RAATKIRANI: 'B', TECOMA: 'S', KANER: 'S', ADENIUM: 'S', BIRDPARADISE: 'B', CROTON: 'B', CORDYLINE: 'SS', SCHEFFLERA: 'B', SONGOFINDIA: 'SS', KAMINI: 'B', DURANTA: 'S', FICUSPANDA: 'B', MORPANKHI: 'S', FOUNTAINGRASS: 'S', AGAVE: 'S', SNAKEPLANT: 'B', BOUGAINVILLEA: 'S', MADHUMALTI: 'S', CHAMPA: 'S' };
+export const PLANT_LIGHT = { BLACKFICUS: 'B', PACHIRA: 'B', ARECA: 'B', RHAPIS: 'SS', FISHTAIL: 'B', BAMBOO: 'B', PHOENIX: 'B', LIVISTONA: 'B', CYCAS: 'B', FOXTAIL: 'S', TRAVELLER: 'S', BANANA: 'S', HIBISCUS: 'S', IXORA: 'B', MOGRA: 'S', CHANDNI: 'B', RAATKIRANI: 'B', TECOMA: 'S', KANER: 'S', ADENIUM: 'S', BIRDPARADISE: 'B', CROTON: 'B', CORDYLINE: 'SS', SCHEFFLERA: 'B', SONGOFINDIA: 'SS', KAMINI: 'B', DURANTA: 'S', FICUSPANDA: 'B', MORPANKHI: 'S', FOUNTAINGRASS: 'S', AGAVE: 'S', SNAKEPLANT: 'B', BOUGAINVILLEA: 'S', MADHUMALTI: 'S', CHAMPA: 'S' };
 export const hasPlant = k => !!SP[String(k || '').replace(/^LP-/, '').toUpperCase()];
 // how wide the plant is (ft) at this height — the planner uses it for the footprint
 export function plantSpread(key, h) { const s = SP[String(key).replace(/^LP-/, '').toUpperCase()]; return Math.max(1, Math.round((s ? s.spread : 0.7) * (+h || 3) * 2) / 2); }
@@ -127,8 +129,9 @@ const FAM = {
     for (let i = 0; i < 22; i++) { const a = i * 2.4, out = V(Math.cos(a), 0, Math.sin(a)), a0 = 0.95 - (i / 22) * 0.6 + rnd() * 0.15, up = UP(), side = new T.Vector3().crossVectors(out, up);
       for (let t = 0.08; t <= 1; t += 0.035) { const p = top.clone().add(out.clone().multiplyScalar(L * t * Math.cos(a0))).add(V(0, L * t * Math.sin(a0) - L * 0.18 * t * t, 0)), ll = L * 0.14 * (1 - t * 0.6);
         [-1, 1].forEach(sd => B.add(leafGeo('leaf'), 'leaf', leafM(p, side.clone().multiplyScalar(sd).add(out.clone().multiplyScalar(0.8)).add(V(0, 0.25, 0)), out, ll, ll * 0.32), pick(rnd, sp.leaf), {})); } } },
-  bush(g, B, rnd, sp, H, y0, W) { const [rx0, ry0] = sp.shape, h = H - y0, rx = Math.max(0.5, W / 2), ry = h * ry0, cy = y0 + h - ry, n = Math.round((sp.dense ? 620 : 480) * Math.min(1.8, 0.6 + h / 4));
-    for (let k = 0; k < 4; k++) stick(g, V(0, y0, 0), V((rnd() - 0.5) * rx * 0.6, cy, (rnd() - 0.5) * rx * 0.6), 0.04, 0.025, 0x5A4A36, 4);
+  bush(g, B, rnd, sp, H, y0, W) { const [rx0, ry0] = sp.shape, h = H - y0, rx = Math.max(0.5, W / 2), ry = sp.tree ? h * (1 - sp.tree) / 2 : h * ry0, cy = y0 + h - ry, n = Math.round((sp.dense ? 620 : 480) * Math.min(1.8, 0.6 + h / 4));
+    if (sp.tree) { stick(g, V(0, y0, 0), V(0, cy, 0), 0.07 + h * 0.012, 0.05 + h * 0.008, sp.trunk, 7); for (let k = 0; k < 4; k++) stick(g, V(0, cy - ry * 0.5, 0), V((rnd() - 0.5) * rx, cy + ry * 0.2, (rnd() - 0.5) * rx), 0.03, 0.02, sp.trunk, 4); }
+    else for (let k = 0; k < 4; k++) stick(g, V(0, y0, 0), V((rnd() - 0.5) * rx * 0.6, cy, (rnd() - 0.5) * rx * 0.6), 0.04, 0.025, 0x5A4A36, 4);
     for (let k = 0; k < 7; k++) B.add(blobGeo(), 'core', blobM(V((rnd() - 0.5) * rx * 0.7, cy + (rnd() - 0.5) * ry * 0.7, (rnd() - 0.5) * rx * 0.7), rx * 0.45, ry / rx), sp.core || 0x22461E, { side: T.FrontSide, roughness: 1 });
     const ls = (sp.big ? 0.42 : sp.dense ? 0.2 : 0.28) * Math.min(1.4, 0.7 + h / 6);
     for (let i = 0; i < n; i++) { const u = rnd() * 6.283, v = Math.acos(2 * rnd() - 1), s = sp.loose ? 0.6 + rnd() * 0.5 : 0.72 + rnd() * 0.32, d = V(Math.sin(v) * Math.cos(u), Math.cos(v), Math.sin(v) * Math.sin(u));
@@ -187,6 +190,11 @@ const FAM = {
     tips.forEach(p => { for (let k = 0; k < 24; k++) { const b = k / 24 * 6.283 + rnd() * 0.3; B.add(leafGeo('leaf'), 'leaf', leafM(p, V(Math.cos(b), 0.3 + rnd() * 0.7, Math.sin(b)), UP(), 0.9 + h * 0.06, 0.42), pick(rnd, sp.leaf), {}); }
       const c = pick(rnd, sp.fl); for (let k = 0; k < 7; k++) { const q = p.clone().add(V((rnd() - 0.5) * 0.5, 0.5 + rnd() * 0.3, (rnd() - 0.5) * 0.5)); for (let j = 0; j < 5; j++) { const b = j / 5 * 6.283 + k; B.add(leafGeo('paddle'), 'petal', leafM(q, V(Math.cos(b), 0.35, Math.sin(b)), UP(), 0.3, 0.24), c, { emissive: c, emissiveIntensity: 0.08 }); }
         B.add(ballGeo(), 'eye', blobM(q.clone().add(V(0, 0.03, 0)), 0.06), 0xF5C518, { side: T.FrontSide }); } }); },
+  pachira(g, B, rnd, sp, H, y0) { const h = H - y0, tH = h * 0.5, n = 3;
+    for (let j = 0; j < n; j++) { let prev = V(Math.cos(j * 2.09) * 0.07, y0, Math.sin(j * 2.09) * 0.07); for (let k = 1; k <= 8; k++) { const a = j * 2.09 + k * 0.9, p = V(Math.cos(a) * 0.07, y0 + tH * k / 8, Math.sin(a) * 0.07); stick(g, prev, p, 0.045, 0.04, sp.trunk, 6); prev = p; } }   // the braided trunk
+    const top = V(0, y0 + tH, 0);
+    for (let i = 0; i < 26; i++) { const a = i * 2.4 + rnd() * 0.3, up = 0.25 + rnd() * 1.0, L = h * (0.14 + rnd() * 0.14), d = V(Math.cos(a) * Math.cos(up), Math.sin(up), Math.sin(a) * Math.cos(up)), p = top.clone().add(V(0, rnd() * h * 0.12, 0)).add(d.clone().multiplyScalar(L)); stick(g, top, p, 0.015, 0.012, 0x6E8A3A, 4);
+      for (let k = 0; k < 5; k++) { const b = (k - 2) * 0.45, lf = d.clone().applyAxisAngle(V(0, 1, 0), b).add(V(0, -0.15, 0)); B.add(leafGeo('leaf'), 'leaf', leafM(p, lf, UP(), (0.6 + h * 0.05) * (k === 2 ? 1 : 0.85), 0.28 + h * 0.02), pick(rnd, sp.leaf), {}); } } },
   banana(g, B, rnd, sp, H, y0) { const h = H - y0, top = V(0, y0 + h * 0.45, 0); stick(g, V(0, y0, 0), top, 0.16 + h * 0.02, 0.12 + h * 0.015, sp.stem, 10);
     for (let i = 0; i < 8; i++) { const yaw = i * 2.4 + rnd() * 0.3, tilt = 0.2 + (i / 8) * 0.9 + rnd() * 0.15, L = h * (0.55 + rnd() * 0.15), d = V(Math.sin(yaw) * Math.sin(tilt * 0.6), Math.cos(tilt * 0.6), Math.cos(yaw) * Math.sin(tilt * 0.6)), b = top.clone().add(d.clone().multiplyScalar(h * 0.12));
       stick(g, top, b, 0.03, 0.025, sp.stem, 4); B.add(strapGeo('bleaf'), 'bleaf', strapM(b, yaw, tilt, L, L * 0.34, (rnd() - 0.5) * 0.6), pick(rnd, sp.leaf), {}); } },

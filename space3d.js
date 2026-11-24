@@ -5,10 +5,10 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=40';
-import { pergolaModel } from './pergola3d.js?v=30';
+import { cabinModel, plotModel } from './cabin3d.js?v=41';
+import { pergolaModel } from './pergola3d.js?v=31';
 import { outline } from './plan2d.js?v=14';
-import { plantModel } from './plants3d.js?v=1';
+import { plantModel } from './plants3d.js?v=2';
 
 let R = null, HANDLER = null;
 const M = {};

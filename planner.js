@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=44';
+import * as S3 from './space3d.js?v=45';
 import * as P2 from './plan2d.js?v=14';
-import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=1';
-import { cutHit } from './cabin3d.js?v=40';
+import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=2';
+import { cutHit } from './cabin3d.js?v=41';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
