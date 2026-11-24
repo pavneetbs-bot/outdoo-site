@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel } from './cabin3d.js?v=37';
-import { pergolaModel } from './pergola3d.js?v=27';
-import { outline } from './plan2d.js?v=11';
+import { cabinModel, plotModel } from './cabin3d.js?v=38';
+import { pergolaModel } from './pergola3d.js?v=28';
+import { outline } from './plan2d.js?v=12';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -264,6 +264,12 @@ export function screenModel(g, w, h, it, K) {
   }
 }
 const NOLABEL = new Set(['pathway', 'turf', 'lights', 'planter']);   // 224: small or many — no tag over each
+// 258: a built-in planter box (masonry + soil + leafy plants) and a warm cove strip glowing on the floor under an edge (night)
+function pbox(g, bw, bd, x, z, ht, pm) { box(g, bw, ht, bd, x, ht / 2, z, pm || C().stone); box(g, bw - 0.2, 0.08, bd - 0.2, x, ht + 0.02, z, mat('pb_soil', 0x4A3A2A));
+  const n = Math.max(2, Math.round(bw * bd / 1.1)), L1 = mat('pl_leaf', 0x2F5E26), L2 = mat('pl_leaf2', 0x4C7F38); let sd = Math.abs(Math.round(x * 7 + z * 13 + bw * 3)) + 1; const rnd = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < n; i++) { const r = 0.35 + rnd() * 0.3, m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), i % 2 ? L1 : L2); m.position.set(x + (rnd() - 0.5) * (bw - 0.5), ht + r * 0.7 + rnd() * 0.5, z + (rnd() - 0.5) * (bd - 0.4)); m.castShadow = true; g.add(m); } }
+function coveStrip(g, bw, bd, x, z, y) { if (!R) return; const m = new THREE.Mesh(new THREE.PlaneGeometry(bw + 0.8, bd + 0.8), mat('cove_glow', COVE, { transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+  m.rotation.x = -Math.PI / 2; m.position.set(x, y || 0.05, z); m.visible = !!R.night; m.userData.nightOnly = 1; g.add(m); (R.nl || (R.nl = [])).push(m); }
 export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
   if (cat === 'sofa') {   // 193d: a 3-seater along the back, a 2-seater on the right, a coffee table in front
@@ -297,11 +303,14 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const y = (h || 3.4) - 0.4, fm = K.frame; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 0.5, 0.15, a * (w / 2 - 0.08), y + 0.25, b * (d / 2 - 0.08), fm));
     box(g, w, 0.12, 0.12, 0, y + 0.5, -d / 2 + 0.06, fm); box(g, w, 0.12, 0.12, 0, y + 0.62, d / 2 - 0.06, fm); box(g, 0.12, 0.12, d, -w / 2 + 0.06, y + 0.56, 0, fm); box(g, 0.12, 0.12, d, w / 2 - 0.06, y + 0.56, 0, fm);
     const sh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, 0.05, d + 0.3), mat('c_poly', 0xF4F4F2, { roughness: 0.35, transparent: true, opacity: 0.88 })); sh.position.set(0, y + 0.66, 0); sh.rotation.x = Math.atan2(0.12, d); sh.castShadow = true; g.add(sh);
-  } else if (cat === 'fbench') {   // 239: built-in seating — a masonry seat with a cushion and a backrest against the wall (back = −z)
-    box(g, w, 1.4, d - 0.3, 0, 0.7, 0.15, K.stone); box(g, w - 0.1, 0.25, d - 0.5, 0, 1.52, 0.2, K.cush); box(g, w, 1.5, 0.3, 0, 2.15, -d / 2 + 0.15, K.stone); box(g, w - 0.2, 1.0, 0.25, 0, 2.15, -d / 2 + 0.45, K.cush2);
+  } else if (cat === 'fbench') {   // 239: built-in seating — a masonry seat with a cushion and a backrest against the wall (back = −z); 258: + built-in planters behind / at the open ends
+    const pl = (it && it.plant) || '', bk = pl === 'back' || pl === 'both', sd = pl === 'sides' || pl === 'both', pe = (it && it.pend) || { l: true, r: true }, PB = 1.5, zb = bk ? -d / 2 + PB : -d / 2;
+    let x0 = -w / 2, x1 = w / 2; if (bk) pbox(g, w, PB, 0, -d / 2 + PB / 2, 2.6);
+    if (sd && w > 4) { if (pe.l) { pbox(g, PB, d / 2 - zb, x0 + PB / 2, (zb + d / 2) / 2, 2.2); x0 += PB; } if (pe.r) { pbox(g, PB, d / 2 - zb, x1 - PB / 2, (zb + d / 2) / 2, 2.2); x1 -= PB; } }
+    const sw = x1 - x0, sx = (x0 + x1) / 2, sdp = d / 2 - zb - 0.3, sz = zb + 0.3 + sdp / 2;
+    box(g, sw, 1.4, sdp, sx, 0.7, sz, K.stone); box(g, sw - 0.1, 0.25, sdp - 0.2, sx, 1.52, sz + 0.05, K.cush); box(g, sw, 1.5, 0.3, sx, 2.15, zb + 0.15, K.stone); box(g, sw - 0.2, 1.0, 0.25, sx, 2.15, zb + 0.45, K.cush2);
   } else if (cat === 'counter') {   // 239: food / buffet counter — base, stone top, a cooktop and a sink on it (back = −z, against the wall)
-    box(g, w, 2.9, d * 0.9, 0, 1.45, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, K.stone); box(g, Math.min(2, w / 3), 0.06, 1.4, -w / 4, 3.07, 0, K.dark); box(g, 1.6, 0.06, 1.2, w / 4, 3.07, 0, mat('c_sink', 0xB8BCC0, { metalness: 0.7, roughness: 0.3 }));
-    box(g, w, 1.6, 0.15, 0, 3.8, -d / 2 + 0.08, K.stone);
+    box(g, w, 2.9, d * 0.9, 0, 1.45, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, mat('c_granite', 0x2F2E2D, { roughness: 0.25, metalness: 0.1 }));   // 258 (owner): no wall behind it, a plain granite top
   } else if (cat === 'bench') {
     box(g, w, 0.2, d * 0.8, 0, 1.5, 0, K.wood); [-w / 2 + 0.4, w / 2 - 0.4].forEach(x => box(g, 0.25, 1.4, d * 0.7, x, 0.7, 0, K.frame));
   } else if (cat === 'table') {
@@ -318,11 +327,12 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
       box(sl, seg, 1.4, 1.7, 0, 0.7, 0, K.stone); box(sl, seg - 0.03, 0.25, 1.5, 0, 1.52, 0.05, K.cush); box(sl, seg, 1.5, 0.3, 0, 2.15, -0.75, K.stone); }
   } else if (cat === 'bar') {   // 241: island bar — free on both sides, stools at the front; L = a return arm on the right
     const L = it && it.shape === 'L', D = L ? 2.2 : d * 0.7, arm = (bw, bd, x, z, st) => { box(g, bw, 3.4, bd, x, 1.7, z, K.stone); box(g, bw + 0.3, 0.15, bd + 0.5, x, 3.5, z + 0.1, K.wood2); };
-    if (L) { arm(w, D, 0, -d / 2 + D / 2); arm(D, d - D, w / 2 - D / 2, D / 2); } else arm(w, D, 0, -d * 0.15);
-    const fz = L ? -d / 2 + D + 0.6 : d / 2 + 0.6, run = L ? w - D : w, x0 = -w / 2, n = Math.max(1, Math.floor(run / 2.2));
-    for (let i = 0; i < n; i++) { const x = x0 + run * (i + 0.5) / n; cyl(g, 0.55, 0.55, 0.15, x, 2.6, fz, K.cush2); cyl(g, 0.08, 0.08, 2.5, x, 1.25, fz, K.frame, 8); }
+    const fl = it && it.flip ? -1 : 1;   // 258 (owner): main counter at the front, return arm on the right (left when flipped); the bar chairs are their own items, outside
+    if (L) { arm(w, D, 0, d / 2 - D / 2); arm(D, d - D, fl * (w / 2 - D / 2), -D / 2); } else arm(w, D, 0, -d * 0.15);
   } else if (cat === 'planter' && it && /^MTO-PL-[A-Z]{2}$/.test(it.cfgId || it.pick || '')) {   // 199: an outrr planter — its own size, finish colour, plinth, plants, LED glow underneath
     planterModel(g, w, d, h, it, K);
+  } else if (cat === 'planter' && it && it.frp) {   // 258 (owner): a rectangular FRP trough along the parapet, planted
+    pbox(g, w, d, 0, 0, 2, mat('c_frp', 0x3B3D40, { roughness: 0.35, metalness: 0.1 }));
   } else if (cat === 'planter') {
     tropical(g, w, d, it);   // 241: a mix of tropical plants — palms, big leaves, bushes — big and small
   } else if (cat === 'water' && it && it.mech) {   // 247 (owner): water feature by its mechanism — cascade / wall fall / rain curtain / geyser jets
@@ -456,7 +466,7 @@ function measures(P) {
 }
 
 // 235: night view — the lights show
-function night(on) { if (!R || R.night === on) return; R.night = on; R.dirty = true; (R.nl || []).forEach(m => { m.visible = on; }); R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.12 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
+function night(on) { if (!R || R.night === on) return; R.night = on; R.dirty = true; (R.nl || []).forEach(m => { m.visible = on; }); R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.2 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
 // 241: tropical planting in a pot — areca palm / big-leaf (monstera, bird of paradise) / round bush, size varies from pot to pot
 function tropical(g, w, d, it) { const sd = Math.abs(Math.round((+(it && it.x) || 1) * 13 + (+(it && it.z) || 1) * 7)), rnd = (k => () => (k = (k * 16807) % 2147483647) / 2147483647)(sd + 11), r = Math.min(w, d) / 2, sz = 0.8 + rnd() * 0.9, ty = sd % 3;
   const pot = sd % 2 ? mat('c_potc', 0x3A3836, { roughness: 0.7 }) : mat('c_pott', 0xB06A47, { roughness: 0.9 }); cyl(g, r * 0.92, r * 0.72, r * 1.7, 0, r * 0.85, 0, pot, 20); const y0 = r * 1.7;
@@ -492,7 +502,7 @@ function downGlow(par, x, y, z, H) { return; if (!R) return; const h = Math.min(
 const glow = c => mat('g_' + c.toString(16), c, { emissive: c, emissiveIntensity: 2.2, roughness: 1 });
 // wall lights on the structures and the parapet (full lighting)
 // 245 (owner): warm white (≈ 2700 K) everywhere; up-down lights = black cylinders on the walls (never by the door), parapet lights = small black step lights; no cones — only the glow they throw
-const WARM = 0xFFB15E, LENS = 0xFFC98A;
+const WARM = 0xFFCF94, LENS = 0xFFE4BE, COVE = 0xFFC27A;   // 258 (owner): less yellow (≈ 3000 K)
 function wallLights(g, t) { const W = WARM, gm = glow(LENS), blk = mat('lt_blk', 0x1E1E1E, { roughness: 0.45, metalness: 0.4 }), E = 0.75;
   const updown = (x, y, z, nx, nz) => { const c = new THREE.Group(); c.position.set(x + nx * 0.16, y, z + nz * 0.16); g.add(c);   // a black cylinder on the wall, light out of both ends
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.75, 16), blk); c.add(body); [-1, 1].forEach(sg => { const ln = new THREE.Mesh(new THREE.CircleGeometry(0.1, 14), gm); ln.rotation.x = sg > 0 ? -Math.PI / 2 : Math.PI / 2; ln.position.y = sg * 0.376; c.add(ln); });
@@ -506,6 +516,8 @@ function wallLights(g, t) { const W = WARM, gm = glow(LENS), blk = mat('lt_blk',
   const par = (+t.par || 3) - 0.9; for (let x = 4; x < t.pw - 3; x += 9) step(x, par, E + 0.04, 0, 1); for (let z = 4; z < t.pd - 3; z += 9) { step(E + 0.04, par, z, 1, 0); step(t.pw - E - 0.04, par, z, -1, 0); } }
 // the setup's own lights: pergola profile, cove under bar / feature wall, spikes in planters, downlights on screens every 4 ft
 function itemLights(hd, it, P) { const lv = (P.site || {}).light; if (!lv) return; const W = WARM, gm = glow(LENS), w = it.w, d = it.d, h = +it.h || 3;
+  if (['deck', 'bar', 'counter', 'fbench'].includes(it.cat) && it.shape !== 'curve') {   // 258 (owner): cove light under the edge — a warm glow on the floor round it + a soft lamp low down
+    coveStrip(hd, w, d, 0, 0, 0.06); const l = new THREE.PointLight(COVE, it.cat === 'deck' ? 1.6 : 1.1, Math.max(w, d) * 0.9 + 3, 2); l.position.set(0, 0.35, 0); hd.add(l); }
   if (it.cat === 'pergola') { const y = Math.max(7, h) - 0.35; [[w, 0.12, 0, -d / 2 + 0.3], [w, 0.12, 0, d / 2 - 0.3]].forEach(([a, b, x, z]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(a - 0.6, 0.08, b), gm); m.position.set(x, y, z); hd.add(m); });
     [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, d - 0.6), gm); m.position.set(x, y, 0); hd.add(m); }); const l = new THREE.PointLight(W, 4, Math.max(w, d) * 1.2, 2); l.position.set(0, y - 0.5, 0); hd.add(l); }
   else if (it.cat === 'feature' || it.cat === 'bar') { const m = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.06, 0.1), gm); m.position.set(0, it.cat === 'bar' ? 3.3 : 0.35, d / 2 + 0.08); hd.add(m); const l = new THREE.PointLight(W, 2.2, 7, 2); l.position.set(0, it.cat === 'bar' ? 3 : 0.8, d / 2 + 0.8); hd.add(l); }
@@ -567,9 +579,10 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
         const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
         if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.2, (+it.h || 3) + 0.2, 0.6)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = (+it.h || 3) / 2; p.add(ln); }
         if (!k && P.labels !== false) { const tg = tag(it.label || 'Privacy screen'); tg.position.y = (+it.h || 3) + 1.4; p.add(tg); }
-        if ((P.site || {}).light !== '') { const gm = glow(LENS), bk = mat('lt_blk', 0x1E1E1E, { roughness: 0.45, metalness: 0.4 }), hh = +it.h || 3; let n = 0;   // 245: one-way lights fixed on the screen's top rail — a black housing, the warm lens facing down, a soft wash on the screen
-          for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4, n++) { const hs = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.34), bk); hs.position.set(u, hh - 0.02, 0.3); p.add(hs); const ln = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.2), gm); ln.position.set(u, hh - 0.11, 0.36); p.add(ln);
-            if (n % 2 === 0) { const l = new THREE.PointLight(WARM, 0.9, 5, 2); l.position.set(u, hh - 0.9, 0.7); p.add(l); } } } });   // 239: one-way down lights on every screen by default
+        if ((P.site || {}).light !== '') { const gm = glow(LENS), bk = mat('lt_blk', 0x1E1E1E, { roughness: 0.45, metalness: 0.4 }), hh = +it.h || 3; let n = 0;
+          const th = p.rotation.y, st = P.site || {}, sn = Math.sin(th) * ((+st.pw || 30) / 2 - p.position.x) + Math.cos(th) * ((+st.pd || 60) / 2 - p.position.z) >= 0 ? 1 : -1;   // 258 (owner): the lights always on the terrace side of the screen   // 245: one-way lights fixed on the screen's top rail — a black housing, the warm lens facing down, a soft wash on the screen
+          for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4, n++) { const hs = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.34), bk); hs.position.set(u, hh - 0.02, 0.3 * sn); p.add(hs); const ln = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.2), gm); ln.position.set(u, hh - 0.11, 0.36 * sn); p.add(ln);
+            if (n % 2 === 0) { const l = new THREE.PointLight(WARM, 0.9, 5, 2); l.position.set(u, hh - 0.9, 0.7 * sn); p.add(l); } } } });   // 239: one-way down lights on every screen by default
       return;
     }
     const [fw, fd] = foot(it), hd = new THREE.Group(); hd.userData.it = i; hd.position.set(+it.x + fw / 2, 0, +it.z + fd / 2); hd.rotation.y = -(+it.rot || 0) * Math.PI / 180; items.add(hd);

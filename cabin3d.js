@@ -334,8 +334,8 @@ function drawPlot(tg, t) {
   const cs = t.corner === 'left' || t.corner === 'right' ? t.corner : '';   // a corner plot: the road on that side
   if (cs) box(tg, 24, 0.1, 400, cs === 'left' ? -15 : pw + 15, gy + 0.06, pd / 2, road, false);
   let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const nb = (x, z, w, d) => { const h = BH + (rnd() * 20 - 8), m = P('t_nb' + (seed % 3), [0xD9CBB5, 0xE6DDD0, 0xCFC2AE][seed % 3]); box(tg, w, h, d, x, gy + h / 2, z, m, false); box(tg, w, 3, 0.6, x, gy + h + 1.5, z + d / 2 - 0.3, m, false);
-    if (rnd() > 0.4) box(tg, 9, 9, 16, x + (rnd() > 0.5 ? w / 2 - 5 : -w / 2 + 5), gy + h + 4.5, z, m, false); };
+  const nb = (x, z, w, d) => { const h = BH - 1 - rnd() * 4,   /* 258 (owner): neighbours at about our height, their stairs rooms not towering over us */ m = P('t_nb' + (seed % 3), [0xD9CBB5, 0xE6DDD0, 0xCFC2AE][seed % 3]); box(tg, w, h, d, x, gy + h / 2, z, m, false); box(tg, w, 3, 0.6, x, gy + h + 1.5, z + d / 2 - 0.3, m, false);
+    if (rnd() > 0.5) box(tg, 9, 8, 14, x + (rnd() > 0.5 ? w / 2 - 5 : -w / 2 + 5), gy + h + 4, z, m, false); };
   if (cs !== 'left') { nb(-pw / 2 - 0.3, pd / 2, pw, pd); if (!rb) nb(-pw / 2 - 0.3, -pd / 2 - 0.3, pw, pd); }
   if (cs !== 'right') { nb(pw * 1.5 + 0.3, pd / 2, pw, pd); if (!rb) nb(pw * 1.5 + 0.3, -pd / 2 - 0.3, pw, pd); }
   if (rb) nb(pw / 2, -30 - pd / 2, pw * 3, pd); else nb(pw / 2, -pd / 2 - 0.3, pw, pd);
@@ -378,7 +378,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=41').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=42').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }

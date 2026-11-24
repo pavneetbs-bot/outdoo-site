@@ -4,9 +4,9 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=41';
-import * as P2 from './plan2d.js?v=11';
-import { cutHit } from './cabin3d.js?v=37';
+import * as S3 from './space3d.js?v=42';
+import * as P2 from './plan2d.js?v=12';
+import { cutHit } from './cabin3d.js?v=38';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -788,7 +788,8 @@ function suPaint() { if (S.magic) return;
     bs.forEach((v, i) => { h += `<p class="pl-h">Bar counter${bs.length > 1 ? ' ' + (i + 1) : ''}</p><div class="pl-subig">` + big(`bshape:${i}:straight`, v === 'straight', P2.ico('straight'), 'Straight') + big(`bshape:${i}:L`, v === 'L', P2.ico('lshape'), 'L-shape') + big(`bshape:${i}:curve`, v === 'curve', P2.ico('curve'), 'Curved') + '</div>'; });
     h += next(); }
   else if (q === 'fbs') { const fs = suArr('fbs', B.fbench || 0, 'L'); h += '<h2>Your fixed seating</h2><p class="pl-sub">Built in, against the walls.</p>';
-    fs.forEach((v, i) => { h += `<p class="pl-h">Seating${fs.length > 1 ? ' ' + (i + 1) : ''}</p><div class="pl-subig pl-col3">` + big(`fbs:${i}:straight`, v === 'straight', P2.ico('straight'), 'Straight') + big(`fbs:${i}:L`, v === 'L', P2.ico('lshape'), 'L-shape') + big(`fbs:${i}:curve`, v === 'curve', P2.ico('curve'), 'Curved') + '</div>'; }); h += next(); }
+    fs.forEach((v, i) => { h += `<p class="pl-h">Seating${fs.length > 1 ? ' ' + (i + 1) : ''}</p><div class="pl-subig pl-col3">` + big(`fbs:${i}:straight`, v === 'straight', P2.ico('straight'), 'Straight') + big(`fbs:${i}:L`, v === 'L', P2.ico('lshape'), 'L-shape') + big(`fbs:${i}:curve`, v === 'curve', P2.ico('curve'), 'Curved') + '</div>';
+      if (v !== 'curve') { const pv = (su.fbp || [])[i] || 'none'; h += '<p class="pl-sub" style="margin:8px 0 4px">Built-in planters with it?</p><div class="pl-sucs">' + [['none', 'Just the seating'], ['back', 'Behind it'], ['sides', v === 'L' ? 'Ends + L corner' : 'At both ends'], ['both', 'Behind + ends']].map(z => chip(`fbp:${i}:${z[0]}`, pv === z[0], z[1])).join('') + '</div>'; } }); h += next(); }   // 258 (owner)
   else if (q === 'wtr') { const ws = suArr('wm', B.water || 0, 'cascade'); h += '<h2>Your water feature</h2><p class="pl-sub">How should the water move?</p>';
     ws.forEach((v, i) => { h += `${ws.length > 1 ? `<p class="pl-h">Water feature ${i + 1}</p>` : ''}<div class="pl-subig">` + WMECH.map(z => big(`wm:${i}:${z[0]}`, v === z[0], P2.ico('water'), z[1], z[2])).join('') + '</div>'; }); h += next(); }
   else if (q === 'ftr') { const fs = suArr('fd', B.feature || 0, 'fluted'); h += '<h2>Your feature wall</h2><p class="pl-sub">Each one with warm light and a bit of green.</p>';
@@ -858,6 +859,7 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'bel': S.bsel = S.bsel || {}; if (S.bsel[a[1]]) delete S.bsel[a[1]]; else { S.bsel[a[1]] = 1; if (a[1] === 'pergola') S.bsel.deck = 1; } if (DECOR.has(a[1])) su.ddirty = true; else su.dirty = true; break;   // a pergola comes with a deck (untick it if not wanted)
     case 'bcnt': { const k = a[1], mx = { cabin: 3, pergola: 3, bar: 3, jacuzzi: 2 }[k] || 6, v = (S.bsel[k] || 0) + (+a[2] || 0); if (v <= 0) delete S.bsel[k]; else S.bsel[k] = Math.min(mx, v); if (k === 'cabin') suCab(); if (DECOR.has(k)) su.ddirty = true; else su.dirty = true; break; }
     case 'bshape': suBars()[+a[1]] = a[2]; su.dirty = true; break;
+    case 'fbp': (su.fbp = su.fbp || [])[+a[1]] = a[2]; su.dirty = true; break;
     case 'fbs': case 'wm': case 'fd': case 'gw': { const key = a[0] === 'fbs' ? 'fbs' : a[0]; (su[key] = su[key] || [])[+a[1]] = a.slice(2).join(':'); su.dirty = true; break; }
     case 'ncab': S.bsel.cabin = Math.max(1, Math.min(3, (S.bsel.cabin || 1) + (+a[1] || 0))); suCab(); su.dirty = true; break;
     case 'cuse': { const c = suCab()[+a[1]]; if (c) { const u = a.slice(2).join(':'); c.use = c.use.includes(u) ? c.use.filter(z => z !== u) : c.use.concat(u); } su.dirty = true; break; }
@@ -895,8 +897,16 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'sz': S.suSz = !S.suSz; if (S.suSz) S.suMv = false; break;
     case 'mv': S.suMv = !S.suMv; if (S.suMv) S.suSz = false; break;
     case 'csz': { const it = S.sel != null ? S.items[S.sel] : null; if (!it || it.cat !== 'cabin') break; const L = cabinLay(it), l0 = +L.L || 12, w0 = +L.W || 10, d = +a[2] || 0; S.msg = ''; cabinSize(it, a[1] === 'L' ? l0 + d : l0, a[1] === 'W' ? w0 + d : w0); draw(true); break; }
-    case 'rs': case 'rot': case 'del': if (S.sel == null) break; { const G = grpOf(S.sel), it = S.items[S.sel];   // 254: Remove takes the whole group; a deck under the pergola follows its turn / size
+    case 'rs': case 'rot': case 'del': case 'flip': if (S.sel == null) break; { const G = grpOf(S.sel), it = S.items[S.sel];   // 254: Remove takes the whole group; a deck under the pergola follows its turn / size
       if (a[0] === 'del') { S.items = S.items.filter((o, j) => !G.includes(j)); S.sel = null; S.suSz = false; draw(true); break; }
+      if (a[0] === 'flip') {   // 258 (owner): mirror an L — the bar's return arm / the seating's short arm goes to the other end
+        if (it.cat === 'bar') { it.flip = !it.flip; const br = rectI(it), had = S.items.filter(o => o.cat === 'stool' && rGap2(rectI(o), br) < 2.5); if (had.length) { S.items = S.items.filter(o => !had.includes(o)); S.sel = S.items.indexOf(it); barStools(it); } draw(true); break; }
+        const R0 = G.map(j => rectI(S.items[j])), x0 = Math.min(...R0.map(r => r.x)), x1 = Math.max(...R0.map(r => r.x + r.w)), z0 = Math.min(...R0.map(r => r.z)), z1 = Math.max(...R0.map(r => r.z + r.d)), keep = G.map(j => JSON.stringify(S.items[j]));
+        const hz = R0.some(r => r.w > r.d && Math.abs(r.w - (x1 - x0)) < 0.3);   // the long arm runs across → mirror left-right, else top-bottom
+        G.forEach((j, k) => { const o = S.items[j], r = R0[k], rt = (+o.rot || 0) % 360; if (hz) { o.x = r2(x0 + x1 - r.x - r.w); if (rt === 90 || rt === 270) o.rot = (rt + 180) % 360; } else { o.z = r2(z0 + z1 - r.z - r.d); if (rt === 0 || rt === 180) o.rot = (rt + 180) % 360; } });
+        if (G.length === 2 && S.items[G[0]].plant) lEnds(S.items[G[0]], S.items[G[1]]);
+        if (G.some(j => !inside(rectI(S.items[j])) || clashes(S.items[j], j))) { G.forEach((j, k) => Object.assign(S.items[j], JSON.parse(keep[k]))); S.msg = 'No room to flip it here — move it first'; } else S.msg = '';
+        draw(true); break; }
       if (a[0] === 'rot' && it.cat === 'fbench' && G.length > 1) {   // 257 (owner): the L turns as one, round its middle
         const keep = G.map(j => JSON.stringify(S.items[j])), R0 = G.map(j => rectI(S.items[j])), gx = (Math.min(...R0.map(r => r.x)) + Math.max(...R0.map(r => r.x + r.w))) / 2, gz = (Math.min(...R0.map(r => r.z)) + Math.max(...R0.map(r => r.z + r.d))) / 2;
         G.forEach((j, k) => { const o = S.items[j], r = R0[k], cx = r.x + r.w / 2 - gx, cz = r.z + r.d / 2 - gz, nx = gx - cz, nz = gz + cx; o.rot = ((+o.rot || 0) + 90) % 360; const f = rectI(o); o.x = r2(o.x + (nx - (f.x + f.w / 2))); o.z = r2(o.z + (nz - (f.z + f.d / 2))); });
@@ -965,15 +975,15 @@ function suUp() { const D = SUD; SUD = null; if (!D) return;
   draw(true); suPaint(); }
 function suPopHtml() { const it = S.sel != null ? S.items[S.sel] : null; if (!it) return ''; const c = CAT[it.cat] || {}, G = grpOf(S.sel), Lg = G.length > 1 && it.cat === 'fbench';
   return `<div class="pl-tb" style="visibility:hidden"><span class="pl-tbn">${esc(G.length > 1 && G.some(j => S.items[j].cat === 'pergola') ? 'Pergola + deck' : Lg ? 'L seating · 1 arm' : it.label || c.t || '')}</span>` +
-    (!it.segs && !it.box && !it.lock ? `<button type="button" data-su="mv" class="${S.suMv ? 'on' : ''}"><i>✥</i>Move</button>` : '') + (!att(it) && !it.segs && !it.lock ? '<button type="button" data-su="rot"><i>↻</i>Turn</button>' : '') + ((c.size && c.size !== 'fixed' || it.cat === 'cabin' || SZOK.has(it.cat)) && !it.lock ? `<button type="button" data-su="sz" class="${S.suSz ? 'on' : ''}"><i>⤢</i>Size</button>` : '') +
+    (!it.segs && !it.box && !it.lock ? `<button type="button" data-su="mv" class="${S.suMv ? 'on' : ''}"><i>✥</i>Move</button>` : '') + (!att(it) && !it.segs && !it.lock ? '<button type="button" data-su="rot"><i>↻</i>Turn</button>' : '') + ((Lg || (it.cat === 'bar' && it.shape === 'L')) && !it.lock ? '<button type="button" data-su="flip"><i>⇋</i>Flip</button>' : '') + ((c.size && c.size !== 'fixed' || it.cat === 'cabin' || SZOK.has(it.cat)) && !it.lock ? `<button type="button" data-su="sz" class="${S.suSz ? 'on' : ''}"><i>⤢</i>Size</button>` : '') +
     '<button type="button" data-su="del"><i>🗑</i>Remove</button><button type="button" class="ok" data-su="unsel"><i>✓</i>Done</button></div>'; }
 const SZOK = new Set(['sofa', 'swing', 'dining', 'bench', 'table', 'water', 'sculpture', 'jacuzzi', 'umbrella', 'firepit', 'rack']);   // 257 (owner): every thing can be sized in the 2D setup
 const szLim = (it, c) => SZOK.has(it.cat) ? [[r2(c.w * 0.5), r2(c.d * 0.5)], [r2(c.w * 2.5), r2(c.d * 2.5)]] : [c.min || [1, 1], c.max || [80, 80]];
 function suSzHtml() { const it = S.sel != null ? S.items[S.sel] : null; if (!it || !S.suSz) return ''; const c = CAT[it.cat] || {};
   if (it.cat === 'cabin') { const L = cabinLay(it), tw = (+it.rot || 0) % 180 === 0, r = (k, ar, nm, sm, v) => `<div class="pl-szr"><span class="pl-sza">${ar}</span><span class="pl-szl">${nm}<small>${sm}</small></span><button type="button" data-su="csz:${k}:-1" aria-label="Smaller">−</button><em>${v} ft</em><button type="button" data-su="csz:${k}:1" aria-label="Bigger">+</button></div>`;   // 256: the cabin's own length × width
-    return '<div class="pl-szp">' + r('L', tw ? '↔' : '↕', 'Length — L', 'along the door wall', +L.L || 12) + r('W', tw ? '↕' : '↔', 'Width — W', 'door wall to back wall', +L.W || 10) + '</div>'; } if ((!c.size || c.size === 'fixed') && !SZOK.has(it.cat)) return ''; const tw = (+it.rot || 0) % 180 === 0;
+    return '<div class="pl-szp">' + r('L', tw ? '↔' : '↕', 'Length — L', 'along the door wall', +L.L || 12) + r('W', tw ? '↕' : '↔', 'Width — W', 'door wall to back wall', +L.W || 10) + '</div>'; } if ((!c.size || c.size === 'fixed') && !SZOK.has(it.cat) && !(it.cat === 'bar' && it.shape === 'L')) return ''; const tw = (+it.rot || 0) % 180 === 0;
   const row = (k, ar, nm, sm, v) => `<div class="pl-szr"><span class="pl-sza">${ar}</span><span class="pl-szl">${nm}<small>${sm}</small></span><button type="button" data-su="rs:${k}:-1" aria-label="Smaller">−</button><em>${v} ft</em><button type="button" data-su="rs:${k}:1" aria-label="Bigger">+</button></div>`;
-  return '<div class="pl-szp">' + row('w', tw ? '↔' : '↕', 'Width — W', tw ? 'left to right on the plan' : 'top to bottom on the plan', it.w) + (c.size === 'wd' || SZOK.has(it.cat) ? row('d', tw ? '↕' : '↔', 'Length — L', tw ? 'top to bottom on the plan' : 'left to right on the plan', it.d) : '') + '</div>'; }
+  return '<div class="pl-szp">' + row('w', tw ? '↔' : '↕', 'Width — W', tw ? 'left to right on the plan' : 'top to bottom on the plan', it.w) + (c.size === 'wd' || SZOK.has(it.cat) || (it.cat === 'bar' && it.shape === 'L') ? row('d', tw ? '↕' : '↔', 'Length — L', tw ? 'top to bottom on the plan' : 'left to right on the plan', it.d) : '') + '</div>'; }
 function suPopPlace() { const pop = SUEL && SUEL.querySelector('.pl-tb'), box = SUEL && SUEL.querySelector('.pl-su2d'); if (!pop || !box || S.sel == null) return;
   const gs = grpOf(S.sel).map(j => box.querySelector(`[data-it="${j}"]`)).filter(Boolean); if (!gs.length) return; const R = gs.map(g => g.getBoundingClientRect()), cb = box.getBoundingClientRect();
   const top = Math.min(...R.map(r => r.top)) - cb.top, bot = Math.max(...R.map(r => r.bottom)) - cb.top, mid = (Math.min(...R.map(r => r.left)) + Math.max(...R.map(r => r.right))) / 2 - cb.left, pw = pop.offsetWidth, ph = pop.offsetHeight;
@@ -1110,8 +1120,9 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   const openC = () => { try { const fr = (P2.freeRects(t, S.items, 3) || [])[0]; if (fr && fr.w) return [fr.x + fr.w / 2, fr.z + fr.d / 2]; } catch (e) {} return gc; };
   const fbq = (S.su || {}).fbs || [];
   for (let n = 0; n < (B.fbench || 0); n++) { const sh = fbq[n] || 'L', lt = learned('fbench');   // 247: straight along a wall / L in a corner / curved in a corner
-    if (sh === 'L') { lSeat(g, SZ.L || [10, 6], lt, PR, notes) || miss++; continue; }
-    if (sh === 'straight') { put('fbench', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : -30) - (PR.some(r => inR(cx, cz, r)) ? 30 : 0) + cornerPull(cx, cz, f, true) - (lt ? 0.1 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270], set: { w: (SZ.L || [10])[0], d: 2.5, label: 'Fixed seating' } }) || miss++; continue; }
+    const fpl = ((S.su || {}).fbp || [])[n] || 'none', fbk = fpl === 'back' || fpl === 'both';
+    if (sh === 'L') { lSeat(g, SZ.L || [10, 6], lt, PR, notes, fpl) || miss++; continue; }
+    if (sh === 'straight') { put('fbench', (cx, cz, f, rot) => (backTo(cx, cz, f, rot) ? 40 : -30) - (PR.some(r => inR(cx, cz, r)) ? 30 : 0) + cornerPull(cx, cz, f, true) - (lt ? 0.1 * d2(cx, cz, lt[0], lt[1]) : 0), { rots: [0, 90, 180, 270], set: { w: (SZ.L || [10])[0], d: fbk ? 4 : 2.5, label: 'Fixed seating', plant: fpl } }) || miss++; continue; }
     const cs = Math.max(7, Math.min(10, (SZ.L || [10])[0] - 1)), CN = olOn() ? olCorners() : [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]], ROT = { bl: 0, br: 90, fr: 180, fl: 270 };
     let best = null; CN.forEach(([k, X, Z]) => { const it = newItem('fbench'); Object.assign(it, { w: cs, d: cs, shape: 'curve', label: 'Curved seating', rot: ROT[k], x: k[1] === 'l' ? X : X - cs, z: k[0] === 'b' ? Z : Z - cs });   // a quarter arc hugging that corner
       const i = S.items.length; S.items.push(it); const ok = !clashes(it, i) && !PR.some(r => hit(rectI(it), r)); S.items.pop(); if (!ok) return;
@@ -1189,18 +1200,18 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   ['chair', 'table', 'railing', 'gate'].forEach(k => { for (let j = 0; j < (B[k] || 0); j++) { const before = S.items.length; addItem(k); if (S.items.length === before) miss++; } });
   // 5) plants LAST, once the big things stand — one in each free corner, then along the walls and round the pergola, never bunched (4 ft apart at least)
   const plants = (lv, n0) => { const C1 = P + 1.2, gap = lv === 'lush' ? 3.5 : 4.5;
-    const quiet = (tg, far) => { const it = newItem('planter'); if (!it) return; const i = S.items.length; S.items.push(it); const near = (x, z) => S.items.some((o, j) => j !== i && o.cat === 'planter' && d2(x, z, o.x + 1, o.z + 1) < gap);
-      const ok = spotBest(it, i, (cx, cz) => -d2(cx, cz, tg[0], tg[1]) - (near(cx, cz) ? 50 : 0), [0], g.dz && Object.assign({ fr: g.fr }, g.dz));
-      if (!ok || near(it.x + 1, it.z + 1) || d2(it.x + 1, it.z + 1, tg[0], tg[1]) > (far || 4) || all('pergola').some(o => hit(rectI(it), rectI(o)))) { S.items.pop(); return; } flush(it, i); };   // never under the pergola
+    const quiet = (tg, far, frp) => { const it = newItem('planter'); if (!it) return; if (frp) Object.assign(it, { w: 5, d: 1.6, frp: true, label: 'FRP planter' }); const i = S.items.length; S.items.push(it); /* 258 (owner): rectangular FRP planters along the parapets */ const ctrI = o => { const r = rectI(o); return [r.x + r.w / 2, r.z + r.d / 2]; }, near = (x, z) => S.items.some((o, j) => j !== i && o.cat === 'planter' && d2(x, z, ...ctrI(o)) < gap);
+      const ok = spotBest(it, i, (cx, cz) => -d2(cx, cz, tg[0], tg[1]) - (near(cx, cz) ? 50 : 0), frp ? [frp === 'v' ? 90 : 0] : [0], g.dz && Object.assign({ fr: g.fr }, g.dz));
+      if (!ok || near(...ctrI(it)) || d2(...ctrI(it), tg[0], tg[1]) > (far || 4) || all('pergola').some(o => hit(rectI(it), rectI(o)))) { S.items.pop(); return; } flush(it, i); };   // never under the pergola
     (olOn() ? olCorners().map(([k, X, Z]) => [X + (k[1] === 'l' ? 1.2 : -1.2), Z + (k[0] === 'b' ? 1.2 : -1.2)]) : [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]]).forEach(tg => quiet(tg));
     if (n0 != null) { for (let k = 0, u = 0; k < n0; k++, u++) { const s2 = [P + 1, P + 1 + (t.pd - 2 * P - 2) * (u + 0.5) / n0]; quiet(g.far === 'right' ? [t.pw - P - 1, s2[1]] : s2, 5); } return; }
     if (lv === 'light') return;
     { const pts = []; LAY.slice(0, lv === 'lush' ? 3 : 2).forEach(L => L.els.forEach(e => { if (e[0] === 'planter') pts.push([e[1], e[2]]); })); pts.slice(0, lv === 'lush' ? 10 : 5).forEach(tg => quiet(tg, 5)); }
-    const step = lv === 'lush' ? 5 : 7, fx = g.far === 'right' ? t.pw - C1 : C1, nx = g.far === 'right' ? C1 : t.pw - C1;   // 241: along the parapets
+    const step = lv === 'lush' ? 6.5 : 7.5, fx = g.far === 'right' ? t.pw - C1 : C1, nx = g.far === 'right' ? C1 : t.pw - C1;   // 241: along the parapets; 258: FRP troughs, a few more
     if (olOn()) olWalls().forEach(w => { if (w.hi - w.lo < 6) return; const sd = w.vert ? (w.dir > 0 ? 'left' : 'right') : (w.dir > 0 ? 'back' : 'front'); if (g.road.includes(sd) && !(w.vert ? false : w.dir < 0 && w.at < t.pd - P - 2)) return;   // 244: along every wall of the shape (not the road side)
-      for (let u = w.lo + P + 4; u < w.hi - P - 3; u += step) quiet(w.vert ? [w.at + w.dir * 1.2, u] : [u, w.at + w.dir * 1.2], 2.5); });
-    else { for (let z = P + 5; z < t.pd - 5; z += step) { quiet([fx, z], 2.5); quiet([nx, z + step / 2], 2.5); }
-    for (let x = P + 5; x < t.pw - 5; x += step) { if (!g.road.includes('back')) quiet([x, C1], 2.5); } }
+      for (let u = w.lo + P + 4; u < w.hi - P - 3; u += step) quiet(w.vert ? [w.at + w.dir * 1.2, u] : [u, w.at + w.dir * 1.2], 3, w.vert ? 'v' : 'h'); });
+    else { for (let z = P + 5; z < t.pd - 5; z += step) { quiet([fx, z], 3, 'v'); quiet([nx, z + step / 2], 3, 'v'); }
+    for (let x = P + 5; x < t.pw - 5; x += step) { if (!g.road.includes('back')) quiet([x, C1], 3, 'h'); } }
     if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; for (let z = P + 8; z < t.pd - 6; z += 9) quiet([nx, z], 3); for (let x = P + 8; x < t.pw - 6; x += 9) { quiet([x, C1], 3); quiet([x, t.pd - C1], 3); } }
     if (pr) { const r = pr; [[r.x - 1, r.z - 1], [r.x + r.w + 1, r.z - 1], [r.x - 1, r.z + r.d + 1], [r.x + r.w + 1, r.z + r.d + 1]].forEach(tg => quiet(tg, 2.5)); }
     const cbs = all('cabin'); cbs.forEach(c => { const r = rectI(c); quiet([r.x - 1.2, r.z + r.d + 1], 2.5); quiet([r.x + r.w + 1.2, r.z + r.d + 1], 2.5); }); };
@@ -1228,9 +1239,13 @@ function grassFill(g, path, notes, door) {
   const pi = newItem('pathway'); Object.assign(pi, { x: r2(pa.x), z: r2(pa.z), w: r2(pa.w), d: r2(pa.d), rot: 0, onTurf: true, label: 'Stepping stones' }); S.items.push(pi); notes.push('Stepping stones across the grass from the stairs side');
 }
 // 245 (owner): bar chairs on the customer's side of each bar (away from the wall / bartender), 2 ft apart
-function barStools(b) { const r = rectI(b), FACE = { 0: [0, 1], 90: [-1, 0], 180: [0, -1], 270: [1, 0] }, v = FACE[(+b.rot || 0) % 360] || [0, 1], along = v[1] ? r.w : r.d, n = Math.max(1, Math.min(5, Math.floor((along - 0.5) / 2.2)));
-  for (let k = 0; k < n; k++) { const u = (k + 0.5) / n, it = newItem('stool'); if (!it) return; it.rot = (+b.rot || 0) % 360; const cx = v[1] ? r.x + r.w * u : (v[0] > 0 ? r.x + r.w + 1.1 : r.x - 1.1), cz = v[1] ? (v[1] > 0 ? r.z + r.d + 1.1 : r.z - 1.1) : r.z + r.d * u;
-    it.x = r2(cx - 0.75); it.z = r2(cz - 0.75); const i = S.items.length; S.items.push(it); if (clashes(it, i)) S.items.pop(); } }
+const rGap2 = (a, b) => Math.hypot(Math.max(0, a.x - (b.x + b.w), b.x - (a.x + a.w)), Math.max(0, a.z - (b.z + b.d), b.z - (a.z + a.d)));
+function barStools(b) {   // 258 (owner): chairs on the outside — the front of the bar, and the outer side of an L's return arm
+  const r = rectI(b), a = (+b.rot || 0) * Math.PI / 180, u = [Math.cos(a), Math.sin(a)], v = [-Math.sin(a), Math.cos(a)], cx = r.x + r.w / 2, cz = r.z + r.d / 2, w = +b.w, d = +b.d, L = b.shape === 'L', fl = b.flip ? -1 : 1, D = 2.2, pts = [];
+  const nF = Math.max(1, Math.min(5, Math.floor((w - 0.5) / 2.2))); for (let k = 0; k < nF; k++) pts.push([-w / 2 + w * (k + 0.5) / nF, d / 2 + 1.1]);
+  if (L) { const run = d - D, nS = Math.max(0, Math.min(4, Math.floor((run - 0.3) / 2.2))); for (let k = 0; k < nS; k++) pts.push([fl * (w / 2 + 1.1), -d / 2 + run * (k + 0.5) / nS]); }
+  pts.forEach(([lx, lz]) => { const it = newItem('stool'); if (!it) return; it.rot = (+b.rot || 0) % 360; const X = cx + lx * u[0] + lz * v[0], Z = cz + lx * u[1] + lz * v[1];
+    it.x = r2(X - 0.75); it.z = r2(Z - 0.75); const i = S.items.length; S.items.push(it); if (clashes(it, i)) S.items.pop(); }); }
 // 245: the floor look's patterned 'rugs' — Moroccan tiles under the open seating (garden walk) or under every seating area (courtyard)
 function floorRugs() { const t = S.site, f = t.floor || (t.floor = {}), pr = f.preset; f.rugs = [];
   if (pr !== 'garden' && pr !== 'courtyard') return; const seat = S.items.filter(o => ['sofa', 'dining', 'fbench', 'firepit', 'swing'].includes(o.cat) || (pr === 'courtyard' && o.cat === 'pergola' && !S.items.some(d => d.cat === 'deck' && hit(rectI(d), rectI(o)))));
@@ -1286,8 +1301,12 @@ function pathTo(g, door, tgs, notes, turfs) {   // 241: turfs → the path is ke
   notes.push(turfs ? 'Stepping stones across the grass' : 'Pathway from the stairs to ' + (tgs.some(o => o.cat === 'cabin') ? 'the cabin' : 'the seating')); return true;
 }
 // 239: built-in seating as an L in a corner of two walls (parapet / the stairs room) — under the pergola when it stands in a corner
-function lSeat(g, sz, lt, PRS, notes) {   // 241: open to the sky (never under a pergola), best in a corner on the road side
-  const t = S.site, P = g.P, D = 2, cn = olOn() ? olCorners() : [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]];
+// 258: which ends of each L arm are open (planter there with "sides") — the arm along the corner wall gets the corner planter, the other arm's corner end stays a seat
+function lEnds(A, Bb) { const ends = o => { const r = rectI(o), a = (+o.rot || 0) * Math.PI / 180, ux = Math.cos(a), uz = Math.sin(a), cx = r.x + r.w / 2, cz = r.z + r.d / 2; return [[cx - ux * o.w / 2, cz - uz * o.w / 2], [cx + ux * o.w / 2, cz + uz * o.w / 2]]; };
+  const rb = rectI(Bb), ra = rectI(A), near = (p, r) => p[0] >= r.x - 0.6 && p[0] <= r.x + r.w + 0.6 && p[1] >= r.z - 0.6 && p[1] <= r.z + r.d + 0.6;
+  const ea = ends(A), eb = ends(Bb); A.pend = { l: true, r: true }; Bb.pend = { l: !near(eb[0], ra), r: !near(eb[1], ra) }; }
+function lSeat(g, sz, lt, PRS, notes, pl) {   // 241: open to the sky (never under a pergola), best in a corner on the road side
+  const t = S.site, P = g.P, D = pl === 'back' || pl === 'both' ? 3.5 : 2, cn = olOn() ? olCorners() : [['bl', P, P], ['br', t.pw - P, P], ['fl', P, t.pd - P], ['fr', t.pw - P, t.pd - P]];
   let best = null;
   for (const [k, X, Z] of cn) { const left = k[1] === 'l', back = k[0] === 'b';
     for (let s0 = 0; s0 < 4; s0++) { const La = Math.max(4, sz[0] - s0 * 2), Lb = Math.max(3, sz[1] - s0 * 1.5);
@@ -1298,7 +1317,7 @@ function lSeat(g, sz, lt, PRS, notes) {   // 241: open to the sky (never under a
       const cx = left ? X + La / 3 : X - La / 3, cz = back ? Z + Lb / 3 : Z - Lb / 3, roadSide = g.road.includes(back ? 'back' : 'front') ? 1 : 0;
       const sc = roadSide * 30 - (lt ? 0.15 * Math.hypot(cx - lt[0], cz - lt[1]) : 0) - (g.dz ? (Math.hypot(cx - (g.dz.x + g.dz.w / 2), cz - (g.dz.z + g.dz.d / 2)) < 10 ? 12 : 0) : 0) - s0 * 3;
       if (!best || sc > best[0]) best = [sc, A, Bb]; break; } }
-  if (!best) return false; { const gid = 'L' + Math.random().toString(36).slice(2, 7); best[1].grp = gid; best[2].grp = gid; } S.items.push(best[1], best[2]); notes.push('Built-in L seating in the open corner on the road side'); return true;
+  if (!best) return false; { const gid = 'L' + Math.random().toString(36).slice(2, 7); best[1].grp = gid; best[2].grp = gid; if (pl && pl !== 'none') { best[1].plant = pl; best[2].plant = pl; lEnds(best[1], best[2]); } } S.items.push(best[1], best[2]); notes.push('Built-in L seating in the open corner on the road side'); return true;
 }
 const inR2 = (cx, cz, r) => cx > r.x - 1 && cx < r.x + r.w + 1 && cz > r.z - 1 && cz < r.z + r.d + 1;
 function stepPick() {
