@@ -347,6 +347,17 @@ function drawPlot(tg, t) {
   if (hi.right && cs !== 'right') { const H = hH('right'), L = hL('right', pd); box(tg, 0.75, H, L, pw + 0.4, Y + H / 2, L / 2, hw); }
   if (hi.back && !rb) { const H = hH('back'), L = hL('back', pw); box(tg, L, H, 0.75, L / 2, Y + H / 2, -0.4, hw); }
   // what's already on the roof
+  if (t.mstair && t.mstair.type) { const M0 = (t.blocks || []).find(b => b.type === 'mumty'); if (M0) {   // 263 (owner): stairs up onto the stairs room's roof — monkey ladder / MS staircase / spiral, on the wall asked
+    const sd = t.mstair.side || 'left', H = (+M0.h || 9) + 0.35, ms = P('t_mst', 0x2E2E2E), tr = P('t_mstr', 0x4A4A4A), xs = sd === 'left' || sd === 'right', L = xs ? +M0.d : +M0.w, n = { left: [-1, 0], right: [1, 0], back: [0, -1], front: [0, 1] }[sd];
+    const o = xs ? [sd === 'left' ? +M0.x : +M0.x + +M0.w, +M0.z] : [+M0.x, sd === 'back' ? +M0.z : +M0.z + +M0.d], u = xs ? [0, 1] : [1, 0], at = (a, off, y) => [o[0] + u[0] * a + n[0] * off, Y + y, o[1] + u[1] * a + n[1] * off];
+    const dr = M0.door === sd, put = (m, a, off, y) => { const p = at(a, off, y); m.position.set(p[0], p[1], p[2]); tg.add(m); m.castShadow = true; return m; }, bx = (w, h, d, a, off, y, mt) => put(new THREE.Mesh(new THREE.BoxGeometry(xs ? d : w, h, xs ? w : d), mt), a, off, y);
+    if (t.mstair.type === 'ladder') { const a = dr ? L - 1.2 : L * 0.7; [-0.7, 0.7].forEach(e => bx(0.1, H + 3, 0.1, a + e, 0.45, (H + 3) / 2, ms)); for (let y = 1; y < H + 2.5; y += 1) bx(1.4, 0.06, 0.06, a, 0.45, y, tr); bx(0.1, 0.1, 0.5, a - 0.7, 0.25, H - 0.5, ms); bx(0.1, 0.1, 0.5, a + 0.7, 0.25, H - 0.5, ms); }
+    else if (t.mstair.type === 'spiral') { const a = dr ? L - 1.6 : Math.min(L - 1.6, L * 0.75), c = at(a, 2.7, 0), col = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, H + 3, 10), ms); col.position.set(c[0], Y + (H + 3) / 2, c[2]); tg.add(col); const ns = Math.round(H / 0.62);
+      for (let k = 0; k < ns; k++) { const ang = k * 0.42 + Math.atan2(n[0], n[1]) + Math.PI, st = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 0.75), tr); st.position.set(c[0] + Math.cos(ang) * 1.25, Y + (k + 1) * H / ns, c[2] - Math.sin(ang) * 1.25); st.rotation.y = ang; st.castShadow = true; tg.add(st); } }
+    else { const run = Math.min(L - 0.6, H * 1.05), a0 = dr ? L - 0.3 - run : 0.3, ns = Math.round(H / 0.6);   // a straight MS flight along the wall, rising away from the start
+      for (let k = 0; k < ns; k++) bx(run / ns + 0.05, 0.1, 2.6, a0 + (k + 0.5) * run / ns, 1.35, (k + 1) * H / ns, tr);
+      const sl = Math.hypot(run, H), ang = Math.atan2(H, run), mk = off => { const m = new THREE.Mesh(new THREE.BoxGeometry(sl, 0.35, 0.1), ms); const p = at(a0 + run / 2, off, H / 2); m.position.set(p[0], p[1], p[2]); if (xs) { m.rotation.y = Math.PI / 2; m.rotation.x = 0; m.rotateZ(-ang); } else m.rotation.z = ang; m.castShadow = true; tg.add(m); };
+      mk(0.1); mk(2.65); const hr = new THREE.Mesh(new THREE.BoxGeometry(sl, 0.06, 0.06), ms), p2 = at(a0 + run / 2, 2.65, H / 2 + 3); hr.position.set(p2[0], p2[1], p2[2]); if (xs) { hr.rotation.y = Math.PI / 2; hr.rotateZ(-ang); } else hr.rotation.z = ang; tg.add(hr); } } }
   if (t.pipes && t.pipes.face) { const M0 = (t.blocks || []).find(b => b.type === 'mumty'); if (M0) { const pv = P('t_pvc', 0x8C8C88), f = t.pipes.face, H0 = +M0.h || 9;   // 246: open plumbing pipes on the stairs-room wall
     [-0.7, 0, 0.7].forEach((u, k) => { const r = k === 1 ? 0.22 : 0.16, cx = f === 'left' ? M0.x - 0.3 : f === 'right' ? M0.x + M0.w + 0.3 : M0.x + M0.w / 2 + u, cz = f === 'back' ? M0.z - 0.3 : f === 'front' ? M0.z + M0.d + 0.3 : M0.z + M0.d / 2 + u;
       const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, H0 + 0.6, 12), pv); c.position.set(cx, Y + (H0 + 0.6) / 2, cz); c.castShadow = true; tg.add(c); }); } }
@@ -365,7 +376,9 @@ function drawPlot(tg, t) {
     }
     if (bk.type === 'shaft') { const th = 0.33; box(bg, bk.w, h, th, x, Y + h / 2, z - bk.d / 2 + th / 2, plaster); box(bg, bk.w, h, th, x, Y + h / 2, z + bk.d / 2 - th / 2, plaster);
       box(bg, th, h, bk.d, x - bk.w / 2 + th / 2, Y + h / 2, z, plaster); box(bg, th, h, bk.d, x + bk.w / 2 - th / 2, Y + h / 2, z, plaster); box(bg, bk.w - 0.6, 0.05, bk.d - 0.6, x, Y + 0.3, z, dark, false); return; }
-    box(bg, bk.w, h, bk.d, x, Y + h / 2, z, wallm); box(bg, bk.w + 0.6, 0.35, bk.d + 0.6, x, Y + h + 0.17, z, side2);
+    box(bg, bk.w, h, bk.d, x, Y + h / 2, z, wallm);
+    if (bk.type === 'mumty') { const e = mumtyProj(t, bk); box(bg, bk.w + e.l + e.r, 0.35, bk.d + e.b + e.f, x + (e.r - e.l) / 2, Y + h + 0.17, z + (e.f - e.b) / 2, side2); }   // 263 (owner): the usual 2 ft chajja round the stairs room (none where a room joins it)
+    else box(bg, bk.w + 0.6, 0.35, bk.d + 0.6, x, Y + h + 0.17, z, side2);
     if (bk.type !== 'lift') {   // a door on the side that faces the open terrace
       const DD = { front: [0, 1], back: [0, -1], left: [-1, 0], right: [1, 0] }[bk.door], dx = DD ? DD[0] * pw : pw / 2 - x, dz = DD ? DD[1] * pd : pd / 2 - z, door = P('t_door', 0x6B4A2F);   // 221: bk.door = the side the door opens to (asked in the wizard)
       const dh = Math.min(7, h - 1); if (dh >= 4) if (Math.abs(dx) / pw > Math.abs(dz) / pd) box(bg, 0.1, dh, Math.min(3.2, bk.d - 1), x + Math.sign(dx) * (bk.w / 2 + 0.05), Y + dh / 2, z, door); else box(bg, Math.min(3.2, bk.w - 1), dh, 0.1, x, Y + dh / 2, z + Math.sign(dz) * (bk.d / 2 + 0.05), door);
@@ -378,7 +391,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=48').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=49').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
@@ -690,3 +703,9 @@ window.Cabin3D = { show, snapshot, onEvent, zoom, resize, panMode, home, _r: () 
 export function cabinModel(c, lay) { return build(c, lay, { bare: true }); }
 export function plotModel(t) { const tg = new THREE.Group(); tg.name = 'plot'; drawPlot(tg, t); return tg; }
 export function sharedMat(n) { return mat(n); }
+// 263: the stairs room's roof projection per side (ft) — 2 ft, none on a side touching another room / lift, ≤ the gap to the parapet's inside face
+export function mumtyProj(t, bk) { const E = 0.75, P2 = 2, o = { l: P2, r: P2, b: P2, f: P2 }, B = (t.blocks || []).filter(b => b !== bk && b.type !== 'shaft' && b.type !== 'ac' && b.type !== 'mumty' || (b !== bk && b.type === 'mumty'));
+  const ov = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0) > 0.5, X0 = +bk.x, X1 = +bk.x + +bk.w, Z0 = +bk.z, Z1 = +bk.z + +bk.d;
+  B.filter(b => b.type !== 'shaft' && b.type !== 'ac').forEach(b => { const x0 = +b.x, x1 = x0 + +b.w, z0 = +b.z, z1 = z0 + +b.d;
+    if (Math.abs(x1 - X0) < 0.7 && ov(z0, z1, Z0, Z1)) o.l = 0; if (Math.abs(x0 - X1) < 0.7 && ov(z0, z1, Z0, Z1)) o.r = 0; if (Math.abs(z1 - Z0) < 0.7 && ov(x0, x1, X0, X1)) o.b = 0; if (Math.abs(z0 - Z1) < 0.7 && ov(x0, x1, X0, X1)) o.f = 0; });
+  o.l = Math.max(0.3, Math.min(o.l || 0.3, X0 - E)); o.r = Math.max(0.3, Math.min(o.r || 0.3, (+t.pw || 30) - E - X1)); o.b = Math.max(0.3, Math.min(o.b || 0.3, Z0 - E)); o.f = Math.max(0.3, Math.min(o.f || 0.3, (+t.pd || 60) - E - Z1)); return o; }

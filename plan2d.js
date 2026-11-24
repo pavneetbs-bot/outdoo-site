@@ -160,7 +160,7 @@ export function svg(t, opts) {
     if (b.type !== 'ac') { const nm = b.pent ? 'Penthouse' : b.w >= 5 ? NAME[b.type] || '' : '', ix = b.x + b.w / 2 - (nm ? nm.length * lab * 0.29 + lab * 0.1 : 0); h += icoG(b.type === 'room' && b.pent ? 'cabin' : b.type, ix, b.z + b.d / 2, lab * 1.1) + (nm ? `<text x="${ix + lab * 0.75}" y="${b.z + b.d / 2}" font-size="${lab}" class="p2lb" style="text-anchor:start">${nm}</text>` : ''); }
     h += '</g>'; });
   // the things that stand on it (pergolas last, as an outline over what is under them)
-  items.forEach((it, i) => { if (it && !it.segs && !it.box && !['deck', 'turf', 'pathway', 'pergola'].includes(it.cat)) h += drawn(it, i); });
+  items.forEach((it, i) => { if (it && !it.segs && !it.box && it.mode !== 'mst' && !['deck', 'turf', 'pathway', 'pergola'].includes(it.cat)) h += drawn(it, i); });
   items.forEach((it, i) => { if (it && !it.segs && !it.box && it.cat === 'pergola') h += drawn(it, i); });
   // road + north
   const rd = opts.road || ['front'], lt = (x, y, tx, r) => `<text x="${x}" y="${y}" font-size="${s * 1.2}" class="p2lb" style="fill:#8a3a1f"${r ? ` transform="rotate(${r} ${x} ${y})"` : ''}>${tx}</text>`;
