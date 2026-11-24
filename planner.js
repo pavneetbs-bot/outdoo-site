@@ -620,14 +620,15 @@ function stepPlace() {
     (mumtyTanks() ? '<button type="button" data-pl="pmode:tank"><b>Hide the water tanks</b><small>A screen round the tanks on the mumty roof</small></button>' : '') +
     '</div><div class="pl-act"><button type="button" data-pl="askx">Cancel</button></div></div>';
   if (!S.items.length && !S.bskip) return builder();
-  if (S.su && S.su.done && S.site.kind === 'terrace') h += '<p class="pl-h" style="margin-top:0">The look</p><div class="pl-looks">' + Object.keys(THEME_T).map(k => `<button type="button" data-pl="look:${k}" class="${(S.su.theme || 'natural') === k ? 'on' : ''}"><i class="pl-lk pl-lk-${k}"></i>${THEME_T[k][0]}</button>`).join('') + '</div>' + '<button type="button" class="pl-design" data-pl="plan2d">📐 Change the layout<small>Move, resize or remove things on the 2D plan — or answer the questions again</small></button>';
+  if (S.su && S.su.done && S.site.kind === 'terrace') h += '<button type="button" class="pl-design" data-pl="plan2d">📐 Change the layout<small>Move, resize or remove things on the 2D plan — or answer the questions again</small></button>';
   else if (S.bnote) h += '<div class="pl-note">✓ Placed where our terraces have them — drag anything to move it.</div>';
-  h += '<h4>Add more</h4><p class="pl-sub">Tap to add · move things on the 2D plan (📐)</p>';
+  const SD = S.su && S.su.done && S.site.kind === 'terrace';   // 258 (owner): after the setup, adding is done under the 2D plan
+  if (!SD) h += '<h4>Add more</h4><p class="pl-sub">Tap to add · move things on the 2D plan (📐)</p>';
   if (lock) h += '<button type="button" class="pl-lock" data-pl="unlock">🔒 Sign in to see prices</button>';
   if (S.msg) h += `<div class="pl-msg">${esc(S.msg)}</div>`;
   const sets = SETUPS.filter(x => !x.lawn || S.site.kind !== 'terrace');
   if (!S.items.length) h += '<p class="pl-h">Start from a setup</p><div class="pl-set">' + sets.map(x => `<button type="button" data-pl="setup:${x.k}"><i>${x.e}</i><b>${esc(x.t)}</b><small>${esc(x.d)}</small></button>`).join('') + '</div><p class="pl-h">Or add one by one</p>';
-  h += '<div class="pl-pal">' + CATS.filter(c => (!c.lawn || S.site.kind !== 'terrace') && (designs(c).length || c.always) && (c.k !== 'accover' || S.site.kind === 'terrace')).map(c => {
+  if (!SD) h += '<div class="pl-pal">' + CATS.filter(c => (!c.lawn || S.site.kind !== 'terrace') && (designs(c).length || c.always) && (c.k !== 'accover' || S.site.kind === 'terrace')).map(c => {
     const fp = fromPrice(Object.assign({ cat: c.k, w: c.w || 4, d: c.d || 4, h: c.h || 3 }, c.k === 'cabin' ? { sku: (cabinSkus().find(s => /PORTA/.test(s)) || cabinSkus()[0]) } : {}));
     return `<button type="button" data-pl="add:${c.k}"><i>${c.e}</i><span><b>${esc(c.t)}</b><small>${fp.price != null ? (lock ? fp.n + ' designs' : 'from ' + lakh(fp.price)) : fp.soon ? 'Coming soon' : fp.n + ' designs'}</small></span></button>`; }).join('') + '</div>';
   if (lwOk()) h = lwCard() + h;
@@ -706,6 +707,7 @@ function suOpen(q) { S.su = Object.assign({ q: 0, pg: '5-8', cs: '3-4', north: '
   SUEL.style.display = 'block'; suPaint(); }
 function suClose() { if (SUEL) SUEL.style.display = 'none'; if (S.su) S.su.on = false; draw(false); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 60); }
 function suSkip(q) { const B = S.bsel || {}; if (q === 'remove') return !suRemList().length;
+  if (q === 'floor') return true;   // 258 (owner): the floor look is not asked for now (the floor stays as it is)
   if ((q === 'fbs' && !B.fbench) || (q === 'wtr' && !B.water) || (q === 'ftr' && !B.feature) || (q === 'gfw' && !B.graffiti)) return true;
   return (q === 'cabin' && !B.cabin) || (q === 'bar' && !B.bar) || (q === 'seats' && !B.cabin && !B.pergola); }
 function suStep(d) { const su = S.su; let q = su.q + d; while (q > 0 && q < SUQ.length - 1 && suSkip(SUQ[q])) q += d; su.q = Math.max(0, Math.min(SUQ.length - 1, q)); }
@@ -752,6 +754,7 @@ function suCompose(ph) {   // a fresh setup from the answers — 245: ph 'el' = 
   ph = ph || 'all'; if (ph === 'all') { suCompose('el'); return suCompose('decor'); }
   const su = S.su; S.sel = null; S.bsel = Object.assign({}, S.bsel || {}); S.bsel.pathway = 1; S.bsel.feature = S.bsel.feature || 1; delete S.bsel.planter;
   if (ph === 'decor') { const keep = S.items.filter(o => !DECOR.has(o.cat) || o.old); S.items = keep; const BD = {}; Object.keys(S.bsel).forEach(k => { if (DECOR.has(k) && k !== 'planter') BD[k] = S.bsel[k]; });
+    if (!su.flr) su.flr = 'keep';
     let lay = null; try { lay = (TM.layout ? TM.layout(S.site, 14) : [])[0] || null; } catch (e) {} S.site.light = su.light === 'none' ? '' : su.light;
     compose({ lay, B: BD, phase: 'decor' }); floorRugs(); su.ddirty = false; su.decorDone = true; S.bskip = true; ev('plan_build', { ref: 'decor', n: S.items.length }); draw(true); return; }
   S.items = S.items.filter(o => o.old); su.decorDone = false;   // 249: the existing things stay where they were put
@@ -832,7 +835,7 @@ function suPaint() { if (S.magic) return;
       '<div class="pl-subig">' + chip('north:', false, 'Not sure') + '</div>' + (su.north ? next() : ''); }
   else { const it = S.sel != null ? S.items[S.sel] : null;
     h += q === 'eplan' ? '<h2>Your layout</h2><p class="pl-sub" style="margin:-4px 0 6px">Round 2 of 3 — the big pieces. Furniture and plants come next.</p>' : '<h2>Your setup</h2>';
-    h += `<p class="pl-sub">${it ? (S.suMv ? 'Drag it to where you want · ✓ Done when finished' : 'Tap ✥ Move to drag it · ✓ Done when finished') : 'Tap a thing to change it · swipe to scroll'}</p>` + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d${S.suMv && S.sel != null ? ' mv' : ''}">${suPlan()}${suPopHtml()}</div>` + suSzHtml();   // 254: toolbar over the picked thing
+    h += `<p class="pl-sub">${it ? (S.suMv ? 'Drag it to where you want · ✓ Done when finished' : 'Tap ✥ Move to drag it · ✓ Done when finished') : 'Tap a thing to change it · swipe to scroll'}</p>` + (S.msg ? `<div class="pl-msg">${esc(S.msg)}</div>` : '') + `<div class="pl-su2d${S.suMv && S.sel != null ? ' mv' : ''}">${suPlan()}${suPopHtml()}</div>` + suSzHtml() + suAddHtml(q);   // 254: toolbar over the picked thing
     h += '<div class="pl-sucs">' + chip('meas', !!su.meas, '📏 Measurements') + chip('again', false, '↺ Set up again') + chip('roof', false, '✎ Change the roof') + '</div>' +
       (q === 'eplan' ? `<div class="pl-subar"><button type="button" class="pl-go" data-su="next">See it in 3D →</button></div>` : `<div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>`); }
   SUEL.innerHTML = h + '</div>'; if (S.sel != null) requestAnimationFrame(suPopPlace);
@@ -896,6 +899,7 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'unsel': S.sel = null; S.suSz = false; S.suMv = false; S.msg = ''; break;
     case 'sz': S.suSz = !S.suSz; if (S.suSz) S.suMv = false; break;
     case 'mv': S.suMv = !S.suMv; if (S.suMv) S.suSz = false; break;
+    case 'sadd': addItem(a[1]); if (S.sel != null) { S.suMv = true; S.bsel = S.bsel || {}; S.bsel[a[1]] = (S.bsel[a[1]] || 0) + 1; } draw(true); break;   // 258: lands in a free spot, picked, ready to move
     case 'csz': { const it = S.sel != null ? S.items[S.sel] : null; if (!it || it.cat !== 'cabin') break; const L = cabinLay(it), l0 = +L.L || 12, w0 = +L.W || 10, d = +a[2] || 0; S.msg = ''; cabinSize(it, a[1] === 'L' ? l0 + d : l0, a[1] === 'W' ? w0 + d : w0); draw(true); break; }
     case 'rs': case 'rot': case 'del': case 'flip': if (S.sel == null) break; { const G = grpOf(S.sel), it = S.items[S.sel];   // 254: Remove takes the whole group; a deck under the pergola follows its turn / size
       if (a[0] === 'del') { S.items = S.items.filter((o, j) => !G.includes(j)); S.sel = null; S.suSz = false; draw(true); break; }
@@ -979,6 +983,10 @@ function suPopHtml() { const it = S.sel != null ? S.items[S.sel] : null; if (!it
     '<button type="button" data-su="del"><i>🗑</i>Remove</button><button type="button" class="ok" data-su="unsel"><i>✓</i>Done</button></div>'; }
 const SZOK = new Set(['sofa', 'swing', 'dining', 'bench', 'table', 'water', 'sculpture', 'jacuzzi', 'umbrella', 'firepit', 'rack']);   // 257 (owner): every thing can be sized in the 2D setup
 const szLim = (it, c) => SZOK.has(it.cat) ? [[r2(c.w * 0.5), r2(c.d * 0.5)], [r2(c.w * 2.5), r2(c.d * 2.5)]] : [c.min || [1, 1], c.max || [80, 80]];
+// 258 (owner): add more right under the 2D plan — only what this round is for (round 2: the big pieces; round 3: + furniture, decor and plants)
+const NOADD = new Set(['privacy', 'accover', 'shaftcover', 'pathway', 'railing', 'gate', 'bench']);
+function suAddHtml(q) { if (S.sel != null || (q !== 'eplan' && q !== 'plan')) return ''; const L = CATS.filter(c => !NOADD.has(c.k) && (!c.lawn || S.site.kind !== 'terrace') && (designs(c).length || c.always) && (q === 'plan' || !DECOR.has(c.k)));
+  return '<p class="pl-h" style="margin-top:14px">Add more</p><div class="pl-sucs">' + L.map(c => `<button type="button" class="pl-chip" data-su="sadd:${c.k}">${P2.ico(c.k)} ${esc(c.t)}${S.items.some(o => o.cat === c.k) ? ' <small>+1</small>' : ''}</button>`).join('') + '</div>'; }
 function suSzHtml() { const it = S.sel != null ? S.items[S.sel] : null; if (!it || !S.suSz) return ''; const c = CAT[it.cat] || {};
   if (it.cat === 'cabin') { const L = cabinLay(it), tw = (+it.rot || 0) % 180 === 0, r = (k, ar, nm, sm, v) => `<div class="pl-szr"><span class="pl-sza">${ar}</span><span class="pl-szl">${nm}<small>${sm}</small></span><button type="button" data-su="csz:${k}:-1" aria-label="Smaller">−</button><em>${v} ft</em><button type="button" data-su="csz:${k}:1" aria-label="Bigger">+</button></div>`;   // 256: the cabin's own length × width
     return '<div class="pl-szp">' + r('L', tw ? '↔' : '↕', 'Length — L', 'along the door wall', +L.L || 12) + r('W', tw ? '↕' : '↔', 'Width — W', 'door wall to back wall', +L.W || 10) + '</div>'; } if ((!c.size || c.size === 'fixed') && !SZOK.has(it.cat) && !(it.cat === 'bar' && it.shape === 'L')) return ''; const tw = (+it.rot || 0) % 180 === 0;
