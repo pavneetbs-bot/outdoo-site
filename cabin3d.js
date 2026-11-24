@@ -359,7 +359,7 @@ function drawPlot(tg, t) {
       const sl = Math.hypot(run, H), ang = Math.atan2(H, run), mk = off => { const m = new THREE.Mesh(new THREE.BoxGeometry(sl, 0.35, 0.1), ms); const p = at(a0 + run / 2, off, H / 2); m.position.set(p[0], p[1], p[2]); if (xs) { m.rotation.y = Math.PI / 2; m.rotation.x = 0; m.rotateZ(-ang); } else m.rotation.z = ang; m.castShadow = true; tg.add(m); };
       mk(0.1); mk(2.65); const hr = new THREE.Mesh(new THREE.BoxGeometry(sl, 0.06, 0.06), ms), p2 = at(a0 + run / 2, 2.65, H / 2 + 3); hr.position.set(p2[0], p2[1], p2[2]); if (xs) { hr.rotation.y = Math.PI / 2; hr.rotateZ(-ang); } else hr.rotation.z = ang; tg.add(hr); } } }
   if (t.pipes && t.pipes.face) { const M0 = (t.blocks || []).find(b => b.type === 'mumty'); if (M0) { const pv = P('t_pvc', 0x8C8C88), f = t.pipes.face, H0 = +M0.h || 9;   // 246: open plumbing pipes on the stairs-room wall
-    [-0.7, 0, 0.7].forEach((u, k) => { const r = k === 1 ? 0.22 : 0.16, cx = f === 'left' ? M0.x - 0.3 : f === 'right' ? M0.x + M0.w + 0.3 : M0.x + M0.w / 2 + u, cz = f === 'back' ? M0.z - 0.3 : f === 'front' ? M0.z + M0.d + 0.3 : M0.z + M0.d / 2 + u;
+    const po = +t.pipes.off || 0; [-0.7, 0, 0.7].forEach((u0, k) => { const u = u0 + po, r = k === 1 ? 0.22 : 0.16, cx = f === 'left' ? M0.x - 0.3 : f === 'right' ? M0.x + M0.w + 0.3 : M0.x + M0.w / 2 + u, cz = f === 'back' ? M0.z - 0.3 : f === 'front' ? M0.z + M0.d + 0.3 : M0.z + M0.d / 2 + u;
       const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, H0 + 0.6, 12), pv); c.position.set(cx, Y + (H0 + 0.6) / 2, cz); c.castShadow = true; tg.add(c); }); } }
   (t.blocks || []).forEach((bk, i) => {
     const bg = new THREE.Group(); bg.userData.st = { i }; tg.add(bg); const x = +bk.x + bk.w / 2, z = +bk.z + bk.d / 2, h = bk.type === 'shaft' && bk.h != null && bk.h !== '' && +bk.h >= 0 && +bk.h < 1 ? Math.max(0.08, +bk.h) : (bk.type !== 'ac' && +bk.h > 0 ? +bk.h : 0) || BH_[bk.type] || 9;   // a height the customer typed
@@ -377,7 +377,12 @@ function drawPlot(tg, t) {
     if (bk.type === 'shaft') { const th = 0.33; box(bg, bk.w, h, th, x, Y + h / 2, z - bk.d / 2 + th / 2, plaster); box(bg, bk.w, h, th, x, Y + h / 2, z + bk.d / 2 - th / 2, plaster);
       box(bg, th, h, bk.d, x - bk.w / 2 + th / 2, Y + h / 2, z, plaster); box(bg, th, h, bk.d, x + bk.w / 2 - th / 2, Y + h / 2, z, plaster); box(bg, bk.w - 0.6, 0.05, bk.d - 0.6, x, Y + 0.3, z, dark, false); return; }
     box(bg, bk.w, h, bk.d, x, Y + h / 2, z, wallm);
-    if (bk.type === 'mumty') { const e = mumtyProj(t, bk); box(bg, bk.w + e.l + e.r, 0.35, bk.d + e.b + e.f, x + (e.r - e.l) / 2, Y + h + 0.17, z + (e.f - e.b) / 2, side2); }   // 263 (owner): the usual 2 ft chajja round the stairs room (none where a room joins it)
+    if (bk.type === 'mumty') { const e = mumtyProj(t, bk), G = mstGap(t, bk), yS = Y + h + 0.17;   // 266 (owner): the stairs up come through a proper opening in the chajja
+      if (!G) box(bg, bk.w + e.l + e.r, 0.35, bk.d + e.b + e.f, x + (e.r - e.l) / 2, yS, z + (e.f - e.b) / 2, side2);
+      else { const k = { left: 'l', right: 'r', back: 'b', front: 'f' }[G.sd], e2 = Object.assign({}, e, { [k]: 0 }), X0 = +bk.x - e.l, X1 = +bk.x + +bk.w + e.r, Z0 = +bk.z - e.b, Z1 = +bk.z + +bk.d + e.f, xs = G.sd === 'left' || G.sd === 'right';
+        box(bg, bk.w + e2.l + e2.r, 0.35, bk.d + e2.b + e2.f, x + (e2.r - e2.l) / 2, yS, z + (e2.f - e2.b) / 2, side2);
+        const s0 = xs ? (G.sd === 'left' ? X0 : +bk.x + +bk.w) : (G.sd === 'back' ? Z0 : +bk.z + +bk.d), sw = e[k], A0 = xs ? Z0 : X0, A1 = xs ? Z1 : X1, o0 = (xs ? +bk.z : +bk.x), g0 = Math.max(A0, o0 + G.g0), g1 = Math.min(A1, o0 + G.g1);
+        [[A0, g0], [g1, A1]].forEach(([a, b]) => { if (b - a > 0.1) { if (xs) box(bg, sw, 0.35, b - a, s0 + sw / 2, yS, (a + b) / 2, side2); else box(bg, b - a, 0.35, sw, (a + b) / 2, yS, s0 + sw / 2, side2); } }); } }   // 263 (owner): the usual 2 ft chajja round the stairs room (none where a room joins it)
     else box(bg, bk.w + 0.6, 0.35, bk.d + 0.6, x, Y + h + 0.17, z, side2);
     if (bk.type !== 'lift') {   // a door on the side that faces the open terrace
       const DD = { front: [0, 1], back: [0, -1], left: [-1, 0], right: [1, 0] }[bk.door], dx = DD ? DD[0] * pw : pw / 2 - x, dz = DD ? DD[1] * pd : pd / 2 - z, door = P('t_door', 0x6B4A2F);   // 221: bk.door = the side the door opens to (asked in the wizard)
@@ -391,7 +396,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=51').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=52').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
@@ -498,7 +503,7 @@ function ensure(el) {
     const sun = new THREE.DirectionalLight(0xFFF4E0, 2.2); sun.position.set(40, 60, 50); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004;
     Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 200 }); scene.add(sun); scene.add(sun.target);
     const cam = new THREE.PerspectiveCamera(40, 1, 0.1, 1000), ortho = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 1000);
-    const controls = new OrbitControls(cam, renderer.domElement); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49;
+    const controls = new OrbitControls(cam, renderer.domElement); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49; controls.addEventListener('change', () => { if (R && R.active === cam && cam.position.y < 1) cam.position.y = 1; });   // 266: look up from below, never under the floor
     renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;border-radius:16px';
     R = { renderer, scene, cam, ortho, controls, sun, hemi, key: '', view: '', group: null, skyD: sky('#BFD8EA', '#F1EEE7'), skyN: sky('#0B1222', '#2B3550'), night: false };
     scene.background = R.skyD;
@@ -552,7 +557,7 @@ function topCam() {   // from above: a terrace is seen whole, road at the bottom
 function setView(v, keepCam) {
   R.view = v; const L = R.L, W = R.W, H = R.H, cx = L / 2, cz = W / 2, d = Math.max(L, W), C = R.controls;
   visible(v);
-  C.maxPolarAngle = Math.PI * 0.49; C.minPolarAngle = 0; R.cam.fov = 40; C.enableZoom = true; C.rotateSpeed = 1; C.autoRotate = v === '360'; C.enabled = true; C.enableRotate = true; C.autoRotateSpeed = 1.1; C.enablePan = false;
+  C.maxPolarAngle = Math.PI * 0.58; C.minPolarAngle = 0; R.cam.fov = 40; C.enableZoom = true; C.rotateSpeed = 1; C.autoRotate = v === '360'; C.enabled = true; C.enableRotate = true; C.autoRotateSpeed = 1.1; C.enablePan = false;
   if (v === 'top') { R.active = R.ortho; topCam(); C.enabled = false; }
   else if (['front', 'back', 'right', 'left'].includes(v)) {
     R.active = R.ortho; R.ortho.up.set(0, 1, 0);
@@ -704,6 +709,11 @@ export function cabinModel(c, lay) { return build(c, lay, { bare: true }); }
 export function plotModel(t) { const tg = new THREE.Group(); tg.name = 'plot'; drawPlot(tg, t); return tg; }
 export function sharedMat(n) { return mat(n); }
 // 263: the stairs room's roof projection per side (ft) — 2 ft, none on a side touching another room / lift, ≤ the gap to the parapet's inside face
+export function mstGap(t, M0) {   // 266: where the stairs onto the stairs room's roof pass its chajja (side + a-range from the wall's start)
+  const m = t.mstair; if (!m || !m.type || !M0) return null; const sd = m.side || 'left', xs = sd === 'left' || sd === 'right', L = xs ? +M0.d : +M0.w, dr = M0.door === sd, H = (+M0.h || 9) + 0.35;
+  if (m.type === 'ladder') { const a = dr ? L - 1.2 : L * 0.7; return { sd, g0: a - 1, g1: a + 1 }; }
+  if (m.type === 'spiral') { const a = dr ? L - 1.6 : Math.min(L - 1.6, L * 0.75); return { sd, g0: a - 2.5, g1: a + 2.5 }; }
+  const run = Math.min(L - 0.6, H * 1.05), a0 = dr ? L - 0.3 - run : 0.3; return { sd, g0: a0 + run - 3, g1: a0 + run + 0.4 }; }
 export function mumtyProj(t, bk) { const E = 0.75, P2 = 2, o = { l: P2, r: P2, b: P2, f: P2 }, B = (t.blocks || []).filter(b => b !== bk && b.type !== 'shaft' && b.type !== 'ac' && b.type !== 'mumty' || (b !== bk && b.type === 'mumty'));
   const ov = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0) > 0.5, X0 = +bk.x, X1 = +bk.x + +bk.w, Z0 = +bk.z, Z1 = +bk.z + +bk.d;
   B.filter(b => b.type !== 'shaft' && b.type !== 'ac').forEach(b => { const x0 = +b.x, x1 = x0 + +b.w, z0 = +b.z, z1 = z0 + +b.d;

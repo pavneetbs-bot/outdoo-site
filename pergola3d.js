@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=47';   // 193f: the same terrace as the cabin studio and the planner
+import { plotModel } from './cabin3d.js?v=48';   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -218,7 +218,8 @@ function ensure(el) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping; el.appendChild(renderer.domElement);
   const scene = new THREE.Scene(), pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
   const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 400), controls = new OrbitControls(cam, renderer.domElement);
-  controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 6; controls.maxDistance = 80; controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
+  controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.6; controls.minDistance = 4; controls.addEventListener('change', () => { if (cam.position.y < 1.2) cam.position.y = 1.2; });   // 266: look up at the roof from below
+  controls.maxDistance = 80; controls.autoRotate = true; controls.autoRotateSpeed = 0.6;
   controls.addEventListener('start', () => { controls.autoRotate = false; });
   const hemi = new THREE.HemisphereLight(0xffffff, 0xb8ad98, 0.7), sun = new THREE.DirectionalLight(0xffffff, 1.9);
   sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, far: 120 });
@@ -262,7 +263,7 @@ export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
-  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=51').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=52').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' + JSON.stringify(opts.deck) : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';

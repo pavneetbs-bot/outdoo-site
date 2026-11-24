@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=47';
-import { pergolaModel } from './pergola3d.js?v=37';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=48';
+import { pergolaModel } from './pergola3d.js?v=38';
 import { outline, sofaLayout } from './plan2d.js?v=18';
 import { plantModel } from './plants3d.js?v=2';
 
@@ -35,7 +35,8 @@ function waterLib(g, w, d, code, K) {
   const pebbles = (pw, pd, y, z0) => { const pb = mat('c_wpeb', 0xD9D2C6, { roughness: 0.9 }); for (let i = 0; i < Math.min(40, Math.round(pw * 3)); i++) { const r = 0.08 + (i % 3) * 0.03, m0 = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 4), pb); m0.scale.y = 0.5; m0.position.set(-pw / 2 + 0.2 + ((i * 0.6173) % 1) * (pw - 0.4), y, z0 - pd / 2 + 0.15 + ((i * 0.381) % 1) * (pd - 0.3)); g.add(m0); } };
   if (kind === 'geyser') { const H = code === 'TG-CUBE1' ? 2 : 1.5, wall = 0.25; box(g, w, H, d, 0, H / 2, 0, FM); box(g, w - wall * 2, 0.04, d - wall * 2, 0, H + 0.01, 0, wat); [[w + 0.15, 0.2, 0, d / 2], [w + 0.15, 0.2, 0, -d / 2], [0.2, d + 0.15, w / 2, 0], [0.2, d + 0.15, -w / 2, 0]].forEach(([a, b, x, z]) => box(g, a, 0.12, b, x, H + 0.06, z, fin === 'stack' ? K.stone : FM));
     const n = ex.length, pts = code === 'TG-QUINT' ? [[0, 0], [-w / 4, -d / 4], [w / 4, -d / 4], [-w / 4, d / 4], [w / 4, d / 4]] : ex.map((_, k) => [-w / 2 + w * (k + 0.5) / n, 0]), foam = mat('c_wfoam', 0xF7FBFC, { transparent: true, opacity: 0.85, roughness: 0.6, emissive: 0x8FB8C8, emissiveIntensity: 0.15 });
-    pts.forEach(([x, z], k) => { const hh = ex[k] || 2; const j = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, hh, 10), foam); j.position.set(x, H + hh / 2, z); g.add(j); const t = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 6), foam); t.position.set(x, H + hh, z); g.add(t); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.03, 10), led); l.position.set(x, H - 0.22, z); g.add(l); }); return; }
+    pts.forEach(([x, z], k) => { const hh = ex[k] || 2; const j = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, hh, 10), foam); j.position.set(x, H + hh / 2, z); g.add(j); const t = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 6), foam); t.position.set(x, H + hh, z); g.add(t); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.03, 10), led); l.position.set(x, H - 0.22, z); g.add(l);
+      const gj = new THREE.Sprite(haloMat()); gj.scale.set(1.1, hh + 0.9, 1); gj.position.set(x, H + hh / 2, z); nightOnly(gj, g); const gt = new THREE.Sprite(haloMat()); gt.scale.set(1.3, 1.3, 1); gt.position.set(x, H + hh, z); nightOnly(gt, g); }); return; }   // 266 (owner): lit from under, the jets glow at night
   const bd = code.startsWith('WC') ? 2 : 1.5, FH = 7.5, ft = 0.8, fz = -d / 2 + ft / 2, bz = fz + ft / 2 + bd / 2;   // face 10 × 6 ft on an 18 in basin; the basin in front
   const trough = z0 => { box(g, w, 1.3, bd, 0, 0.65, z0, K.stone); const rm = 0.25; box(g, w + 0.1, 0.35, rm, 0, 1.47, z0 + bd / 2 - rm / 2 + 0.05, K.stone); box(g, w + 0.1, 0.35, rm, 0, 1.47, z0 - bd / 2 + rm / 2 - 0.05, K.stone); [-1, 1].forEach(a => box(g, rm, 0.35, bd, a * (w / 2 - rm / 2 + 0.05), 1.47, z0, K.stone));   // 263: an open basin — the water and pebbles show
     box(g, w - 0.5, 0.03, bd - 0.5, 0, 1.45, z0, wat); pebbles(w - 0.6, bd - 0.6, 1.47, z0); box(g, w - 0.6, 0.04, 0.06, 0, 1.5, z0 + bd / 2 - 0.3, led); };
@@ -54,13 +55,19 @@ function waterLib(g, w, d, code, K) {
   else if (kind === 'casc') { let x0 = -(ex.reduce((a, q) => a + q[0], 0) + (ex.length - 1) * 0.7) / 2; ex.forEach(([nw, ly]) => { const x = x0 + nw / 2; x0 += nw + 0.7; box(g, nw + 0.1, 0.12, 0.3, x, ly, zf + 0.12, ss); const c = new THREE.QuadraticBezierCurve3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.15, 0.22), new THREE.Vector3(0, -(ly - 1.45), 0.4));
       const pts = c.getPoints(10), sg = new THREE.BufferGeometry(), pos = []; for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[i], p1 = pts[i + 1]; [[-nw / 2 + 0.05, p0], [nw / 2 - 0.05, p0], [-nw / 2 + 0.05, p1], [nw / 2 - 0.05, p0], [nw / 2 - 0.05, p1], [-nw / 2 + 0.05, p1]].forEach(([dx, p]) => pos.push(x + dx, ly - 0.06 + p.y, zf + 0.26 + p.z)); }
       sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.computeVertexNormals(); g.add(new THREE.Mesh(sg, sheet)); }); }
+  const nU = Math.max(1, Math.round(w / 2.6)), uh = FH - 1.6;   // 266 (owner): underwater lights in the basin wash up the wall at night
+  for (let k = 0; k < nU; k++) { const x = -w / 2 + w * (k + 0.5) / nU, wm = new THREE.Mesh(new THREE.PlaneGeometry(Math.min(3, w / nU + 0.6), uh), washMat()); wm.rotation.z = Math.PI; wm.position.set(x, 1.5 + uh / 2, fz + ft / 2 + 0.06); nightOnly(wm, g); const hs = new THREE.Sprite(haloMat('b')); hs.scale.set(1.4, 0.7, 1); hs.position.set(x, 1.55, bz); nightOnly(hs, g); }
 }
 
 let BEAM = null; function beamMat() { if (BEAM) return BEAM; const c = document.createElement('canvas'); c.width = 8; c.height = 64; const x = c.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(255,210,150,.45)'); gr.addColorStop(0.45, 'rgba(255,200,130,.18)'); gr.addColorStop(1, 'rgba(255,200,130,0)'); x.fillStyle = gr; x.fillRect(0, 0, 8, 64);
   const t = new THREE.CanvasTexture(c); return (BEAM = new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })); }   // 263: a soft up-light through the plant, no lamp
-let WASH = null; function washMat() { if (WASH) return WASH; const c = document.createElement('canvas'); c.width = 64; c.height = 128; const x = c.getContext('2d'), im = x.createImageData(64, 128);   // 263 (owner): a downlight's V — narrow at the lamp, spreading and fading down the screen
-  for (let yy = 0; yy < 128; yy++) { const v = yy / 127, half = 3 + v * 30, fade = Math.pow(1 - v, 1.6); for (let xx = 0; xx < 64; xx++) { const u = Math.abs(xx - 31.5) / half, a = u >= 1 ? 0 : (1 - u * u) * fade * (yy < 4 ? yy / 4 : 1), o2 = (yy * 64 + xx) * 4; im.data[o2] = 255; im.data[o2 + 1] = 200; im.data[o2 + 2] = 135; im.data[o2 + 3] = Math.round(a * 255); } } x.putImageData(im, 0, 0);
+let WASH = null; function washMat() { if (WASH) return WASH; const c = document.createElement('canvas'); c.width = 128; c.height = 256; const x = c.getContext('2d'), im = x.createImageData(128, 256);   // 263 (owner): a downlight's V; 266: a soft, natural spread (gaussian across, a warm hotspot at the lamp, fading down)
+  for (let yy = 0; yy < 256; yy++) { const v = yy / 255, sp = 4 + Math.pow(v, 0.8) * 46, fade = Math.pow(1 - v, 1.3) * (0.75 + 0.25 * Math.exp(-v * 9)), top = yy < 6 ? yy / 6 : 1; for (let xx = 0; xx < 128; xx++) { const u = (xx - 63.5) / sp, a = Math.exp(-u * u * 1.6) * fade * top * 0.85, o2 = (yy * 128 + xx) * 4; im.data[o2] = 255; im.data[o2 + 1] = 205; im.data[o2 + 2] = 145; im.data[o2 + 3] = Math.round(Math.min(1, a) * 255); } } x.putImageData(im, 0, 0);
   const t = new THREE.CanvasTexture(c); if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return (WASH = new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })); }
+let HALO = null; function haloMat(col) { const k = col || 'w'; HALO = HALO || {}; if (HALO[k]) return HALO[k]; const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), gr = x.createRadialGradient(64, 64, 0, 64, 64, 64);   // 266: a soft round glow (plant lit by its spike, water lit from under)
+  const rgb = k === 'b' ? '170,215,255' : '255,205,145'; gr.addColorStop(0, `rgba(${rgb},.55)`); gr.addColorStop(0.35, `rgba(${rgb},.25)`); gr.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c); return (HALO[k] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); }
+function nightOnly(o, par) { o.visible = !!(R && R.night); o.userData.nightOnly = 1; if (R) (R.nl || (R.nl = [])).push(o); par.add(o); return o; }
 const deckUnder = (it, P) => (P.items || []).some(o => o.cat === 'deck' && Math.abs(+o.x - +it.x) < 0.7 && Math.abs(+o.z - +it.z) < 0.7);   // 262: the deck item is drawn instead (same boards, same height as the cabin floor)
 let ROPE_TX = null; const ROPE_M = {};
 function ropeMat(pw, ph) {   // 261: woven rope (vertical cords with gaps) as a cut-out texture, repeated ~7 cords a foot
@@ -82,14 +89,14 @@ function ensure(el) {
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0xeef0ea);
   const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
   const cam = new THREE.PerspectiveCamera(40, 1, 0.3, 1500), controls = new OrbitControls(cam, renderer.domElement);
-  controls.enableDamping = !LITE; controls.dampingFactor = 0.25; controls.maxPolarAngle = Math.PI * 0.47;   /* 259 (owner): no gliding on after the finger lifts */ controls.minDistance = 6; controls.maxDistance = 260; controls.screenSpacePanning = true;
+  controls.enableDamping = !LITE; controls.dampingFactor = 0.25; controls.maxPolarAngle = Math.PI * 0.62;   /* 259 (owner): no gliding on after the finger lifts; 266: can look up from below (a pergola's ceiling) */ controls.minDistance = 3; controls.maxDistance = 260; controls.screenSpacePanning = true;
   const hemi = new THREE.HemisphereLight(0xffffff, 0xb8ad98, 0.75), sun = new THREE.DirectionalLight(0xffffff, 1.8);
   sun.castShadow = true; sun.shadow.mapSize.set(LITE ? 1024 : 2048, LITE ? 1024 : 2048); Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 80, bottom: -80, far: 400 });
   scene.add(hemi, sun, sun.target);
   R = { renderer, scene, cam, controls, sun, hemi, el, group: null, key: '', view: '3d', ray: new THREE.Raycaster(), floor: new THREE.Plane(new THREE.Vector3(0, 1, 0), 0) };
   const cv = renderer.domElement; cv.style.touchAction = 'none';
   cv.addEventListener('pointerdown', pDown); window.addEventListener('pointermove', pMove); window.addEventListener('pointerup', pUp);
-  controls.addEventListener('change', () => { R.dirty = true; }); R.dirty = true; R.t0 = 0;
+  controls.addEventListener('change', () => { R.dirty = true; if (cam.position.y < 1.4) cam.position.y = 1.4; });   // 266: never under the floor R.dirty = true; R.t0 = 0;
   size(); const loop = t => { R.raf = requestAnimationFrame(loop); const moved = controls.update(); if (moved || R.dirty || (t || 0) - R.t0 > 700) { R.dirty = false; R.t0 = t || 0; renderer.render(scene, cam); } }; loop();
   window.addEventListener('resize', size);
 }
@@ -614,8 +621,11 @@ function itemLights(hd, it, P) { const lv = (P.site || {}).light; if (!lv) retur
     [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, d - 0.6), gm); m.position.set(x, y, 0); hd.add(m); }); const l = new THREE.PointLight(W, 4, Math.max(w, d) * 1.2, 2); l.position.set(0, y - 0.5, 0); hd.add(l); }
   else if (it.cat === 'feature' || it.cat === 'bar') { const m = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.06, 0.1), gm); m.position.set(0, it.cat === 'bar' ? 3.3 : 0.35, d / 2 + 0.08); hd.add(m); if (it.cat === 'bar' && it.shape === 'L') { const fl = it.flip ? -1 : 1, rl = d - 2.2, m2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, rl - 0.3), gm); m2.position.set(fl * (w / 2 + 0.08), 3.3, -2.2 / 2); hd.add(m2); const w2 = new THREE.Mesh(new THREE.PlaneGeometry(rl - 0.4, 3.1), washMat()); w2.position.set(fl * (w / 2 + 0.03), 1.65, -1.1); w2.rotation.y = fl * Math.PI / 2; w2.visible = !!(R && R.night); if (R) (R.nl || (R.nl = [])).push(w2); hd.add(w2); }   /* 263 (owner): the L's return arm lit too */ const l = new THREE.PointLight(W, 2.2, 7, 2); l.position.set(0, it.cat === 'bar' ? 3 : 0.8, d / 2 + 0.8); hd.add(l); }
   else if (it.cat === 'planter' || it.cat === 'vgarden' || it.cat === 'plant') {   // 263 (owner): the spike stands in the planter's soil and the plant glows a little
-    const sy = it.frp ? 2.05 : it.cat === 'vgarden' ? 0.3 : 1.1, sx = it.cat === 'vgarden' ? 0 : w * 0.22, sz = it.cat === 'vgarden' ? d / 2 + 0.3 : d * 0.15, m = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 8), gm); m.position.set(sx, sy + 0.1, sz); hd.add(m);
-    const bh = it.cat === 'vgarden' ? Math.max(4, h) : Math.max(2.5, h * 0.9), bm = new THREE.Mesh(new THREE.ConeGeometry(Math.max(0.8, Math.min(w, d) * 0.55), bh, 16, 1, true), beamMat()); bm.rotation.x = Math.PI; bm.position.set(sx * 0.5, sy + bh / 2, sz * 0.5); bm.visible = !!(R && R.night); if (R) (R.nl || (R.nl = [])).push(bm); hd.add(bm); }
+    const sy = it.frp ? 2.05 : it.cat === 'vgarden' ? 0.3 : 1.1, sx = it.cat === 'vgarden' ? 0 : w * 0.22, sz = it.cat === 'vgarden' ? d / 2 + 0.3 : d * 0.15, blk = new THREE.MeshStandardMaterial({ color: 0x1E1E1E, roughness: 0.5, metalness: 0.4 });   // 266 (owner): a real spike — stake in the soil, black head tilted up at the plant, warm lens
+    const stk = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.015, 0.5, 6), blk); stk.position.set(sx, sy + 0.1, sz); hd.add(stk);
+    const hdm = new THREE.Group(); hdm.position.set(sx, sy + 0.38, sz); hdm.rotation.x = it.cat === 'vgarden' ? -0.35 : 0.35; const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.09, 0.32, 12), blk); hdm.add(cyl); const lens = new THREE.Mesh(new THREE.CircleGeometry(0.095, 12), gm); lens.rotation.x = -Math.PI / 2; lens.position.y = 0.165; hdm.add(lens); hd.add(hdm);
+    const bh = it.cat === 'vgarden' ? Math.max(4, h) : Math.max(2.5, h * 0.9), sp = new THREE.Sprite(haloMat()), R0 = Math.max(1.6, Math.min(Math.max(w, d), 6) * 0.9); sp.scale.set(R0, bh * 1.1, 1); sp.position.set(sx * 0.4, sy + bh * 0.5, sz * 0.4); nightOnly(sp, hd);
+    const sp2 = new THREE.Sprite(haloMat()); sp2.scale.set(0.9, 0.9, 1); sp2.position.set(sx, sy + 0.5, sz); nightOnly(sp2, hd); }
 }
 // 234: floor finishes — tiles (plain / Moroccan) over the whole roof, a pebble border along the parapet
 const TEX = {};
@@ -784,7 +794,7 @@ export function preview(el, items) {
     const scene = new THREE.Scene(); scene.background = new THREE.Color(0xF1ECE3);
     const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
     const cam = new THREE.PerspectiveCamera(35, 1, 0.1, 400), controls = new OrbitControls(cam, renderer.domElement);
-    controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 2; controls.maxDistance = 80;
+    controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.55; controls.minDistance = 2; controls.maxDistance = 80;
     const hemi = new THREE.HemisphereLight(0xffffff, 0xb8ad98, 0.8), sun = new THREE.DirectionalLight(0xffffff, 1.7); sun.position.set(-12, 22, 14); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
     Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, far: 80 }); scene.add(hemi, sun);
     const fl = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat('pv_floor', 0xD9CFC0, { roughness: 0.95 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; scene.add(fl);
