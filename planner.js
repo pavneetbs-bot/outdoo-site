@@ -4,8 +4,9 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=42';
-import * as P2 from './plan2d.js?v=12';
+import * as S3 from './space3d.js?v=43';
+import * as P2 from './plan2d.js?v=13';
+import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=1';
 import { cutHit } from './cabin3d.js?v=38';
 import * as TM from './terrace-match.js?v=5';
 
@@ -27,7 +28,8 @@ const CATS = [
   { k: 'bench', t: 'Bench', e: '🪵', col: 'furniture', sb: /bench/i, kind: 'free', w: 5, d: 2, h: 1.6, size: 'fixed' },
   { k: 'table', t: 'Table', e: '🟫', col: 'furniture', sb: /table/i, kind: 'free', w: 3, d: 3, h: 2.5, size: 'fixed' },
   { k: 'bar', t: 'Bar counter', e: '🍸', col: 'bar-counters', kind: 'free', w: 8, d: 2.5, h: 3.6, min: [4, 2.5], max: [24, 2.5], size: 'w' },
-  { k: 'planter', t: 'Planter', e: '🪴', col: 'planters', kind: 'free', w: 2, d: 2, h: 3.5, size: 'wd' },   // 199: outrr planters are made to your length × width
+  { k: 'planter', t: 'Planter', e: '🪴', col: 'planters', kind: 'free', w: 2, d: 2, h: 3.5, size: 'wd' },
+  { k: 'plant', t: 'Plant', e: '🌴', col: 'landscape-plants', kind: 'free', w: 2, d: 2, h: 5, size: 'fixed', always: true, rts: true, nolabel: true },   // 218b: a real Landscape Plant (ready to ship, Delhi NCR) — species + size, its own 3D model   // 199: outrr planters are made to your length × width
   { k: 'water', t: 'Water feature', e: '⛲', col: 'water-features', kind: 'free', w: 4, d: 4, h: 3.8, size: 'fixed' },
   { k: 'sculpture', t: 'Sculpture', e: '🗿', col: 'sculptures', kind: 'free', w: 2, d: 2, h: 4, size: 'fixed' },
   { k: 'deck', t: 'Decking', e: '🟧', col: 'decking', kind: 'floor', w: 10, d: 8, h: 0.2, min: [4, 4], max: [80, 80], size: 'wd' },
@@ -312,6 +314,24 @@ function designs(c) {
   for (const id in P) { const p = P[id]; if (!p || !p.cz || p.col !== c.col) continue; if (c.sb && !c.sb.test(p.sb || p.n || '')) continue; if (c.k !== 'cabin' && p.cz.unit === 'cabin') continue; out.push(id); }
   return out;
 }
+// 218b: Landscape Plants — species (SKU LP-<PLANT>-<ft>) and their sizes, from the store catalogue
+function plantList() { const P = PR(), G = {}; for (const id in P) { const p = P[id]; if (!p || p.col !== 'landscape-plants' || p.cz) continue; const k = String(id).split('-')[1]; if (k) (G[k] = G[k] || []).push(id); }
+  Object.values(G).forEach(a => a.sort((x, y) => plantH(x) - plantH(y))); return G; }
+function plantH(id) { const p = PR()[id] || {}, m = String(p.vs || p.n || '').match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)\s*ft|(\d+(?:\.\d+)?)\s*ft/); return m ? (m[2] ? (+m[1] + +m[2]) / 2 : +m[3]) : 4; }
+const plantName = id => String((PR()[id] || {}).n || '').replace(/ — .*$/, '');
+const plantP0 = id => { const p = PR()[id]; return p ? (window.baseP ? window.baseP(id) : p.p) : null; };
+function plantSet(it, key, id) {   // species + size (nearest to it.h when no size given); footprint = the plant's spread
+  const ids = plantList()[key] || []; if (!id || !ids.includes(id)) id = ids.slice().sort((a, b) => Math.abs(plantH(a) - (it.h || 4)) - Math.abs(plantH(b) - (it.h || 4)))[0] || null;
+  it.plant = key; it.pick = id; if (id) it.h = plantH(id); const sp = Math.max(1.5, Math.min(8, plantSpread(key, it.h))); it.w = sp; it.d = sp; it.label = id ? plantName(id) : 'Plant'; }
+function plantChoices(it) { const G = plantList(); return Object.keys(G).map(k => { const ids = G[k], id = ids.slice().sort((a, b) => Math.abs(plantH(a) - (it.h || 4)) - Math.abs(plantH(b) - (it.h || 4)))[0], soon = (PR()[id] || {}).oo === false;
+  return { id: k === it.plant && it.pick ? it.pick : id, q: { price: soon ? 0 : plantP0(k === it.plant && it.pick ? it.pick : id), o: null, soon } }; }).sort((a, b) => (a.id === it.pick ? -1 : b.id === it.pick ? 1 : 0)); }
+const LIGHT_T = { S: '☀ Full sun', SS: '◐ Semi-shade', B: '☀ ◐ Sun or semi-shade' };
+function plantPicker(it) { const G = plantList(), keys = Object.keys(G); if (!keys.length) return '<p class="pl-sub">The plants are loading…</p>';
+  let h = `<p class="pl-sub" style="margin:0 0 6px">${esc(LIGHT_T[PLANT_LIGHT[it.plant]] || '')} · comes in a nursery grow bag · delivered in Delhi NCR</p>`;
+  h += '<p class="pl-h" style="margin-top:4px">Size</p><div class="pl-tabs">' + (G[it.plant] || []).map(id => btn(`data-pl="plsz:${id}"`, id === it.pick, esc(String((PR()[id] || {}).vs || plantH(id) + ' ft').split(' · ')[0]))).join('') + '</div>';
+  h += '<p class="pl-h">Plant</p><div class="pl-row2">' + keys.sort((a, b) => plantName(G[a][0]).localeCompare(plantName(G[b][0]))).map(k => { const id = G[k][Math.floor((G[k].length - 1) / 2)], im = IMG(id);
+    return `<button type="button" class="pl-ds${k === it.plant ? ' on' : ''}" data-pl="plk:${k}" aria-pressed="${k === it.plant}">${im ? `<img src="${esc(im)}" alt="" loading="lazy">` : '<i></i>'}<b>${esc(plantName(id))}</b><small>${esc(LIGHT_T[PLANT_LIGHT[k]] || '')}</small></button>`; }).join('') + '</div>';
+  return h; }
 function oFor(m, it) {   // the item's size in the words of that design's price list (clamped to what it allows)
   const u = m.unit, cl = (v, r) => { const lo = num(r && r.min), hi = num(r && r.max); v = num(v) || lo || 1; if (lo != null) v = Math.max(lo, v); if (hi != null) v = Math.min(hi, v); return v; };
   const o = { pin: '', zone: null };
@@ -350,7 +370,7 @@ function priceAt(id, it) {   // one design at this item's size: its cheapest mat
   return best;
 }
 function choices(it) {   // the designs the customer can pick for this item, cheapest first
-  const c = CAT[it.cat]; if (!c) return []; const P = PR();
+  const c = CAT[it.cat]; if (!c) return []; const P = PR(); if (c.rts) return plantChoices(it);
   return designs(c).filter(id => P[id].oo !== false && (c.k !== 'cabin' || (P[id].cz || {}).cabin)).map(id => ({ id, q: priceAt(id, it) })).filter(x => x.q).sort((a, b) => a.q.price - b.q.price);
 }
 // 193h: a design's real size (fixed-size designs: from the size label, e.g. "60 × 60 × 85 cm", "450 cube", "3 ft"; benches: by seats)
@@ -389,10 +409,12 @@ function custSheet() {   // customise one design: finish, colour, options, add-o
   h += '<div class="pl-act"><button type="button" data-pl="cs:cancel">Cancel</button><button type="button" data-pl="cs:use" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Use in my plan</button></div></div>';
   return h;
 }
-function picked(it) { const ch = choices(it); return ch.find(x => x.id === it.pick) || (it.cat === 'cabin' && ch.find(x => x.id === it.sku)) || ch[0] || null; }
+function picked(it) { if (it.cat === 'plant') { const ch = plantChoices(it); return ch.find(x => x.id === it.pick) || null; } const ch = choices(it); return ch.find(x => x.id === it.pick) || (it.cat === 'cabin' && ch.find(x => x.id === it.sku)) || ch[0] || null; }
 const IMG = id => { try { const x = PR()[id]; return (typeof IMGS !== 'undefined' ? IMGS : window.IMGS || {})[x.img] || ''; } catch (e) { return ''; } };
 function fromPrice(it) {   // cheapest orderable design of the category at this size: { price, n, soon }
-  const c = CAT[it.cat]; if (!c || it.old || it.pipe) return null; const k = [it.cat, it.w, it.d, it.h, it.pw || '', it.sku || '', it.cfgId || '', JSON.stringify(it.cfg || '')].join('|'); if (PC[k]) return PC[k];
+  const c = CAT[it.cat]; if (!c || it.old || it.pipe) return null;
+  if (c.rts) { const G = plantList(), ids = it.pick ? [it.pick] : [].concat(...Object.values(G)), open = ids.filter(id => (PR()[id] || {}).oo !== false); return { price: open.length ? Math.min(...open.map(plantP0)) : null, n: Object.keys(G).length, soon: !open.length && ids.length > 0, plants: 1 }; }
+  const k = [it.cat, it.w, it.d, it.h, it.pw || '', it.sku || '', it.cfgId || '', JSON.stringify(it.cfg || '')].join('|'); if (PC[k]) return PC[k];
   if (it.cfg && it.cfgId && c.k !== 'cabin') { const q = priceAt(it.cfgId, it); if (q) return (PC[k] = { price: q.price, n: designs(c).length, soon: false, own: true }); }
   const ids = designs(c), P = PR(); let best = null, open = 0;
   for (const id of ids) {
@@ -415,6 +437,7 @@ function cabinFoot(it) {   // the cabin's plot footprint = body + its plinth (0.
 function cabinLay(it) { const c = cabinCfg(it); return (it.layout && (!it.lsku || it.lsku === it.sku) ? it.layout : null) || (c && c.layout) || {}; }
 function newItem(k) {
   const c = CAT[k], t = S.site, it = { cat: k, rot: 0, w: c.w || 4, d: c.d || 4, h: c.h || 3, label: c.t };
+  if (k === 'plant') { const G = plantList(), key = G.ARECA ? 'ARECA' : Object.keys(G)[0]; if (!key) return null; plantSet(it, key); }
   if (k === 'cabin') { const sk = cabinSkus().find(s => /PORTA/.test(s)) || cabinSkus()[0]; if (!sk) return null; it.sku = sk; cabinFoot(it); it.h = 10; it.label = PR()[sk].n.replace(/ —.*$/, ''); }
   it.x = r2((t.pw - it.w) / 2); it.z = r2(t.pd * 0.55 - it.d / 2); return it;
 }
@@ -591,6 +614,7 @@ function stepPlace() {
     const c = CAT[sel.cat], fp = fromPrice(sel), pm = (k, lbl, v, ns) => `<div class="pl-pm"><span>${lbl}</span><button type="button" data-pl="${ns || 'rs'}:${k}:-1" aria-label="${lbl} smaller">−</button><label class="pl-sz"><input type="number" inputmode="decimal" step="${ns ? 1 : 0.5}" data-plin="${ns || 'rs'}:${k}" value="${v}" aria-label="${lbl} in feet"> ft</label><button type="button" data-pl="${ns || 'rs'}:${k}:1" aria-label="${lbl} bigger">+</button></div>`;
     h += `<div class="pl-ed"><h4>${c.e} ${esc(sel.label || c.t)}</h4>`; const T = { size: '', place: '', design: '' };   // 202: one kind at a time — Size · Place · Design tabs
     if (sel.cat === 'cabin') { const sk = cabinSkus(); T.size += '<div class="pl-tabs">' + sk.map(s => btn(`data-pl="csku:${s}"`, s === sel.sku, esc(PR()[s].n.replace(/ —.*$/, '').replace(/ \(.*$/, '')))).join('') + '</div>'; const L = cabinLay(sel); if (!sel.lock && L && L.walls && window.mtoCabinSize) { const lim = window.mtoCabinSize(sel.sku, L, L.L, L.W) || {}; T.size += pm('L', 'Length', num(L.L), 'cz') + pm('W', 'Width', num(L.W), 'cz') + `<p class="pl-sub" style="margin:2px 0 0">${lim.Lmin}–${lim.Lmax} × ${lim.Wmin}–${lim.Wmax} ft. Walls, doors, rooms and finishes: in its designer.</p>`; } }
+    else if (sel.cat === 'plant') T.size += plantPicker(sel);
     else if (c.size === 'fixed') T.size += `<p class="pl-sub">One standard size here — you'll pick the exact design at the end.</p>`;
     if (sel.lock) T.size += '<p class="pl-note" style="margin:6px 0">🔒 Locked — its size and place can\'t change by mistake.</p>';
     else if (c.size === 'wd') T.size += pm('w', 'Length', sel.w) + pm('d', 'Width', sel.d);
@@ -604,9 +628,9 @@ function stepPlace() {
     if (sel.cat === 'pergola' && !sel.lock) { T.size += pm('h', 'Height', sel.h); T.design += `<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="pdeck"${sel.deck ? ' checked' : ''}> Deck floor under it (as high as a porta cabin's)</label>` + (sel.att && sel.att.length ? '<p class="pl-sub" style="margin:2px 0 6px">Fixed to the wall on ' + sel.att.length + ' side' + (sel.att.length > 1 ? 's' : '') + ' — no posts there' + (sel.hAuto !== false && S.items.some(o => o.cat === 'cabin') ? '; height and deck matched to the cabin' : '') + '.</p>' : ''); }
     if (sel.cat === 'graffiti') T.size += `<label class="pl-ck" style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0"><input type="checkbox" data-pl="gfit"${sel.fit !== false ? ' checked' : ''}> Fit the whole wall it's on${sel.open ? ' (door left open)' : ''}</label>`;
     if (!att(sel) && c.kind !== 'edge' && !sel.lock) T.place += '<p class="pl-h" style="margin-top:6px">Against a wall? <small style="font-weight:400;color:#7A7268">it stays on it when moved</small></p><div class="pl-tabs">' + [['free', 'Free'], ['left', 'Left'], ['right', 'Right'], ['back', 'Back'], ['front', 'Front']].map(([k2, l2]) => btn(`data-pl="wside:${k2}"`, (sel.wside || 'free') === k2, l2)).join('') + '</div>';
-    T.design += `<p style="margin:10px 0 0;font-size:14px">${fp && fp.price != null ? (lock ? '🔒 Price after sign-in' : 'From <b>' + rs(fp.price) + '</b>') : fp && fp.soon ? 'Coming soon' : 'Our team will price it'} <small style="color:#7A7268">· ${fp ? fp.n : 0} designs</small></p>`;
+    T.design += `<p style="margin:10px 0 0;font-size:14px">${fp && fp.price != null ? (lock ? '🔒 Price after sign-in' : (fp.plants ? '' : 'From ') + '<b>' + rs(fp.price) + '</b>') : fp && fp.soon ? 'Coming soon' : 'Our team will price it'} <small style="color:#7A7268">· ${fp ? fp.n : 0} ${fp && fp.plants ? 'plants' : 'designs'}</small></p>`;
     const look = !!(S.su && S.su.done && S.site.kind === 'terrace');   // 239: after the setup the 3D only shows — sizes and places change on the 2D plan
-    if (look) { T.size = ''; T.place = ''; T.design = '<p class="pl-sub" style="margin:0 0 8px">Sizes and places change on the 2D plan.</p>' + T.design; }
+    if (look) { T.size = sel.cat === 'plant' ? plantPicker(sel) : ''; T.place = ''; T.design = '<p class="pl-sub" style="margin:0 0 8px">Sizes and places change on the 2D plan.</p>' + T.design; }
     { const tabs = [['size', 'Size'], ['place', 'Place'], ['design', 'Design & price']].filter(([k]) => T[k]); if (!T[S.edTab]) S.edTab = tabs.length ? tabs[0][0] : 'size';
       if (tabs.length > 1) h += '<div class="pl-etabs">' + tabs.map(([k, l]) => btn(`data-pl="etab:${k}"`, S.edTab === k, l)).join('') + '</div>'; h += '<div class="pl-epane">' + (T[S.edTab] || '') + '</div>'; }
     if (look) h += '<div class="pl-act"><button type="button" data-pl="plan2d">📐 Change on the 2D plan</button><button type="button" data-pl="done" style="margin-left:auto;background:#2E2E2E;color:#fff;border:0">Done</button></div></div>';
@@ -694,7 +718,7 @@ const SUQ = ['have', 'existing', 'remove', 'asbuilt', 'ab3d', 'mood', 'want', 'c
 // 246 (owner): round 1 also asks what is ALREADY built on the roof (kept as 'Existing' things on the plan, never priced) and what is to be taken down
 const HAVE = [['pergola', 'Pergola'], ['bar', 'Bar counter'], ['cabin', 'Cabin / room'], ['planter', 'Built-in planters'], ['fbench', 'Fixed seating'], ['jacuzzi', 'Pool / jacuzzi'], ['water', 'Water feature'], ['deck', 'Deck'], ['privacy', 'Privacy screen']];
 const FLOOR0 = [['cement', 'Cement / PCC', 'raw, plastered'], ['tiles', 'Tiles', 'ceramic / vitrified'], ['kota', 'Kota stone', 'grey-green stone slabs'], ['marble', 'Marble / granite', 'polished stone']];
-const DECOR = new Set(['sofa', 'swing', 'dining', 'chair', 'table', 'stool', 'firepit', 'sculpture', 'jacuzzi', 'umbrella', 'lights', 'planter']);
+const DECOR = new Set(['sofa', 'swing', 'dining', 'chair', 'table', 'stool', 'firepit', 'sculpture', 'jacuzzi', 'umbrella', 'lights', 'planter', 'plant']);
 // 245: four floor looks (owner) — the tiles, grass and patterned 'rugs' they lay
 const FLOORS = [['garden', 'Garden walk', 'Soft grass with stepping stones, a Moroccan-tile patch where you sit, plain tiles around'], ['courtyard', 'Moroccan courtyard', 'Plain tiles with Moroccan pattern under every seating area, like rugs'],
   ['greek', 'Greek terrace', 'Cream terrazzo-look floor with a sage border — calm and airy'], ['geometric', 'Modern geometric', 'Plain tiles laid in a pattern — two-tone checks with a dark border']];
@@ -780,7 +804,7 @@ function suPaint() { if (S.magic) return;
   else if (q === 'want') { const LY = S.site && S.site.layout;   // 243: what the architect proposed on the customer's own drawing comes ticked
     if (LY && !su.layTicked) { su.layTicked = true; const M = { seating: 'sofa', planter: null, turf: null }; (LY.proposed || []).forEach(k => { const c = k in M ? M[k] : k; if (k === 'turf') su.turf = true; if (c && CAT[c]) S.bsel[c] = S.bsel[c] || 1; }); if (LY.north && !su.north) su.north = LY.north; } const cats = CATS.filter(c => (!c.lawn || !terr) && (designs(c).length || c.always) && (c.k !== 'accover' || terr) && !['railing', 'gate', 'pathway', 'turf', 'lights', 'planter', 'shaftcover', 'bench'].includes(c.k) && !DECOR.has(c.k) && (c.k !== 'rack' || B.bar));   // 245: round 2 = the big pieces only (bench = fixed seating)
     h += (LY && (LY.proposed || []).length ? '<p class="pl-sub" style="margin:0 0 6px">📄 Ticked from your drawing — change anything.</p>' : '') + '<h2>What do you want?</h2><div class="pl-els pl-els2">' + cats.map(c => { const v = B[c.k] || 0; return `<div class="pl-elw"><button type="button" data-su="bel:${c.k}" class="${v ? 'on' : ''}"><i>${c.e}</i><b>${esc(c.t)}</b>${v ? '<em>✓</em>' : ''}</button>${v ? `<div class="pl-cnt"><button type="button" data-su="bcnt:${c.k}:-1" aria-label="One less">−</button><b>${v}</b><button type="button" data-su="bcnt:${c.k}:1" aria-label="One more">+</button></div>` : ''}</div>`; }).join('') + '</div><p class="pl-sub" style="margin-top:12px">Furniture, plants and lamps come after the layout.</p>' + next('', !Object.keys(B).filter(k => !DECOR.has(k)).length); }
-  else if (q === 'decor') { const cats = CATS.filter(c => DECOR.has(c.k) && !['planter', 'chair', 'table'].includes(c.k) && (designs(c).length || c.always) && (c.k !== 'stool' || B.bar));
+  else if (q === 'decor') { const cats = CATS.filter(c => DECOR.has(c.k) && !['planter', 'plant', 'chair', 'table'].includes(c.k) && (designs(c).length || c.always) && (c.k !== 'stool' || B.bar));
     h += '<h2>Furniture & finishing touches</h2><p class="pl-sub">Round 3 — what goes on your layout.</p><div class="pl-els pl-els2">' + cats.map(c => { const v = B[c.k] || 0; return `<div class="pl-elw"><button type="button" data-su="bel:${c.k}" class="${v ? 'on' : ''}"><i>${c.e}</i><b>${esc(c.k === 'lights' ? 'Garden lamps' : c.t)}</b>${v ? '<em>✓</em>' : ''}</button>${v ? `<div class="pl-cnt"><button type="button" data-su="bcnt:${c.k}:-1" aria-label="One less">−</button><b>${v}</b><button type="button" data-su="bcnt:${c.k}:1" aria-label="One more">+</button></div>` : ''}</div>`; }).join('') + '</div>' + next(); }
   else if (q === 'cabin') { const cb = suCab(); h += '<h2>Your cabin' + (cb.length > 1 ? 's' : '') + '</h2><div class="pl-cnts"><span>🏠 How many cabins</span><button type="button" data-su="ncab:-1">−</button><b>' + cb.length + '</b><button type="button" data-su="ncab:1">+</button></div>';
     cb.forEach((c, i) => { h += `<div class="pl-cab"><b>Cabin ${cb.length > 1 ? i + 1 : ''} — what for?</b><div class="pl-sucs">` + CAB_USE.map(u => chip(`cuse:${i}:${u}`, c.use.includes(u), esc(u))).join('') + `</div><b>Inside it</b><div class="pl-sucs">` + chip(`cin:${i}:pantry`, c.pantry, '🍳 Pantry') + chip(`cin:${i}:wash`, c.wash, '🚿 Washroom') + '</div>' +
@@ -1207,11 +1231,20 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
       if (sd === 'left' || sd === 'right') { gi.x = sd === 'left' ? Mb.x - d : Mb.x + Mb.w; gi.z = r2(Mb.z + (Mb.d - w) / 2); } S.items.push(gi); if (n === 0) notes.push('Graffiti on the stairs-room wall you picked'); } }
   ['chair', 'table', 'railing', 'gate'].forEach(k => { for (let j = 0; j < (B[k] || 0); j++) { const before = S.items.length; addItem(k); if (S.items.length === before) miss++; } });
   // 5) plants LAST, once the big things stand — one in each free corner, then along the walls and round the pergola, never bunched (4 ft apart at least)
+  // 218b: real Landscape Plants (each its own 3D model) — a palm in every corner, accent plants by the pergola / cabin and at the layouts' spots; the FRP troughs (258) stay along the parapets;
+  // sun plants in the open, semi-shade ones within 3 ft of a wall / block / pergola / cabin. One palm for every corner, three plants taking turns.
+  const PG = plantList(), real = PH !== 'old' && Object.keys(PG).length > 0, seed = Math.round(t.pw * 7 + t.pd * 3);
+  const POOL = { corner: { S: ['ARECA', 'PHOENIX', 'FOXTAIL', 'LIVISTONA', 'BAMBOO'], SS: ['RHAPIS', 'ARECA', 'BAMBOO', 'LIVISTONA'] },
+    wall: { S: ['KAMINI', 'HIBISCUS', 'TECOMA', 'IXORA', 'CROTON', 'MORPANKHI', 'FOUNTAINGRASS', 'DURANTA', 'KANER'], SS: ['SONGOFINDIA', 'CORDYLINE', 'SCHEFFLERA', 'CHANDNI', 'SNAKEPLANT', 'CROTON'] },
+    accent: { S: ['BIRDPARADISE', 'MOGRA', 'CHAMPA', 'ADENIUM', 'AGAVE', 'BANANA'], SS: ['RHAPIS', 'SCHEFFLERA', 'SNAKEPLANT', 'BIRDPARADISE'] } }, HT = { corner: 6, wall: 4, accent: 4.5 }, rN = {};
+  const shadeAt = (x, z) => (t.blocks || []).some(b => x > b.x - 3 && x < b.x + b.w + 3 && z > b.z - 3 && z < b.z + b.d + 3) || S.items.some(o => (o.cat === 'pergola' || o.cat === 'cabin') && (f => x > o.x - 3 && x < o.x + f[0] + 3 && z > o.z - 3 && z < o.z + f[1] + 3)(foot(o)));
+  const species = (role, tg) => { const lt = shadeAt(tg[0], tg[1]) ? 'SS' : 'S', ok = k => PG[k] && (PLANT_LIGHT[k] === lt || PLANT_LIGHT[k] === 'B'), pool = POOL[role][lt].filter(ok); if (!pool.length) return Object.keys(PG)[0];
+    if (role === 'corner') return pool[seed % pool.length]; const n = rN[role + lt] = (rN[role + lt] || 0) + 1; return pool[(seed + (n % 3)) % pool.length]; };
   const plants = (lv, n0) => { const C1 = P + 1.2, gap = lv === 'lush' ? 3.5 : 4.5;
-    const quiet = (tg, far, frp) => { const it = newItem('planter'); if (!it) return; if (frp) Object.assign(it, { w: 5, d: 1.6, frp: true, label: 'FRP planter' }); const i = S.items.length; S.items.push(it); /* 258 (owner): rectangular FRP planters along the parapets */ const ctrI = o => { const r = rectI(o); return [r.x + r.w / 2, r.z + r.d / 2]; }, near = (x, z) => S.items.some((o, j) => j !== i && o.cat === 'planter' && d2(x, z, ...ctrI(o)) < gap);
+    const quiet = (tg, far, frp, role) => { const pl = real && !frp, it = newItem(pl ? 'plant' : 'planter'); if (!it) return; if (frp) Object.assign(it, { w: 5, d: 1.6, frp: true, label: 'FRP planter' }); if (pl) { it.h = HT[role || 'accent']; plantSet(it, species(role || 'accent', tg)); } const i = S.items.length; S.items.push(it); /* 258 (owner): rectangular FRP planters along the parapets */ const ctrI = o => { const r = rectI(o); return [r.x + r.w / 2, r.z + r.d / 2]; }, near = (x, z) => S.items.some((o, j) => j !== i && (o.cat === 'planter' || o.cat === 'plant') && d2(x, z, ...ctrI(o)) < gap);
       const ok = spotBest(it, i, (cx, cz) => -d2(cx, cz, tg[0], tg[1]) - (near(cx, cz) ? 50 : 0), frp ? [frp === 'v' ? 90 : 0] : [0], g.dz && Object.assign({ fr: g.fr }, g.dz));
       if (!ok || near(...ctrI(it)) || d2(...ctrI(it), tg[0], tg[1]) > (far || 4) || all('pergola').some(o => hit(rectI(it), rectI(o)))) { S.items.pop(); return; } flush(it, i); };   // never under the pergola
-    (olOn() ? olCorners().map(([k, X, Z]) => [X + (k[1] === 'l' ? 1.2 : -1.2), Z + (k[0] === 'b' ? 1.2 : -1.2)]) : [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]]).forEach(tg => quiet(tg));
+    (olOn() ? olCorners().map(([k, X, Z]) => [X + (k[1] === 'l' ? 1.2 : -1.2), Z + (k[0] === 'b' ? 1.2 : -1.2)]) : [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]]).forEach(tg => quiet(tg, null, null, 'corner'));
     if (n0 != null) { for (let k = 0, u = 0; k < n0; k++, u++) { const s2 = [P + 1, P + 1 + (t.pd - 2 * P - 2) * (u + 0.5) / n0]; quiet(g.far === 'right' ? [t.pw - P - 1, s2[1]] : s2, 5); } return; }
     if (lv === 'light') return;
     { const pts = []; LAY.slice(0, lv === 'lush' ? 3 : 2).forEach(L => L.els.forEach(e => { if (e[0] === 'planter') pts.push([e[1], e[2]]); })); pts.slice(0, lv === 'lush' ? 10 : 5).forEach(tg => quiet(tg, 5)); }
@@ -1220,7 +1253,7 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
       for (let u = w.lo + P + 4; u < w.hi - P - 3; u += step) quiet(w.vert ? [w.at + w.dir * 1.2, u] : [u, w.at + w.dir * 1.2], 3, w.vert ? 'v' : 'h'); });
     else { for (let z = P + 5; z < t.pd - 5; z += step) { quiet([fx, z], 3, 'v'); quiet([nx, z + step / 2], 3, 'v'); }
     for (let x = P + 5; x < t.pw - 5; x += step) { if (!g.road.includes('back')) quiet([x, C1], 3, 'h'); } }
-    if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; for (let z = P + 8; z < t.pd - 6; z += 9) quiet([nx, z], 3); for (let x = P + 8; x < t.pw - 6; x += 9) { quiet([x, C1], 3); quiet([x, t.pd - C1], 3); } }
+    if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; for (let z = P + 8; z < t.pd - 6; z += 9) quiet([nx, z], 3, null, 'wall'); for (let x = P + 8; x < t.pw - 6; x += 9) { quiet([x, C1], 3, null, 'wall'); quiet([x, t.pd - C1], 3, null, 'wall'); } }
     if (pr) { const r = pr; [[r.x - 1, r.z - 1], [r.x + r.w + 1, r.z - 1], [r.x - 1, r.z + r.d + 1], [r.x + r.w + 1, r.z + r.d + 1]].forEach(tg => quiet(tg, 2.5)); }
     const cbs = all('cabin'); cbs.forEach(c => { const r = rectI(c); quiet([r.x - 1.2, r.z + r.d + 1], 2.5); quiet([r.x + r.w + 1.2, r.z + r.d + 1], 2.5); }); };
   if (B.turf && PH !== 'decor') grassFill(g, B.pathway, notes, mumtyFace());   // 245: the grass fills the open space left once the big pieces stand
@@ -1335,10 +1368,11 @@ function stepPick() {
   let h = '<h4>Pick designs</h4><p class="pl-sub">Each thing at the size you set — tap a design to choose it, then Customise it. Change the size in step 2.</p>';
   S.items.forEach((it, i) => { if (it.old) return;
     const c = CAT[it.cat], ch = choices(it), pk = picked(it);
-    h += `<div class="pl-pk"><div class="pl-pkh"><b>${c.e} ${esc(it.label || c.t)}</b><span>${pk ? rs(pk.q.price) : ''}</span></div>${pk && pk.q.n > 1 ? `<p class="pl-sub" style="margin:-4px 0 8px">${it.w} ft — goes as ${pk.q.n} pieces of ${pk.q.o.l || pk.q.o.w} ft</p>` : ''}`;
+    h += `<div class="pl-pk"><div class="pl-pkh"><b>${c.e} ${esc(it.label || c.t)}</b><span>${pk ? (pk.q.soon ? 'Coming soon' : rs(pk.q.price)) : ''}</span></div>${pk && pk.q.n > 1 ? `<p class="pl-sub" style="margin:-4px 0 8px">${it.w} ft — goes as ${pk.q.n} pieces of ${pk.q.o.l || pk.q.o.w} ft</p>` : ''}`;
     if (!ch.length) { h += '<p class="pl-sub" style="margin:4px 0 0">No design open for orders at this size yet — our team will help.</p></div>'; return; }
     h += '<div class="pl-row2">' + ch.slice(0, 12).map(x => { const p = PR()[x.id], on = pk && pk.id === x.id, im = IMG(x.id);
-      return `<button type="button" class="pl-ds${on ? ' on' : ''}" data-pl="pick:${i}:${esc(x.id)}" aria-pressed="${on}">${im ? `<img src="${esc(im)}" alt="" loading="lazy">` : '<i></i>'}<b>${esc(String(p.n).replace(/ — .*$/, ''))}</b><small>${rs(x.q.price)}</small></button>`; }).join('') + '</div>';
+      return `<button type="button" class="pl-ds${on ? ' on' : ''}" data-pl="pick:${i}:${esc(x.id)}" aria-pressed="${on}">${im ? `<img src="${esc(im)}" alt="" loading="lazy">` : '<i></i>'}<b>${esc(String(p.n).replace(/ — .*$/, ''))}</b><small>${x.q.soon ? 'Coming soon' : rs(x.q.price)}</small></button>`; }).join('') + '</div>';
+    if (pk && c.rts) { h += '<div class="pl-tabs" style="margin-top:6px">' + (plantList()[it.plant] || []).map(id => btn(`data-pl="plsz3:${i}:${id}"`, id === it.pick, esc(String((PR()[id] || {}).vs || '').split(' · ')[0]))).join('') + `</div><a class="pl-see" href="/?p=${encodeURIComponent(pk.id)}" target="_blank" rel="noopener">See this plant ↗</a></div>`; return; }
     if (pk) h += (c.k === 'cabin' || c.k === 'pergola' ? `<button type="button" class="pl-cust" data-pl="sel2:${i}">✎ Customise in the designer</button>` : `<button type="button" class="pl-cust" data-pl="cust:${i}">✎ Customise${it.cfg && it.cfgId === pk.id ? ' (your choices)' : ''}</button>`) + `<a class="pl-see" href="/?p=${encodeURIComponent(pk.id)}" target="_blank" rel="noopener">See this design ↗</a>`;
     h += '</div>';
   });
@@ -1356,7 +1390,7 @@ function estBox() {   // 193i: delivery + installation for the picked designs at
 async function estimate() {
   const pin = (S.est && S.est.pin) || pinNow(); if (!/^\d{6}$/.test(pin) || !window.mtoEstimate) { S.msg = 'Type the 6-digit pincode of the site'; return draw(false); }
   S.est = { pin, busy: true }; draw(false); let dlv = 0, inst = 0, prod = 0, na = 0;
-  for (const it of S.items) { const pk = picked(it); if (!pk) continue; const q = await window.mtoEstimate(pk.id, pk.q.o, pin), n = pk.q.n || 1;
+  for (const it of S.items) { const pk = picked(it); if (!pk || it.cat === 'plant') continue; const q = await window.mtoEstimate(pk.id, pk.q.o, pin), n = pk.q.n || 1;
     if (!q || !q.ok) { na++; prod += pk.q.price; continue; } prod += (q.product || 0) * n; dlv += (q.delivery_fee || 0) * n; inst += (q.install_fee || 0) * n; }
   S.est = { pin, res: { pin, dlv, inst, na, total: prod + dlv + inst } }; try { const a = JSON.parse(localStorage.getItem('outrr_addr') || '{}'); if (!a.pincode) { a.pincode = pin; localStorage.setItem('outrr_addr', JSON.stringify(a)); } } catch (e) {}
   draw(false);
@@ -1365,12 +1399,16 @@ function lwCard() { return '<div class="pl-note" style="margin:0 0 12px"><b>A bi
 function exact() { let t = 0, n = 0; S.items.forEach(it => { const pk = picked(it); if (pk) { t += pk.q.price; n++; } }); return { t, n }; }
 function toCart() {
   if (!priceOk()) return unlock();
-  const lines0 = []; S.items.forEach(it => { const pk = picked(it); if (pk) for (let k = 0; k < (pk.q.n || 1); k++) lines0.push({ id: pk.id, o: pk.q.o }); });   // a long screen = its equal pieces
+  const pl = {}; let plSoon = 0; S.items.forEach(it => { if (it.cat !== 'plant') return; const pk = picked(it); if (!pk) return; if (pk.q.soon) plSoon++; else pl[pk.id] = (pl[pk.id] || 0) + 1; });   // 218b: plants go to the ready-to-ship cart
+  const lines0 = []; S.items.forEach(it => { const pk = it.cat === 'plant' ? null : picked(it); if (pk) for (let k = 0; k < (pk.q.n || 1); k++) lines0.push({ id: pk.id, o: pk.q.o }); });   // a long screen = its equal pieces
   const lines = []; lines0.forEach(ln => { const mx = +(((PR()[ln.id] || {}).cz || {}).pcs || {}).max || 1, key = ln.id + JSON.stringify(ln.o);   // 199: the same design set up the same way → one line of N pieces
     const hit = mx > 1 && lines.find(z => z.key === key && (z.o.pcs || 1) < mx); if (hit) hit.o = Object.assign({}, hit.o, { pcs: (hit.o.pcs || 1) + 1 }); else lines.push({ id: ln.id, o: Object.assign({}, ln.o), key }); });
   lines.forEach(z => delete z.key);
   if (lines.length > 20) { S.msg = 'That is ' + lines.length + ' designs (long screens go as pieces) — one order takes up to 20. Take some off, or ask our team for one quote.'; return draw(false); }
-  if (!lines.length) { S.msg = 'Nothing here can be ordered yet'; return draw(false); }
+  const plIds = Object.keys(pl);
+  if (!lines.length && !plIds.length) { S.msg = plSoon ? 'The plants open for orders soon — they stay on your plan' : 'Nothing here can be ordered yet'; return draw(false); }
+  if (plIds.length && typeof window.addCart === 'function') plIds.forEach(id => { for (let k = 0; k < Math.min(pl[id], 10); k++) window.addCart(id); });
+  if (!lines.length) { ev('plan_to_cart', { value: Math.round(exact().t) }); close(); if (window.openCart) window.openCart(); if (plSoon && window.toast) setTimeout(() => window.toast(plSoon + ' plant(s) open for orders soon — not added'), 600); return; }
   if (!window.mtoCartAddMany) { S.msg = 'Please try again in a moment'; return draw(false); }
   const r = window.mtoCartAddMany(lines);
   if (!r.added) { S.msg = 'Couldn\'t add these — ' + (r.skipped.join(', ') || 'please try again'); return draw(false); }
@@ -1487,7 +1525,10 @@ function act(a) {   // one button's action on S; true = draw again
     case 'cz': if (it && !it.lock && it.cat === 'cabin') { const L = cabinLay(it); cabinSize(it, a[1] === 'L' ? num(L.L) + +a[2] : num(L.L), a[1] === 'W' ? num(L.W) + +a[2] : num(L.W)); } break;
     case 'csku': if (it) { const keep = JSON.stringify(it), L0 = it.layout; it.sku = a[1] + (a[2] ? ':' + a[2] : ''); if (L0 && window.mtoCabinSize) { const r = window.mtoCabinSize(it.sku, null, L0.L, L0.W); if (r && r.lay) { it.layout = r.lay; it.lsku = it.sku; } } cabinFoot(it); it.label = PR()[it.sku].n.replace(/ —.*$/, ''); if (!settle(it, S.sel)) { Object.assign(it, JSON.parse(keep)); S.msg = 'That cabin doesn\'t fit here'; } } break;
     case 'unlock': return unlock();
-    case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x) { x.pick = id; if (x.cfgId && x.cfgId !== id) { delete x.cfg; delete x.cfgId; } realSize(x, id, x.cfg); if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
+    case 'plk': case 'plsz': case 'plsz3': { const i = a[0] === 'plsz3' ? +a[1] : S.sel, id = a[0] === 'plsz3' ? a[2] : a[1], x = S.items[i]; if (!x || x.cat !== 'plant') break; const keep = JSON.stringify(x), f0 = foot(x), cx = x.x + f0[0] / 2, cz = x.z + f0[1] / 2;
+      if (a[0] === 'plk') plantSet(x, id); else plantSet(x, String(id).split('-')[1], id); const f1 = foot(x); x.x = r2(cx - f1[0] / 2); x.z = r2(cz - f1[1] / 2);
+      if (!settle(x, i, [x.x, x.z])) { Object.assign(x, JSON.parse(keep)); S.msg = 'No room for it that size here'; } break; }
+    case 'pick': { const i = +a[1], id = a.slice(2).join(':'), x = S.items[i]; if (x && x.cat === 'plant') { const keep = JSON.stringify(x); plantSet(x, String(id).split('-')[1], id); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); S.msg = 'That plant doesn\'t fit there'; } break; } if (x) { x.pick = id; if (x.cfgId && x.cfgId !== id) { delete x.cfg; delete x.cfgId; } realSize(x, id, x.cfg); if (x.cat === 'cabin') { const keep = JSON.stringify(x); x.sku = id; cabinFoot(x); x.label = PR()[id].n.replace(/ —.*$/, ''); if (!settle(x, i)) { Object.assign(x, JSON.parse(keep)); x.pick = x.sku; S.msg = 'That cabin doesn\'t fit there — make room in step 2'; } } } break; }
     case 'cart': return toCart();
     case 'estgo': return estimate();
     case 'sel2': S.step = 1; S.sel = +a[1]; break;

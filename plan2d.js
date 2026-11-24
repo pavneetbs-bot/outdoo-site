@@ -5,10 +5,11 @@
 const E = 0.75;   // parapet
 const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 const f1 = v => (Math.round(v * 2) / 2).toString();
-export const ICON = { mumty: '🪜', lift: '🛗', room: '🚪', shaft: '⬛', ac: '❄️', cabin: '🏠', pergola: '⛱️', sofa: '🛋️', swing: '🪢', dining: '🍽️', chair: '🪑', bench: '🪵', table: '🟫', bar: '🍸', planter: '🪴',
+export const ICON = { plant: '🌴', mumty: '🪜', lift: '🛗', room: '🚪', shaft: '⬛', ac: '❄️', cabin: '🏠', pergola: '⛱️', sofa: '🛋️', swing: '🪢', dining: '🍽️', chair: '🪑', bench: '🪵', table: '🟫', bar: '🍸', planter: '🪴',
   water: '⛲', sculpture: '🗿', deck: '🟧', railing: '🚧', privacy: '🎋', feature: '🧱', vgarden: '🌿', graffiti: '🎨', accover: '❄️', gate: '🚪', pathway: '🪨', turf: '🟩', firepit: '🔥', jacuzzi: '🛁', lights: '💡', umbrella: '☂️', fbench: '💺', counter: '🍳', shaftcover: '⬜' };
 // 245: line icons (24 × 24, stroke) everywhere instead of emojis — owner: "sare icons line icons banao"
 export const ICO = {
+  plant: 'M12 21v-9 M12 12c-1-4-5-6-9-5 3 1 6 3 9 5 M12 12c1-4 5-6 9-5-3 1-6 3-9 5 M12 10c-2-3-2-6 0-8 2 2 2 5 0 8 M9 21h6',
   cabin: 'M3 10h18v10H3z M3 10l2-4h14l2 4 M8 20v-6h8v6 M12 14v6', pergola: 'M2 7h20 M3 10h18 M5 7v13 M19 7v13 M8 5v5 M12 5v5 M16 5v5',
   sofa: 'M5 11V8a2 2 0 012-2h10a2 2 0 012 2v3 M3 11a2 2 0 012 2v2h14v-2a2 2 0 014 0v5H1v-5a2 2 0 012-2z M5 18v2 M19 18v2', swing: 'M4 3h16 M7 3v11 M17 3v11 M5 14h14v3H5z',
   dining: 'M5 10h14 M8 10v9 M16 10v9 M2 7v12 M22 7v12 M2 14h3 M19 14h3', chair: 'M8 3v18 M8 12h9v9 M8 3h3',
@@ -43,7 +44,7 @@ export function floorThumb(k) { const pat = { garden: '<rect width="120" height=
 export const ico = (k, cls) => ICO[k] ? `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>` : '';
 const icoG = (k, x, y, sz, col) => ICO[k] ? `<g transform="translate(${(x - sz / 2).toFixed(2)} ${(y - sz / 2).toFixed(2)}) scale(${(sz / 24).toFixed(4)})" fill="none" stroke="${col || '#5B544B'}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"><path d="${ICO[k]}"/></g>` : '';
 const NAME = { mumty: 'Stairs', lift: 'Lift', room: 'Room', shaft: 'Shaft', ac: 'AC' };
-const FILL = { rack: '#6B4A33', stool: '#E3D6C2', deck: 'url(#p2wood)', turf: 'url(#p2turf)', pathway: 'url(#p2path)', cabin: '#E8E1D4', jacuzzi: '#CFE6EF', water: '#D6EAF2', planter: '#DCE8D0', vgarden: '#DCE8D0', feature: '#D8D2C8', bar: '#E9D9CC', lights: '#FFF1C9', firepit: '#F2D5C4', fbench: '#E3D6C2', counter: '#E9D9CC', shaftcover: 'rgba(244,244,242,.85)' };
+const FILL = { plant: '#CFE3C0', rack: '#6B4A33', stool: '#E3D6C2', deck: 'url(#p2wood)', turf: 'url(#p2turf)', pathway: 'url(#p2path)', cabin: '#E8E1D4', jacuzzi: '#CFE6EF', water: '#D6EAF2', planter: '#DCE8D0', vgarden: '#DCE8D0', feature: '#D8D2C8', bar: '#E9D9CC', lights: '#FFF1C9', firepit: '#F2D5C4', fbench: '#E3D6C2', counter: '#E9D9CC', shaftcover: 'rgba(244,244,242,.85)' };
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 export const cellFt = (t) => Math.max(t.pw, t.pd);
 
@@ -89,7 +90,7 @@ function dim(x1, y1, x2, y2, off, txt, s, cls) {
 }
 
 // the whole plan. opts: { measure, sel: {k: 'blk'|'it', i}, north: 'back'|'front'|'left'|'right', road: [...sides], items, labels }
-const PEB_SKIP = new Set(['deck', 'turf', 'pathway', 'pergola', 'planter', 'lights', 'stool', 'chair', 'umbrella']);
+const PEB_SKIP = new Set(['plant', 'deck', 'turf', 'pathway', 'pergola', 'planter', 'lights', 'stool', 'chair', 'umbrella']);
 function pOpenSide(t, items, r, c) { const E = 0.75, pw = +t.pw, pd = +t.pd; if (c[2] * c[3] < r[2] * r[3] * 0.6) return false;   // mostly clipped = against the parapet
   if (c[0] <= E + 0.6 && c[2] < 1 || c[1] <= E + 0.6 && c[3] < 1 || c[0] + c[2] >= pw - E - 0.6 && c[2] < 1 || c[1] + c[3] >= pd - E - 0.6 && c[3] < 1) return false;
   const ov = q => Math.max(0, Math.min(c[0] + c[2], q.x + q.w) - Math.max(c[0], q.x)) * Math.max(0, Math.min(c[1] + c[3], q.z + q.d) - Math.max(c[1], q.z)), A = c[2] * c[3];
@@ -133,7 +134,7 @@ export function svg(t, opts) {
   const GR = opts.grp || (sel.k === 'it' && sel.i != null ? [sel.i] : []), gcl = i => (GR.includes(i) ? ' p2on' : GR.length ? ' p2dim' : '');   // 254: the picked thing (+ what moves with it); the rest faded and locked
   const drawn = (it, i) => { const f = foot(it), x = +it.x, z = +it.z, on = GR.includes(i), pg = it.cat === 'pergola', fs = Math.min(f[0], f[1]) * 0.5, lab = Math.max(s * 0.9, Math.min(s * 2, fs));
     const Cv = (it.cat === 'bar' || it.cat === 'fbench') && it.shape === 'curve', Lb = (it.cat === 'bar' && it.shape === 'L') || Cv;   // 241: an L bar drawn as an L; 247: curves as arcs
-    let r = `<g data-it="${i}" class="${(it.old ? 'p2old' : '') + gcl(i)}"><rect x="${x}" y="${z}" width="${f[0]}" height="${f[1]}" rx="${it.cat === 'water' || it.cat === 'firepit' || it.cat === 'umbrella' ? Math.min(f[0], f[1]) / 2 : 0.2}" fill="${Lb ? 'rgba(0,0,0,0)' : pg ? 'rgba(46,46,46,.06)' : FILL[it.cat] || '#F1E3D8'}" stroke="${on ? '#C26445' : Lb ? 'none' : pg ? '#2E2E2E' : '#9B8E7E'}" stroke-width="${sel.i === i ? s * 0.3 : on ? s * 0.18 : s * 0.1}"${pg ? ` stroke-dasharray="${s * 0.5} ${s * 0.3}" pointer-events="stroke"` : ''}/>` + (pg ? `<rect x="${x}" y="${z}" width="${f[0]}" height="${f[1]}" fill="none" stroke="rgba(0,0,0,0)" stroke-width="${s * 1.2}" pointer-events="stroke"/>` : '');   // 254: a pergola is picked by its edge — what stands under it stays tappable
+    let r = `<g data-it="${i}" class="${(it.old ? 'p2old' : '') + gcl(i)}"><rect x="${x}" y="${z}" width="${f[0]}" height="${f[1]}" rx="${it.cat === 'water' || it.cat === 'firepit' || it.cat === 'umbrella' || it.cat === 'plant' ? Math.min(f[0], f[1]) / 2 : 0.2}" fill="${Lb ? 'rgba(0,0,0,0)' : pg ? 'rgba(46,46,46,.06)' : FILL[it.cat] || '#F1E3D8'}" stroke="${on ? '#C26445' : Lb ? 'none' : pg ? '#2E2E2E' : '#9B8E7E'}" stroke-width="${sel.i === i ? s * 0.3 : on ? s * 0.18 : s * 0.1}"${pg ? ` stroke-dasharray="${s * 0.5} ${s * 0.3}" pointer-events="stroke"` : ''}/>` + (pg ? `<rect x="${x}" y="${z}" width="${f[0]}" height="${f[1]}" fill="none" stroke="rgba(0,0,0,0)" stroke-width="${s * 1.2}" pointer-events="stroke"/>` : '');   // 254: a pergola is picked by its edge — what stands under it stays tappable
     if (Cv) { const w = +it.w, d = +it.d, th = -(+it.rot || 0) * Math.PI / 180, cx = x + f[0] / 2, cz = z + f[1] / 2, L0 = [];
       if (it.cat === 'bar') { const R = Math.max(w, d) * 0.62, A = Math.PI * 0.75; for (let k = 0; k <= 16; k++) { const a = -A / 2 + A * k / 16; L0.push([Math.sin(a) * R, Math.cos(a) * R - R + d / 2 - 1.2]); } }
       else { const R = Math.min(w, d) - 1.2, ax = -w / 2 + 0.2 + R, az = -d / 2 + 0.2 + R; for (let k = 0; k <= 16; k++) { const a = (Math.PI / 2) * k / 16; L0.push([ax - R * Math.cos(a), az - R * Math.sin(a)]); } }

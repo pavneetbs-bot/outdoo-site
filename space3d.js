@@ -7,7 +7,8 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel } from './cabin3d.js?v=38';
 import { pergolaModel } from './pergola3d.js?v=28';
-import { outline } from './plan2d.js?v=12';
+import { outline } from './plan2d.js?v=13';
+import { plantModel } from './plants3d.js?v=1';
 
 let R = null, HANDLER = null;
 const M = {};
@@ -331,6 +332,8 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     if (L) { arm(w, D, 0, d / 2 - D / 2); arm(D, d - D, fl * (w / 2 - D / 2), -D / 2); } else arm(w, D, 0, -d * 0.15);
   } else if (cat === 'planter' && it && /^MTO-PL-[A-Z]{2}$/.test(it.cfgId || it.pick || '')) {   // 199: an outrr planter — its own size, finish colour, plinth, plants, LED glow underneath
     planterModel(g, w, d, h, it, K);
+  } else if (cat === 'plant') {   // 218b: a real Landscape Plant (its own model at the picked size), in a plain pot on the plan
+    const m = plantModel(THREE, (it && it.plant) || 'ARECA', h || 4, { pot: 'pot', seed: 5 }); m.rotation.y = (Math.abs(Math.round((+(it && it.x) || 1) * 7 + (+(it && it.z) || 1) * 13)) % 12) * 0.52; g.add(m);
   } else if (cat === 'planter' && it && it.frp) {   // 258 (owner): a rectangular FRP trough along the parapet, planted
     pbox(g, w, d, 0, 0, 2, mat('c_frp', 0x3B3D40, { roughness: 0.35, metalness: 0.1 }));
   } else if (cat === 'planter') {
