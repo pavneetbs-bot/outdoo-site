@@ -4,8 +4,8 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=58';
-import * as P2 from './plan2d.js?v=24';
+import * as S3 from './space3d.js?v=59';
+import * as P2 from './plan2d.js?v=25';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=2';
 import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=54';
 import * as TM from './terrace-match.js?v=5';
@@ -1052,7 +1052,7 @@ function suPaint() { try { fl0Show(); } catch (e) {} if (S.magic) return;
   else if (q === 'green') h += '<h2>How much greenery?</h2><div class="pl-subig pl-col3">' + big('green:light', su.green === 'light', P2.ico('sprout'), 'A little', 'a few plants in the corners') + big('green:balanced', su.green === 'balanced', P2.ico('planter'), 'Balanced', 'corners, a wall of plants, a green wall') + big('green:lush', su.green === 'lush', P2.ico('lush'), 'Lush', 'thick greenery all round') + '</div>' + next();
   else if (q === 'lights') h += '<h2>Lights for the evenings?</h2><div class="pl-subig pl-col3">' + big('light:none', su.light === 'none', P2.ico('sun'), 'No lights', 'only daytime use') + big('light:soft', su.light === 'soft', P2.ico('moon'), 'Soft & warm', 'pergola profile, cove lights, plant spikes') + big('light:full', su.light === 'full', P2.ico('sparkle'), 'All lit up', '+ wall lights and screen downlights') + '</div>' + next();
   else if (q === 'floor') h += '<h2>The floor</h2><p class="pl-sub">Pick a look — we lay it out round your layout.</p><div class="pl-floors">' + (['tiles', 'kota', 'marble', 'granite'].includes(su.floor0) && !su.rm.floor0 ? [['keep', 'Keep my floor', 'The ' + (FLOOR0.find(z => z[0] === su.floor0) || [0, 'floor'])[1].toLowerCase() + ' stays as it is']] : []).concat(FLOORS).map(z => `<button type="button" data-su="flr:${z[0]}" class="${su.flr === z[0] ? 'on' : ''}">${P2.floorThumb(z[0])}<b>${z[1]}</b><small>${z[2]}</small></button>`).join('') + '</div>' + (su.flr ? next() : '');   // 255: coming back, Next keeps the pick
-  else if (q === 'theme') { if (!su.thm) themeApply(({ party: 'modern', spa: 'tropical', green: 'tropical', yoga: 'minimal', work: 'contemporary', chill: 'santorini' })[S.bth] || 'contemporary', true);   // 274 (owner): the last step — same layout, the look changes
+  else if (q === 'theme') { if (!su.thm) themeApply(({ party: 'modern', spa: 'tropical', green: 'tropical', yoga: 'minimal', work: 'contemporary', chill: 'boho' })[S.bth] || 'contemporary', true);   // 274 (owner): the last step — same layout, the look changes
     h += '<h2>Pick a theme</h2><p class="pl-sub">Same layout — tap a theme to see your terrace in it. The floor, finishes, fabrics and plants change with it.</p>' +
       '<div class="pl-thm">' + THEMES6.map(([k, n, d, c]) => `<button type="button" data-su="thm:${k}" class="${su.thm === k ? 'on' : ''}"><i>${c.map(x => `<s style="background:${x}"></s>`).join('')}</i><b>${n}</b><small>${d}</small></button>`).join('') + '</div><div id="suab3d" class="pl-ab3d pl-thv">' + V3T() + '</div>' +
       '<div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>'; }
@@ -1088,20 +1088,25 @@ const THEMES6 = [['tropical', 'Tropical', 'resort, teak, palms, a lawn', ['#8A5A
   ['santorini', 'Santorini', 'white-washed, Aegean blue, bougainvillea', ['#F4F4F0', '#2B5DA8', '#C2187A', '#D8C6A5']],
   ['modern', 'Modern', 'clean lines, charcoal, concrete', ['#2E2E2E', '#B9B8B4', '#6B4A33', '#55634A']],
   ['contemporary', 'Contemporary', 'warm neutrals, travertine, curves', ['#D9CDB8', '#8C6A43', '#8FA38A', '#EDE6DA']],
-  ['minimal', 'Minimal', 'few things, white, light oak', ['#F5F3EF', '#C8A97E', '#D9D6D0', '#1E1E1E']]];
-const TH_FLOOR = { tropical: { tile: 'stone', ts: 2, border: { w: 1, c: 'pebble' }, turf: true, path: 'stones' },
-  turkish: { tile: 'moroccan', ts: 1, border: { w: 1.25, c: 'terracotta' }, inlay: 'star', rugs: 'kilim', path: 'terracotta' },
-  santorini: { tile: 'lime', ts: 2, border: { w: 0.75, c: 'blue' }, inlay: 'mosaic', path: 'cobble' },
-  modern: { tile: 'grey', ts: [2, 4], border: { w: 0.75, c: 'granite' }, path: 'granite' },
-  contemporary: { tile: 'trav', ts: 2, turf: true, path: 'big', rugs: 'sand' },
-  minimal: { tile: 'terrazzo', ts: 4 } };
-const TH_PAINT = { tropical: 0xE6D8BF, turkish: 0xF3ECE0, santorini: 0xFAFAF7, modern: 0xB9B8B4, contemporary: 0xEFE8DC, minimal: 0xF4F2EE };   // the walls' paint per theme
+  ['minimal', 'Minimal', 'few things, white, light oak', ['#F5F3EF', '#C8A97E', '#D9D6D0', '#1E1E1E']],
+  ['boho', 'Boho', 'rustic: terracotta brick, jute, poufs, string lights', ['#B8643F', '#C98B3A', '#6B7A4A', '#EFE4D2']]];
+// 276 (owner): each theme's floor recipe — the field (laid pattern), a border, a paver 'rug' where people sit and under the pergola,
+// the path from the stairs door, lawn, inlay, textile rugs. Patterns: floorlay.js SPECS
+const TH_FLOOR = { tropical: { tile: 'stone', lay: 'trop_field', border: { w: 1, c: 'pebble' }, turf: true, path: 'trop_path', pg: 'trop_rug' },
+  turkish: { tile: 'moroccan', lay: 'turk_field', border: { w: 1.3, c: 'terracotta', lay: 'turk_border' }, inlay: 'star', rugs: 'kilim', path: 'turk_path' },
+  santorini: { tile: 'lime', lay: 'sant_field', border: { w: 0.67, c: 'blue', lay: 'sant_border' }, inlay: 'mosaic', path: 'sant_path', rugs: 'berber' },
+  modern: { tile: 'grey', ts: [2, 4], lay: 'mod_field', border: { w: 0.75, c: 'granite', lay: 'mod_border' }, seat: 'mod_rug', pg: 'mod_rug' },
+  contemporary: { tile: 'trav', lay: 'cont_field', turf: true, path: 'stones', pathTurf: true, seat: 'cont_rug', pg: 'cont_rug', rugs: 'sand' },
+  minimal: { tile: 'terrazzo', lay: 'min_field', seat: 'min_rug' },
+  boho: { tile: 'terracotta', lay: 'boho_field', border: { w: 0.67, c: 'terracotta', lay: 'boho_border' }, path: 'boho_path', seat: 'boho_rug', rugs: 'boho', jute: true } };
+const TH_PAINT = { boho: 0xEADBC4, tropical: 0xE6D8BF, turkish: 0xF3ECE0, santorini: 0xFAFAF7, modern: 0xB9B8B4, contemporary: 0xEFE8DC, minimal: 0xF4F2EE };   // the walls' paint per theme
 const V3T = () => '<div class="pl-ab3t"><button type="button" data-su="v3:zin" aria-label="Zoom in">+</button><button type="button" data-su="v3:zout" aria-label="Zoom out">−</button><button type="button" data-su="v3:pan" aria-label="Move the view" title="Move the view">✋</button><button type="button" data-su="v3:top" aria-label="Top view" title="Top view">▦</button><button type="button" data-su="v3:night" aria-label="Night view" title="Night view">🌙</button><button type="button" data-su="v3:home" aria-label="Whole space" title="Whole space">⌖</button></div>';
 const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-shade)
   turkish: { corner: { S: ['MORPANKHI', 'PHOENIX', 'CYCAS'], SS: ['RHAPIS', 'MORPANKHI'] }, wall: { S: ['BOUGAINVILLEA', 'KANER', 'MOGRA', 'MADHUMALTI'], SS: ['MOGRA', 'CHANDNI', 'SNAKEPLANT'] }, accent: { S: ['CHAMPA', 'AGAVE', 'ADENIUM'], SS: ['SNAKEPLANT', 'CHANDNI'] } },
   santorini: { corner: { S: ['MORPANKHI', 'CYCAS', 'PHOENIX'], SS: ['MORPANKHI', 'RHAPIS'] }, wall: { S: ['BOUGAINVILLEA', 'KANER', 'FOUNTAINGRASS', 'BOUGAINVILLEA'], SS: ['SNAKEPLANT', 'CHANDNI'] }, accent: { S: ['AGAVE', 'ADENIUM', 'BOUGAINVILLEA'], SS: ['SNAKEPLANT'] } },
   modern: { corner: { S: ['BAMBOO', 'MORPANKHI', 'FOXTAIL'], SS: ['BAMBOO', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'SNAKEPLANT', 'AGAVE'], SS: ['SNAKEPLANT', 'CORDYLINE'] }, accent: { S: ['AGAVE', 'BLACKFICUS'], SS: ['SNAKEPLANT', 'BLACKFICUS'] } },
   contemporary: { corner: { S: ['FICUSPANDA', 'BLACKFICUS', 'FOXTAIL'], SS: ['PACHIRA', 'RHAPIS', 'SCHEFFLERA'] }, wall: { S: ['FOUNTAINGRASS', 'DURANTA', 'KAMINI'], SS: ['SCHEFFLERA', 'SNAKEPLANT'] }, accent: { S: ['BIRDPARADISE', 'FICUSPANDA'], SS: ['PACHIRA', 'BIRDPARADISE'] } },
+  boho: { corner: { S: ['PHOENIX', 'FICUSPANDA', 'BANANA'], SS: ['ARECA', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'BOUGAINVILLEA', 'MOGRA', 'AGAVE'], SS: ['SNAKEPLANT', 'CHANDNI'] }, accent: { S: ['BIRDPARADISE', 'AGAVE', 'FOUNTAINGRASS'], SS: ['PACHIRA', 'SNAKEPLANT'] } },
   minimal: { corner: { S: ['FICUSPANDA'], SS: ['FICUSPANDA', 'PACHIRA'] }, wall: { S: ['FOUNTAINGRASS', 'SNAKEPLANT'], SS: ['SNAKEPLANT'] }, accent: { S: ['FICUSPANDA', 'AGAVE'], SS: ['SNAKEPLANT'] } } };
 function themeApply(k, quiet) { const su = S.su; if (!su) return; su.thm = k; su.theme = k;
   S.items = S.items.filter(o => o.old || !(o.cat === 'plant' || (o.cat === 'planter' && !o.pick && !o.cfgId)));   // plants to suit the theme (every planted plant is re-picked)
@@ -1109,7 +1114,7 @@ function themeApply(k, quiet) { const su = S.su; if (!su) return; su.thm = k; su
   try { compose({ B: {}, phase: 'decor' }); } catch (e) {}
   if (!quiet) { save(); draw(true); } }
 function themeFloor(k) { const t = S.site, F = TH_FLOOR[k]; if (!F) return;   // the floor + the open floor landscaped (lawn, a path from the stairs door to the seating, an inlay, rugs)
-  t.floor = { tile: F.tile, ts: F.ts, theme: k, border: F.border || null, pebble: false, zones: [] };
+  t.floor = { tile: F.tile, ts: F.ts, lay: F.lay, theme: k, border: F.border || null, pebble: false, zones: [] };
   if ((S.su || {}).walls !== 'tiles') { t.wallFin = 'paint'; t.paintC = TH_PAINT[k]; }
   try { t.floor.zones = landscape(F); } catch (e) { t.floor.zones = []; } }
 function landscape(F) {
@@ -1134,9 +1139,15 @@ function landscape(F) {
       while (Q.length) { Q.sort((a, b) => a[0] - b[0]); const [c, i, j, d] = Q.shift(); if (goal(i, j)) { end = [i, j, d]; break; } if (c > (dist.get(key(i, j, Math.max(0, d))) ?? 1e9) + 0.01 && d >= 0) continue;
         DIR.forEach(([di, dj], nd) => { const ni = i + di, nj = j + dj; if (!pass(ni, nj)) return; const nc = c + (used[nj][ni] ? 0.8 : 1) + (d >= 0 && d !== nd ? 2 : 0), kk = key(ni, nj, nd); if (nc < (dist.get(kk) ?? 1e9)) { dist.set(kk, nc); prev.set(kk, d >= 0 ? key(i, j, d) : 'S' + i + ',' + j); Q.push([nc, ni, nj, nd]); } }); if (Q.length > 6000) break; }
       if (end) { let k = key(end[0], end[1], end[2]), guard = 0; const cells = []; while (k != null && guard++ < 400) { if (typeof k === 'string') { const [a, b] = k.slice(1).split(',').map(Number); cells.push([a, b]); break; } const ci = Math.floor(k / 4), i = ci % W, j = Math.floor(ci / W); cells.push([i, j]); k = prev.get(k); }
-        cells.forEach(([i, j]) => { onPath[j][i] = 1; const [x, z] = cell(i, j); Z.push({ k: 'path', s: used[j][i] && F.path !== 'stones' ? 'stones' : F.path, x, z, w: G, d: G }); }); } } }
+        cells.forEach(([i, j]) => { onPath[j][i] = 1; if (F.pathTurf && !used[j][i]) return; const [x, z] = cell(i, j); Z.push({ k: 'path', s: used[j][i] ? 'stones' : F.path, x, z, w: G, d: G }); }); } } }
   if (F.inlay) { const b = bigRect((i, j) => ok[j][i] && !used[j][i] && !onPath[j][i]); if (b && b.w >= 2 && b.d >= 2) { const n = Math.min(b.w, b.d, 5), i0 = b.i + Math.floor((b.w - n) / 2), j0 = b.j + Math.floor((b.d - n) / 2), [x, z] = cell(i0, j0); Z.unshift({ k: 'inlay', s: F.inlay, x: x + 0.5, z: z + 0.5, w: n * G - 1, d: n * G - 1 }); } }   // the inlay in the biggest open spot off the path
-  if (F.rugs) S.items.filter(o => ['sofa', 'dining'].includes(o.cat) && !o.old).forEach(o => { const r = rectI(o); Z.push({ k: 'rug', s: F.rugs, x: r.x + 0.4, z: r.z + 0.4, w: r.w - 0.8, d: r.d - 0.8 }); });
+  // 276: a paver 'rug' under each pergola (no deck there) and under each seating group (sofa / dining / fixed seating + what stands by it)
+  const cl = r => { const x0 = Math.max(E, r.x), z0 = Math.max(E, r.z), x1 = Math.min(t.pw - E, r.x + r.w), z1 = Math.min(t.pd - E, r.z + r.d); return x1 - x0 > 1 && z1 - z0 > 1 ? { x: x0, z: z0, w: x1 - x0, d: z1 - z0 } : null; }, PZ = [];
+  if (F.pg) S.items.filter(o => o.cat === 'pergola' && !o.old).forEach(o => { const r = rectI(o); if (S.items.some(q => q.cat === 'deck' && Math.abs(rectI(q).x - r.x) < 1.5 && Math.abs(rectI(q).z - r.z) < 1.5)) return; const c = cl({ x: r.x + 0.2, z: r.z + 0.2, w: r.w - 0.4, d: r.d - 0.4 }); if (c) { PZ.push(c); Z.unshift(Object.assign({ k: 'prug', s: F.pg }, c)); } });
+  const grp = S.items.filter(o => ['sofa', 'dining', 'fbench'].includes(o.cat) && !o.old && !att(o)).map(o => { let r = rectI(o); const r0 = r; S.items.forEach(q => { if (!['chair', 'table', 'stool'].includes(q.cat) && !(q.cat === 'firepit' && o.cat !== 'dining') || q === o) return; const b = rectI(q); if (b.x > r0.x + r0.w + 2 || b.x + b.w < r0.x - 2 || b.z > r0.z + r0.d + 2 || b.z + b.d < r0.z - 2) return; const x0 = Math.min(r.x, b.x), z0 = Math.min(r.z, b.z); r = { x: x0, z: z0, w: Math.max(r.x + r.w, b.x + b.w) - x0, d: Math.max(r.z + r.d, b.z + b.d) - z0 }; }); return r; });
+  if (F.seat) grp.forEach(r => { const c = cl({ x: r.x - 1.2, z: r.z - 1.2, w: r.w + 2.4, d: r.d + 2.4 }); if (c && !PZ.some(p => c.x >= p.x - 0.5 && c.z >= p.z - 0.5 && c.x + c.w <= p.x + p.w + 0.5 && c.z + c.d <= p.z + p.d + 0.5)) Z.unshift(Object.assign({ k: 'prug', s: F.seat, y: 0.004 }, c)); });
+  if (F.rugs) S.items.filter(o => ['sofa', 'dining'].includes(o.cat) && !o.old).forEach(o => { const r = rectI(o); Z.push({ k: 'rug', s: F.rugs, x: r.x - 0.6, z: r.z - 0.6, w: r.w + 1.2, d: r.d + 1.2, y: 0.01 });   // a textile rug a little bigger than the seating
+    if (F.jute) { const rr = Math.min(Math.max(r.w, r.d) * 0.55, 4.5); Z.push({ k: 'rug', s: 'jute', x: r.x + r.w * 0.62 - rr / 2, z: r.z + r.d * 0.6 - rr / 2, w: rr, d: rr, y: 0.02 }); } });   // boho: a round jute rug layered over it
   return Z; }
 const COP0 = [['none', 'No coping (plaster)'], ['cement', 'Cement band'], ['kota', 'Kota stone'], ['granite', 'Granite'], ['marble', 'Marble'], ['sandstone', 'Sandstone'], ['tiles', 'Tiles']], COPN = [['granite', 'Granite'], ['kota', 'Kota stone'], ['marble', 'Marble'], ['sandstone', 'Sandstone']];
 const flAct = () => (S.su && S.su.flAct) || ((S.su && S.su.rm && S.su.rm.floor0) ? 'change' : 'keep');
