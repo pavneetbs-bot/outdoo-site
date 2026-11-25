@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=52';
-import { pergolaModel } from './pergola3d.js?v=40';
-import { outline, sofaLayout } from './plan2d.js?v=22';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=53';
+import { pergolaModel } from './pergola3d.js?v=41';
+import { outline, sofaLayout } from './plan2d.js?v=23';
 import { plantModel } from './plants3d.js?v=2';
 
 let R = null, HANDLER = null;
@@ -129,11 +129,20 @@ function lawn(g, t) {
 // ---- one common model per category (sized to the item)
 // 235: four looks for the same setup — frames, wood, cushions, accents, stone
 const THEMES = { modern: { frame: 0x2E2E2E, wood: 0x8C8C8C, wood2: 0x5E5E5E, cush: 0xEDEDED, cush2: 0x3A4A5A, stone: 0xC9C6C0 }, natural: { frame: 0x6B4A2E, wood: 0xA8784C, wood2: 0x7A5537, cush: 0xE8E1D4, cush2: 0x8A9A5B, stone: 0xC8B89A },
-  moroccan: { frame: 0x3A2A22, wood: 0x8E5A3A, wood2: 0x6A3F28, cush: 0xF2E2C8, cush2: 0x1F6F7E, stone: 0xD9B48C }, tropical: { frame: 0xF1EDE4, wood: 0xC49A6C, wood2: 0x9C7650, cush: 0xF7F4EC, cush2: 0x2E7D5B, stone: 0xE2D8C4 } };
+  moroccan: { frame: 0x3A2A22, wood: 0x8E5A3A, wood2: 0x6A3F28, cush: 0xF2E2C8, cush2: 0x1F6F7E, stone: 0xD9B48C },
+  // 274 (owner): the six themes of the "Pick a theme" step — frames, wood, cushions, accents, stone, pots
+  tropical: { frame: 0x5A4632, wood: 0x8A5A35, wood2: 0x6E4B33, cush: 0xEFE8DA, cush2: 0x3E6B3A, stone: 0xCBBFA8, pot: 0xB46A4A, acc1: 0xD9A441, acc2: 0x3E6B3A, frp: 0x6E4B33 },
+  turkish: { frame: 0xB08D57, wood: 0x5E3B26, wood2: 0x4A2E1E, cush: 0xF3EEE6, cush2: 0x1F6F7E, stone: 0xF1ECE3, pot: 0x1F6F7E, acc1: 0x9E2B25, acc2: 0xE0A33B, frp: 0xC9774A, metal: 1 },
+  santorini: { frame: 0xF2F2EE, wood: 0xD8C6A5, wood2: 0xBFAE8E, cush: 0xF7F7F4, cush2: 0x2B5DA8, stone: 0xF4F4F0, pot: 0xF2F2EE, acc1: 0x2B5DA8, acc2: 0x6FA3D9, frp: 0xF2F2EE },
+  modern: { frame: 0x2E2E2E, wood: 0x6B4A33, wood2: 0x3A3A3A, cush: 0xD9D8D4, cush2: 0x9E9C97, stone: 0xB9B8B4, pot: 0x2E2E2E, acc1: 0x55634A, acc2: 0x9E9C97, frp: 0x2E2E2E },
+  contemporary: { frame: 0x8C6A43, wood: 0xB08560, wood2: 0x8C6A4E, cush: 0xEDE6DA, cush2: 0xD8C9A8, stone: 0xD9CDB8, pot: 0xA89A88, acc1: 0x8FA38A, acc2: 0xC26445, frp: 0xA89A88, metal: 1 },
+  minimal: { frame: 0x1E1E1E, wood: 0xC8A97E, wood2: 0xB09370, cush: 0xF5F3EF, cush2: 0xE6E2DA, stone: 0xF2F0EC, pot: 0xF2F2EE, acc1: 0xE6E2DA, acc2: 0xD9D6D0, frp: 0xF2F2EE } };
+THEMES.modern0 = THEMES.modern;
 let THEME = 'natural';
 const C = () => { const T = THEMES[THEME] || THEMES.natural, k = '_' + THEME; return {
   frame: mat('c_frame' + k, T.frame, { metalness: 0.4, roughness: 0.5 }), wood: mat('c_wood' + k, T.wood), wood2: mat('c_wood2' + k, T.wood2),
   cush: mat('c_cush' + k, T.cush), cush2: mat('c_cush2' + k, T.cush2), stone: mat('c_stone' + k, T.stone), dark: mat('c_dark', 0x3A3A3A),
+  acc1: mat('c_acc1' + k, T.acc1 || 0xC26445, { roughness: 0.95 }), acc2: mat('c_acc2' + k, T.acc2 || 0x55634A, { roughness: 0.95 }), tpot: T.pot != null ? mat('c_tpot' + k, T.pot, { roughness: 0.6 }) : null, frp: mat('c_frp' + k, T.frp != null ? T.frp : 0x3B3D40, { roughness: 0.35, metalness: 0.1 }), themed: T.pot != null,
   leaf: mat('c_leaf', 0x4F7A3A), leaf2: mat('c_leaf2', 0x6B9A4A), water: mat('c_water', 0x6FA8C7, { roughness: 0.15, metalness: 0.1 }), white: mat('c_white', 0xF2EFE8),
   glass: mat('c_glass', 0xBFD9E6, { transparent: true, opacity: 0.35, roughness: 0.05 }), clay: mat('c_clay', 0xB46A4A), pot: mat('c_pot', 0x3D3F41),
 }; };
@@ -361,7 +370,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   const g = new THREE.Group(), K = C();
   if (cat === 'sofa') {   // 261 (owner): a sleek rope sofa set — slim charcoal frame, woven rope back and arms, off-white cushions; pieces as ticked (sofaLayout)
     const L = sofaLayout(it && it.sconf), sx = w / (L.w || w), sz = d / (L.d || d), root = new THREE.Group(); root.scale.set(sx, 1, sz); g.add(root); const SD = 2.6;
-    const fr = mat('c_ropefr', 0x2B2B2B, { roughness: 0.5, metalness: 0.3 }), cu = mat('c_ropecu', 0xEEE9DF, { roughness: 0.95 }), ac1 = mat('c_ropeac1', 0xC26445, { roughness: 0.95 }), ac2 = mat('c_ropeac2', 0x55634A, { roughness: 0.95 });
+    const fr = K.themed ? K.frame : mat('c_ropefr', 0x2B2B2B, { roughness: 0.5, metalness: 0.3 }), cu = K.themed ? K.cush : mat('c_ropecu', 0xEEE9DF, { roughness: 0.95 }), ac1 = K.themed ? K.acc1 : mat('c_ropeac1', 0xC26445, { roughness: 0.95 }), ac2 = K.themed ? K.acc2 : mat('c_ropeac2', 0x55634A, { roughness: 0.95 });   // 274: the theme's frame / cushions / accents
     const panel = (u, pw, ph, x, y, z, ry) => { const m = ropeMat(pw, ph), p = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), m); p.position.set(x, y, z); p.rotation.y = ry || 0; p.castShadow = true; u.add(p); };
     L.pieces.forEach(pc => { const u = new THREE.Group(); u.position.set(pc.x, 0, pc.z); u.rotation.y = pc.ry; root.add(u); const len = pc.len, bz = -SD / 2 + 0.12;
       box(u, len, 0.12, SD, 0, 0.5, 0, fr); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(u, 0.09, 0.45, 0.09, a * (len / 2 - 0.1), 0.23, b * (SD / 2 - 0.1), fr));   // slim seat frame on thin legs
@@ -426,9 +435,10 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'planter' && it && /^MTO-PL-[A-Z]{2}$/.test(it.cfgId || it.pick || '')) {   // 199: an outrr planter — its own size, finish colour, plinth, plants, LED glow underneath
     planterModel(g, w, d, h, it, K);
   } else if (cat === 'plant') {   // 218b: a real Landscape Plant (its own model at the picked size), in a plain pot on the plan
-    const m = plantModel(THREE, (it && it.plant) || 'ARECA', h || 4, { pot: 'pot', seed: 5 }); m.rotation.y = (Math.abs(Math.round((+(it && it.x) || 1) * 7 + (+(it && it.z) || 1) * 13)) % 12) * 0.52; g.add(m);
+    const m = plantModel(THREE, (it && it.plant) || 'ARECA', h || 4, { pot: 'pot', seed: 5 }); if (K.tpot) m.traverse(o => { if (o.isMesh && o.material && o.material.color && o.material.color.getHex() === 0x6A6A66) o.material = K.tpot; });   // 274: the pot in the theme's colour
+    m.rotation.y = (Math.abs(Math.round((+(it && it.x) || 1) * 7 + (+(it && it.z) || 1) * 13)) % 12) * 0.52; g.add(m);
   } else if (cat === 'planter' && it && it.frp) {   // 258 (owner): a rectangular FRP trough along the parapet, planted
-    pbox(g, w, d, 0, 0, 2, mat('c_frp', 0x3B3D40, { roughness: 0.35, metalness: 0.1 }));
+    pbox(g, w, d, 0, 0, 2, K.frp);   // 274: trough in the theme's colour
   } else if (cat === 'planter') {   // 262 (owner): one of our real plant models in a pot — a tropical mix, sizes vary
     const sdp = Math.abs(Math.round((+(it && it.x) || 1) * 13 + (+(it && it.z) || 1) * 7)), k = TROP_B[sdp % TROP_B.length], m = noSh(plantModel(THREE, k, 3 + (sdp % 2) * 1.5, { pot: 'pot', seed: 1 })); m.rotation.y = (sdp % 12) * 0.52; g.add(m);
   } else if (cat === 'water' && it && WLIB[wCode(it)]) { waterLib(g, w, d, wCode(it), K);   // 262 (owner): the water features as in our library (MTO-WW / WC / TG)
@@ -497,7 +507,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     [[0, 0, 1.4], [0.5, 0.2, 1], [-0.4, 0.3, 1.1], [0.1, -0.5, 0.9]].forEach(([x, z, hh]) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.35, hh, 8), mat('c_flame', 0xFF8A2A, { emissive: 0xFF6A00, emissiveIntensity: 1.2, roughness: 1 })); f.position.set(x, 1.2 + hh / 2, z); g.add(f); });
   } else if (cat === 'jacuzzi') {
     // 272 (owner): a real spa — wooden skirting with slats, white acrylic shell with a rim, rounded seats, headrests, water with jets, steps, underwater light at night
-    const H = h || 3, rim = 0.55, iw = w - 2 * rim, id = d - 2 * rim, acr = mat('c_jacr', 0xF4F4F2, { roughness: 0.25 }), sk = mat('c_jsk', 0x6E4B33, { roughness: 0.8 }), sk2 = mat('c_jsk2', 0x5A3C28, { roughness: 0.8 });
+    const H = h || 3, rim = 0.55, iw = w - 2 * rim, id = d - 2 * rim, acr = mat('c_jacr', 0xF4F4F2, { roughness: 0.25 }), sk = K.themed ? K.wood2 : mat('c_jsk', 0x6E4B33, { roughness: 0.8 }), sk2 = K.themed ? K.wood : mat('c_jsk2', 0x5A3C28, { roughness: 0.8 });
     const wat = mat('c_jwat', 0x5FC4D9, { roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.82, emissive: 0x0E5B6A, emissiveIntensity: 0.25 });
     const B = H - 1.2; box(g, w - 0.1, B, d - 0.1, 0, B / 2, 0, sk);   // cabinet (the tub's floor at B)
     [[w, 'z', d / 2], [w, 'z', -d / 2], [d, 'x', w / 2], [d, 'x', -w / 2]].forEach(([L, ax, o]) => { if (ax === 'z') box(g, L, 1.0, 0.06, 0, B + 0.5, o, sk, false); else box(g, 0.06, 1.0, L, o, B + 0.5, 0, sk, false);   // skirting up to the rim
@@ -538,7 +548,7 @@ function pgO(it) {   // 193g: the pergola as set up in its designer (finish, col
 function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w, d)
   if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { const b = cabinModel(P.cabinCfg(it), P.cabinLay(it)); { const lb = b.g.getObjectByName('labels'); if (lb) lb.visible = false; } const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }   // 253: no "Wall / Swing door" tags in the plan
   if (it.cat === 'pergola' && !it.cfgId && !it.pick && !P.fullPergola) {   // 245 (owner): in the plan a light, simple pergola — 4 slim posts, a frame, thin rafters; the chosen design shows in full
-    const h = new THREE.Group(), y0 = it.deck ? 0.6 : 0, H = (+it.h || 8), w = +it.w, d = +it.d, fm = mat('c_pgs', 0x2F2F2F, { metalness: 0.35, roughness: 0.5 }), sp = Math.max(w, d) > 16 ? 3 : 2;
+    const h = new THREE.Group(), y0 = it.deck ? 0.6 : 0, H = (+it.h || 8), w = +it.w, d = +it.d, fm = (THEMES[THEME] || {}).pot != null ? mat('c_pgs_' + THEME, THEMES[THEME].frame, { metalness: THEMES[THEME].metal ? 0.55 : 0.3, roughness: 0.5 }) : mat('c_pgs', 0x2F2F2F, { metalness: 0.35, roughness: 0.5 }), sp = Math.max(w, d) > 16 ? 3 : 2;   // 274: the theme's frame
     if (it.deck && !deckUnder(it, P)) { const dk = mat('c_pdeck', 0x8B6A4A); box(h, w, DECK_H, d, w / 2, DECK_H / 2, d / 2, dk); }
     const px = [0.2, w - 0.2].concat(w > 16 ? [w / 2] : []), pz = [0.2, d - 0.2].concat(d > 16 ? [d / 2] : []);
     const st = P.site || {}, sh = st.kind === 'terrace' ? (st.blocks || []).filter(b => b.type === 'shaft') : [], E = 0.75, par = +st.par || 3, f0 = foot(it), cx0 = +it.x + f0[0] / 2, cz0 = +it.z + f0[1] / 2, ph = -(+it.rot || 0) * Math.PI / 180, cs = Math.cos(ph), sn = Math.sin(ph);
@@ -599,7 +609,7 @@ function measures(P) {
 function night(on) { if (!R || R.night === on) return; R.night = on; R.dirty = true; (R.nl || []).forEach(m => { m.visible = on; }); R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.2 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
 // 241: tropical planting in a pot — areca palm / big-leaf (monstera, bird of paradise) / round bush, size varies from pot to pot
 function tropical(g, w, d, it) { const sd = Math.abs(Math.round((+(it && it.x) || 1) * 13 + (+(it && it.z) || 1) * 7)), rnd = (k => () => (k = (k * 16807) % 2147483647) / 2147483647)(sd + 11), r = Math.min(w, d) / 2, sz = 0.8 + rnd() * 0.9, ty = sd % 3;
-  const pot = sd % 2 ? mat('c_potc', 0x3A3836, { roughness: 0.7 }) : mat('c_pott', 0xB06A47, { roughness: 0.9 }); cyl(g, r * 0.92, r * 0.72, r * 1.7, 0, r * 0.85, 0, pot, 20); const y0 = r * 1.7;
+  const KT = C(), pot = KT.tpot || (sd % 2 ? mat('c_potc', 0x3A3836, { roughness: 0.7 }) : mat('c_pott', 0xB06A47, { roughness: 0.9 })); cyl(g, r * 0.92, r * 0.72, r * 1.7, 0, r * 0.85, 0, pot, 20); const y0 = r * 1.7;
   const L1 = mat('c_lf1', 0x2F6B34, { roughness: 0.8, side: THREE.DoubleSide }), L2 = mat('c_lf2', 0x4C8A3C, { roughness: 0.8, side: THREE.DoubleSide }), L3 = mat('c_lf3', 0x22552A, { roughness: 0.85, side: THREE.DoubleSide });
   const leaf = (len, wid, m) => { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(wid, len * 0.45, 0, len); sh.quadraticCurveTo(-wid, len * 0.45, 0, 0); const o = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), m); o.castShadow = true; return o; };
   if (ty === 0) { const n = 5 + Math.floor(rnd() * 4), H = (3.2 + rnd() * 2.5) * sz;   // areca palm: stems with arching fronds
@@ -672,6 +682,17 @@ function finTex(k) { if (TEX[k]) return TEX[k]; const cv = document.createElemen
   if (flat) { x.fillStyle = flat[0]; x.fillRect(0, 0, 256, 256); if (k === 'stone') for (let i = 0; i < 90; i++) { x.fillStyle = 'rgba(120,100,70,.12)'; x.fillRect(Math.random() * 256, Math.random() * 256, 3 + Math.random() * 10, 2 + Math.random() * 4); } x.strokeStyle = flat[1]; x.lineWidth = 4; x.strokeRect(0, 0, 256, 256); }
   else if (k === 'kota') { x.fillStyle = '#9AA596'; x.fillRect(0, 0, 256, 256); [[128, 0], [0, 128]].forEach(([a, b], j) => { x.fillStyle = j ? '#8F9A8B' : '#A7B1A2'; x.fillRect(a, b, 128, 128); }); x.strokeStyle = '#7E887A'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke(); }
   else if (k === 'marble') { x.fillStyle = '#F2F0EC'; x.fillRect(0, 0, 256, 256); x.strokeStyle = 'rgba(160,150,135,.5)'; x.lineWidth = 2; for (let i = 0; i < 4; i++) { x.beginPath(); x.moveTo(0, 40 + i * 60); x.bezierCurveTo(80, 20 + i * 70, 160, 90 + i * 40, 256, 60 + i * 55); x.stroke(); } x.strokeStyle = '#DCD8D0'; x.strokeRect(0, 0, 256, 256); }
+  else if (k === 'lime') { x.fillStyle = '#F6F4EF'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 600; i++) { x.fillStyle = `rgba(190,182,168,${Math.random() * 0.12})`; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 4 + Math.random() * 14, 3 + Math.random() * 8, Math.random() * 3, 0, 7); x.fill(); } x.strokeStyle = 'rgba(200,192,178,.7)'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); }   // 274: Santorini lime-washed floor
+  else if (k === 'trav') { x.fillStyle = '#DCCFB9'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 40; i++) { x.strokeStyle = `rgba(170,150,120,${0.1 + Math.random() * 0.15})`; x.lineWidth = 1 + Math.random() * 2; const y = Math.random() * 256; x.beginPath(); x.moveTo(0, y); x.bezierCurveTo(80, y + 6, 170, y - 6, 256, y + Math.random() * 6); x.stroke(); } for (let i = 0; i < 90; i++) { x.fillStyle = 'rgba(150,130,100,.25)'; x.fillRect(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 6, 1 + Math.random() * 2); } x.strokeStyle = '#C3B49C'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); }   // 274: travertine
+  else if (k === 'turf') { x.fillStyle = '#6FA24A'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 2600; i++) { x.strokeStyle = ['#5E9440', '#7DB255', '#8BBE5E', '#4F8236'][i % 4]; x.lineWidth = 1.2; const px = Math.random() * 256, py = Math.random() * 256; x.beginPath(); x.moveTo(px, py); x.lineTo(px + (Math.random() - 0.5) * 3, py - 3 - Math.random() * 5); x.stroke(); } }
+  else if (k === 'cobble') { x.fillStyle = '#F4F2EC'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 160; i++) { x.fillStyle = ['#B9B6AE', '#9EA3A8', '#C9C6BE', '#8E949A'][i % 4]; x.beginPath(); x.ellipse((i % 13) * 20 + 8 + Math.random() * 4, Math.floor(i / 13) * 20 + 8 + Math.random() * 4, 8 + Math.random() * 2, 7 + Math.random() * 2, Math.random() * 3, 0, 7); x.fill(); } }   // 274: white pebble cobbles (Santorini)
+  else if (k === 'kilim') { x.fillStyle = '#9E2B25'; x.fillRect(0, 0, 256, 256); const C2 = ['#E0A33B', '#1F6F7E', '#F3EEE6', '#2B2B2B']; for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { const cx = 32 + c * 64, cy = 32 + r * 64; x.fillStyle = C2[(r + c) % 4]; x.beginPath(); x.moveTo(cx, cy - 26); x.lineTo(cx + 22, cy); x.lineTo(cx, cy + 26); x.lineTo(cx - 22, cy); x.fill(); x.fillStyle = '#9E2B25'; x.beginPath(); x.moveTo(cx, cy - 10); x.lineTo(cx + 8, cy); x.lineTo(cx, cy + 10); x.lineTo(cx - 8, cy); x.fill(); } x.strokeStyle = '#F3EEE6'; x.lineWidth = 6; x.strokeRect(3, 3, 250, 250); }   // 274: Turkish kilim rug
+  else if (k === 'sandrug') { x.fillStyle = '#D8C9A8'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 900; i++) { x.fillStyle = `rgba(150,130,100,${Math.random() * 0.12})`; x.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); } x.strokeStyle = '#B9A784'; x.lineWidth = 8; x.strokeRect(6, 6, 244, 244); }
+  else if (k === 'star' || k === 'mosaic') { const tq = k === 'star'; x.fillStyle = tq ? '#F3EEE6' : '#F6F4EF'; x.fillRect(0, 0, 256, 256); x.save(); x.translate(128, 128);   // 274: a round inlay — Turkish 8-point star / Santorini blue-white pebble mosaic
+    x.fillStyle = tq ? '#1F6F7E' : '#2B5DA8'; x.beginPath(); x.arc(0, 0, 124, 0, 7); x.fill(); x.fillStyle = tq ? '#F3EEE6' : '#F6F4EF'; x.beginPath(); x.arc(0, 0, 114, 0, 7); x.fill();
+    if (tq) { [0, Math.PI / 4].forEach((a, j) => { x.save(); x.rotate(a); x.fillStyle = j ? '#E0A33B' : '#9E2B25'; x.fillRect(-72, -72, 144, 144); x.restore(); }); x.fillStyle = '#1F6F7E'; x.beginPath(); x.arc(0, 0, 40, 0, 7); x.fill(); x.fillStyle = '#F3EEE6'; x.beginPath(); x.arc(0, 0, 14, 0, 7); x.fill(); }
+    else { for (let ring = 0; ring < 9; ring++) { const rr = 10 + ring * 12, n = Math.max(6, Math.round(rr * 0.55)); for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + ring; x.fillStyle = ring % 2 ? '#2B5DA8' : '#FFFFFF'; x.beginPath(); x.ellipse(Math.cos(a) * rr, Math.sin(a) * rr, 5, 4, a, 0, 7); x.fill(); } } }
+    x.restore(); }
   else if (k === 'granite') { x.fillStyle = '#3B3936'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 1400; i++) { x.fillStyle = ['#5A5753', '#26241F', '#7B7670', '#4A4642', '#9A948C'][i % 5]; x.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 3, 1 + Math.random() * 3); } x.strokeStyle = 'rgba(20,20,20,.6)'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke(); }   // 272
   else if (k === 'cement') { x.fillStyle = '#C9C5BE'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 500; i++) { x.fillStyle = `rgba(90,85,78,${Math.random() * 0.08})`; x.fillRect(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 6, 2 + Math.random() * 6); } }
   else if (k === 'terrazzo') { x.fillStyle = '#EFE8DC'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 380; i++) { x.fillStyle = ['#C9B99E', '#9FA89A', '#D2B48F', '#B7AE9F', '#A9B3A4'][i % 5]; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 1.5 + Math.random() * 4, 1.2 + Math.random() * 3, Math.random() * 3, 0, 7); x.fill(); } x.strokeStyle = '#DED5C6'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); }
@@ -695,14 +716,24 @@ export function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r =>
   return out; }
 function floorFin(g, t, items) {
   const f = t.floor || {}, pw = +t.pw, pd = +t.pd, E = 0.75;
-  if (['plain', 'moroccan', 'stone', 'terracotta', 'grey', 'terrazzo', 'checker', 'kota', 'marble', 'granite', 'cement'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
-    const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const per = f.tile === 'moroccan' ? 3 : f.tile === 'checker' ? 4 : 2; tx.repeat.set(1 / per, 1 / per);
+  if (['plain', 'moroccan', 'stone', 'terracotta', 'grey', 'terrazzo', 'checker', 'kota', 'marble', 'granite', 'cement', 'lime', 'trav'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
+    const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const ts = Array.isArray(f.ts) ? f.ts : f.ts ? [f.ts, f.ts] : null, per = f.tile === 'moroccan' ? 3 : f.tile === 'checker' ? 4 : 2; if (ts) tx.repeat.set(1 / ts[0], 1 / ts[1]); else tx.repeat.set(1 / per, 1 / per);   // 274: real tile sizes (one tile per texture)
     const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
-  if (f.border) { const bw = 1.25, bm = mat('fl_bord' + f.preset, f.preset === 'greek' ? 0x8FA38A : 0x4A4A48, { roughness: 0.8 }), O = outline(t);   // 245: the floor look's border band along the parapet
+  if (f.border) { const BO = typeof f.border === 'object' ? f.border : null, bw = BO ? +BO.w || 1 : 1.25, bm = BO ? (['pebble', 'terracotta', 'cobble'].includes(BO.c) ? new THREE.MeshStandardMaterial({ map: (tx0 => { const tx = tx0.clone(); tx.needsUpdate = true; tx.repeat.set(1 / 1.5, 1 / 1.5); return tx; })(finTex(BO.c)), roughness: 0.95 }) : mat('fl_bord_' + BO.c, { blue: 0x2B5DA8, granite: 0x2F2E2C }[BO.c] || 0x4A4A48, { roughness: BO.c === 'granite' ? 0.3 : 0.8 })) : mat('fl_bord' + f.preset, f.preset === 'greek' ? 0x8FA38A : 0x4A4A48, { roughness: 0.8 }), O = outline(t);   // 274: a theme's border band (pebbles, terracotta, blue, black granite)   // 245: the floor look's border band along the parapet
     O.forEach((a, i) => { const b = O[(i + 1) % O.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 0.5) return; const ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L; let nx = -uz, nz = ux; const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
       let c = false; for (let p = 0, q = O.length - 1; p < O.length; q = p++) { const [xi, zi] = O[p], [xj, zj] = O[q]; if ((zi > mz + nz) !== (zj > mz + nz) && mx + nx < (xj - xi) * (mz + nz - zi) / (zj - zi) + xi) c = !c; } if (!c) { nx = -nx; nz = -nz; }
       const m = new THREE.Mesh(new THREE.PlaneGeometry(L, bw), bm); m.rotation.x = -Math.PI / 2; m.rotation.z = -Math.atan2(uz, ux); m.position.set(mx + nx * (E + bw / 2), 0.03, mz + nz * (E + bw / 2)); m.receiveShadow = true; g.add(m); }); }
   (f.rugs || []).forEach(([x, z, w, d]) => { const tx = finTex('moroccan').clone(); tx.needsUpdate = true; tx.repeat.set(w / 3, d / 3); const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.8 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.035, z + d / 2); m.receiveShadow = true; g.add(m); });   // 245: Moroccan 'rugs'
+  (f.zones || []).forEach(zn => { const { k, x, z, w, d } = zn; if (!(w > 0.2 && d > 0.2)) return;   // 274 (owner): the open floor landscaped per theme — lawn, paths, inlay, rugs
+    const tex = (key, rx, ry) => { const tx = finTex(key).clone(); tx.needsUpdate = true; tx.repeat.set(rx, ry); return tx; };
+    if (k === 'turf') { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), new THREE.MeshStandardMaterial({ map: tex('turf', w / 3, d / 3), roughness: 1 })); m.position.set(x + w / 2, 0.06, z + d / 2); m.receiveShadow = true; g.add(m); return; }
+    if (k === 'path') { const st = zn.s || 'stones', cx = x + w / 2, cz = z + d / 2;
+      if (st === 'stones') { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.08, 18), mat('fl_stone', 0x9E978C, { roughness: 0.9 })); m.scale.set(1, 1, 0.8); m.position.set(cx, 0.12, cz); m.receiveShadow = m.castShadow = true; g.add(m); return; }
+      const M = { terracotta: () => new THREE.MeshStandardMaterial({ map: tex('terracotta', 1, 1), roughness: 0.9 }), cobble: () => new THREE.MeshStandardMaterial({ map: tex('cobble', 1, 1), roughness: 1 }), granite: () => mat('fl_gr', 0x2F2E2C, { roughness: 0.3 }), big: () => new THREE.MeshStandardMaterial({ map: tex('trav', 0.5, 0.5), roughness: 0.8 }) }[st];
+      const sz = st === 'cobble' || st === 'terracotta' ? 1.98 : 1.8, m = new THREE.Mesh(new THREE.BoxGeometry(Math.min(sz, w), 0.06, Math.min(sz, d)), M ? M() : mat('fl_pv', 0x9E978C)); m.position.set(cx, 0.06, cz); m.receiveShadow = true; g.add(m); return; }
+    if (k === 'inlay') { const r = Math.min(w, d) / 2, m = new THREE.Mesh(new THREE.CircleGeometry(r, 48), new THREE.MeshStandardMaterial({ map: finTex(zn.s === 'star' ? 'star' : 'mosaic'), roughness: 0.6 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.045, z + d / 2); m.receiveShadow = true; g.add(m); return; }
+    if (k === 'rug') { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tex(zn.s === 'sand' ? 'sandrug' : 'kilim', 1, 1), roughness: 0.95 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04, z + d / 2); m.receiveShadow = true; g.add(m); return; }
+    if (k === 'pebble') { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tex(zn.s === 'white' ? 'cobble' : 'pebble', w / 2, d / 2), roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.045, z + d / 2); m.receiveShadow = true; g.add(m); } });
   if (f.pebble) { const b = 0.6, pm = new THREE.MeshStandardMaterial({ map: finTex('pebble'), roughness: 1 });
     (f.pebble === 'near' ? pebNear(t, items) : [[E, E, pw - 2 * E, b], [E, pd - E - b, pw - 2 * E, b], [E, E + b, b, pd - 2 * E - 2 * b], [pw - E - b, E + b, b, pd - 2 * E - 2 * b]]).forEach(([x, z, w, d]) => { const tx = pm.map.clone(); tx.needsUpdate = true; tx.repeat.set(w / 2, d / 2);
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04, z + d / 2); m.receiveShadow = true; g.add(m); }); }

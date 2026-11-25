@@ -314,7 +314,7 @@ function drawPlot(tg, t) {
   const pw = +t.pw || 30, pd = +t.pd || 60, Y = -0.6, par = +t.par || 3, PT = 0.75, BH = 50, hi = t.high || {};
   const P = (n, col) => M[n] || (M[n] = new THREE.MeshStandardMaterial({ color: col, roughness: 0.95 }));
   const plaster = P('t_pl', 0xEAE5DC), tile = P('t_tile', 0xC4BDB1), side2 = P('t_side', 0xDCD3C4), dark = P('t_dark', 0x2F3437), road = P('t_road', 0x6E6C68), win = P('t_win', 0x55626B);
-  const wallm = t.wallFin === 'tiles' ? (t.wallTile ? tileMat(t.wallTile) : cladMat()) : t.wallFin === 'paint' ? P('t_paint', 0xF7F2EA) : plaster;   // 237: the stairs room, parapet and other walls — paint / tiles / as they are
+  const wallm = t.wallFin === 'tiles' ? (t.wallTile ? tileMat(t.wallTile) : cladMat()) : t.wallFin === 'paint' ? (t.paintC ? P('t_paint_' + t.paintC, +t.paintC) : P('t_paint', 0xF7F2EA)) : plaster;   // 274: the theme's paint colour   // 237: the stairs room, parapet and other walls — paint / tiles / as they are
   const CPM = { cement: [0xDCD3C4, 0.95], kota: [0x9AA596, 0.6], granite: [0x34322F, 0.25], marble: [0xF1EEE8, 0.3], sandstone: [0xD8C9A8, 0.85], tiles: [0xC4BDB1, 0.5] }, cp = t.coping && CPM[t.coping.mat] ? t.coping.mat : null;   // 273 (owner): the coping on the parapet — as it is now, or the new one
   const cop = cp ? M['t_cop_' + cp] || (M['t_cop_' + cp] = new THREE.MeshStandardMaterial({ color: CPM[cp][0], roughness: CPM[cp][1] })) : side2, cw = cp && cp !== 'cement' ? 0.35 : 0.1, ct = cp && cp !== 'cement' ? 0.12 : 0.15;
   const OL = plotOutline(t), shaped = OL.length > 4;
@@ -413,7 +413,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=56').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=57').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
