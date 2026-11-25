@@ -161,9 +161,9 @@
     const T = (k, l) => `<button class="${tab === k ? 'on' : ''}" onclick="acTab('${k}')">${l}</button>`
     view(`<div class="pagetop"><span class="bk" onclick="showHome()">←</span><h2>My account</h2></div>
       <div class="ac-hello"><div><b>Hi${me.name ? ', ' + esc(me.name.split(' ')[0]) : ''}</b><span>${esc(me.email)}</span></div><a onclick="acSignOut()">Sign out</a></div>
-      <div class="ac-tabs">${T('orders', 'Orders')}${T('proposals', 'Proposals')}${T('plans', 'Saved plans')}${T('addresses', 'Addresses')}${T('profile', 'Profile & GST')}</div>
+      <div class="ac-tabs">${T('orders', 'Orders')}${T('proposals', 'Proposals')}${T('plans', 'Saved plans')}${T('shared', 'Shared with me')}${T('addresses', 'Addresses')}${T('profile', 'Profile & GST')}</div>
       <div id="acBody"></div>`)
-    tab === 'orders' ? drawOrders() : tab === 'proposals' ? drawProposals() : tab === 'plans' ? drawPlans() : tab === 'addresses' ? drawAddresses() : drawProfile()
+    tab === 'orders' ? drawOrders() : tab === 'proposals' ? drawProposals() : tab === 'plans' ? drawPlans() : tab === 'shared' ? drawShared() : tab === 'addresses' ? drawAddresses() : drawProfile()
   }
   window.acTab = t => { tab = t; draw() }
 
@@ -178,7 +178,7 @@
           <div><b>${esc(p.name)}</b><div class="mut sm">${esc(p.no)} · ${[s.height ? s.height + ' clear' : '', s.colour, s.cover, s.layout].filter(Boolean).map(esc).join(' · ')}</div>
             ${(s.addons || []).length ? `<div class="mut sm">Add-ons: ${s.addons.map(esc).join(', ')}</div>` : ''}
             <div class="mut sm">${pr.total ? '<b>' + rs(pr.total) + '</b> incl. GST' + (pr.install ? ' and installation' : '') + ' · ' : ''}Saved ${d8(p.updated_at, true)}${p.carted_at ? ' · <b>added to cart</b>' : ''}${p.around ? ' · ' + p.around + ' more thing' + (p.around > 1 ? 's' : '') + ' around it' : ''}</div></div></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPropOpen('${p.id}')">Open</button><button class="btn ghost" style="padding:8px 12px" onclick="acPropDel('${p.id}')">Delete</button></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPropOpen('${p.id}')">Open</button><button class="btn ghost" style="padding:8px 12px" onclick="acShare('proposal','${p.id}')">Share</button><button class="btn ghost" style="padding:8px 12px" onclick="acPropDel('${p.id}')">Delete</button></div>
         </div></div>` }).join('') : '<div class="ac-empty"><p>No proposals yet.</p><p class="mut sm">Customise a pergola in 3D — your proposal with price, drawings and specifications is saved here.</p></div>')
     drawProposals.list = list
   }
@@ -198,13 +198,46 @@
             <div class="mut sm">${(p.kinds || []).map(k => CATN[k] || k).join(', ')}</div>
             <div class="mut sm">Saved ${d8(p.updated_at, true)}${p.carted_at ? ' · <b>in your cart ' + d8(p.carted_at, true) + '</b>' : ''}</div></div>
           <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPlanOpen('${p.id}')">Open</button>
-            <button class="btn ghost" style="padding:8px 12px" onclick="acPlanRename('${p.id}')">Rename</button><button class="btn ghost" style="padding:8px 12px" onclick="acPlanDup('${p.id}')">Duplicate</button><button class="btn ghost" style="padding:8px 12px" onclick="acPlanDel('${p.id}')">Delete</button></div>
+            <button class="btn ghost" style="padding:8px 12px" onclick="acPlanRename('${p.id}')">Rename</button><button class="btn ghost" style="padding:8px 12px" onclick="acShare('plan','${p.id}')">Share</button><button class="btn ghost" style="padding:8px 12px" onclick="acPlanDup('${p.id}')">Duplicate</button><button class="btn ghost" style="padding:8px 12px" onclick="acPlanDel('${p.id}')">Delete</button></div>
         </div></div>`).join('') : '<div class="ac-empty"><p>No plans yet.</p><p class="mut sm">Set up your terrace or lawn, place a cabin, a pergola, seating, planters… and see it in 3D with prices.</p></div>')
   }
   window.acPlanOpen = id => { if (window.outrrPlan) outrrPlan({ load: id }) }
   window.acPlanRename = async id => { const nm = prompt('Name this plan'); if (!nm || !nm.trim()) return; try { await rpc('plan_rename', { p_id: id, p_name: nm.trim() }); drawPlans() } catch (e) { say(e.message) } }
   window.acPlanDup = async id => { try { await rpc('plan_duplicate', { p_id: id }); drawPlans(); say('Copy made — change it without touching the first one') } catch (e) { say(e.message) } }   // 216
   window.acPlanDel = async id => { if (!confirm('Delete this plan?')) return; try { await rpc('plan_delete', { p_id: id }); drawPlans() } catch (e) { say(e.message) } }
+
+  // ---------------------------------------------------------------- 224: sharing a plan / proposal with another outrr account
+  async function drawShared() {
+    const b = $('acBody'); if (!b) return; b.innerHTML = '<p class="mut">Loading…</p>'
+    let list = []; try { list = await rpc('shared_with_me') || [] } catch (e) { b.innerHTML = `<p class="mut">${esc(e.message)}</p>`; return }
+    b.innerHTML = '<p class="mut sm" style="margin:4px 0 12px">Plans and proposals other people shared with you. <b>View only</b> = you can look and make your own copy; <b>Can edit</b> = your changes save into their plan (one person edits at a time).</p>' +
+      (list.length ? list.map(p => `<div class="ac-order" style="padding:14px 16px"><div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
+        <div><b>${esc(p.name)}</b> <span class="mut sm">· ${p.kind === 'plan' ? 'Plan' : 'Proposal ' + esc(p.no || '')}</span>
+          <div class="mut sm">Shared by <b>${esc(p.owner)}</b> · ${p.role === 'edit' ? 'Can edit' : 'View only'}${p.size ? ' · ' + esc(p.size) : ''}${p.item_count ? ' · ' + p.item_count + ' things' : ''}${p.price && p.price.total ? ' · ' + rs(p.price.total) : ''}</div>
+          <div class="mut sm">Updated ${d8(p.updated_at, true)}${p.editing ? ` · <b style="color:#9B2C22">${esc(p.editing)} is editing now</b>` : ''}</div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acShOpen('${p.kind}','${p.id}')">Open</button></div></div></div>`).join('')
+      : '<div class="ac-empty"><p>Nothing shared with you yet.</p><p class="mut sm">When someone shares a plan or proposal with your email or mobile, it shows here.</p></div>')
+  }
+  window.acShOpen = async (k, id) => { if (k === 'plan') { if (window.outrrPlan) outrrPlan({ shared: id }); return }
+    try { const p = await rpc('shared_proposal_get', { p_id: id }); if (p && window.mtoOpenProposal) mtoOpenProposal(p.sku, p.cfg, p.pincode) } catch (e) { say(e.message) } }
+  const shBox = h => { let d = $('acShBox'); if (!d) { d = document.createElement('div'); d.id = 'acShBox'; d.style.cssText = 'position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:14px'; d.onclick = e => { if (e.target === d) d.remove() }; document.body.appendChild(d) }
+    d.innerHTML = `<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:86vh;overflow:auto;padding:18px 18px 14px;position:relative"><button onclick="document.getElementById('acShBox').remove()" style="position:absolute;right:10px;top:8px;border:0;background:none;font-size:20px;cursor:pointer" aria-label="Close">✕</button>${h}</div>` }
+  const ACTN = { share: 'shared it', role: 'changed access', unshare: 'stopped sharing', accept: 'got the invite', open: 'opened it', edit: 'made changes', copy: 'made their own copy', lock: 'started editing', unlock: 'stopped editing', delete: 'deleted it' }
+  window.acShare = async (k, id, tabLog) => {
+    let list = [], log = []; try { [list, log] = await Promise.all([rpc('share_list', { p_kind: k, p_id: id }), tabLog ? rpc('share_log', { p_kind: k, p_id: id }) : Promise.resolve([])]) } catch (e) { return say(e.message) }
+    const opt = r => k === 'plan' ? `<select onchange="acShRole('${k}','${id}','${r.id}',this.value)" style="padding:4px"><option value="view"${r.role === 'view' ? ' selected' : ''}>View</option><option value="edit"${r.role === 'edit' ? ' selected' : ''}>Edit</option></select>` : '<span class="mut sm">View</span>'
+    shBox(`<h3 style="margin:0 0 4px">Share this ${k}</h3><p class="mut sm" style="margin:0 0 12px">With someone's outrr account — their email or 10-digit mobile. Only you can share it further or delete it.</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><input id="acShTo" placeholder="Email or mobile" style="flex:1;min-width:180px;padding:9px;border:1px solid #ccc;border-radius:8px">
+        ${k === 'plan' ? '<select id="acShRl" style="padding:8px;border-radius:8px"><option value="view">Can view</option><option value="edit">Can edit</option></select>' : ''}
+        <button class="btn" style="padding:9px 16px" onclick="acShAdd('${k}','${id}')">Share</button></div>
+      <p class="mut sm" style="margin:6px 0 14px">${k === 'plan' ? 'Can edit: their changes save into this plan. One person edits at a time — the others see who is editing.' : 'Proposals are shared view only.'} No outrr account yet? They get it as soon as they sign up with that email / mobile.</p>
+      <b class="sm">Shared with</b>${list.length ? list.map(r => `<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eee"><div class="sm">${esc(r.name || r.email || r.phone)}<div class="mut sm">${esc([r.name ? r.email : '', r.name || r.email ? r.phone : ''].filter(Boolean).join(' · '))}${r.linked ? '' : ' · waiting for sign-up'}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">${opt(r)}<button class="btn ghost" style="padding:4px 10px" onclick="acShDel('${k}','${id}','${r.id}')">Remove</button></div></div>`).join('') : '<p class="mut sm">Not shared yet.</p>'}
+      <div style="margin-top:12px">${tabLog ? `<b class="sm">Activity</b>${log.length ? log.map(l => `<div class="sm" style="padding:5px 0;border-bottom:1px solid #f2f2f2"><b>${esc(l.who || '—')}</b> ${ACTN[l.action] || esc(l.action)}${l.target ? ' · ' + esc(l.target) : ''}${l.n > 1 ? ` <span class="mut">(×${l.n})</span>` : ''}<div class="mut sm">${d8(l.at, true)}${l.n > 1 ? ' – ' + d8(l.last_at, true) : ''}</div></div>`).join('') : '<p class="mut sm">Nothing yet.</p>'}` : `<a style="cursor:pointer;text-decoration:underline" onclick="acShare('${k}','${id}',true)">See activity — who opened or changed it</a>`}</div>`) }
+  window.acShAdd = async (k, id) => { const to = ($('acShTo') || {}).value || '', rl = ($('acShRl') || {}).value || 'view'; if (!to.trim()) return say('Enter an email or mobile number')
+    try { const r = await rpc('share_add', { p_kind: k, p_id: id, p_contact: to.trim(), p_role: rl }); say(r && r.linked ? 'Shared — it shows in their account now' : 'Shared — they get it when they sign up with that ' + (/@/.test(to) ? 'email' : 'mobile')); acShare(k, id) } catch (e) { say(e.message) } }
+  window.acShRole = async (k, id, sid, rl) => { try { await rpc('share_set', { p_share: sid, p_role: rl }); say('Access changed') } catch (e) { say(e.message) } acShare(k, id) }
+  window.acShDel = async (k, id, sid) => { if (!confirm('Stop sharing with this person?')) return; try { await rpc('share_remove', { p_share: sid }); acShare(k, id) } catch (e) { say(e.message) } }
 
   // ---------------------------------------------------------------- orders
   const STEPS = [['placed', 'Placed'], ['confirmed', 'Confirmed'], ['packed', 'Packed'], ['shipped', 'Shipped'], ['delivered', 'Delivered']]
@@ -494,6 +527,7 @@
   const qs = new URLSearchParams(location.search)
   if (qs.has('account') || location.hash === '#account') setTimeout(() => acOpen(qs.get('account') === 'proposals' ? 'proposals' : undefined), 300)
   if (location.hash === '#proposals') setTimeout(() => acOpen('proposals'), 300)
+  if (location.hash === '#shared') setTimeout(() => acOpen('shared'), 300)   // 224: the share email's link
   if (qs.has('wishlist')) setTimeout(() => acWishlist(), 400)
   if (qs.has('track') || location.hash === '#track') setTimeout(() => acTrack(qs.get('track') || ''), 300)
 

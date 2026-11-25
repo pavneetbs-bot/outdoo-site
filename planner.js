@@ -78,7 +78,7 @@ let S = null, EL = null, QUIET = false;
 function fresh() { const t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, par: 3, corner: '', high: {}, tanks: true, blocks: [] }; defBlocks(t); return { v: 1, step: 0, site: t, items: [], sel: null, view: '3d' }; }
 function defBlocks(t) { t.blocks = []; const sm = t.pw <= 25; addBlock(t, 'mumty', sm ? 8 : 10, sm ? 16 : 18, 'left'); const m = t.blocks[0]; if (m) addBlock(t, 'lift', 6, 6, 'left', [PAR, Math.max(PAR, m.z - 6)]); addBlock(t, 'shaft', 3, 4, 'right'); }
 function load() { try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && v.v === 1 && v.site) return Object.assign({ sel: null, view: '3d', step: 0 }, v); } catch (e) {} return fresh(); }
-function save() { if (QUIET) return; try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, su: S.su || null, bsel: S.bsel || null, pid: S.pid || null, pname: S.pname || '', source: S.source || '', ctabs: S.ctabs || [] })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
+function save() { if (QUIET) return; try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, su: S.su || null, bsel: S.bsel || null, pid: S.pid || null, pname: S.pname || '', source: S.source || '', ctabs: S.ctabs || [], sh: S.sh || null })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
 // ---------------------------------------------------------------- 195: plans saved to the customer's account; sign-in asked 1 minute in
 const ev = (k, d) => { try { if (window.otrack) window.otrack(k, d || {}); } catch (e) {} };
 async function rpc(fn, args) {
@@ -95,18 +95,24 @@ async function anonRpc(fn, args) {
 const signedIn = () => { try { return !!localStorage.getItem('outrr_session'); } catch (e) { return false; } };
 const pinNow = () => { try { return (JSON.parse(localStorage.getItem('outrr_addr') || '{}').pincode) || ''; } catch (e) { return ''; } };
 let cloudT = null, cloudBusy = false;
-function cloudSoon(extra) { if (!S || (!assistTok() && (!signedIn() || !priceOk()))) return; clearTimeout(cloudT); cloudT = setTimeout(() => cloudSave(extra), extra ? 0 : 3000); }
+function cloudSoon(extra) { if (!S || S.ro || (S.sh && S.sh.role !== 'edit') || (!assistTok() && (!signedIn() || !priceOk()))) return; clearTimeout(cloudT); cloudT = setTimeout(() => cloudSave(extra), extra ? 0 : 3000); }
 async function cloudSave(extra) {
   if (cloudBusy || !S) return; cloudBusy = true;
   try {
     const est = S.step === 2 ? exact().t : total().t, first = !S.pid;
     const pl = Object.assign({ id: S.pid || null, name: S.pid ? undefined : S.pname || undefined, kind: S.site.kind === 'terrace' ? 'terrace' : 'lawn', site: S.site, items: S.items, step: S.step,
       est: Math.round(est || 0), pincode: pinNow(), device: innerWidth < 760 ? 'mobile' : 'desktop', source: S.source || 'planner' }, extra || {});
-    const r = assistTok() ? await anonRpc('sales_plan_save', { p_token: assistTok(), p: pl }) : await rpc('plan_save', { p: pl });
-    if (r && r.id) { S.pid = r.id; S.pname = r.name; S.savedAt = Date.now(); S.dirty = false; save(); S.dirty = true; paintSaved(); if (first) ev('plan_save', {}); }
+    if (S.ro || (S.sh && S.sh.role !== 'edit')) return;   // 224: view only / someone else is editing
+    if (S.sh) { pl.id = S.sh.id; delete pl.name; }
+    const r = assistTok() ? await anonRpc('sales_plan_save', { p_token: assistTok(), p: pl }) : S.sh ? await rpc('shared_plan_save', { p: pl }) : await rpc('plan_save', { p: pl });
+    if (r && r.id) { S.pid = r.id; if (!S.sh) S.pname = r.name; S.saveErr = ''; S.savedAt = Date.now(); S.dirty = false; save(); S.dirty = true; paintSaved(); if (first) ev('plan_save', {}); }
   } catch (e) { S.saveErr = String(e.message || e); paintSaved(); } finally { cloudBusy = false; }
 }
 function paintSaved() { const el = document.getElementById('plSv'); if (!el || !S) return;
+  if (S.sh || S.ro) { const sh = S.sh;   // 224: a plan shared with me / someone else editing my plan
+    el.innerHTML = (sh ? `<span title="Shared with you">${esc(S.pname || 'Shared plan')} · shared by ${esc(sh.owner)} · ${sh.role === 'edit' ? 'can edit' : 'view only'}</span>` : `<span>✓ ${esc(S.pname || 'Saved')}</span>`) +
+      (S.ro ? `<span style="color:#9B2C22">${esc(S.ro)} is editing right now — you can look, changes here are not saved</span><button type="button" data-pl="shretry">Try again</button>` : sh && sh.role !== 'edit' ? '<span class="mut">Changes here are not saved</span>' : '') +
+      (sh ? '<button type="button" data-pl="shcopy">Make my own copy</button>' : ''); return; }
   el.innerHTML = S.pid ? `<span title="Saved to your account">✓ ${esc(S.pname || 'Saved')}</span><button type="button" data-pl="rename" aria-label="Rename this plan">✎</button><button type="button" data-pl="newplan">＋ New plan</button>` : S.saveErr && signedIn() ? `<span style="color:#9B2C22">${esc(S.saveErr)}</span>` : ''; }
 function gateDue() {   // 1 minute after the planner opened: sign in (with name, mobile, city) to keep going — the plan is then kept in the account
   if (priceOk() || S.gateOff) return false; let t0 = 0; try { t0 = +sessionStorage.getItem('outrr_plan_t0') || 0; if (!t0) { t0 = Date.now(); sessionStorage.setItem('outrr_plan_t0', t0); } } catch (e) {}
@@ -1858,7 +1864,9 @@ function act(a) {   // one button's action on S; true = draw again
       S.items.push(it2); attach(it2, S.items.length - 1); S.sel = S.items.length - 1; if (!it2.w) S.msg = m === 'tank' ? 'Add the mumty (with tanks) in step 1 first' : 'No free parapet on those sides — pick others'; break; }
     case 'askx': S.ask = null; break;
     case 'rename': { const nm = prompt('Name this plan', S.pname || ''); if (nm && nm.trim() && S.pid) { S.pname = nm.trim().slice(0, 120); rpc('plan_rename', { p_id: S.pid, p_name: S.pname }).then(paintSaved).catch(() => {}); save(); } return paintSaved(); }
-    case 'newplan': if (!confirm('Start a new plan? This one stays saved in your account.')) return; { const v = S.view; S = fresh(); S.view = v; S.hist = []; S.hi = -1; S.pid = null; S.pname = ''; } break;
+    case 'newplan': if (!confirm('Start a new plan? This one stays saved in your account.')) return; lockGo(false); { const v = S.view; S = fresh(); S.view = v; S.hist = []; S.hi = -1; S.pid = null; S.pname = ''; } break;
+    case 'shretry': lockGo(true); return;
+    case 'shcopy': rpc('shared_plan_copy', { p_id: S.sh.id }).then(r => { if (r && r.id) { lockGo(false); openSaved(r.id); } }).catch(e => alert(e.message)); return;
     case 'lock': if (it) it.lock = !it.lock; break;
     case 'prop': if (it) { save(); const same = S.items.filter(o => o.cfgId === it.cfgId && JSON.stringify(o.cfg || {}) === JSON.stringify(it.cfg || {}) && o.w === it.w && o.d === it.d).length; const ok = window.mtoPropFromPlan(JSON.parse(JSON.stringify(it)), same); if (ok) { close(); return; } } break;   // 199
     case 'ctab': popAt(null); { const el = document.getElementById('plPop'); if (el) { el.dataset.stick = ''; el.style.display = 'none'; } } openTab(+a[1]); return;
@@ -1989,7 +1997,7 @@ function exitAsk(go) {   // 266 (owner): ✕ asks first
   const old = document.getElementById('plExit'); if (old) old.remove(); const d = document.createElement('div'); d.id = 'plExit'; d.className = 'pl-exit';
   d.innerHTML = '<div><b>Are you sure you want to exit?</b><p>Your progress is saved — you can come back to it later.</p><div><button type="button" data-x="0">Stay</button><button type="button" class="pl-go" data-x="1">Exit</button></div></div>';
   d.addEventListener('click', e => { const b = e.target.closest('[data-x]'); if (e.target === d || b) { d.remove(); if (b && b.dataset.x === '1') { try { save(); } catch (er) {} go(); } } }); document.body.appendChild(d); }
-function close() { if (EL) EL.style.display = 'none'; document.body.style.overflow = ''; try { const u = new URL(location.href); if (u.searchParams.has('plan')) { u.searchParams.delete('plan'); history.replaceState(history.state, '', u.pathname + (u.search || '') + u.hash); } } catch (e) {} }
+function close() { lockGo(false); if (EL) EL.style.display = 'none'; document.body.style.overflow = ''; try { const u = new URL(location.href); if (u.searchParams.has('plan')) { u.searchParams.delete('plan'); history.replaceState(history.state, '', u.pathname + (u.search || '') + u.hash); } } catch (e) {} }
 
 function putPieces(list) {   // 199: each piece takes a placeholder's spot (same kind, no design yet), else a free spot in a row; things already there stay
   if (list[0] && list[0].cat === 'privacy' && list[0].mode === 'par') {   // 211: a parapet / boundary-wall screen design takes the plan's parapet screen (or goes on the parapet)
@@ -2008,6 +2016,7 @@ function putPieces(list) {   // 199: each piece takes a placeholder's spot (same
 export function open(seed) {
   if (seed && seed.load) return openSaved(seed.load);
   if (seed && seed.sload) return openSaved(seed.sload, true);
+  if (seed && seed.shared) return openShared(seed.shared);
   for (const k in PC) delete PC[k]; shell(); TM.load().then(() => { try { if (EL && EL.style.display !== 'none' && S && S.step === 0) draw(); } catch (e) {} }); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
   S.items.forEach(it => { if (it.cat === 'cabin' && it.bcx != null && cabinCfg(it)) { cabinFoot(it); it.x = r2(it.bcx - foot(it)[0] / 2); it.z = r2(it.bcz - foot(it)[1] / 2); delete it.bcx; delete it.bcz; } });   // 193g: back from the studio
   S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
@@ -2035,9 +2044,27 @@ export function open(seed) {
 async function openSaved(id, sales) {   // My account → Saved plans → Open; CRM → lead → Plans (Sales mode)
   try { const v = sales ? await anonRpc('sales_plan_get', { p_token: assistTok(), p_id: id }) : await rpc('plan_get', { p_id: id }); if (!v) throw new Error('Plan not found');
     localStorage.setItem(KEY, JSON.stringify({ v: 1, step: v.step || 1, site: v.site, items: v.items || [], pid: v.id, pname: v.name, source: v.source }));
-    return open({ reload: true });
+    open({ reload: true }); if (!sales) lockGo(true);
   } catch (e) { alert(e.message || 'Could not open the plan'); }
 }
+// 224: a plan someone shared with me (My account → Shared with me) — view, or edit when nobody else is editing; one editor at a time
+async function openShared(id) {
+  try { const v = await rpc('shared_plan_get', { p_id: id }); if (!v) throw new Error('Plan not found');
+    if (v.role === 'owner') return openSaved(id);
+    localStorage.setItem(KEY, JSON.stringify({ v: 1, step: v.step || 1, site: v.site, items: v.items || [], pid: v.id, pname: v.name, source: v.source, sh: { id: v.id, role: v.role, owner: v.owner } }));
+    open({ reload: true }); S.ro = v.role === 'edit' && v.editing ? v.editing : null; paintSaved(); if (v.role === 'edit') lockGo(true);
+  } catch (e) { alert(e.message || 'Could not open the plan'); }
+}
+let lockT = null, lockId = null;
+function lockGo(take) {   // hold the edit lock while the plan is open (renewed every minute; it lapses after 2 minutes)
+  clearInterval(lockT); lockT = null;
+  if (!take) { if (lockId) { const id = lockId; lockId = null; rpc('plan_lock', { p_id: id, p_take: false }).catch(() => {}); } return; }
+  if (!S || !S.pid || assistTok() || (S.sh && S.sh.role !== 'edit') || !signedIn()) return;
+  const tick = () => { if (!S || !S.pid || (EL && EL.style.display === 'none')) return lockGo(false);
+    rpc('plan_lock', { p_id: S.pid, p_take: true }).then(r => { const was = S.ro; S.ro = r && r.ok === false && r.by ? r.by : null; if (r && r.ok) lockId = S.pid; if (was !== S.ro) paintSaved(); if (was && !S.ro) cloudSoon(); }).catch(() => {}); };
+  tick(); lockT = setInterval(tick, 60000);
+}
+addEventListener('pagehide', () => lockGo(false));
 window.outrrPlanState = () => S; window.outrrPlanMove = (i, x, z) => on3d({ t: 'move', i, x, z }); window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
 // 193j: the cabin studio / pergola designer add things around their design with the planner's own rules, on a plan object { site, items, sel }
 function withPlan(plan, fn) {
