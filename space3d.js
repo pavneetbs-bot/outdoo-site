@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=53';
-import { pergolaModel } from './pergola3d.js?v=41';
-import { outline, sofaLayout } from './plan2d.js?v=23';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=54';
+import { pergolaModel } from './pergola3d.js?v=42';
+import { outline, sofaLayout } from './plan2d.js?v=24';
 import { plantModel } from './plants3d.js?v=2';
 
 let R = null, HANDLER = null;
@@ -78,6 +78,16 @@ function ropeMat(pw, ph) {   // 261: woven rope (vertical cords with gaps) as a 
     ROPE_TX = new THREE.CanvasTexture(c); ROPE_TX.wrapS = ROPE_TX.wrapT = THREE.RepeatWrapping; if ('colorSpace' in ROPE_TX) ROPE_TX.colorSpace = THREE.SRGBColorSpace; }
   const t = ROPE_TX.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, pw * 7 / 4), Math.max(1, ph * 2)); return (ROPE_M[k] = new THREE.MeshStandardMaterial({ map: t, alphaTest: 0.4, transparent: false, side: THREE.DoubleSide, roughness: 0.9 })); }
 function box(g, w, h, d, x, y, z, m, sh = true) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = sh; b.receiveShadow = true; g.add(b); return b; }
+// 275 (owner): theme shapes — lanterns, pendants, globes, arches, reed roof, curtains (used by the simple pergola, fire pit, umbrella, swing, fixed seating)
+function lantern(g, x, y, z, s) { const br = mat('c_brass', 0xB08D57, { metalness: 0.8, roughness: 0.35 }), gl = mat('c_lglow', 0xFFD9A0, { emissive: 0xFFB050, emissiveIntensity: 0.9, transparent: true, opacity: 0.85 }); s = s || 1;
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28 * s, 0.22 * s, 0.75 * s, 8), gl); b.position.set(x, y, z); g.add(b);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.32 * s, 0.35 * s, 8), br); cap.position.set(x, y + 0.55 * s, z); g.add(cap); const ft = new THREE.Mesh(new THREE.CylinderGeometry(0.24 * s, 0.3 * s, 0.12 * s, 8), br); ft.position.set(x, y - 0.42 * s, z); g.add(ft);
+  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2, r = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.75 * s, 0.03), br); r.position.set(x + Math.cos(a) * 0.27 * s, y, z + Math.sin(a) * 0.27 * s); g.add(r); } }
+function pendant(g, x, y, z, kind) { const cord = mat('c_cord', 0x222222);
+  const c = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.2, 4), cord); c.position.set(x, y + 0.6, z); g.add(c);
+  if (kind === 'rattan') { const sh = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), mat('c_rattan', 0xB98A4E, { roughness: 1, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })); sh.position.set(x, y - 0.1, z); g.add(sh); }
+  else { const gb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 18, 12), mat('c_globe', 0xFFF3DC, { emissive: 0xFFD08A, emissiveIntensity: 0.6, transparent: true, opacity: 0.9 })); gb.position.set(x, y - 0.2, z); g.add(gb); } }
+function themeKey() { return THEMES[THEME] && THEMES[THEME].pot != null ? THEME : ''; }
 // 273 (owner): cushions that look real — rounded, puffed in the middle along their thinnest side, soft edges and a few wrinkles (geometry cached per size)
 const CUSH = {};
 function cushGeo(w, h, d) { const k = [w, h, d].map(v => Math.round(v * 20)).join('x'); if (CUSH[k]) return CUSH[k];
@@ -371,7 +381,8 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   if (cat === 'sofa') {   // 261 (owner): a sleek rope sofa set — slim charcoal frame, woven rope back and arms, off-white cushions; pieces as ticked (sofaLayout)
     const L = sofaLayout(it && it.sconf), sx = w / (L.w || w), sz = d / (L.d || d), root = new THREE.Group(); root.scale.set(sx, 1, sz); g.add(root); const SD = 2.6;
     const fr = K.themed ? K.frame : mat('c_ropefr', 0x2B2B2B, { roughness: 0.5, metalness: 0.3 }), cu = K.themed ? K.cush : mat('c_ropecu', 0xEEE9DF, { roughness: 0.95 }), ac1 = K.themed ? K.acc1 : mat('c_ropeac1', 0xC26445, { roughness: 0.95 }), ac2 = K.themed ? K.acc2 : mat('c_ropeac2', 0x55634A, { roughness: 0.95 });   // 274: the theme's frame / cushions / accents
-    const panel = (u, pw, ph, x, y, z, ry) => { const m = ropeMat(pw, ph), p = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), m); p.position.set(x, y, z); p.rotation.y = ry || 0; p.castShadow = true; u.add(p); };
+    const panel = (u, pw, ph, x, y, z, ry) => { if (themeKey() === 'contemporary' || themeKey() === 'turkish') { const c = cush(u, pw, ph, 0.55, x, y, z, themeKey() === 'turkish' ? K.cush2 : K.cush); c.rotation.y = ry || 0; return; }   // 275: bouclé / upholstered backs and arms instead of rope
+      const m = ropeMat(pw, ph), p = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), m); p.position.set(x, y, z); p.rotation.y = ry || 0; p.castShadow = true; u.add(p); };
     L.pieces.forEach(pc => { const u = new THREE.Group(); u.position.set(pc.x, 0, pc.z); u.rotation.y = pc.ry; root.add(u); const len = pc.len, bz = -SD / 2 + 0.12;
       box(u, len, 0.12, SD, 0, 0.5, 0, fr); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(u, 0.09, 0.45, 0.09, a * (len / 2 - 0.1), 0.23, b * (SD / 2 - 0.1), fr));   // slim seat frame on thin legs
       cush(u, len - 0.3, 0.42, SD - 0.45, 0, 0.8, 0.18, cu);   // seat cushion
@@ -380,6 +391,12 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
       const n = Math.max(1, pc.n); for (let k = 0; k < n; k++) { const x = -len / 2 + 0.2 + (len - 0.4) * (k + 0.5) / n, bw = Math.min(1.9, (len - 0.4) / n - 0.15); const c = cush(u, bw, 1.15, 0.38, x, 1.58, bz + 0.32, cu); c.rotation.x = -0.12;
         if (n > 1 && (k === 0 || k === n - 1)) { const q = cush(u, 0.95, 0.95, 0.24, x + (k === 0 ? 0.25 : -0.25), 1.47, bz + 0.6, k === 0 ? ac1 : ac2); q.rotation.x = -0.15; q.rotation.z = k === 0 ? 0.08 : -0.08; } } });
     const T = L.table, tg = new THREE.Group(); tg.position.set(T.x, 0, T.z); root.add(tg); box(tg, T.w, 0.1, T.d, 0, 1.2, 0, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(tg, 0.08, 1.15, 0.08, a * (T.w / 2 - 0.15), 0.58, b * (T.d / 2 - 0.15), fr));
+  } else if (cat === 'swing' && ['tropical', 'contemporary', 'santorini'].includes(themeKey())) {   // 275: a hanging egg / cocoon chair on a curved stand
+    const TK = themeKey(), H = h || 7, st = K.frame, shell = TK === 'contemporary' ? mat('c_cocoon', 0xE9E2D6, { roughness: 1 }) : mat('c_rattan', 0xB98A4E, { roughness: 1, side: THREE.DoubleSide });
+    cyl(g, 1.2, 1.3, 0.15, 0, 0.08, 0, st, 20); const arc = new THREE.Mesh(new THREE.TorusGeometry(H * 0.45, 0.1, 6, 24, Math.PI * 0.75), st); arc.position.set(0.3, H * 0.5, 0); arc.rotation.z = Math.PI * 0.25; g.add(arc);
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1.2, 4), K.dark); c.position.set(0, H - 0.9, 0); g.add(c);
+    const egg = new THREE.Mesh(new THREE.SphereGeometry(1.6, 20, 16, -Math.PI * 0.35, Math.PI * 1.7, 0, Math.PI), shell); egg.scale.set(0.95, 1.25, 0.95); egg.position.set(0, H - 3.4, 0); egg.castShadow = true; g.add(egg);
+    cush(g, 1.9, 0.35, 1.7, 0, H - 4.6, 0.05, K.cush); cush(g, 1.3, 0.9, 0.3, 0, H - 4, -0.6, TK === 'contemporary' ? K.cush2 : K.acc2);
   } else if (cat === 'swing') {   // a hanging bench swing on an A-frame
     const H = h || 7, sw = Math.min(w - 1.6, 4.5), m = K.frame;
     [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { rodA(g, [x, 0, -d / 2 + 0.2], [x, H, 0], m); rodA(g, [x, 0, d / 2 - 0.2], [x, H, 0], m); });
@@ -406,6 +423,10 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     if (sm === 'grill') { for (let x = -w / 2 + 0.15; x < w / 2; x += 0.25) box(g, 0.04, 0.08, d, x, y + 0.6, 0, fm); box(g, w, 0.08, 0.04, 0, y + 0.6, 0, fm); }
     else if (sm === 'louvre') { const al = mat('c_alu', 0xB9BCC0, { metalness: 0.5, roughness: 0.4 }); for (let z = -d / 2 + 0.2; z < d / 2; z += 0.35) { const b2 = box(g, w, 0.03, 0.3, 0, y + 0.6, z, al); b2.rotation.x = 0.5; } }
     else { const sh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, sm === 'glass' ? 0.1 : 0.05, d + 0.3), sm === 'glass' ? mat('c_sglass', 0xBFDDE6, { roughness: 0.05, transparent: true, opacity: 0.45, metalness: 0.1 }) : sm === 'cement' ? mat('c_scem', 0xA7A49E, { roughness: 0.95 }) : mat('c_poly', 0xF4F4F2, { roughness: 0.35, transparent: true, opacity: 0.88 })); sh.position.set(0, y + 0.66, 0); if (sm !== 'glass') sh.rotation.x = Math.atan2(0.12, d); sh.castShadow = true; g.add(sh); }
+  } else if (cat === 'fbench' && themeKey() === 'turkish' && !(it && it.shape === 'curve') && !(it && it.plant)) {   // 275 (owner): Turkish majlis — a low base, a thick floor mattress, cushions against the wall, bolsters at the ends
+    box(g, w, 0.7, d, 0, 0.35, 0, K.stone); cush(g, w - 0.1, 0.55, d - 0.4, 0, 0.95, 0.15, K.acc1);
+    const n = Math.max(2, Math.round(w / 2.2)); for (let k = 0; k < n; k++) { const x = -w / 2 + w * (k + 0.5) / n, c = cush(g, Math.min(2, w / n - 0.15), 1.5, 0.45, x, 1.85, -d / 2 + 0.4, k % 2 ? K.acc2 : K.cush2); c.rotation.x = -0.18; }
+    [-1, 1].forEach(a => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, d - 0.6, 14), K.acc2); b.rotation.x = Math.PI / 2; b.position.set(a * (w / 2 - 0.45), 1.6, 0.1); b.castShadow = true; g.add(b); });
   } else if (cat === 'fbench') {   // 239: built-in seating — a masonry seat with a cushion and a backrest against the wall (back = −z); 258: + built-in planters behind / at the open ends
     const pl = (it && it.plant) || '', bk = pl === 'back' || pl === 'both', sd = pl === 'sides' || pl === 'both', pe = (it && it.pend) || { l: true, r: true }, PB = 1.5, zb = bk ? -d / 2 + PB : -d / 2;
     let x0 = -w / 2, x1 = w / 2; if (bk) pbox(g, w, PB, 0, -d / 2 + PB / 2, 2.6);
@@ -502,6 +523,12 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const n = Math.max(1, Math.floor(L / 2.2)); for (let k = 0; k < n; k++) { const u = -L / 2 + L * (k + 0.5) / n; box(g, al ? W - 0.5 : 1.8, 0.1, al ? 1.8 : W - 0.5, al ? 0 : u, 0.08, al ? u : 0, mat('c_slab', 0x8F8A82), false); }
   } else if (cat === 'turf') {
     const n = Math.max(1, Math.round(d / 2)); for (let k = 0; k < n; k++) box(g, w, 0.08, d / n, 0, 0.04, -d / 2 + d * (k + 0.5) / n, k % 2 ? mat('c_turf', 0x6FA24A) : mat('c_turf2', 0x63963F), false);
+  } else if (cat === 'firepit' && ['turkish', 'modern', 'minimal', 'contemporary'].includes(themeKey())) {   // 275: the theme's fire pit
+    const TK = themeKey(), r = Math.min(w, d) / 2, fl = () => [[0, 0, 1.2], [0.4, 0.2, 0.9], [-0.35, 0.25, 1]].forEach(([x, z, hh]) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.3, hh, 8), mat('c_flame', 0xFF8A2A, { emissive: 0xFF6A00, emissiveIntensity: 1.2, roughness: 1 })); f.position.set(x * r / 2, (TK === 'turkish' ? 2.1 : TK === 'minimal' ? 1.3 : 1.25) + hh / 2, z * r / 2); g.add(f); });
+    if (TK === 'turkish') { const cu = mat('c_copper', 0xB26A3C, { metalness: 0.85, roughness: 0.35 }); const bowl = new THREE.Mesh(new THREE.SphereGeometry(r * 0.8, 22, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), cu); bowl.rotation.x = Math.PI; bowl.position.y = 2.1; bowl.scale.y = 0.55; g.add(bowl); [0, 1, 2].forEach(k => { const a = k / 3 * Math.PI * 2; box(g, 0.1, 1.9, 0.1, Math.cos(a) * r * 0.6, 0.95, Math.sin(a) * r * 0.6, cu); }); fl(); }
+    else if (TK === 'modern') { box(g, w * 0.9, 1.2, d * 0.9, 0, 0.6, 0, mat('c_fpblk', 0x232323, { roughness: 0.6 })); box(g, w * 0.6, 0.05, d * 0.3, 0, 1.22, 0, mat('c_glassb', 0x111111, { roughness: 0.1 })); fl(); }
+    else if (TK === 'minimal') { box(g, w * 0.95, 1.2, Math.min(d, 1.6), 0, 0.6, 0, mat('c_fpwh', 0xEDEAE4)); box(g, w * 0.7, 0.04, 0.2, 0, 1.22, 0, K.dark); fl(); }
+    else { cyl(g, r, r * 0.75, 1.2, 0, 0.6, 0, mat('c_conc', 0xBDB6AA, { roughness: 0.85 }), 28); cyl(g, r - 0.25, r - 0.25, 0.05, 0, 1.2, 0, mat('c_ember', 0x3A1A0A), 28); fl(); }
   } else if (cat === 'firepit') {
     const r = Math.min(w, d) / 2; cyl(g, r, r * 0.9, 1.2, 0, 0.6, 0, K.dark, 28); cyl(g, r - 0.3, r - 0.3, 0.05, 0, 1.2, 0, mat('c_ember', 0x3A1A0A), 28);
     [[0, 0, 1.4], [0.5, 0.2, 1], [-0.4, 0.3, 1.1], [0.1, -0.5, 0.9]].forEach(([x, z, hh]) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.35, hh, 8), mat('c_flame', 0xFF8A2A, { emissive: 0xFF6A00, emissiveIntensity: 1.2, roughness: 1 })); f.position.set(x, 1.2 + hh / 2, z); g.add(f); });
@@ -526,6 +553,13 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const ul = new THREE.Mesh(new THREE.PlaneGeometry(iw * 0.8, id * 0.8), mat('c_julight', 0x6FE3FF, { emissive: 0x3FD0FF, emissiveIntensity: 1.4, transparent: true, opacity: 0.55 })); ul.rotation.x = -Math.PI / 2; ul.position.y = B + 0.05; nightOnly(ul, g);
   } else if (cat === 'lights') {
     cyl(g, 0.15, 0.2, (h || 3) - 0.4, 0, ((h || 3) - 0.4) / 2, 0, K.frame, 10); cyl(g, 0.3, 0.25, 0.4, 0, (h || 3) - 0.2, 0, mat('c_lamp', 0xFFE2A8, { emissive: WARM, emissiveIntensity: 1 }), 12);
+  } else if (cat === 'umbrella' && themeKey()) {   // 275: the theme's umbrella
+    const TK = themeKey(), H = h || 8, r = Math.min(w, d) / 2; cyl(g, 0.9, 1, 0.4, 0, 0.2, 0, K.dark, 16);
+    if (TK === 'tropical') { cyl(g, 0.12, 0.12, H, 0, H / 2, 0, K.wood2, 8); const th = new THREE.Mesh(new THREE.ConeGeometry(r, 2.2, 14, 3), mat('c_thatch', 0xC7A46A, { roughness: 1, side: THREE.DoubleSide })); th.position.y = H - 0.4; th.castShadow = true; g.add(th); for (let k = 0; k < 28; k++) { const a = k / 28 * Math.PI * 2; box(g, 0.08, 0.5, 0.02, Math.cos(a) * r * 0.98, H - 1.6, Math.sin(a) * r * 0.98, mat('c_thatch2', 0xB18E56)).rotation.y = -a; } }
+    else if (TK === 'modern' || TK === 'minimal') { const col = TK === 'modern' ? 0x8F8F8C : 0xF2F2EE; cyl(g, 0.1, 0.1, H + 0.4, -r * 0.75, (H + 0.4) / 2, 0, K.frame, 8); box(g, r * 0.8, 0.1, 0.1, -r * 0.35, H + 0.3, 0, K.frame); const sq = new THREE.Mesh(new THREE.ConeGeometry(r * 1.35, 0.9, 4, 1, true), mat('c_umb_' + TK, col, { side: THREE.DoubleSide })); sq.rotation.y = Math.PI / 4; sq.position.y = H; sq.castShadow = true; g.add(sq); }
+    else { cyl(g, 0.1, 0.1, H, 0, H / 2, 0, K.wood2, 8); const cv = document.createElement('canvas'); cv.width = 256; cv.height = 16; const x2 = cv.getContext('2d'); const cols = TK === 'turkish' ? ['#9E2B25', '#F3EEE6', '#1F6F7E', '#F3EEE6'] : TK === 'santorini' ? ['#2B5DA8', '#F7F7F4'] : ['#D8C9A8', '#EDE6DA']; for (let k = 0; k < 16; k++) { x2.fillStyle = cols[k % cols.length]; x2.fillRect(k * 16, 0, 16, 16); }
+      const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; const c = new THREE.Mesh(new THREE.ConeGeometry(r, 1.6, 16, 1, true), new THREE.MeshStandardMaterial({ map: tx, side: THREE.DoubleSide, roughness: 0.9 })); c.position.y = H - 0.6; c.castShadow = true; g.add(c);
+      if (TK === 'turkish') for (let k = 0; k < 32; k++) { const a = k / 32 * Math.PI * 2; const t = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.35, 5), mat('c_tassel', 0xE0A33B)); t.position.set(Math.cos(a) * r, H - 1.55, Math.sin(a) * r); t.rotation.x = Math.PI; g.add(t); } }
   } else if (cat === 'umbrella') {
     const H = h || 8, r = Math.min(w, d) / 2; cyl(g, 0.9, 1, 0.4, 0, 0.2, 0, K.dark, 16); cyl(g, 0.1, 0.1, H, 0, H / 2, 0, K.wood2, 8);
     const c = new THREE.Mesh(new THREE.ConeGeometry(r, 1.6, 8, 1, true), mat('c_canopy', 0xEADCC8, { side: THREE.DoubleSide })); c.position.y = H - 0.6; c.castShadow = true; g.add(c);
@@ -560,6 +594,15 @@ function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w
     px.forEach(x => pz.forEach(z => { if ((x === w / 2 && z !== 0.2 && z !== d - 0.2) || (z === d / 2 && x !== 0.2 && x !== w - 0.2)) return; post(x, z); }));
     box(h, w, 0.35, 0.18, w / 2, y0 + H - 0.18, 0.2, fm); box(h, w, 0.35, 0.18, w / 2, y0 + H - 0.18, d - 0.2, fm); box(h, 0.18, 0.35, d, 0.2, y0 + H - 0.18, d / 2, fm); box(h, 0.18, 0.35, d, w - 0.2, y0 + H - 0.18, d / 2, fm);
     for (let x = 1.2; x < w - 0.6; x += 1.2) box(h, 0.1, 0.22, d - 0.2, x, y0 + H + 0.05, d / 2, fm, false);
+    const TK = themeKey(), yb = y0 + H - 0.4;   // 275 (owner): the simple pergola dressed for the theme
+    if (TK === 'turkish') { [[0.2, 0.2, w - 0.2, 0.2], [0.2, d - 0.2, w - 0.2, d - 0.2], [0.2, 0.2, 0.2, d - 0.2], [w - 0.2, 0.2, w - 0.2, d - 0.2]].forEach(([x1, z1, x2, z2]) => { const L = Math.hypot(x2 - x1, z2 - z1), n = Math.max(1, Math.round(L / 6)); for (let k = 0; k < n; k++) { const sp = L / n, a = new THREE.Mesh(new THREE.TorusGeometry(sp / 2 - 0.15, 0.09, 6, 24, Math.PI), fm); const u = (k + 0.5) / n; a.position.set(x1 + (x2 - x1) * u, yb - sp / 2 + 0.3, z1 + (z2 - z1) * u); if (x1 === x2) a.rotation.y = Math.PI / 2; a.scale.y = Math.min(1, 1.6 / (sp / 2)); h.add(a); } });
+      [[w * 0.35, d * 0.4], [w * 0.65, d * 0.6], [w * 0.5, d * 0.25]].forEach(([x, z]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.6, 4), mat('c_cord', 0x222222)); c.position.set(x, y0 + H - 0.9, z); h.add(c); lantern(h, x, y0 + H - 2.1, z, 1); }); }
+    else if (TK === 'santorini') { const rd = mat('c_reed', 0xD9C9A3, { roughness: 1 }); for (let z = 0.4; z < d - 0.3; z += 0.18) box(h, w - 0.3, 0.05, 0.12, w / 2, y0 + H + 0.2, z, rd, false); }   // reed shade roof
+    else if (TK === 'tropical') { const bb = mat('c_bamboo', 0xC9A46B, { roughness: 0.9 }); const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, w - 0.5, 10), bb); roll.rotation.z = Math.PI / 2; roll.position.set(w / 2, yb, 0.3); h.add(roll); box(h, w - 0.6, 1.6, 0.04, w / 2, yb - 0.9, 0.3, bb, false);   // bamboo blind half down at the back
+      [[w * 0.3, d * 0.45], [w * 0.7, d * 0.45]].forEach(([x, z]) => pendant(h, x, y0 + H - 1.6, z, 'rattan')); }
+    else if (TK === 'contemporary') { const cu = mat('c_sheer', 0xF4EFE6, { transparent: true, opacity: 0.55, side: THREE.DoubleSide, roughness: 1 }); [[0.2, 0.2], [w - 0.2, 0.2], [0.2, d - 0.2], [w - 0.2, d - 0.2]].forEach(([x, z]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.6, H - 0.6, 10, 1, true), cu); c.position.set(x + (x < w / 2 ? 0.4 : -0.4), y0 + (H - 0.6) / 2, z + (z < d / 2 ? 0.4 : -0.4)); h.add(c); });
+      [[w * 0.35, d * 0.5], [w * 0.65, d * 0.5]].forEach(([x, z]) => pendant(h, x, y0 + H - 1.7, z, 'globe')); }
+    else if (TK === 'modern') box(h, w - 1, 0.06, 0.08, w / 2, y0 + H - 0.38, d / 2, mat('c_led', 0xFFF4E0, { emissive: 0xFFE0B0, emissiveIntensity: 1.2 }), false);
     h.userData.pg = { top: H + y0 }; return h; }
   if (it.cat === 'pergola') { try { const b = pergolaModel(/^MTO-PG-/.test(it.cfgId || it.pick || '') ? (it.cfgId || it.pick) : (P.pergolaSku || 'MTO-PG-TW'), pgO(it)), h = new THREE.Group(), y0 = it.deck ? 0.6 : 0;   // 193d: on a deck as high as a porta cabin's
     b.g.position.y = y0; h.add(b.g); if (it.deck && !deckUnder(it, P)) { const dk = mat('c_pdeck', 0x8B6A4A); const n = Math.max(1, Math.round(it.d / 0.5)); for (let k = 0; k < n; k++) box(h, it.w, DECK_H, it.d / n - 0.03, it.w / 2, DECK_H / 2, it.d * (k + 0.5) / n, k % 2 ? dk : mat('c_pdeck2', 0x7A5C40)); }
