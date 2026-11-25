@@ -1092,13 +1092,14 @@ const THEMES6 = [['tropical', 'Tropical', 'resort, teak, palms, a lawn', ['#8A5A
   ['boho', 'Boho', 'rustic: terracotta brick, jute, poufs, string lights', ['#B8643F', '#C98B3A', '#6B7A4A', '#EFE4D2']]];
 // 276 (owner): each theme's floor recipe — the field (laid pattern), a border, a paver 'rug' where people sit and under the pergola,
 // the path from the stairs door, lawn, inlay, textile rugs. Patterns: floorlay.js SPECS
-const TH_FLOOR = { tropical: { tile: 'stone', lay: 'trop_field', border: { w: 1, c: 'pebble' }, turf: true, path: 'trop_path', pg: 'trop_rug' },
-  turkish: { tile: 'moroccan', lay: 'turk_field', border: { w: 1.3, c: 'terracotta', lay: 'turk_border' }, inlay: 'star', rugs: 'kilim', path: 'turk_path' },
-  santorini: { tile: 'lime', lay: 'sant_field', border: { w: 0.67, c: 'blue', lay: 'sant_border' }, inlay: 'mosaic', path: 'sant_path', rugs: 'berber' },
-  modern: { tile: 'grey', ts: [2, 4], lay: 'mod_field', border: { w: 0.75, c: 'granite', lay: 'mod_border' }, seat: 'mod_rug', pg: 'mod_rug' },
-  contemporary: { tile: 'trav', lay: 'cont_field', turf: true, path: 'stones', pathTurf: true, seat: 'cont_rug', pg: 'cont_rug', rugs: 'sand' },
-  minimal: { tile: 'terrazzo', lay: 'min_field', seat: 'min_rug' },
-  boho: { tile: 'terracotta', lay: 'boho_field', border: { w: 0.67, c: 'terracotta', lay: 'boho_border' }, path: 'boho_path', seat: 'boho_rug', rugs: 'boho', jute: true } };
+const TH_FLOOR = { tropical: { tile: 'stone', lay: 'trop_field', border: { w: 1, c: 'pebble' }, turf: true, path: 'trop_path', pg: 'trop_rug', fire: 'trop_field' },
+  turkish: { tile: 'moroccan', lay: 'turk_field', border: { w: 1.3, c: 'terracotta', lay: 'turk_border' }, inlay: 'star', rugs: 'kilim', path: 'turk_path', fire: 'turk_border' },
+  santorini: { tile: 'lime', lay: 'sant_field', border: { w: 0.67, c: 'blue', lay: 'sant_border' }, inlay: 'mosaic', path: 'sant_path', rugs: 'berber', fire: 'sant_field' },
+  modern: { tile: 'grey', ts: [2, 4], lay: 'mod_field', border: { w: 0.75, c: 'granite', lay: 'mod_border' }, seat: 'mod_rug', pg: 'wpc_grey', fire: 'mod_border' },
+  contemporary: { tile: 'trav', lay: 'cont_field', turf: true, path: 'stones', pathTurf: true, seat: 'cont_rug', pg: 'cont_rug', rugs: 'sand', fire: 'cont_field' },
+  minimal: { tile: 'terrazzo', lay: 'min_field', seat: 'min_rug', fire: 'min_field' },
+  boho: { tile: 'terracotta', lay: 'boho_field', border: { w: 0.67, c: 'terracotta', lay: 'boho_border' }, path: 'boho_path', seat: 'boho_rug', rugs: 'boho', jute: true, fire: 'boho_rug' } };
+// 276 (owner): grass never under a fire pit — it always stands on the theme's stone / Moroccan / tiles; decks are always WPC boards (fabricated, never civil)
 const TH_PAINT = { boho: 0xEADBC4, tropical: 0xE6D8BF, turkish: 0xF3ECE0, santorini: 0xFAFAF7, modern: 0xB9B8B4, contemporary: 0xEFE8DC, minimal: 0xF4F2EE };   // the walls' paint per theme
 const V3T = () => '<div class="pl-ab3t"><button type="button" data-su="v3:zin" aria-label="Zoom in">+</button><button type="button" data-su="v3:zout" aria-label="Zoom out">−</button><button type="button" data-su="v3:pan" aria-label="Move the view" title="Move the view">✋</button><button type="button" data-su="v3:top" aria-label="Top view" title="Top view">▦</button><button type="button" data-su="v3:night" aria-label="Night view" title="Night view">🌙</button><button type="button" data-su="v3:home" aria-label="Whole space" title="Whole space">⌖</button></div>';
 const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-shade)
@@ -1119,7 +1120,8 @@ function themeFloor(k) { const t = S.site, F = TH_FLOOR[k]; if (!F) return;   //
   try { t.floor.zones = landscape(F); } catch (e) { t.floor.zones = []; } }
 function landscape(F) {
   const t = S.site, E = P0(), G = 2, W = Math.floor((t.pw - 2 * E) / G), D = Math.floor((t.pd - 2 * E) / G), Z = [];
-  const solid = S.items.filter(o => !att(o) && !o.segs && !['turf', 'pathway', 'lights', 'pergola', 'umbrella', 'plant'].includes(o.cat) && !(o.cat === 'planter' && !o.frp && !o.pick)).map(rectI).concat((t.kind === 'terrace' ? t.blocks : []).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d })));
+  const solid = S.items.filter(o => !att(o) && !o.segs && !['turf', 'pathway', 'lights', 'pergola', 'umbrella', 'plant'].includes(o.cat) && !(o.cat === 'planter' && !o.frp && !o.pick))
+    .map(rectI).concat(S.items.filter(o => o.cat === 'firepit').map(o => { const r = rectI(o); return { x: r.x - 2, z: r.z - 2, w: r.w + 4, d: r.d + 4 }; })).concat((t.kind === 'terrace' ? t.blocks : []).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d })));
   const free = (x, z, w, d) => inside({ x, z, w, d }) && !solid.some(r => x < r.x + r.w - 0.05 && r.x < x + w - 0.05 && z < r.z + r.d - 0.05 && r.z < z + d - 0.05);
   const cell = (i, j) => [E + i * G, E + j * G], ok = []; for (let j = 0; j < D; j++) { ok.push([]); for (let i = 0; i < W; i++) { const [x, z] = cell(i, j); ok[j].push(free(x, z, G, G)); } }
   // the biggest open rectangle (on the 2 ft grid)
@@ -1146,6 +1148,7 @@ function landscape(F) {
   if (F.pg) S.items.filter(o => o.cat === 'pergola' && !o.old).forEach(o => { const r = rectI(o); if (S.items.some(q => q.cat === 'deck' && Math.abs(rectI(q).x - r.x) < 1.5 && Math.abs(rectI(q).z - r.z) < 1.5)) return; const c = cl({ x: r.x + 0.2, z: r.z + 0.2, w: r.w - 0.4, d: r.d - 0.4 }); if (c) { PZ.push(c); Z.unshift(Object.assign({ k: 'prug', s: F.pg }, c)); } });
   const grp = S.items.filter(o => ['sofa', 'dining', 'fbench'].includes(o.cat) && !o.old && !att(o)).map(o => { let r = rectI(o); const r0 = r; S.items.forEach(q => { if (!['chair', 'table', 'stool'].includes(q.cat) && !(q.cat === 'firepit' && o.cat !== 'dining') || q === o) return; const b = rectI(q); if (b.x > r0.x + r0.w + 2 || b.x + b.w < r0.x - 2 || b.z > r0.z + r0.d + 2 || b.z + b.d < r0.z - 2) return; const x0 = Math.min(r.x, b.x), z0 = Math.min(r.z, b.z); r = { x: x0, z: z0, w: Math.max(r.x + r.w, b.x + b.w) - x0, d: Math.max(r.z + r.d, b.z + b.d) - z0 }; }); return r; });
   if (F.seat) grp.forEach(r => { const c = cl({ x: r.x - 1.2, z: r.z - 1.2, w: r.w + 2.4, d: r.d + 2.4 }); if (c && !PZ.some(p => c.x >= p.x - 0.5 && c.z >= p.z - 0.5 && c.x + c.w <= p.x + p.w + 0.5 && c.z + c.d <= p.z + p.d + 0.5)) Z.unshift(Object.assign({ k: 'prug', s: F.seat, y: 0.004 }, c)); });
+  if (F.fire) S.items.filter(o => o.cat === 'firepit').forEach(o => { const r = rectI(o), c = cl({ x: r.x - 1.5, z: r.z - 1.5, w: r.w + 3, d: r.d + 3 }); if (c) Z.push(Object.assign({ k: 'prug', s: F.fire, y: 0.09 }, c)); });   // a hard pad under every fire pit, above any lawn
   if (F.rugs) S.items.filter(o => ['sofa', 'dining'].includes(o.cat) && !o.old).forEach(o => { const r = rectI(o); Z.push({ k: 'rug', s: F.rugs, x: r.x - 0.6, z: r.z - 0.6, w: r.w + 1.2, d: r.d + 1.2, y: 0.01 });   // a textile rug a little bigger than the seating
     if (F.jute) { const rr = Math.min(Math.max(r.w, r.d) * 0.55, 4.5); Z.push({ k: 'rug', s: 'jute', x: r.x + r.w * 0.62 - rr / 2, z: r.z + r.d * 0.6 - rr / 2, w: rr, d: rr, y: 0.02 }); } });   // boho: a round jute rug layered over it
   return Z; }

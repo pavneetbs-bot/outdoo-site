@@ -13,7 +13,7 @@ export const SPECS = {
   // Tropical — mixed-size sandstone, grass in the joints of the paths, teak deck
   trop_field: { pat: 'french', u: 1, g: 0.05, pal: ['#D2BE96', '#C9AE82', '#DCCBA6', '#BFA57C', '#D6C29C', '#B89B72'], v: 0.07, j: '#A8987C', m: 'stone' },
   trop_path: { pat: 'flag', n: 16, P: 6, g: 0.13, pal: ['#B9A47F', '#A99470', '#C4B08C', '#9E8A68'], v: 0.08, j: 'grass', m: 'stone' },
-  trop_rug: { pat: 'deck', w: 0.42, lens: [3, 4, 5, 6], g: 0.03, pal: ['#8A5A35', '#7E5230', '#93613A', '#74492A'], v: 0.08, j: '#2A1E14', m: 'wood' },
+  trop_rug: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#8A5A35', '#7E5230', '#93613A', '#74492A'], v: 0.06, j: '#2A1E14', m: 'wpc' },   // 276: decks are always WPC boards (fabricated, not civil) — teak
   // Turkish — 6" encaustic cement tiles, terracotta hex border, kilims
   turk_field: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#E9DCC4', '#E4D6BC', '#EDE1CB'], ink: ['#2F6F7E'], ink2: '#C27A4E', v: 0.04, j: '#D6CEC0', m: 'cement' },
   turk_border: { pat: 'hex', u: 0.38, g: 0.04, pal: ['#C27A4E', '#B56E45', '#CC8659', '#A9643E'], v: 0.08, j: '#E6DCCB', m: 'clay' },
@@ -28,10 +28,12 @@ export const SPECS = {
   mod_border: { pat: 'stack', w: 0.75, d: 2, g: 0.02, pal: ['#2F2E2C', '#363431', '#2A2927'], v: 0.06, j: '#1E1D1B', m: 'stone' },
   // Contemporary — travertine French pattern, oak herringbone deck where people sit
   cont_field: { pat: 'french', u: 0.67, g: 0.025, pal: ['#E2D5BE', '#DCCDB3', '#E7DCC7', '#D5C4A7', '#DFD1B8'], v: 0.05, j: '#CBBC9F', m: 'trav' },
-  cont_rug: { pat: 'herring', w: 0.33, l: 1.33, g: 0.02, pal: ['#B08560', '#A57B56', '#BA8F68', '#9C734F'], v: 0.07, j: '#5E4632', m: 'wood', rot: 45 },
+  cont_rug: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#B08560', '#A57B56', '#BA8F68', '#9C734F'], v: 0.06, j: '#4A3626', m: 'wpc' },   // WPC oak
   // Minimal — microcement, big faint joints
   min_field: { pat: 'stack', w: 4, d: 4, g: 0.012, pal: ['#E9E6E0', '#E5E2DB', '#ECE9E3'], v: 0.015, j: '#D2CEC6', m: 'micro' },
-  min_rug: { pat: 'deck', w: 0.5, lens: [6, 8], g: 0.02, pal: ['#D2B994', '#CDB38D', '#D8C09C'], v: 0.04, j: '#8E7A5E', m: 'wood' },
+  min_rug: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.025, pal: ['#D2B994', '#CDB38D', '#D8C09C'], v: 0.04, j: '#8E7A5E', m: 'wpc' },   // WPC light oak
+  wpc_grey: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#8E8A84', '#86827C', '#96928B'], v: 0.04, j: '#3A3835', m: 'wpc' },
+  wpc_walnut: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#5E3B26', '#56361F', '#66422B'], v: 0.06, j: '#24170E', m: 'wpc' },
   // Boho / rustic — terracotta brick herringbone, a basketweave "rug" where people sit, brick soldier border
   boho_field: { pat: 'herring', w: 0.33, l: 0.67, g: 0.028, pal: ['#A9583A', '#9A4F33', '#B5623F', '#8E482E', '#B86B47', '#9F5537'], v: 0.1, j: '#9C8566', m: 'brick', rot: 45 },
   boho_rug: { pat: 'basket', w: 0.33, n: 2, g: 0.04, pal: ['#7A3E27', '#86452B', '#713924', '#8E4D31'], v: 0.08, j: '#BFA98A', m: 'brick' },
@@ -63,6 +65,9 @@ function surface(x, S, T, P, R, ppf) {   // the material over the tiles: speckle
   if (m === 'trav') { for (let i = 0; i < W * H / 260; i++) { x.fillStyle = `rgba(150,128,96,${0.12 + R() * 0.12})`; x.beginPath(); x.ellipse(R() * W, R() * H, 0.6 + R() * 2.4, 0.4 + R() * 0.8, 0, 0, 7); x.fill(); } x.lineWidth = 0.6; for (let i = 0; i < H / 14; i++) { x.strokeStyle = `rgba(175,155,120,${0.05 + R() * 0.07})`; const y = R() * H; x.beginPath(); x.moveTo(0, y); x.bezierCurveTo(W / 3, y + 3 * (R() - 0.5), 2 * W / 3, y + 3 * (R() - 0.5), W, y); x.stroke(); } }
   if (m === 'lime' || m === 'micro' || m === 'cement') { for (let i = 0; i < W * H / 120; i++) { x.fillStyle = m === 'lime' ? `rgba(200,190,170,${R() * 0.07})` : `rgba(110,104,96,${R() * 0.05})`; x.beginPath(); x.ellipse(R() * W, R() * H, 2 + R() * 9, 1.5 + R() * 6, R() * 3, 0, 7); x.fill(); } }
   if (m === 'glaze') T.forEach(t => { if (t.s < 0.5) return; const [a, b] = t.p[0]; x.fillStyle = 'rgba(255,255,255,.16)'; x.beginPath(); x.ellipse((a + 0.3 * (t.p[2][0] - a)) * ppf, (b + 0.3 * (t.p[2][1] - b)) * ppf, (t.p[2][0] - a) * ppf * 0.25, (t.p[2][1] - b) * ppf * 0.12, -0.6, 0, 7); x.fill(); });
+  if (m === 'wpc') T.forEach(t => { const xs = t.p.map(q => q[0]), zs = t.p.map(q => q[1]), x0 = Math.min(...xs) * ppf, x1 = Math.max(...xs) * ppf, z0 = Math.min(...zs) * ppf, z1 = Math.max(...zs) * ppf, n = 4;   // WPC boards: fine grooves along the length, a light brushed grain
+    for (let k = 1; k < n; k++) { const y = z0 + (z1 - z0) * k / n; x.fillStyle = 'rgba(20,12,6,.16)'; x.fillRect(x0 + 1, y - 0.6, x1 - x0 - 2, 1.1); x.fillStyle = 'rgba(255,245,230,.08)'; x.fillRect(x0 + 1, y + 0.6, x1 - x0 - 2, 0.8); }
+    for (let k = 0; k < 6; k++) { x.fillStyle = `rgba(40,25,12,${0.03 + R() * 0.05})`; x.fillRect(x0 + (x1 - x0) * R(), z0 + 1 + (z1 - z0 - 2) * R(), (x1 - x0) * (0.2 + R() * 0.5), 0.7); } });
   if (m === 'wood') T.forEach(t => { x.save(); x.beginPath(); t.p.forEach(([a, b], i) => i ? x.lineTo(a * ppf, b * ppf) : x.moveTo(a * ppf, b * ppf)); x.closePath(); x.clip(); const xs = t.p.map(q => q[0]), zs = t.p.map(q => q[1]), x0 = Math.min(...xs) * ppf, x1 = Math.max(...xs) * ppf, z0 = Math.min(...zs) * ppf, z1 = Math.max(...zs) * ppf, v = t.a === 90;
     x.lineWidth = 0.7; for (let k = 0; k < 7; k++) { x.strokeStyle = `rgba(60,35,18,${0.08 + R() * 0.12})`; x.beginPath(); if (v) { const c = x0 + (x1 - x0) * R(); x.moveTo(c, z0); x.bezierCurveTo(c + 2 * (R() - 0.5), z0 + (z1 - z0) / 3, c + 2 * (R() - 0.5), z0 + 2 * (z1 - z0) / 3, c, z1); } else { const c = z0 + (z1 - z0) * R(); x.moveTo(x0, c); x.bezierCurveTo(x0 + (x1 - x0) / 3, c + 2 * (R() - 0.5), x0 + 2 * (x1 - x0) / 3, c + 2 * (R() - 0.5), x1, c); } x.stroke(); }
     if (R() < 0.25) { x.fillStyle = 'rgba(50,30,15,.25)'; x.beginPath(); x.ellipse(x0 + (x1 - x0) * R(), z0 + (z1 - z0) * R(), 1.4, 0.8, v ? 1.57 : 0, 0, 7); x.fill(); } x.restore(); }); }
