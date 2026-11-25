@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=54';
-import * as P2 from './plan2d.js?v=20';
+import * as S3 from './space3d.js?v=55';
+import * as P2 from './plan2d.js?v=21';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=2';
-import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=50';
+import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=51';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -800,7 +800,7 @@ function builder() {   // 231: one screen — a mood ticks things, tap tiles to 
 const SUQ = ['have', 'existing', 'remove', 'asbuilt', 'ab3d', 'mood', 'want', 'cabin', 'bar', 'fbs', 'wtr', 'ftr', 'gfw', 'roofx', 'seats', 'floor', 'north', 'eplan', 'e3d', 'decor', 'sofa', 'green', 'lights', 'plan'];   // 245 (owner): round 1 roof → round 2 the big pieces (eplan) → round 3 furniture, plants, lamps (plan)
 // 246 (owner): round 1 also asks what is ALREADY built on the roof (kept as 'Existing' things on the plan, never priced) and what is to be taken down
 const HAVE = [['pergola', 'Pergola'], ['bar', 'Bar counter'], ['cabin', 'Cabin / room'], ['planter', 'Built-in planters'], ['fbench', 'Fixed seating'], ['jacuzzi', 'Pool / jacuzzi'], ['water', 'Water feature'], ['deck', 'Deck'], ['privacy', 'Privacy screen']];
-const FLOOR0 = [['cement', 'Cement / PCC', 'raw, plastered'], ['tiles', 'Tiles', 'ceramic / vitrified'], ['kota', 'Kota stone', 'grey-green stone slabs'], ['marble', 'Marble / granite', 'polished stone']];
+const FLOOR0 = [['cement', 'Cement / PCC', 'raw, plastered'], ['tiles', 'Tiles', 'ceramic / vitrified'], ['kota', 'Kota stone', 'grey-green stone slabs'], ['marble', 'Marble', 'white, polished'], ['granite', 'Granite', 'dark, polished']];
 const isDecor = o => !!(o && !o.old && DECOR.has(o.cat));
 const DECOR = new Set(['sofa', 'swing', 'dining', 'chair', 'table', 'stool', 'firepit', 'sculpture', 'jacuzzi', 'umbrella', 'lights', 'planter', 'plant']);
 // 245: four floor looks (owner) — the tiles, grass and patterned 'rugs' they lay
@@ -810,7 +810,7 @@ const THEME_T = { modern: ['Modern', 'grey'], natural: ['Natural', 'stone'], mor
 const CAB_USE = ['Lounge', 'WFH office', 'Gym', 'Bedroom', 'Guest room', 'Home theatre', 'Yoga studio', 'Kids\' play', 'Bar lounge', 'Store room'];
 let SUEL = null;
 function suNeed() { return S.step === 1 && S.site.kind === 'terrace' && !(S.su && S.su.done) && (!S.items.length && !S.bskip || !!(S.su && S.su.left)); }   // 267: left mid-way → opens again where it was left
-function suOpen(q) { S.su = Object.assign({ q: 0, pg: '5-8', cs: '3-4', north: '', turf: null, green: 'balanced', light: 'soft', stairs: 'keep', roomRef: null, cab: [], theme: 'natural', walls: 'paint', tankHas: null, tankScr: true, shaft: 'keep', have: {}, rm: {}, floor0: 'cement', pipes: null, pipeScr: true }, S.su || {}); if (q != null) S.su.q = q; S.su.on = true;
+function suOpen(q) { S.su = Object.assign({ q: 0, pg: '5-8', cs: '3-4', north: '', turf: null, green: 'balanced', light: 'soft', stairs: 'keep', roomRef: null, cab: [], theme: 'natural', walls: 'paint', tankHas: null, tankScr: true, shaft: 'keep', have: {}, rm: {}, floor0: 'cement', pipes: null, pipeScr: true }, S.su || {}); if (q != null) S.su.q = q; S.su.on = true; fl0Show();
   if (!SUEL) { SUEL = document.createElement('div'); SUEL.className = 'pl-su'; EL.appendChild(SUEL); SUEL.addEventListener('click', suClick); SUEL.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.sd && S.su) (S.su.selOpen = S.su.selOpen || {})[d.dataset.sd] = d.open; }, true); SUEL.addEventListener('pointerdown', suDown); SUEL.addEventListener('wheel', suWheel, { passive: false }); SUEL.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.pl-su2d')) e.preventDefault(); }); SUEL.addEventListener('pointermove', suMove); SUEL.addEventListener('pointerup', suUp); SUEL.addEventListener('pointercancel', suCancel); SUEL.addEventListener('touchmove', e => { if (SUD && SUD.drag) e.preventDefault(); }, { passive: false }); }
   try { splitPar(); } catch (e) {} SUEL.style.display = 'block'; suPaint(); }
 function suClose() { if (SUEL) SUEL.style.display = 'none'; if (S.su) S.su.on = false; draw(false); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 60); }
@@ -863,7 +863,7 @@ function suRemList() { const su = S.su || {}, L = [], hv = su.have || {}, t = S.
   if (su.shaftNow && su.shaftNow !== 'none' && su.shaft === 'keep') L.push({ k: 'shaftcov', t: 'Shaft cover (' + ((SMAT_NOW.find(z => z[0] === su.shaftNow) || [0, ''])[1]).toLowerCase() + ')', ic: 'shaft' });
   if ((su.mst || {}).has && su.mst.has !== 'none' && (su.mst.act || 'keep') === 'keep') L.push({ k: 'mstair', t: ((MST.find(z => z[0] === su.mst.has) || [0, 'Stairs'])[1]) + ' to the stairs-room roof', ic: 'mumty' });
   if (su.pipes && !su.pipeScr) L.push({ k: 'pipes', t: 'Open plumbing pipes (to be shifted / boxed)', ic: 'mumty' });
-  if (su.walls === 'tiles') L.push({ k: 'walltiles', t: 'Tiles on the walls', ic: 'brick' }); if (['tiles', 'kota', 'marble'].includes(su.floor0)) L.push({ k: 'floor0', t: 'The floor (' + (FLOOR0.find(z => z[0] === su.floor0) || [0, ''])[1] + ')', ic: 'tiles' });
+  if (su.walls === 'tiles') L.push({ k: 'walltiles', t: 'Tiles on the walls', ic: 'brick' }); if (['tiles', 'kota', 'marble', 'granite'].includes(su.floor0)) L.push({ k: 'floor0', t: 'The floor (' + (FLOOR0.find(z => z[0] === su.floor0) || [0, ''])[1] + ')', ic: 'tiles' });
   return L; }
 function suOld(keepNew) {   // 249: what is already built (and kept) placed once on the plan; placed again only when those answers change
   const su = S.su; suRemApply(); if (su.oldPlaced && !su.oldDirty) return;
@@ -897,8 +897,11 @@ function suPipes(dry) {   // 246: the stairs-room face with the open pipes (not 
   if (!su.pipeScr) return; const pm = su.pipeMat || 'cement', w = 3, d = 0.5, it = { cat: 'privacy', label: (PMAT.find(z => z[0] === pm) || [0, 0, 'Pipe cover'])[2], pmat: pm, pipe: true, h: 8, w, d, rot: { left: 90, right: 270, back: 180, front: 0 }[f[0]] };
   if (f[0] === 'left') { it.x = M.x - d; it.z = M.z + M.d / 2 - w / 2; } else if (f[0] === 'right') { it.x = M.x + M.w; it.z = M.z + M.d / 2 - w / 2; } else if (f[0] === 'back') { it.x = M.x + M.w / 2 - w / 2; it.z = M.z - d; } else { it.x = M.x + M.w / 2 - w / 2; it.z = M.z + M.d; }
   if (it.rot % 180) { it.x = f[0] === 'left' ? M.x - d : M.x + M.w; it.z = M.z + M.d / 2 - w / 2; } if (off) { if (f[0] === 'left' || f[0] === 'right') it.z += off; else it.x += off; } S.items.push(it); }
+const FL0T = { tiles: 'plain', kota: 'kota', marble: 'marble', granite: 'granite', cement: 'cement' };
+function fl0Tile() { const su = S.su || {}; return (su.rm || {}).floor0 ? 'cement' : FL0T[su.floor0] || 'cement'; }
+function fl0Show() { const su = S.su; if (!su || !su.floor0 || (su.flr && su.flr !== 'keep')) return; S.site.floor = Object.assign({}, S.site.floor || {}, { tile: fl0Tile() }); }   // 272 (owner): the floor that is there now, from the first plan / 3D
 function suSiteApply() { const su = S.su;
-  S.site.floor = { tile: su.flr === 'keep' ? ({ tiles: 'plain', kota: 'kota', marble: 'marble' }[su.floor0] || 'cement') : su.flr === 'greek' ? 'terrazzo' : su.flr === 'geometric' ? 'checker' : (THEME_T[su.theme] || THEME_T.natural)[1], pebble: 'near', preset: su.flr || 'garden', border: su.flr === 'greek' || su.flr === 'geometric' }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls === 'tiles' && su.rm.walltiles ? 'paint' : su.walls || 'none'; S.site.floor0 = su.rm.floor0 ? 'cement' : su.floor0 || 'cement'; S.site.remove = Object.keys(su.rm || {}).filter(k => su.rm[k]); S.site.wallTile = su.walls === 'tiles' ? Object.assign({ k: 'brick', c: 'red' }, su.wtile || {}) : undefined; S.site.tankScreen = su.tankHas === true && !su.tankScr && !(su.rm || {}).tankscr ? 'existing' : ''; }
+  S.site.floor = { tile: su.flr === 'keep' ? fl0Tile() : su.flr === 'greek' ? 'terrazzo' : su.flr === 'geometric' ? 'checker' : (THEME_T[su.theme] || THEME_T.natural)[1], pebble: 'near', preset: su.flr || 'garden', border: su.flr === 'greek' || su.flr === 'geometric' }; S.site.light = su.light === 'none' ? '' : su.light; S.site.refurb = { stairs: su.stairs, room: su.roomRef }; S.site.wallFin = su.walls === 'tiles' && su.rm.walltiles ? 'paint' : su.walls || 'none'; S.site.floor0 = su.rm.floor0 ? 'cement' : su.floor0 || 'cement'; S.site.remove = Object.keys(su.rm || {}).filter(k => su.rm[k]); S.site.wallTile = su.walls === 'tiles' ? Object.assign({ k: 'brick', c: 'red' }, su.wtile || {}) : undefined; S.site.tankScreen = su.tankHas === true && !su.tankScr && !(su.rm || {}).tankscr ? 'existing' : ''; }
 function suShaftCov() { exSync(); const su = S.su;
   S.items = S.items.filter(o => o.cat !== 'shaftcover');
   if (su.shaft === 'new' || su.shaft === 'change') (S.site.blocks || []).filter(b => b.type === 'shaft').forEach(b => S.items.push({ cat: 'shaftcover', mode: 'shaft', smat: su.shaftNew || 'poly', label: 'Shaft cover — ' + (SMAT.find(z => z[0] === (su.shaftNew || 'poly')) || [0, 'polycarbonate'])[1].replace(/ \(MS frame\)/, '').toLowerCase() + (su.shaftMS === false ? ' (on the old frame)' : ' + new MS frame'), x: b.x, z: b.z, w: b.w, d: b.d, h: (+b.h || 3) + 0.4, rot: 0 }));
@@ -966,7 +969,7 @@ function suCompose(ph) { exSync();   // a fresh setup from the answers — 245: 
 function suPlan() { const su = S.su, t = S.site, rd = ['front'].concat(t.road_back ? ['back'] : [], t.corner ? [t.corner] : []).filter(x => t.road_front !== false || x !== 'front');
   const el = SUQ[su.q] === 'eplan';   // 266 (owner): round 2 shows only the big pieces
   return P2.svg(t, { items: el ? S.items.map(o => isDecor(o) ? null : o) : S.items, measure: !!su.meas, sel: S.sel != null ? { k: 'it', i: S.sel } : null, grp: S.sel != null ? grpOf(S.sel) : null, wl: S.sel != null && S.suSz ? S.sel : null, wlab: S.sel != null && S.suSz && S.items[S.sel] && S.items[S.sel].cat === 'cabin' ? (L => ['L ' + (+L.L || 12) + "'", 'W ' + (+L.W || 10) + "'"])(cabinLay(S.items[S.sel])) : null, north: su.north, road: rd }); }
-function suPaint() { if (S.magic) return;
+function suPaint() { try { fl0Show(); } catch (e) {} if (S.magic) return;
   const su = S.su, q = SUQ[su.q], B = S.bsel || {}, terr = S.site.kind === 'terrace', chip = (k, on, tx) => `<button type="button" data-su="${k}" class="${on ? 'on' : ''}" aria-pressed="${!!on}">${tx}</button>`;
   const big = (k, on, e, t, sm) => chip(k, on, `<i>${e}</i><b>${t}</b>${sm ? `<small>${sm}</small>` : ''}`), next = (tx, dis) => `<div class="pl-subar"><button type="button" class="pl-go" data-su="next"${dis ? ' disabled' : ''}>${su.addK ? 'Add it to my plan →' : su.edK ? 'Save changes ✓' : tx || 'Next →'}</button></div>`;
   const P2Q = ['asbuilt', 'eplan', 'plan'].includes(q) && !su.addK && !su.edK;
@@ -1039,7 +1042,7 @@ function suPaint() { if (S.magic) return;
     h += next(); }
   else if (q === 'green') h += '<h2>How much greenery?</h2><div class="pl-subig pl-col3">' + big('green:light', su.green === 'light', P2.ico('sprout'), 'A little', 'a few plants in the corners') + big('green:balanced', su.green === 'balanced', P2.ico('planter'), 'Balanced', 'corners, a wall of plants, a green wall') + big('green:lush', su.green === 'lush', P2.ico('lush'), 'Lush', 'thick greenery all round') + '</div>' + next();
   else if (q === 'lights') h += '<h2>Lights for the evenings?</h2><div class="pl-subig pl-col3">' + big('light:none', su.light === 'none', P2.ico('sun'), 'No lights', 'only daytime use') + big('light:soft', su.light === 'soft', P2.ico('moon'), 'Soft & warm', 'pergola profile, cove lights, plant spikes') + big('light:full', su.light === 'full', P2.ico('sparkle'), 'All lit up', '+ wall lights and screen downlights') + '</div>' + next();
-  else if (q === 'floor') h += '<h2>The floor</h2><p class="pl-sub">Pick a look — we lay it out round your layout.</p><div class="pl-floors">' + (['tiles', 'kota', 'marble'].includes(su.floor0) && !su.rm.floor0 ? [['keep', 'Keep my floor', 'The ' + (FLOOR0.find(z => z[0] === su.floor0) || [0, 'floor'])[1].toLowerCase() + ' stays as it is']] : []).concat(FLOORS).map(z => `<button type="button" data-su="flr:${z[0]}" class="${su.flr === z[0] ? 'on' : ''}">${P2.floorThumb(z[0])}<b>${z[1]}</b><small>${z[2]}</small></button>`).join('') + '</div>' + (su.flr ? next() : '');   // 255: coming back, Next keeps the pick
+  else if (q === 'floor') h += '<h2>The floor</h2><p class="pl-sub">Pick a look — we lay it out round your layout.</p><div class="pl-floors">' + (['tiles', 'kota', 'marble', 'granite'].includes(su.floor0) && !su.rm.floor0 ? [['keep', 'Keep my floor', 'The ' + (FLOOR0.find(z => z[0] === su.floor0) || [0, 'floor'])[1].toLowerCase() + ' stays as it is']] : []).concat(FLOORS).map(z => `<button type="button" data-su="flr:${z[0]}" class="${su.flr === z[0] ? 'on' : ''}">${P2.floorThumb(z[0])}<b>${z[1]}</b><small>${z[2]}</small></button>`).join('') + '</div>' + (su.flr ? next() : '');   // 255: coming back, Next keeps the pick
   else if (q === 'north') { const t = S.site; h += '<h2>Which side is north?</h2><p class="pl-sub">Tap the side — the seating goes where the afternoon sun is softer.</p>' +
       `<div class="pl-sun" style="aspect-ratio:${t.pw}/${t.pd}">${['back', 'left', 'right', 'front'].map(sd => `<button type="button" data-su="north:${sd}" class="pl-sn pl-sn-${sd}${su.north === sd ? ' on' : ''}">N</button>`).join('')}<span>▼ road</span></div>` +
       '<div class="pl-subig">' + chip('north:', false, 'Not sure') + '</div>' + (su.north ? next() : ''); }
@@ -1153,7 +1156,7 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'hvc': { su.oldDirty = true; const hv = su.have = su.have || {}, v = (hv[a[1]] || 0) + (+a[2] || 0); if (v <= 0) delete hv[a[1]]; else hv[a[1]] = Math.min(6, v); su.dirty = true; break; }
     case 'rm': { su.oldDirty = true; su.rm = su.rm || {}; if (a[2] === '1') su.rm[a[1]] = true; else delete su.rm[a[1]]; suRemApply(); su.dirty = true; break; }
     case 'wrm': su.rm = su.rm || {}; if (a[1] === '1') su.rm.walltiles = true; else delete su.rm.walltiles; su.dirty = true; break;
-    case 'fl0': su.floor0 = a[1]; su.dirty = true; break;
+    case 'fl0': su.floor0 = a[1]; su.dirty = true; fl0Show(); break;
     case 'pipes': su.pipes = a[1] === '1'; su.dirty = true; break;
     case 'pscr': su.pipeScr = a[1] === '1'; su.dirty = true; break;
     case 'pmat': if (su.pipeMat !== a[1]) { su.pipeMat = a[1]; S.items.forEach(o2 => { if (o2.pipe) { o2.pmat = a[1]; o2.label = (PMAT.find(z => z[0] === a[1]) || [0, 0, 'Pipe cover'])[2]; } }); } break;   // 260: changes the cover in place, no new setup

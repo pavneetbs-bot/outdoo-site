@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=50';
-import { pergolaModel } from './pergola3d.js?v=38';
-import { outline, sofaLayout } from './plan2d.js?v=20';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=51';
+import { pergolaModel } from './pergola3d.js?v=39';
+import { outline, sofaLayout } from './plan2d.js?v=21';
 import { plantModel } from './plants3d.js?v=2';
 
 let R = null, HANDLER = null;
@@ -484,8 +484,24 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const r = Math.min(w, d) / 2; cyl(g, r, r * 0.9, 1.2, 0, 0.6, 0, K.dark, 28); cyl(g, r - 0.3, r - 0.3, 0.05, 0, 1.2, 0, mat('c_ember', 0x3A1A0A), 28);
     [[0, 0, 1.4], [0.5, 0.2, 1], [-0.4, 0.3, 1.1], [0.1, -0.5, 0.9]].forEach(([x, z, hh]) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.35, hh, 8), mat('c_flame', 0xFF8A2A, { emissive: 0xFF6A00, emissiveIntensity: 1.2, roughness: 1 })); f.position.set(x, 1.2 + hh / 2, z); g.add(f); });
   } else if (cat === 'jacuzzi') {
-    const H = h || 3; box(g, w, H, d, 0, H / 2, 0, K.white); box(g, w - 0.8, 0.08, d - 0.8, 0, H - 0.25, 0, K.water); box(g, w + 0.4, 0.15, d + 0.4, 0, H, 0, K.wood2);
-    box(g, 2, 0.8, 1.2, 0, 0.4, d / 2 + 0.6, K.wood2);
+    // 272 (owner): a real spa — wooden skirting with slats, white acrylic shell with a rim, rounded seats, headrests, water with jets, steps, underwater light at night
+    const H = h || 3, rim = 0.55, iw = w - 2 * rim, id = d - 2 * rim, acr = mat('c_jacr', 0xF4F4F2, { roughness: 0.25 }), sk = mat('c_jsk', 0x6E4B33, { roughness: 0.8 }), sk2 = mat('c_jsk2', 0x5A3C28, { roughness: 0.8 });
+    const wat = mat('c_jwat', 0x5FC4D9, { roughness: 0.05, metalness: 0.1, transparent: true, opacity: 0.82, emissive: 0x0E5B6A, emissiveIntensity: 0.25 });
+    const B = H - 1.2; box(g, w - 0.1, B, d - 0.1, 0, B / 2, 0, sk);   // cabinet (the tub's floor at B)
+    [[w, 'z', d / 2], [w, 'z', -d / 2], [d, 'x', w / 2], [d, 'x', -w / 2]].forEach(([L, ax, o]) => { if (ax === 'z') box(g, L, 1.0, 0.06, 0, B + 0.5, o, sk, false); else box(g, 0.06, 1.0, L, o, B + 0.5, 0, sk, false);   // skirting up to the rim
+      const n = Math.max(3, Math.round(L / 0.45)); for (let k = 1; k < n; k++) { const u = -L / 2 + L * k / n; if (ax === 'z') box(g, 0.04, H - 0.45, 0.04, u, (H - 0.2) / 2, o + Math.sign(o) * 0.04, sk2, false); else box(g, 0.04, H - 0.45, 0.04, o + Math.sign(o) * 0.04, (H - 0.2) / 2, u, sk2, false); } });
+    box(g, w, 0.12, d, 0, 0.06, 0, sk2);   // plinth
+    [[w - 0.12, rim - 0.06, 0, -d / 2 + rim / 2], [w - 0.12, rim - 0.06, 0, d / 2 - rim / 2], [rim - 0.06, id, -w / 2 + rim / 2, 0], [rim - 0.06, id, w / 2 - rim / 2, 0]].forEach(([a, b, x, z]) => box(g, a, 1.0, b, x, B + 0.5, z, acr, false));   // shell walls
+    box(g, w + 0.06, 0.12, rim, 0, H + 0.02, -d / 2 + rim / 2, acr); box(g, w + 0.06, 0.12, rim, 0, H + 0.02, d / 2 - rim / 2, acr); box(g, rim, 0.12, id, -w / 2 + rim / 2, H + 0.02, 0, acr); box(g, rim, 0.12, id, w / 2 - rim / 2, H + 0.02, 0, acr);   // rim
+    box(g, iw, 0.04, id, 0, B + 0.02, 0, acr, false);   // shell floor
+    const sd = Math.min(1.3, id * 0.3); box(g, iw, 0.45, sd, 0, B + 0.225, -id / 2 + sd / 2, acr, false); box(g, sd, 0.45, id - sd, -iw / 2 + sd / 2, B + 0.225, sd / 2, acr, false); box(g, sd * 1.6, 0.2, sd, iw / 2 - sd * 0.8, B + 0.1, id / 2 - sd / 2, acr, false);   // seats + lounger
+    const water = box(g, iw - 0.02, 0.05, id - 0.02, 0, H - 0.42, 0, wat, false); water.castShadow = false;
+    const hr = mat('c_jhr', 0x3A3A3A, { roughness: 0.6 }); [[-iw / 4, -d / 2 + rim / 2], [iw / 4, -d / 2 + rim / 2], [-w / 2 + rim / 2, id / 6]].forEach(([x, z], k) => { const b = box(g, k < 2 ? 1 : 0.4, 0.14, k < 2 ? 0.4 : 1, x, H + 0.14, z, hr); b.castShadow = false; });   // headrests
+    const fo = mat('c_jfoam', 0xFFFFFF, { roughness: 0.9, transparent: true, opacity: 0.85 }); for (let k = 0; k < 14; k++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.05 + (k % 3) * 0.03, 8, 6), fo); b.position.set((Math.sin(k * 2.3) * 0.42) * iw, H - 0.38, (Math.cos(k * 1.7) * 0.4) * id); g.add(b); }   // jets bubbling
+    const st = mat('c_jchr', 0xC8CCD0, { metalness: 0.9, roughness: 0.2 }); [[-iw / 2 + 0.03, 0], [iw / 2 - 0.03, -id / 4], [0, -id / 2 + 0.03]].forEach(([x, z]) => cyl(g, 0.07, 0.07, 0.05, x, B + 0.7, z, st, 10));   // jet nozzles
+    box(g, 0.7, 0.08, 0.35, w / 2 - rim / 2, H + 0.02, d / 2 - rim / 2, mat('c_jpanel', 0x1E1E1E, { roughness: 0.3 }), false);   // control panel
+    box(g, Math.min(3, w * 0.5), H * 0.4, 0.8, 0, H * 0.2, d / 2 + 0.4, sk);   // one step up
+    const ul = new THREE.Mesh(new THREE.PlaneGeometry(iw * 0.8, id * 0.8), mat('c_julight', 0x6FE3FF, { emissive: 0x3FD0FF, emissiveIntensity: 1.4, transparent: true, opacity: 0.55 })); ul.rotation.x = -Math.PI / 2; ul.position.y = B + 0.05; nightOnly(ul, g);
   } else if (cat === 'lights') {
     cyl(g, 0.15, 0.2, (h || 3) - 0.4, 0, ((h || 3) - 0.4) / 2, 0, K.frame, 10); cyl(g, 0.3, 0.25, 0.4, 0, (h || 3) - 0.2, 0, mat('c_lamp', 0xFFE2A8, { emissive: WARM, emissiveIntensity: 1 }), 12);
   } else if (cat === 'umbrella') {
@@ -644,6 +660,7 @@ function finTex(k) { if (TEX[k]) return TEX[k]; const cv = document.createElemen
   if (flat) { x.fillStyle = flat[0]; x.fillRect(0, 0, 256, 256); if (k === 'stone') for (let i = 0; i < 90; i++) { x.fillStyle = 'rgba(120,100,70,.12)'; x.fillRect(Math.random() * 256, Math.random() * 256, 3 + Math.random() * 10, 2 + Math.random() * 4); } x.strokeStyle = flat[1]; x.lineWidth = 4; x.strokeRect(0, 0, 256, 256); }
   else if (k === 'kota') { x.fillStyle = '#9AA596'; x.fillRect(0, 0, 256, 256); [[128, 0], [0, 128]].forEach(([a, b], j) => { x.fillStyle = j ? '#8F9A8B' : '#A7B1A2'; x.fillRect(a, b, 128, 128); }); x.strokeStyle = '#7E887A'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke(); }
   else if (k === 'marble') { x.fillStyle = '#F2F0EC'; x.fillRect(0, 0, 256, 256); x.strokeStyle = 'rgba(160,150,135,.5)'; x.lineWidth = 2; for (let i = 0; i < 4; i++) { x.beginPath(); x.moveTo(0, 40 + i * 60); x.bezierCurveTo(80, 20 + i * 70, 160, 90 + i * 40, 256, 60 + i * 55); x.stroke(); } x.strokeStyle = '#DCD8D0'; x.strokeRect(0, 0, 256, 256); }
+  else if (k === 'granite') { x.fillStyle = '#3B3936'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 1400; i++) { x.fillStyle = ['#5A5753', '#26241F', '#7B7670', '#4A4642', '#9A948C'][i % 5]; x.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 3, 1 + Math.random() * 3); } x.strokeStyle = 'rgba(20,20,20,.6)'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke(); }   // 272
   else if (k === 'cement') { x.fillStyle = '#C9C5BE'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 500; i++) { x.fillStyle = `rgba(90,85,78,${Math.random() * 0.08})`; x.fillRect(Math.random() * 256, Math.random() * 256, 2 + Math.random() * 6, 2 + Math.random() * 6); } }
   else if (k === 'terrazzo') { x.fillStyle = '#EFE8DC'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 380; i++) { x.fillStyle = ['#C9B99E', '#9FA89A', '#D2B48F', '#B7AE9F', '#A9B3A4'][i % 5]; x.beginPath(); x.ellipse(Math.random() * 256, Math.random() * 256, 1.5 + Math.random() * 4, 1.2 + Math.random() * 3, Math.random() * 3, 0, 7); x.fill(); } x.strokeStyle = '#DED5C6'; x.lineWidth = 2; x.strokeRect(0, 0, 256, 256); }
   else if (k === 'checker') { x.fillStyle = '#E9E6E0'; x.fillRect(0, 0, 256, 256); x.fillStyle = '#8F8D88'; x.fillRect(0, 0, 128, 128); x.fillRect(128, 128, 128, 128); x.strokeStyle = '#C9C5BD'; x.lineWidth = 3; x.strokeRect(0, 0, 256, 256); x.beginPath(); x.moveTo(128, 0); x.lineTo(128, 256); x.moveTo(0, 128); x.lineTo(256, 128); x.stroke(); }
@@ -666,7 +683,7 @@ export function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r =>
   return out; }
 function floorFin(g, t, items) {
   const f = t.floor || {}, pw = +t.pw, pd = +t.pd, E = 0.75;
-  if (['plain', 'moroccan', 'stone', 'terracotta', 'grey', 'terrazzo', 'checker', 'kota', 'marble', 'cement'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
+  if (['plain', 'moroccan', 'stone', 'terracotta', 'grey', 'terrazzo', 'checker', 'kota', 'marble', 'granite', 'cement'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
     const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const per = f.tile === 'moroccan' ? 3 : f.tile === 'checker' ? 4 : 2; tx.repeat.set(1 / per, 1 / per);
     const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
   if (f.border) { const bw = 1.25, bm = mat('fl_bord' + f.preset, f.preset === 'greek' ? 0x8FA38A : 0x4A4A48, { roughness: 0.8 }), O = outline(t);   // 245: the floor look's border band along the parapet
