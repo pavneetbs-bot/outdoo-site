@@ -106,13 +106,14 @@ function build(c, lay, opts) {
     const wg = new THREE.Group(); wg.name = 'wall-' + side; walls.add(wg); wallOf[side] = wg;
     const ks = (lay.walls || {})[side] || [], len = side === 'front' || side === 'back' ? L : W, sf = sideFrame(side, L, W);
     const sh = shadeHex(c, lay, side), WM = sh === 'wpc' ? mat('wpc') : sh ? mat(sh) : mat('puf');   // 188: wall finish / shade
-    let prevSolid = false; const runs = [];
+    let prevSolid = false, prevGl = false; const runs = [], wide = Array.isArray(lay.wide) && lay.wide.includes(side), gRuns = [];   // 269 (owner): a wide side = one long glass run with MS posts every ~10 ft
     for (let i = 0; i < ks.length;) {
       const k = ks[i], b = bayOf(c, k), sp = spanOf(c, k), a = i * bay, e = Math.min((i + sp) * bay, len), solid = !b || (!b.glass && !b.door);
       const post = (u) => piece(wg, sf, u - 0.06, u + 0.06, 0, H, FM, T + 0.04);
       const hb = piece(hits, sf, a + 0.05, e - 0.05, 0, H, mat('hit'), 0.8); hb.userData = { bay: { side, i } }; hb.castShadow = false;
-      if (i === 0 || !(prevSolid && solid)) post(a);   // 188: no steel posts inside a run of solid wall — only at corners and beside doors / glass
-      prevSolid = solid;
+      const gl = !!(b && b.glass && !b.door); if (wide && gl) { const r0 = gRuns[gRuns.length - 1]; if (r0 && prevGl && r0[1] === a) r0[1] = e; else gRuns.push([a, e]); }
+      if ((i === 0 || !(prevSolid && solid)) && !(wide && gl && prevGl && i > 0)) post(a);   // 188: no steel posts inside a run of solid wall — only at corners and beside doors / glass
+      prevSolid = solid; prevGl = gl;
       { const lt = BAY_LABEL[k] || (b && b.name) || 'Wall', run = runs[runs.length - 1];   // one label per run of the same kind (not one per panel)
         if (run && run.t === lt && run.e === a && !(b && b.door)) run.e = e; else runs.push({ t: lt, a, e });
         if (b && b.door) { const kind = k === 'slide' ? 'slide' : k === 'fold' ? 'fold' : sp > 1 || k === 'double' || k === 'pdouble' ? 'swing2' : 'swing', dep = kind === 'slide' || kind === 'fold' ? 1.6 : Math.min(e - a - 0.2, 3.2);
@@ -139,6 +140,7 @@ function build(c, lay, opts) {
       i += sp;
     }
     piece(wg, sf, len - 0.06, len + 0.06, 0, H, FM, T + 0.04);
+    for (const [ga, ge] of gRuns) { const n = Math.ceil((ge - ga) / 10 - 0.01); for (let j = 1; j < n; j++) { const u = ga + (ge - ga) * j / n; piece(wg, sf, u - 0.08, u + 0.08, 0, H, FM, T + 0.06); } }
     for (const r of runs) { const lb = label(r.t, Math.min(3.8, Math.max(2.8, r.e - r.a - 0.4))), [lx, lz] = sf.at((r.a + r.e) / 2, T / 2 + 0.16); lb.position.set(lx, 4.4, lz);
       lb.rotation.y = side === 'front' ? 0 : side === 'back' ? Math.PI : side === 'right' ? Math.PI / 2 : -Math.PI / 2; labels.add(lb); }
   }

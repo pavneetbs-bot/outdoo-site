@@ -5,7 +5,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=48';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=49';
 import { pergolaModel } from './pergola3d.js?v=38';
 import { outline, sofaLayout } from './plan2d.js?v=19';
 import { plantModel } from './plants3d.js?v=2';

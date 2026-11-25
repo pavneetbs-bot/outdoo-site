@@ -7,7 +7,7 @@
 import * as S3 from './space3d.js?v=53';
 import * as P2 from './plan2d.js?v=19';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=2';
-import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=48';
+import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=49';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -517,20 +517,20 @@ function cabWalls(it) {
   if (!it.exB) it.exB = Object.assign({}, e); const eT = k => Math.max(e[k] || 0.3, it.exB[k] || 0.3);   // 267: the full projection's reach, so a dropped projection isn't put back on the next pass
   const Cw = [R.x + R.w / 2, R.z + R.d / 2], Lc = [(L + e.r - e.l) / 2, (W + e.f - e.b) / 2], loc = p => { const v = rotV([p[0] - Cw[0], p[1] - Cw[1]], -rot); return [Lc[0] + v[0], Lc[1] + v[1]]; };
   const obs = (t.blocks || []).filter(b => b.type !== 'shaft' && b.type !== 'ac' && (+b.h || 8) >= 4).map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d })).concat(S.items.filter(o => o !== it && o.cat === 'cabin').map(rectI));
-  const solid = {};
+  const solid = {}, parOn = {};
   Object.keys(LSN).forEach(sd => { const ws = cabWorld(sd, rot), tol = eT({ front: 'f', back: 'b', left: 'l', right: 'r' }[sd]) + 0.8, iv = [];
     const xs = ws === 'left' || ws === 'right', u0 = xs ? R.z : R.x, u1 = xs ? R.z + R.d : R.x + R.w, edge = ws === 'left' ? R.x : ws === 'right' ? R.x + R.w : ws === 'back' ? R.z : R.z + R.d;
-    const par = ws === 'left' ? edge - P : ws === 'right' ? t.pw - P - edge : ws === 'back' ? edge - P : t.pd - P - edge; if (par <= tol) iv.push([u0, u1]);
+    const par = ws === 'left' ? edge - P : ws === 'right' ? t.pw - P - edge : ws === 'back' ? edge - P : t.pd - P - edge; if (par <= tol) { if ((t.high || {})[ws]) iv.push([u0, u1]); else parOn[sd] = 1; }   // 269 (owner): a low parapet keeps the glass (windows / one long glass run) — only a tall wall makes the side solid
     obs.forEach(o => { const gap = ws === 'left' ? edge - (o.x + o.w) : ws === 'right' ? o.x - edge : ws === 'back' ? edge - (o.z + o.d) : o.z - edge; if (gap < -0.6 || gap > tol) return;
       const a = Math.max(u0, xs ? o.z : o.x), b = Math.min(u1, xs ? o.z + o.d : o.x + o.w); if (b - a > 0.3) iv.push([a, b]); });
     if (!iv.length) return;
     solid[sd] = iv.map(([a, b]) => { const pa = xs ? [edge, a] : [a, edge], pb = xs ? [edge, b] : [b, edge], la = loc(pa), lb = loc(pb), f = q => sd === 'front' || sd === 'back' ? q[0] : W - q[1], v = [f(la), f(lb)].sort((m, n) => m - n); return [Math.max(0, v[0] - 0.2), v[1] + 0.2]; }); });
-  it.wallSides = Object.keys(solid);
+  it.wallSides = Object.keys(solid).concat(Object.keys(parOn).filter(k => !solid[k]));
   // 262 (owner): no projection on a side against a wall (most of it) or where a pergola joins on — the pergola runs right up to the cabin instead
   const PG = S.items.filter(o => o.cat === 'pergola' && !o.old).map(o => [o, rectI(o)]), pgTouch = {}, sideLen = sd => sd === 'front' || sd === 'back' ? L : W;
   Object.keys(LSN).forEach(sd => { const ws = cabWorld(sd, rot), tol = eT({ front: 'f', back: 'b', left: 'l', right: 'r' }[sd]) + 0.8, xs = ws === 'left' || ws === 'right', u0 = xs ? R.z : R.x, u1 = xs ? R.z + R.d : R.x + R.w, edge = ws === 'left' ? R.x : ws === 'right' ? R.x + R.w : ws === 'back' ? R.z : R.z + R.d;
     PG.forEach(([o, q]) => { const gap = ws === 'left' ? edge - (q.x + q.w) : ws === 'right' ? q.x - edge : ws === 'back' ? edge - (q.z + q.d) : q.z - edge; const ov = Math.min(u1, xs ? q.z + q.d : q.x + q.w) - Math.max(u0, xs ? q.z : q.x); if (gap > -0.6 && gap <= (o.szBy ? 0.15 : tol) && ov > 2) (pgTouch[sd] = pgTouch[sd] || []).push([o, ws]); }); });   // 268: a pergola sized by hand isn't stretched back to the cabin
-  const ps = (base.proj && Array.isArray(base.proj.sides)) ? base.proj.sides : [], drop = ps.filter(sd => pgTouch[sd] || (solid[sd] || []).reduce((a, r) => a + Math.max(0, Math.min(sideLen(sd), r[1]) - Math.max(0, r[0])), 0) >= sideLen(sd) * 0.5);
+  const ps = (base.proj && Array.isArray(base.proj.sides)) ? base.proj.sides : [], drop = ps.filter(sd => pgTouch[sd] || parOn[sd] || (solid[sd] || []).reduce((a, r) => a + Math.max(0, Math.min(sideLen(sd), r[1]) - Math.max(0, r[0])), 0) >= sideLen(sd) * 0.5);
   const base2 = drop.length ? Object.assign(JSON.parse(JSON.stringify(base)), { proj: Object.assign({}, base.proj, { sides: ps.filter(sd => !drop.includes(sd)) }) }) : base;
   const parD = {}, touchC = []; Object.keys(LSN).forEach(sd => { const ws = cabWorld(sd, rot), edge = ws === 'left' ? R.x : ws === 'right' ? R.x + R.w : ws === 'back' ? R.z : R.z + R.d; parD[sd] = ws === 'left' ? edge - P : ws === 'right' ? t.pw - P - edge : ws === 'back' ? edge - P : t.pd - P - edge;   // 268: how far each side is from the parapet; which sides touch another cabin
     const xs = ws === 'left' || ws === 'right', u0 = xs ? R.z : R.x, u1 = xs ? R.z + R.d : R.x + R.w, tol = eT({ front: 'f', back: 'b', left: 'l', right: 'r' }[sd]) + 0.8;
@@ -538,7 +538,7 @@ function cabWalls(it) {
   it.cabTouch = touchC; const isH = /HYBRID/.test(it.sku || ''), solidLen = sd => (solid[sd] || []).reduce((a, r) => a + Math.max(0, Math.min(sideLen(sd), r[1]) - Math.max(0, r[0])), 0);
   const gSides = isH && it.gs ? ['front'].concat(['left', 'right', 'back'].sort((a, b) => (solidLen(a) - solidLen(b)) || (parD[b] - parD[a]))).slice(0, Math.max(1, Math.min(4, +it.gs))) : null;
   const winS = gSides ? Object.keys(LSN).filter(sd => !gSides.includes(sd) && parD[sd] < 8 && solidLen(sd) < sideLen(sd) * 0.5) : null;
-  const lay = window.mtoCabinFix(it.sku, base2, { solid, doors: it.ldoors || [], glass: gSides, win: winS, join: (it.joinDoor || []).filter(sd => touchC.includes(sd)) }); if (lay) { it.layout = lay; it.lsku = it.sku; }
+  const lay = window.mtoCabinFix(it.sku, base2, { solid, doors: it.ldoors || [], glass: gSides, win: winS, join: (it.joinDoor || []).filter(sd => touchC.includes(sd)), wide: /GLASS/.test(it.sku || '') ? Object.keys(LSN).filter(sd => parD[sd] < 8 && solidLen(sd) < sideLen(sd) * 0.5) : null }); if (lay) { it.layout = lay; it.lsku = it.sku; }
   { const e0 = it.ex || e, bc = (o => [Cw[0] + o[0], Cw[1] + o[1]])(rotV([(e0.l - e0.r) / 2, (e0.b - e0.f) / 2], rot)); cabinFoot(it); const e1 = it.ex, o1 = rotV([(e1.l - e1.r) / 2, (e1.b - e1.f) / 2], rot), f1 = foot(it);
     it.x = Math.round((bc[0] - o1[0] - f1[0] / 2) * 1000) / 1000; it.z = Math.round((bc[1] - o1[1] - f1[1] / 2) * 1000) / 1000; }
   { const R1 = rectI(it); drop.filter(sd => !pgTouch[sd]).forEach(sd => { const ws = cabWorld(sd, rot), xs = ws === 'left' || ws === 'right', edge = ws === 'left' ? R1.x : ws === 'right' ? R1.x + R1.w : ws === 'back' ? R1.z : R1.z + R1.d, u0 = xs ? R1.z : R1.x, u1 = xs ? R1.z + R1.d : R1.x + R1.w;   // 268 (owner): a side whose projection was dropped against a wall moves up flush to it — no gap
@@ -1194,7 +1194,7 @@ function suClick(e) { const b = e.target.closest('[data-su]'); if (!b || b.disab
     case 'sadd': { const k = a[1]; S.bsel = S.bsel || {};
       if (ADDQ[k] && SUQ.includes(ADDQ[k])) { S.bsel[k] = (S.bsel[k] || 0) + 1; if (k === 'bar') S.bsel.stool = S.bsel.stool || 1; su.addK = k; su.addRet = su.q; su.addD = [!!su.dirty, !!su.ddirty]; su.q = SUQ.indexOf(ADDQ[k]); break; }   // 260 (owner): the same questions as in the setup, then it is added
       const n0 = S.items.length; addItem(k); if (S.sel != null) { S.suMv = true; S.bsel[k] = (S.bsel[k] || 0) + 1; suToast('Added — move it where you want it'); } else suToast(S.msg || 'No free room for it', 1); suSigNow(); cabFixAll(); draw(true); break; }
-    case 'csz': { const it = S.sel != null ? S.items[S.sel] : null; if (!it || it.cat !== 'cabin') break; const L = cabinLay(it), l0 = +L.L || 12, w0 = +L.W || 10, d = +a[2] || 0; S.msg = ''; cabinSize(it, a[1] === 'L' ? l0 + d : l0, a[1] === 'W' ? w0 + d : w0); draw(true); break; }
+    case 'csz': { const it = S.sel != null ? S.items[S.sel] : null; if (!it || it.cat !== 'cabin') break; const L = cabinLay(it), l0 = +L.L || 12, w0 = +L.W || 10, d = /^[FI]/.test(a[2] || '') ? fiStep(a[1] === 'L' ? l0 : w0, a[2]) : +a[2] || 0; S.msg = ''; cabinSize(it, a[1] === 'L' ? l0 + d : l0, a[1] === 'W' ? w0 + d : w0); draw(true); break; }
     case 'rs': case 'rot': case 'del': case 'flip': if (S.sel == null) break; { const G = grpOf(S.sel), it = S.items[S.sel];   // 254: Remove takes the whole group; a deck under the pergola follows its turn / size
       if (a[0] === 'del') { prefDrop(G); const gone = G.map(j => S.items[j]); S.items = S.items.filter((o, j) => !G.includes(j)); scrAfter(gone); suSigNow(); S.sel = null; S.suSz = false; draw(true); break; }
       if (a[0] === 'flip') {   // 258 (owner): mirror an L — the bar's return arm / the seating's short arm goes to the other end
@@ -1350,7 +1350,7 @@ function suMvHtml() { const it = S.sel != null ? S.items[S.sel] : null; if (!it 
 function suSzHtml() { const it = S.sel != null ? S.items[S.sel] : null; if (!it || !S.suSz) return ''; const c = CAT[it.cat] || {};
   if (it.mode === 'par' && it.zone) { const L = it.zone[1] - it.zone[0], sd = it.sides[0], fromW = SIDE_AX[sd] === 'x' ? 'from the left end' : 'from the back end';
     return '<div class="pl-szp">' + `<div class="pl-szr pl-szr2"><span class="pl-sza">↔</span><span class="pl-szl">Length · ${fiTxt(L)}<small>along the ${sd} parapet</small></span>${fiCtl('zl', L)}</div>` + `<div class="pl-szr pl-szr2"><span class="pl-sza">⇥</span><span class="pl-szl">Starts · ${fiTxt(it.zone[0])}<small>${fromW} of that wall</small></span>${fiCtl('zs', it.zone[0])}</div>` + '</div>'; }
-  if (it.cat === 'cabin') { const L = cabinLay(it), tw = (+it.rot || 0) % 180 === 0, r = (k, ar, nm, sm, v) => `<div class="pl-szr"><span class="pl-sza">${ar}</span><span class="pl-szl">${nm}<small>${sm}</small></span><button type="button" data-su="csz:${k}:-1" aria-label="Smaller">−</button><em>${v} ft</em><button type="button" data-su="csz:${k}:1" aria-label="Bigger">+</button></div>`;   // 256: the cabin's own length × width
+  if (it.cat === 'cabin') { const L = cabinLay(it), tw = (+it.rot || 0) % 180 === 0, r = (k, ar, nm, sm, v) => `<div class="pl-szr pl-szr2"><span class="pl-sza">${ar}</span><span class="pl-szl">${nm} · ${fiTxt(+v)}<small>${sm}</small></span>${fiCtl('csz:' + k, +v)}</div>`;   // 256: the cabin's own length × width; 269 (owner): feet + inches
     return '<div class="pl-szp">' + r('L', tw ? '↔' : '↕', 'Length — L', 'along the door wall', +L.L || 12) + r('W', tw ? '↕' : '↔', 'Width — W', 'door wall to back wall', +L.W || 10) + '</div>'; } if ((!c.size || c.size === 'fixed') && !SZOK.has(it.cat) && !(it.cat === 'bar' && it.shape === 'L')) return ''; const tw = (+it.rot || 0) % 180 === 0;
   const row = (k, ar, nm, sm, v) => `<div class="pl-szr pl-szr2"><span class="pl-sza">${ar}</span><span class="pl-szl">${nm} · ${fiTxt(+v)}<small>${sm}</small></span>${fiCtl('rs:' + k, +v)}</div>`;
   return '<div class="pl-szp">' + row('w', tw ? '↔' : '↕', 'Width — W', tw ? 'left to right on the plan' : 'top to bottom on the plan', it.w) + (c.size === 'wd' || SZOK.has(it.cat) || (it.cat === 'bar' && it.shape === 'L') ? row('d', tw ? '↕' : '↔', 'Length — L', tw ? 'top to bottom on the plan' : 'left to right on the plan', it.d) : '') + '</div>'; }

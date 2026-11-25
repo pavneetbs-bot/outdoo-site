@@ -632,8 +632,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=48').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=48'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=49').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=49'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1856,7 +1856,8 @@
     var x = PRODS[id], c = x && x.cz && x.cz.cabin; if (!c) return null;
     var dv = function (v, d) { v = num(v); return v == null ? d : v; }, lim = { Lmin: dv(c.L && c.L.min, 8), Lmax: Math.max(dv(c.L && c.L.max, 40), big ? 80 : 0), Wmin: dv(c.W && c.W.min, 8), Wmax: Math.max(dv(c.W && c.W.max, 20), big ? 40 : 0) };   // 268: the planner may go past the catalogue's sizes (priced by our team)
     var l = cbClone(lay && lay.walls ? lay : c.layout || {}); if (!l.walls) return Object.assign({ lay: null }, lim);
-    l.L = Math.round(Math.max(lim.Lmin, Math.min(lim.Lmax, num(L) || num(l.L) || lim.Lmin))); l.W = Math.round(Math.max(lim.Wmin, Math.min(lim.Wmax, num(W) || num(l.W) || lim.Wmin)));
+    var in12 = function (v) { return Math.round(v * 12) / 12; };   // 269 (owner): sizes to the inch (the last bay takes the odd inches)
+    l.L = in12(Math.max(lim.Lmin, Math.min(lim.Lmax, num(L) || num(l.L) || lim.Lmin))); l.W = in12(Math.max(lim.Wmin, Math.min(lim.Wmax, num(W) || num(l.W) || lim.Wmin)));
     cbResize(c, l); arr(l.places).forEach(function (p) { cbClamp(c, l, p); }); cbSync(c, l);
     return Object.assign({ lay: l }, lim);
   };
@@ -1879,6 +1880,7 @@
     if (spec && spec.glass) SIDES.forEach(function (sd) { var ks = arr(l.walls[sd]), i = 0; if (!ks.length) return; var gl = spec.glass.indexOf(sd) >= 0, len = cbLen(c, l, sd);
       while (i < ks.length) { var k = ks[i], b = cbBay(c, k), sp = cbSpan(c, k); if (b && !b.door && k !== '-' && !inS(sd, i * bay, Math.min((i + sp) * bay, len))) { var to = gl ? 'glass' : 'puf'; if (k !== to && cbBay(c, to)) { cbSet(c, l, sd, i, to); ks = l.walls[sd]; } } i += sp; }
       if (!gl && arr(spec.win).indexOf(sd) >= 0 && cbBay(c, 'window')) { var n = cbN(c, l, sd), want = len >= 16 ? 2 : 1, put = 0; [Math.floor((n - 1) / 2), Math.floor(n / 4), Math.floor(3 * n / 4)].forEach(function (j) { if (put >= want || j < 0 || j >= n) return; var k2 = arr(l.walls[sd])[j], b2 = cbBay(c, k2); if (k2 === 'puf' && !inS(sd, j * bay, Math.min((j + 1) * bay, len))) { cbSet(c, l, sd, j, 'window'); put++; } }); } });
+    if (spec && spec.wide) l.wide = spec.wide.slice(); else delete l.wide;   // 269: all-glass sides facing the parapet — one long glass run, MS posts every ~10 ft
     arr(spec && spec.join).forEach(function (sd) { if (!l.walls[sd]) return; var n = cbN(c, l, sd), j = Math.max(0, Math.floor((n - 1) / 2)), k3 = cbBay(c, 'door') ? 'door' : dk; if (cbSpan(c, k3) <= n) cbSet(c, l, sd, Math.min(j, n - cbSpan(c, k3)), k3); });
     try { cbSync(c, l); } catch (e) {} return l;
   };
@@ -1945,7 +1947,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=83').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=84').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
