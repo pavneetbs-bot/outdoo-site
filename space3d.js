@@ -7,9 +7,9 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=54';
 import { pergolaModel } from './pergola3d.js?v=42';
-import { outline, sofaLayout } from './plan2d.js?v=25';
+import { outline, sofaLayout } from './plan2d.js?v=26';
 import { plantModel } from './plants3d.js?v=2';
-import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=2';
+import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=3';
 const LAYK = k => !!LSPEC[k];
 
 let R = null, HANDLER = null;
@@ -797,14 +797,14 @@ function cozy(g, t, items) { const th = (t.floor || {}).theme; if (!th || th ===
         const pl = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.1, 7), pm); pl.position.set(x + Math.cos(a) * tl * 1.5, hh + 0.3, z + Math.sin(a) * tl * 1.5); pl.rotation.set(Math.sin(a) * tl, 0, -Math.cos(a) * tl); pl.scale.set(1, 1, 0.7); g.add(pl); } } } }
 // 276 (owner): laid floors — textures drawn tile by tile (floorlay.js), with a bump map; UVs in feet so pieces join up
 const LTX = {};
-function layMat(name, rough) { const k = name + (rough || ''); if (LTX[k]) return LTX[k]; const P = layPeriod(name), ppf = Math.min(LITE ? 72 : 112, Math.floor((LITE ? 640 : 1024) / Math.max(P[0], P[1]))), r = (layRot(name) || 0) * Math.PI / 180;
+function layMat(name, rough, xr) { const k = name + (rough || '') + ':' + (xr || 0); if (LTX[k]) return LTX[k]; const P = layPeriod(name), ppf = Math.min(LITE ? 72 : 112, Math.floor((LITE ? 640 : 1024) / Math.max(P[0], P[1]))), r = ((layRot(name) || 0) + (xr || 0)) * Math.PI / 180;
   const mk = (cv, srgb) => { const t = new THREE.CanvasTexture(cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.repeat.set(1 / P[0], 1 / P[1]); t.rotation = r; t.anisotropy = 4; return t; };
   return (LTX[k] = new THREE.MeshStandardMaterial({ map: mk(layCanvas(name, ppf).cv, true), bumpMap: mk(layCanvas(name, ppf, true).cv), bumpScale: 2.2, roughness: rough || 0.86 })); }
 function layPlane(g, name, x, z, w, d, y, rough) { const geo = new THREE.PlaneGeometry(w, d), uv = geo.attributes.uv, ps = geo.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, x + w / 2 + ps.getX(i), -(z + d / 2 - ps.getY(i)));
   const m = new THREE.Mesh(geo, layMat(name, rough)); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, y, z + d / 2); m.receiveShadow = true; g.add(m); return m; }
 function floorFin(g, t, items) {
   const f = t.floor || {}, pw = +t.pw, pd = +t.pd, E = 0.75;
-  if (f.lay) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1])); const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), layMat(f.lay)); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
+  if (f.lay) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1])); const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), layMat(f.lay, 0, f.lrot || 0)); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
   else if (['plain', 'moroccan', 'stone', 'terracotta', 'grey', 'terrazzo', 'checker', 'kota', 'marble', 'granite', 'cement', 'lime', 'trav'].includes(f.tile)) { const sh = new THREE.Shape(); outline(t).forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1]));
     const tx = finTex(f.tile).clone(); tx.needsUpdate = true; const ts = Array.isArray(f.ts) ? f.ts : f.ts ? [f.ts, f.ts] : null, per = f.tile === 'moroccan' ? 3 : f.tile === 'checker' ? 4 : 2; if (ts) tx.repeat.set(1 / ts[0], 1 / ts[1]); else tx.repeat.set(1 / per, 1 / per);   // 274: real tile sizes (one tile per texture)
     const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.85 })); m.rotation.x = -Math.PI / 2; m.position.y = 0.02; m.receiveShadow = true; g.add(m); }
@@ -814,10 +814,17 @@ function floorFin(g, t, items) {
       if (BO && BO.lay) { const geo = new THREE.PlaneGeometry(L, bw), uv = geo.attributes.uv, ps = geo.attributes.position; for (let q = 0; q < uv.count; q++) uv.setXY(q, ps.getX(q) + L / 2, ps.getY(q) + bw / 2); const m = new THREE.Mesh(geo, layMat(BO.lay)); m.rotation.x = -Math.PI / 2; m.rotation.z = -Math.atan2(uz, ux); m.position.set(mx + nx * (E + bw / 2), 0.03, mz + nz * (E + bw / 2)); m.receiveShadow = true; g.add(m); return; }   // 276: a laid border (bricks on edge, hex, mosaic)
       const m = new THREE.Mesh(new THREE.PlaneGeometry(L, bw), bm); m.rotation.x = -Math.PI / 2; m.rotation.z = -Math.atan2(uz, ux); m.position.set(mx + nx * (E + bw / 2), 0.03, mz + nz * (E + bw / 2)); m.receiveShadow = true; g.add(m); }); }
   (f.rugs || []).forEach(([x, z, w, d]) => { const tx = finTex('moroccan').clone(); tx.needsUpdate = true; tx.repeat.set(w / 3, d / 3); const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.8 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.035, z + d / 2); m.receiveShadow = true; g.add(m); });   // 245: Moroccan 'rugs'
+  const shp = (pts, circ) => { const sh = new THREE.Shape(); if (circ) sh.absarc(circ[0], -circ[1], circ[2], 0, Math.PI * 2, false); else pts.forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1])); return new THREE.ShapeGeometry(sh, 40); };
+  (f.zones || []).forEach(zn => { const y = 0.035 + (zn.y || 0), lay = (geo, m, yy) => { const me = new THREE.Mesh(geo, m); me.rotation.x = -Math.PI / 2; me.position.y = yy; me.receiveShadow = true; g.add(me); return me; };   // 276c: round pods / hubs, curved lawns, stepping stones, planter beds
+    if (zn.k === 'circ') { if (zn.edge) lay(shp(null, [zn.cx, zn.cz, zn.r + 0.3]), mat('fl_edge' + zn.edge, parseInt(zn.edge.slice(1), 16), { roughness: 0.5 }), y - 0.001); lay(shp(null, [zn.cx, zn.cz, zn.r]), layMat(zn.s), y); }
+    else if (zn.k === 'poly') { if (zn.s === 'turf' || zn.s === 'peb') { const tx = finTex(zn.s === 'turf' ? 'turf' : 'pebble').clone(); tx.needsUpdate = true; tx.repeat.set(1 / 3, 1 / 3); const ed = zn.pts.map(p => p); lay(shp(ed.map(p => p)), mat('fl_lawned', 0x9E978C), y - 0.001).scale.set(1, 1, 1); lay(shp(zn.pts), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 }), y + 0.03); } else lay(shp(zn.pts), layMat(zn.s), y); }
+    else if (zn.k === 'stone') { const m = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.12, 9), mat('fl_st' + zn.c, parseInt(zn.c.slice(1), 16), { roughness: 0.95 })); m.scale.set(zn.rx, 1, zn.rz); m.rotation.y = -(zn.rot || 0) * Math.PI / 180; m.position.set(zn.cx, 0.1, zn.cz); m.receiveShadow = m.castShadow = true; g.add(m); }
+    else if (zn.k === 'bed') { const bx = new THREE.Mesh(new THREE.BoxGeometry(zn.w, 1.2, zn.d), mat('fl_bed', 0xD9D3C7, { roughness: 0.9 })); bx.position.set(zn.x + zn.w / 2, 0.6, zn.z + zn.d / 2); bx.castShadow = bx.receiveShadow = true; g.add(bx); const tx = finTex('turf').clone(); tx.needsUpdate = true; tx.repeat.set(zn.w / 2, zn.d / 2); const tp = new THREE.Mesh(new THREE.PlaneGeometry(zn.w - 0.3, zn.d - 0.3), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); tp.rotation.x = -Math.PI / 2; tp.position.set(zn.x + zn.w / 2, 1.18, zn.z + zn.d / 2); g.add(tp);
+      const n = Math.max(1, Math.floor(Math.max(zn.w, zn.d) / 2.2)), sm = [mat('fl_sh1', 0x4E7F33, { roughness: 1 }), mat('fl_sh2', 0x3F6B2A, { roughness: 1 }), mat('fl_sh3', 0x5E8F3E, { roughness: 1 })]; for (let q = 0; q < n; q++) { const u = (q + 0.5) / n, sh = new THREE.Mesh(new THREE.SphereGeometry(0.55 + (q % 3) * 0.12, 10, 8), sm[q % 3]); sh.scale.y = 0.8; sh.position.set(zn.w >= zn.d ? zn.x + zn.w * u : zn.x + zn.w / 2, 1.55, zn.w >= zn.d ? zn.z + zn.d / 2 : zn.z + zn.d * u); sh.castShadow = true; g.add(sh); } } });
   (f.zones || []).forEach(zn => { const { k, x, z, w, d } = zn; if (!(w > 0.2 && d > 0.2)) return;   // 274 (owner): the open floor landscaped per theme — lawn, paths, inlay, rugs
     const tex = (key, rx, ry) => { const tx = finTex(key).clone(); tx.needsUpdate = true; tx.repeat.set(rx, ry); return tx; };
     if (k === 'turf') { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, d), new THREE.MeshStandardMaterial({ map: tex('turf', w / 3, d / 3), roughness: 1 })); m.position.set(x + w / 2, 0.06, z + d / 2); m.receiveShadow = true; g.add(m); return; }
-    if (k === 'prug') { layPlane(g, zn.s, x, z, w, d, 0.035 + (zn.y || 0)); return; }   // 276: a paver 'rug' — another pattern where people sit / under the pergola
+    if (k === 'prug') { const y = 0.035 + (zn.y || 0); if (zn.edge) { const e = 0.3, m = new THREE.Mesh(new THREE.PlaneGeometry(w + 2 * e, d + 2 * e), mat('fl_edge' + zn.edge, parseInt(zn.edge.slice(1), 16), { roughness: 0.5 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, y - 0.001, z + d / 2); m.receiveShadow = true; g.add(m); } if (!zn.eonly) layPlane(g, zn.s, x, z, w, d, y); return; }   // 276: a paver 'rug' (+ its trim)   // 276: a paver 'rug' — another pattern where people sit / under the pergola
     if (k === 'path' && zn.s && LAYK(zn.s)) { layPlane(g, zn.s, x, z, w, d, 0.04); return; }
     if (k === 'path') { const st = zn.s || 'stones', cx = x + w / 2, cz = z + d / 2;
       if (st === 'stones') { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.08, 18), mat('fl_stone', 0x9E978C, { roughness: 0.9 })); m.scale.set(1, 1, 0.8); m.position.set(cx, 0.12, cz); m.receiveShadow = m.castShadow = true; g.add(m); return; }

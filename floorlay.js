@@ -40,11 +40,29 @@ export const SPECS = {
   boho_border: { pat: 'stack', w: 0.33, d: 0.67, g: 0.04, pal: ['#8E4A2E', '#9A5233', '#84442A'], v: 0.08, j: '#CDB998', m: 'brick' },
   boho_path: { pat: 'flag', n: 14, P: 6, g: 0.12, pal: ['#C9B48E', '#BFA982', '#D3C09C'], v: 0.08, j: 'grass', m: 'stone' } };
 
+// 276c (owner): the floor-layout roles — a calm base, the feature (runners, rugs, hubs), checkers
+Object.assign(SPECS, {
+  turk_base: { pat: 'stack', w: 1, d: 1, g: 0.03, pal: ['#B9714C', '#B06A46', '#C27A52', '#A9643F', '#BC7650'], v: 0.07, j: '#D9CBB4', m: 'clay' },
+  mod_plain: { pat: 'stack', w: 2, d: 4, g: 0.02, pal: ['#B7B6B1', '#AEADA8', '#BFBEB9', '#A6A5A0'], v: 0.04, j: '#8E8C87', m: 'cement' },
+  min_path: { pat: 'stack', w: 1, d: 3, g: 0.015, pal: ['#D9D6D0', '#D3D0C9', '#DEDBD5'], v: 0.02, j: '#BDB8AF', m: 'micro' },
+  cont_enc: { pat: 'enc', u: 0.67, g: 0.012, pal: ['#E6DCC9', '#E1D6C2', '#EADFCD'], ink: ['#8E8A84'], ink2: '#B9A487', v: 0.03, j: '#CFC4B0', m: 'cement' },
+  boho_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#EFE4D2', '#EADFCB', '#F2E8D8'], ink: ['#B5562F'], ink2: '#6B7A4A', v: 0.04, j: '#D8C6AA', m: 'cement' },
+  sant_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#F6F4EF', '#F1EEE7'], ink: ['#2B5DA8'], ink2: '#6FA3D9', v: 0.03, j: '#D9D3C7', m: 'cement' },
+  trop_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.04, pal: ['#DCCBA6', '#D6C29C'], pal2: ['#A99470', '#9E8A68'], v: 0.05, j: '#A8987C', m: 'stone' },
+  turk_chk: { pat: 'stack', alt: 1, w: 1, d: 1, g: 0.03, pal: ['#B9714C', '#B06A46'], pal2: ['#EFE7D8', '#E9DCC4'], v: 0.05, j: '#D9CBB4', m: 'clay' },
+  sant_chk: { pat: 'stack', alt: 1, w: 1.5, d: 1.5, g: 0.04, pal: ['#F6F4EF', '#F1EEE7'], pal2: ['#9EA3A8', '#8E949A'], v: 0.04, j: '#D9D3C7', m: 'lime' },
+  mod_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.02, pal: ['#C9C8C4', '#C2C1BD'], pal2: ['#5A5A58', '#626260'], v: 0.04, j: '#8E8C87', m: 'stone' },
+  cont_chk: { pat: 'oct', u: 2, g: 0.03, pal: ['#E2D5BE', '#DCCDB3', '#E7DCC7'], pal2: ['#3A3835', '#2F2E2C'], v: 0.04, j: '#CBBC9F', m: 'trav' },
+  min_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.015, pal: ['#ECE9E3', '#E9E6E0'], pal2: ['#D6D2CB', '#D2CEC6'], v: 0.02, j: '#D2CEC6', m: 'micro' },
+  boho_chk: { pat: 'stack', alt: 1, w: 1, d: 1, g: 0.035, pal: ['#B8643F', '#AD5D3A'], pal2: ['#EFE4D2', '#E8DCC6'], v: 0.06, j: '#C9B69A', m: 'clay' } });
+
 // tiles of one pattern repeat, anchored inside [0, P) — each { p: [[x, z]…], c: colour index, f: shade, a: grain angle }
 function tiles(S, R) { const T = [], add = (p, a) => T.push({ p, c: Math.floor(R() * S.pal.length), f: 1 + (R() * 2 - 1) * (S.v || 0.05), a: a || 0, s: R() });
   const rect = (x, z, w, d, a) => add([[x, z], [x + w, z], [x + w, z + d], [x, z + d]], a);
   let P = S.P ? [S.P, S.P] : [8, 8];
-  if (S.pat === 'stack') { const nx = Math.max(1, Math.round(8 / S.w)), nz = Math.max(1, Math.round(8 / S.d)); P = [nx * S.w, nz * S.d]; for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) rect(i * S.w, j * S.d, S.w, S.d); }
+  if (S.pat === 'stack') { let nx = Math.max(1, Math.round(8 / S.w)), nz = Math.max(1, Math.round(8 / S.d)); if (S.alt) { nx += nx % 2; nz += nz % 2; } P = [nx * S.w, nz * S.d]; for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { rect(i * S.w, j * S.d, S.w, S.d); T[T.length - 1].k = (i + j) % 2; } }
+  else if (S.pat === 'oct') { const u = S.u, c = u * 0.29, n = Math.max(2, Math.round(6 / u)); P = [n * u, n * u];   // octagons with small diamonds where four meet
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const x = i * u, z = j * u; add([[x + c, z], [x + u - c, z], [x + u, z + c], [x + u, z + u - c], [x + u - c, z + u], [x + c, z + u], [x, z + u - c], [x, z + c]]); add([[x, z - c], [x + c, z], [x, z + c], [x - c, z]]); T[T.length - 1].k = 1; } }
   else if (S.pat === 'running' || S.pat === 'deck') { const w = S.w, nz = Math.max(2, Math.round(8 / w)); P = [Math.max(...(S.lens || [w * 3])) * 2, nz * w]; P[0] = Math.max(P[0], 8);
     for (let j = 0; j < nz; j++) { let x = R() * 2; const L0 = x; while (x < P[0] + L0 - 0.01) { let L = S.lens ? S.lens[Math.floor(R() * S.lens.length)] : S.l || w * 3; if (x + L > P[0] + L0) L = P[0] + L0 - x; if (L < 0.6 && T.length) { T[T.length - 1].p[1][0] += L; T[T.length - 1].p[2][0] += L; break; } rect(x % P[0], j * w, L, w, 0); x += L; } } }
   else if (S.pat === 'herring') { const w = S.w, l = S.l, k = Math.round(l / w), n = Math.max(1, Math.round(6 / (w * 2 * k))), Pl = n * w * 2 * k, N = Math.ceil(Pl / (w * k)) + 3, M = Math.ceil(Pl / w) + N * k + 3; P = [Pl, Pl];   // 90° herringbone of k:1 bricks (turned 45° by rot); lattice (w, w) and (−k w, k w)
@@ -92,10 +110,10 @@ function paint(S, ppf, bump) { const R = rnd(7919), { T, P } = tiles(S, R), W = 
   if (S.jz === 'grass' && !bump) { const gc = document.createElement('canvas'); gc.width = W; gc.height = H; grass(gc.getContext('2d'), W, H, rnd(31)); for (let j = 0; j * S.d <= P[1] + 1e-6; j++) { const y0 = Math.max(0, Math.round((j * S.d - S.gz / 2) * ppf)), y1 = Math.min(H, Math.round((j * S.d + S.gz / 2) * ppf)); if (y1 > y0) x.drawImage(gc, 0, y0, W, y1 - y0, 0, y0, W, y1 - y0); } }
   const gx = (S.g || 0.03) / 2, gz = (S.jz ? S.gz : S.g || 0.03) / 2;
   const draw = (t, dx, dz) => { const xs = t.p.map(q => q[0]), zs = t.p.map(q => q[1]), cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
-    const pts = t.p.map(([a, b]) => { const sx = Math.sign(a - cx), sz = Math.sign(b - cz); if (S.pat === 'hex') { const L = Math.hypot(a - cx, b - cz), k = (L - gx) / L; return [(cx + (a - cx) * k + dx) * ppf, (cz + (b - cz) * k + dz) * ppf]; } const vx = t.a === 90 ? gz : gx, vz = S.jz ? (t.a === 90 ? gx : gz) : gx; return [(a - sx * vx + dx) * ppf, (b - sz * vz + dz) * ppf]; });
+    const pts = t.p.map(([a, b]) => { const sx = Math.sign(a - cx), sz = Math.sign(b - cz); if (S.pat === 'hex' || S.pat === 'oct') { const L = Math.hypot(a - cx, b - cz), k = (L - gx) / L; return [(cx + (a - cx) * k + dx) * ppf, (cz + (b - cz) * k + dz) * ppf]; } const vx = t.a === 90 ? gz : gx, vz = S.jz ? (t.a === 90 ? gx : gz) : gx; return [(a - sx * vx + dx) * ppf, (b - sz * vz + dz) * ppf]; });
     const path = (o) => { x.beginPath(); pts.forEach(([a, b], i) => i ? x.lineTo(a + o, b + o) : x.moveTo(a + o, b + o)); x.closePath(); }; path(0);
     if (bump) { const v = Math.round(185 + (t.f - 1) * 300 + t.s * 25); x.fillStyle = `rgb(${v},${v},${v})`; x.fill(); x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = Math.max(1, ppf * 0.03); x.stroke(); }
-    else { x.fillStyle = shade(S.pal[t.c], t.f); x.fill(); if (S.m !== 'micro') { const o = Math.max(1, ppf * 0.02); x.save(); x.clip(); x.lineWidth = o * 1.6; path(o); x.strokeStyle = 'rgba(255,250,240,.28)'; x.stroke(); path(-o); x.strokeStyle = 'rgba(30,20,10,.26)'; x.stroke(); x.restore(); } }
+    else { const pl = t.k && S.pal2 ? S.pal2 : S.pal; x.fillStyle = shade(pl[t.c % pl.length], t.f); x.fill(); if (S.m !== 'micro') { const o = Math.max(1, ppf * 0.02); x.save(); x.clip(); x.lineWidth = o * 1.6; path(o); x.strokeStyle = 'rgba(255,250,240,.28)'; x.stroke(); path(-o); x.strokeStyle = 'rgba(30,20,10,.26)'; x.stroke(); x.restore(); } }
     if (S.pat === 'enc') { x.save(); x.translate(dx * ppf, dz * ppf); encMotif(x, S, t, ppf, bump); x.restore(); } };
   [-1, 0, 1].forEach(a => [-1, 0, 1].forEach(b => T.forEach(t => draw(t, a * P[0], b * P[1]))));
   if (!bump) surface(x, S, T, P, rnd(101), ppf);
