@@ -7,7 +7,7 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=54';
 import { pergolaModel } from './pergola3d.js?v=42';
-import { outline, sofaLayout } from './plan2d.js?v=26';
+import { outline, sofaLayout } from './plan2d.js?v=27';
 import { plantModel } from './plants3d.js?v=2';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=3';
 const LAYK = k => !!LSPEC[k];
@@ -817,6 +817,7 @@ function floorFin(g, t, items) {
   const shp = (pts, circ) => { const sh = new THREE.Shape(); if (circ) sh.absarc(circ[0], -circ[1], circ[2], 0, Math.PI * 2, false); else pts.forEach((p, i) => i ? sh.lineTo(p[0], -p[1]) : sh.moveTo(p[0], -p[1])); return new THREE.ShapeGeometry(sh, 40); };
   (f.zones || []).forEach(zn => { const y = 0.035 + (zn.y || 0), lay = (geo, m, yy) => { const me = new THREE.Mesh(geo, m); me.rotation.x = -Math.PI / 2; me.position.y = yy; me.receiveShadow = true; g.add(me); return me; };   // 276c: round pods / hubs, curved lawns, stepping stones, planter beds
     if (zn.k === 'circ') { if (zn.edge) lay(shp(null, [zn.cx, zn.cz, zn.r + 0.3]), mat('fl_edge' + zn.edge, parseInt(zn.edge.slice(1), 16), { roughness: 0.5 }), y - 0.001); lay(shp(null, [zn.cx, zn.cz, zn.r]), layMat(zn.s), y); }
+    else if (zn.k === 'poly' && zn.s === '#edge') lay(shp(zn.pts), mat('fl_edge' + zn.c, parseInt(zn.c.slice(1), 16), { roughness: 0.5 }), y);
     else if (zn.k === 'poly') { if (zn.s === 'turf' || zn.s === 'peb') { const tx = finTex(zn.s === 'turf' ? 'turf' : 'pebble').clone(); tx.needsUpdate = true; tx.repeat.set(1 / 3, 1 / 3); const ed = zn.pts.map(p => p); lay(shp(ed.map(p => p)), mat('fl_lawned', 0x9E978C), y - 0.001).scale.set(1, 1, 1); lay(shp(zn.pts), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 }), y + 0.03); } else lay(shp(zn.pts), layMat(zn.s), y); }
     else if (zn.k === 'stone') { const m = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 0.12, 9), mat('fl_st' + zn.c, parseInt(zn.c.slice(1), 16), { roughness: 0.95 })); m.scale.set(zn.rx, 1, zn.rz); m.rotation.y = -(zn.rot || 0) * Math.PI / 180; m.position.set(zn.cx, 0.1, zn.cz); m.receiveShadow = m.castShadow = true; g.add(m); }
     else if (zn.k === 'bed') { const bx = new THREE.Mesh(new THREE.BoxGeometry(zn.w, 1.2, zn.d), mat('fl_bed', 0xD9D3C7, { roughness: 0.9 })); bx.position.set(zn.x + zn.w / 2, 0.6, zn.z + zn.d / 2); bx.castShadow = bx.receiveShadow = true; g.add(bx); const tx = finTex('turf').clone(); tx.needsUpdate = true; tx.repeat.set(zn.w / 2, zn.d / 2); const tp = new THREE.Mesh(new THREE.PlaneGeometry(zn.w - 0.3, zn.d - 0.3), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); tp.rotation.x = -Math.PI / 2; tp.position.set(zn.x + zn.w / 2, 1.18, zn.z + zn.d / 2); g.add(tp);

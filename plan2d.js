@@ -140,6 +140,7 @@ export function svg(t, opts) { const U = 'u' + (++SVGN);   // 276c: own pattern 
     if (k === 'turf') h += `<rect x="${x}" y="${z}" width="${w}" height="${d}" fill="url(#p2turf)"/>`;
     else if (k === 'prug' || (k === 'path' && LSPEC[zn.s])) h += (zn.edge ? `<rect x="${x - 0.3}" y="${z - 0.3}" width="${w + 0.6}" height="${d + 0.6}" fill="${zn.edge}"/>` : '') + (zn.eonly ? '' : `<rect x="${x}" y="${z}" width="${w}" height="${d}" fill="url(#p2L_${zn.s}${U})"/>`);   // 276: laid paver rugs / paths (+ trim)
     else if (k === 'circ') h += (zn.edge ? `<circle cx="${zn.cx}" cy="${zn.cz}" r="${zn.r + 0.3}" fill="${zn.edge}"/>` : '') + `<circle cx="${zn.cx}" cy="${zn.cz}" r="${zn.r}" fill="url(#p2L_${zn.s}${U})"/>`;   // 276c
+    else if (k === 'poly' && zn.s === '#edge') h += `<polygon points="${zn.pts.map(p => p.join(',')).join(' ')}" fill="${zn.c}"/>`;
     else if (k === 'poly') h += `<polygon points="${zn.pts.map(p => p.join(',')).join(' ')}" fill="${zn.s === 'turf' ? 'url(#p2turf)' : zn.s === 'peb' ? 'url(#p2peb)' : `url(#p2L_${zn.s}${U})`}" stroke="${zn.s === 'turf' ? '#6E9E46' : '#9E978C'}" stroke-width="0.2"/>`;
     else if (k === 'stone') h += `<ellipse cx="${zn.cx}" cy="${zn.cz}" rx="${zn.rx}" ry="${zn.rz}" transform="rotate(${zn.rot || 0} ${zn.cx} ${zn.cz})" fill="${zn.c}" stroke="rgba(0,0,0,.25)" stroke-width="0.1"/>`;
     else if (k === 'bed') h += `<rect x="${x}" y="${z}" width="${w}" height="${d}" fill="url(#p2turf)" stroke="#8E877B" stroke-width="0.25"/>`;
