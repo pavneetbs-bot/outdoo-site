@@ -44,7 +44,7 @@ export function floorThumb(k) { const pat = { garden: '<rect width="120" height=
   return `<svg viewBox="0 0 120 80" class="flthumb" aria-hidden="true">${pat}</svg>`; }
 export const ico = (k, cls) => ICO[k] ? `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICO[k]}"/></svg>` : '';
 const icoG = (k, x, y, sz, col) => ICO[k] ? `<g transform="translate(${(x - sz / 2).toFixed(2)} ${(y - sz / 2).toFixed(2)}) scale(${(sz / 24).toFixed(4)})" fill="none" stroke="${col || '#5B544B'}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"><path d="${ICO[k]}"/></g>` : '';
-const NAME = { mumty: 'Stairs', lift: 'Lift', room: 'Room', shaft: 'Shaft', ac: 'AC' };
+const NAME = { mumty: 'Stairs', lift: 'Lift', room: 'Room', shaft: 'Shaft', ac: 'AC', troom: 'Temp room' };
 const FILL = { plant: '#CFE3C0', rack: '#6B4A33', stool: '#E3D6C2', deck: 'url(#p2wood)', turf: 'url(#p2turf)', pathway: 'url(#p2path)', cabin: '#E8E1D4', jacuzzi: '#CFE6EF', water: '#D6EAF2', planter: '#DCE8D0', vgarden: '#DCE8D0', feature: '#D8D2C8', bar: '#E9D9CC', lights: '#FFF1C9', firepit: '#F2D5C4', fbench: '#E3D6C2', counter: '#E9D9CC', shaftcover: 'rgba(244,244,242,.85)' };
 const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 export const cellFt = (t) => Math.max(t.pw, t.pd);
@@ -157,10 +157,10 @@ export function svg(t, opts) {
   items.forEach((it, i) => { if (it && it.segs) h += `<g data-it="${i}" class="${gcl(i)}">` + it.segs.map(g => `<path d="M${g.x0} ${g.z0}L${g.x1} ${g.z1}" stroke="${GR.includes(i) ? '#C26445' : '#8B6A43'}" stroke-width="${s * 0.55}" stroke-linecap="round"/>`).join('') + '</g>'; });
   // roof structures
   (t.blocks || []).forEach((b, i) => { const on = sel.k === 'blk' && sel.i === i, lab = Math.max(s * 0.9, Math.min(s * 1.7, Math.min(b.w, b.d) * 0.32));
-    h += `<g data-blk="${i}"><rect x="${b.x}" y="${b.z}" width="${b.w}" height="${b.d}" rx="0.2" fill="${b.type === 'ac' ? '#BFD9E6' : b.type === 'shaft' ? '#9C958A' : b.type === 'mumty' ? '#CFC7BA' : '#D6D2C7'}" stroke="${on ? '#C26445' : '#6F665A'}" stroke-width="${on ? s * 0.3 : s * 0.12}"/>`;
-    if (b.type === 'mumty' || b.type === 'room' || b.type === 'lift') { const dr = b.door || 'front', dw = Math.min(3, (dr === 'front' || dr === 'back' ? b.w : b.d) * 0.5);
+    h += `<g data-blk="${i}"><rect x="${b.x}" y="${b.z}" width="${b.w}" height="${b.d}" rx="0.2" fill="${b.type === 'ac' ? '#BFD9E6' : b.type === 'shaft' ? '#9C958A' : b.type === 'mumty' ? '#CFC7BA' : b.type === 'troom' ? '#DCE9DF' : '#D6D2C7'}" stroke="${on ? '#C26445' : '#6F665A'}" stroke-width="${on ? s * 0.3 : s * 0.12}"${b.type === 'troom' ? ` stroke-dasharray="${s * 0.6} ${s * 0.4}"` : ''}/>`;
+    if (b.type === 'mumty' || b.type === 'room' || b.type === 'lift' || b.type === 'troom') { const dr = b.door || 'front', dw = Math.min(3, (dr === 'front' || dr === 'back' ? b.w : b.d) * 0.5);
       h += dr === 'front' || dr === 'back' ? `<rect x="${b.x + (b.w - dw) / 2}" y="${dr === 'front' ? b.z + b.d - 0.25 : b.z - 0.05}" width="${dw}" height="0.3" fill="#8B5A2B"/>` : `<rect x="${dr === 'right' ? b.x + b.w - 0.25 : b.x - 0.05}" y="${b.z + (b.d - dw) / 2}" width="0.3" height="${dw}" fill="#8B5A2B"/>`; }
-    if (b.type !== 'ac') { const nm = b.pent ? 'Penthouse' : b.w >= 5 ? NAME[b.type] || '' : '', ix = b.x + b.w / 2 - (nm ? nm.length * lab * 0.29 + lab * 0.1 : 0); h += icoG(b.type === 'room' && b.pent ? 'cabin' : b.type, ix, b.z + b.d / 2, lab * 1.1) + (nm ? `<text x="${ix + lab * 0.75}" y="${b.z + b.d / 2}" font-size="${lab}" class="p2lb" style="text-anchor:start">${nm}</text>` : ''); }
+    if (b.type !== 'ac') { const nm = b.pent ? 'Penthouse' : b.w >= 5 ? NAME[b.type] || '' : '', ix = b.x + b.w / 2 - (nm ? nm.length * lab * 0.29 + lab * 0.1 : 0); h += icoG(b.type === 'room' && b.pent ? 'cabin' : b.type === 'troom' ? 'room' : b.type, ix, b.z + b.d / 2, lab * 1.1) + (nm ? `<text x="${ix + lab * 0.75}" y="${b.z + b.d / 2}" font-size="${lab}" class="p2lb" style="text-anchor:start">${nm}</text>` : ''); }
     h += '</g>'; });
   // the things that stand on it (pergolas last, as an outline over what is under them)
   items.forEach((it, i) => { if (it && !it.segs && !it.box && it.mode !== 'mst' && !['deck', 'turf', 'pathway', 'pergola'].includes(it.cat)) h += drawn(it, i); });

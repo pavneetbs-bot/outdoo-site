@@ -632,8 +632,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=51').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=51'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=52').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=52'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -694,8 +694,8 @@
   var AU = function () { try { return localStorage.getItem('outrr_area_unit') === 'm' ? 'm' : 'yd'; } catch (e) { return 'yd'; } }, plotLab = function (g) { return AU() === 'm' ? Math.round(+g * 0.836127) + ' sq m' : g + ' sq yd'; };   // plot size in sq yd (gaj) or sq m
   // 201: Quick setup (3 questions) for customers; Detailed for staff / CSP (Sales mode), ?pro=1, or anyone who opened it once
   window.tsFull = function () { try { if (/[?&]pro=1\b/.test(location.search)) localStorage.setItem('outrr_ts_mode', 'full'); } catch (e) {} if (window.ASSIST && window.ASSIST.name) return true; try { return localStorage.getItem('outrr_ts_mode') === 'full'; } catch (e) { return false; } };
-  var TS_KIND = { mumty: ['Mumty (staircase room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft (open duct)', 'Shaft'], room: ['Room already built', 'Room'], ac: ['AC outdoor unit', 'AC unit'] };
-  var TS_BH = { mumty: 9, lift: 11, shaft: 3, room: 9 };   // = cabin3d.js BH_: a block's height when not typed
+  var TS_KIND = { mumty: ['Mumty (staircase room)', 'Mumty'], lift: ['Lift room', 'Lift room'], shaft: ['Shaft (open duct)', 'Shaft'], room: ['Room already built', 'Room'], ac: ['AC outdoor unit', 'AC unit'], troom: ['Temporary room (net / PVC sheet)', 'Temp room'] };
+  var TS_BH = { mumty: 9, lift: 11, shaft: 3, room: 9, troom: 8 };   // = cabin3d.js BH_: a block's height when not typed
   var TS_CUTS = [['bl', 'Back-left'], ['br', 'Back-right'], ['fl', 'Front-left'], ['fr', 'Front-right']];   // 193: corners cut (front = road side)
   var TS_WALLS = [['left', 'Left wall'], ['right', 'Right wall'], ['back', 'Back wall'], ['front', 'Front wall'], ['free', 'Free']];
   var TS_ROT = [[0, 'Road side'], [90, 'Right'], [180, 'Back'], [270, 'Left']];
@@ -776,7 +776,7 @@
   // 202: the terrace one kind of question at a time — Quick: Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof
   // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
   var TMM = null, TMP = null;
-  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=21').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
+  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=22').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
   function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=5').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
   function tsTpl() {
     var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -1947,7 +1947,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=87').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=88').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2399,7 +2399,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=39').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=40').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -2807,7 +2807,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=55').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=56').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -2925,7 +2925,7 @@
       else if (st.step === 'src') h += srcPaint();
       else if (st.step === 'load') h += '<p class="sp-sub">Loading your plans…</p>';
       else if (st.step === 'plans') h += '<h2>Which space is ' + esc(W) + ' for?</h2><p class="sp-sub">Pick one of your plans — ' + (what === 'planner' ? 'it opens as you left it' : 'it goes on that terrace / lawn, with the things around it') + '. Or start a new one, for another home or client.</p><div class="sp-list">' +
-        list.map(function (p, i) { return '<div class="sp-row"><button type="button" data-sp="p:' + i + '"><i>' + (p.kind === 'lawn' ? '🌳' : '🏙') + '</i><span><b>' + esc(p.name) + '</b><small>' + esc([p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace', p.size, p.n ? p.n + ' thing' + (p.n > 1 ? 's' : '') : '', p.local ? 'open on this device' : p.at ? 'saved ' + new Date(p.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')) + '</small></span></button>' + (p.local ? '' : '<div class="sp-acts"><button type="button" data-sp="pdup:' + i + '">⧉ Duplicate</button><button type="button" data-sp="pdel:' + i + '">🗑 Delete</button></div>') + '</div>'; }).join('') +   // 242: duplicate / delete a saved plan (own plans only — the server checks)
+        list.map(function (p, i) { return '<div class="sp-row"><button type="button" data-sp="p:' + i + '"><i>' + (p.kind === 'lawn' ? '🌳' : '🏙') + '</i><span><b>' + esc(p.name) + '</b><small>' + esc([p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace', p.size, p.n ? p.n + ' thing' + (p.n > 1 ? 's' : '') : '', p.local ? 'open on this device' : p.at ? 'saved ' + new Date(p.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')) + '</small></span></button>' + (p.local ? '' : '<div class="sp-acts"><button type="button" data-sp="pren:' + i + '">✎ Rename</button><button type="button" data-sp="pdup:' + i + '">⧉ Duplicate</button><button type="button" data-sp="pdel:' + i + '">🗑 Delete</button></div>') + '</div>'; }).join('') +   // 242: duplicate / delete a saved plan (own plans only — the server checks)
         '<button type="button" data-sp="new" class="sp-new"><i>＋</i><span><b>A new space</b><small>Another home, a client’s site… — your plans stay saved</small></span></button></div>';
       else h += (list.length ? '<button type="button" class="sp-back" data-sp="back">← My plans</button>' : '') + '<h2>Where will ' + esc(W) + ' go?</h2><p class="sp-sub">We set up the space first' + (what === 'planner' ? '' : ', then you design ' + esc(W) + ' on it in 3D') + '.</p><div class="sp-kinds">' +
         '<button type="button" data-sp="k:ground"><i>🌳</i><b>Lawn / garden</b><small>Ground level — a lawn, garden, farmhouse or courtyard</small></button>' +
@@ -2978,7 +2978,7 @@
         '<div class="tw-chips tw-sm2">' + chip('ip:' + key + ':' + i + ':auto', pos === 'auto', autoT) + '</div></div>'; };
     var twCnt = function (k, v) { return '<div class="tw-wd"><label>How many <input type="number" min="1" max="12" inputmode="numeric" data-tw="' + k + '" value="' + (v || 1) + '"></label></div>'; };
     var twRoads = function () { var r = st.a.road; return ['front'].concat(r === 'both' ? ['back'] : r === 'cl' ? ['left'] : r === 'cr' ? ['right'] : []); };
-    var TWD = { mumty: [10, 16, 9], lift: [6, 8, 11], shaft: [4, 6, 3], room: [8, 12, 9], ac: [1.2, 3, 2.5] };   // 223: a new block's size (ft)
+    var TWD = { mumty: [10, 16, 9], lift: [6, 8, 11], shaft: [4, 6, 3], room: [8, 12, 9], ac: [1.2, 3, 2.5], troom: [10, 10, 8] };   // 223: a new block's size (ft)
     var twHit = function (t, b, j) { var P = 0.75; if (b.x < P - 0.01 || b.z < P - 0.01 || b.x + b.w > t.pw - P + 0.01 || b.z + b.d > t.pd - P + 0.01) return 'It doesn\'t fit inside the terrace there';
       if (t.blocks.some(function (o, k) { return k !== j && b.x < o.x + o.w - 0.01 && o.x < b.x + b.w - 0.01 && b.z < o.z + o.d - 0.01 && o.z < b.z + b.d - 0.01; })) return 'It can\'t go on top of another one';
       var OP = olGet(t); if (OP) return olOut(OP, b, 0.75) ? 'That part of the roof is cut — it can\'t go there' : '';
@@ -3011,7 +3011,7 @@
           '<p class="tw-h">Against</p><div class="tw-chips tw-sm2">' + TS_WALLS.map(function (wl) { return chip('bwall:' + wl[0], (b.side || 'free') === wl[0], wl[0] === 'free' ? 'No wall (free)' : wl[1]); }).join('') + '</div>' +
           '<p class="tw-tip">' + (b.lock ? 'Locked — it stays where it is.' : 'Drag it in the 3D to move it' + (b.side && b.side !== 'free' ? ' (it slides along the ' + b.side + ' wall)' : '') + '.') + '</p></div>';
       } else h += '<p class="tw-tip">👆 Tap a room in the 3D (or above) to change its size, wall or lock it. Drag it to move it.</p>';
-      h += '<p class="tw-h">Add another</p><div class="tw-chips tw-sm2">' + ['mumty', 'lift', 'room', 'shaft', 'ac'].map(function (k) { return chip('badd:' + k, false, '+ ' + TS_KIND[k][1]); }).join('') + '</div>';
+      h += '<p class="tw-h">Add another</p><div class="tw-chips tw-sm2">' + ['mumty', 'lift', 'room', 'troom', 'shaft', 'ac'].map(function (k) { return chip('badd:' + k, false, '+ ' + TS_KIND[k][1]); }).join('') + '</div>';
       return h; };
     var twRef = function () { var p = d.querySelector('#twPn'), m = d.querySelector('#twSm'); if (p) p.innerHTML = twPanel(); if (m) m.innerHTML = twSum(); tw3d(); };
     var twSite = function () {   // the answers → the terrace (ft; x left → right seen from the road, z back → front)
@@ -3046,7 +3046,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=55').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=56').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
@@ -3094,7 +3094,7 @@
         [['3', '▁', 'Wall about 3 ft', 'Most terraces'], ['4', '▂', 'Wall 4 ft or more', 'Already private'], ['rail', '┼', 'Railing / glass', 'Open view']].map(function (r) { return '<button type="button" data-sp="w:par:' + r[0] + '" class="' + (a.par === r[0] ? 'on' : '') + '"><i>' + r[1] + '</i><span><b>' + r[2] + '</b><small>' + r[3] + '</small></span></button>'; }).join('') + '</div>';
       else if (q === 'plan') { if (!st.site && !TMM && TMP) { TMP.then(function () { if (TWQ[st.q] === 'plan') paint(); }); return h + '<p class="sp-sub">Loading…</p>'; }
         if (!st.site) { twLearn(); st.site = twSite(); }
-        var t = st.site, sb = t.blocks[st.sel], IC = { mumty: '🪜 Stairs', lift: '🛗 Lift', room: '🚪 Room', shaft: '⬛ Shaft', ac: '❄️ AC' };
+        var t = st.site, sb = t.blocks[st.sel], IC = { mumty: '🪜 Stairs', lift: '🛗 Lift', room: '🚪 Room', shaft: '⬛ Shaft', ac: '❄️ AC', troom: '⛺ Temp room' };
         h += '<h2>Your roof</h2>' + (st.fromPdf ? '<div class="tw-pdf"><b>📄 Drawn from your layout</b> — check it against your drawing' + (st.bg ? ' (shown behind)' : '') + '. <b>Built anything after this drawing?</b> Add it with the + buttons below.' + (st.fromPdf.team || st.fromPdf.left == null ? '' : '<small>' + st.fromPdf.left + ' of 2 layout uploads left on this account</small>') + '</div>' : '') +
           (st.shp ? '<p class="sp-sub">The outline of your roof — cut any wall, move corners, or start from a shape.</p>' : '<p class="sp-sub">Drag to move · tap to resize · ✏ shape of the roof · 🧱 higher wall next door</p>') + '<div class="tw-chips tw-sm2" style="margin:-6px 0 4px">' + chip('shp', !!st.shp, st.shp ? '✓ Shape done' : '✏ Change shape') + (st.shp ? '' : chip('pmeas', !!st.pmeas, '📏 ' + (st.pmeas ? 'Hide' : 'Show') + ' measurements')) + (st.bg ? chip('pbg', !!st.bgOn, '👁 ' + (st.bgOn ? 'Hide' : 'Show') + ' my drawing') : '') + '</div>' + (st.msg ? '<p class="tw-msg">' + esc(st.msg) + '</p>' : '') +
           '<div class="tw-plw' + (st.pmeas ? ' tw-meas' : '') + (st.shp ? ' tw-plw-shp' : '') + '" style="aspect-ratio:' + t.pw + '/' + t.pd + ';height:min(50vh,' + Math.round((st.shp ? 270 : 330) * t.pd / t.pw) + 'px)">' + (st.shp ? shSvg(t) : '') +
@@ -3103,7 +3103,7 @@
             return '<i class="tw-hw tw-hw-' + sd + (on ? ' on' : '') + '" style="' + (sd === 'back' ? 'right:auto;width:' + pc + '%' : 'bottom:auto;height:' + pc + '%') + '"></i><button type="button" class="tw-hb tw-hb-' + sd + (on ? ' on' : '') + '" data-sp="w:phigh:' + sd + '" aria-pressed="' + on + '">🧱' + (on ? ' High' : '') + '</button>'; }).join('') +
           (st.pmeas && !st.shp && p2Get(function () { paint(); }) ? P2M.dimsSvg(t, []) : '') +
           (st.bg && st.bgOn ? '<img class="tw-bg" src="' + st.bg + '" alt="">' : '') + '<div class="tw-pl' + (st.shp ? ' tw-pl-dim' : '') + '" style="clip-path:' + twClip(t) + '">' + t.blocks.map(function (b, i) {
-            return '<div data-blk="' + i + '" class="tw-b tw-' + b.type + (i === st.sel ? ' on' : '') + '" style="left:' + (b.x / t.pw * 100) + '%;top:' + (b.z / t.pd * 100) + '%;width:' + (b.w / t.pw * 100) + '%;height:' + (b.d / t.pd * 100) + '%"><span>' + (b.pent ? '🏠 Penthouse' : IC[b.type] || b.type) + '</span>' + (b.type === 'mumty' || b.type === 'room' || b.type === 'lift' ? '<i class="tw-door tw-door-' + twDoor(t, b) + '"></i>' : '') + '</div>'; }).join('') +
+            return '<div data-blk="' + i + '" class="tw-b tw-' + b.type + (i === st.sel ? ' on' : '') + '" style="left:' + (b.x / t.pw * 100) + '%;top:' + (b.z / t.pd * 100) + '%;width:' + (b.w / t.pw * 100) + '%;height:' + (b.d / t.pd * 100) + '%"><span>' + (b.pent ? '🏠 Penthouse' : IC[b.type] || b.type) + '</span>' + (b.type === 'mumty' || b.type === 'room' || b.type === 'lift' || b.type === 'troom' ? '<i class="tw-door tw-door-' + twDoor(t, b) + '"></i>' : '') + '</div>'; }).join('') +
           '</div><i class="tw-rd">▼ road</i>' + (a.road === 'cl' ? '<i class="tw-rd tw-rl">road ◀</i>' : a.road === 'cr' ? '<i class="tw-rd tw-rr">▶ road</i>' : a.road === 'both' ? '<i class="tw-rd tw-rb">▲ road</i>' : '') + '</div>';
         if (st.shp) h += shPanel(t); else {
         if (st.hsel && (t.high || {})[st.hsel]) { var ho = (t.hw || {})[st.hsel] || {}, hf = st.hsel === 'back' ? t.pw : t.pd;
@@ -3115,9 +3115,9 @@
             '<button type="button" data-sp="w:csel:' + st.csel + '" aria-label="Done">✓</button></div>'; }
         if (sb) h += '<div class="tw-ed"><b>' + (sb.pent ? '🏠 Penthouse' : IC[sb.type] || '') + '</b>' + (sb.type === 'ac' ? '<span>Units</span><button type="button" data-sp="w:bz:n:-">−</button><em>' + Math.max(1, Math.round(sb.d / 3)) + '</em><button type="button" data-sp="w:bz:n:+">+</button>'
           : '<span>W</span><button type="button" data-sp="w:bz:w:-">−</button><em>' + sb.w + '</em><button type="button" data-sp="w:bz:w:+">+</button><span>L</span><button type="button" data-sp="w:bz:d:-">−</button><em>' + sb.d + '</em><button type="button" data-sp="w:bz:d:+">+</button>') +
-          (sb.type === 'mumty' || sb.type === 'room' || sb.type === 'lift' ? '<div class="tw-chips tw-sm2" style="width:100%;margin:4px 0"><span style="align-self:center;font-size:12px;color:#7A7268">Door</span>' + [['back', '⬆'], ['left', '⬅'], ['right', '➡'], ['front', '⬇ road side']].map(function (z) { return chip('pdoor:' + z[0], twDoor(t, sb) === z[0], z[1]); }).join('') + '</div>' : '') +
+          (sb.type === 'troom' ? '<div class="tw-chips tw-sm2" style="width:100%;margin:4px 0"><span style="align-self:center;font-size:12px;color:#7A7268">Walls of</span>' + chip('tmat:net', sb.mat !== 'pvc', 'Net (jaal)') + chip('tmat:pvc', sb.mat === 'pvc', 'PVC sheet') + '</div>' : '') + (sb.type === 'mumty' || sb.type === 'room' || sb.type === 'lift' || sb.type === 'troom' ? '<div class="tw-chips tw-sm2" style="width:100%;margin:4px 0"><span style="align-self:center;font-size:12px;color:#7A7268">Door</span>' + [['back', '⬆'], ['left', '⬅'], ['right', '➡'], ['front', '⬇ road side']].map(function (z) { return chip('pdoor:' + z[0], twDoor(t, sb) === z[0], z[1]); }).join('') + '</div>' : '') +
           '<button type="button" data-sp="w:brot" aria-label="Turn">↻</button><button type="button" data-sp="w:bdel" aria-label="Remove">🗑</button><button type="button" data-sp="w:bx" aria-label="Done">✓</button></div>';
-        h += '<div class="tw-chips tw-sm2 tw-add">' + ['mumty', 'lift', 'room', 'shaft', 'ac'].map(function (k) { return chip('badd:' + k, false, '+ ' + IC[k]); }).join('') + '</div>' +
+        h += '<div class="tw-chips tw-sm2 tw-add">' + ['mumty', 'lift', 'room', 'troom', 'shaft', 'ac'].map(function (k) { return chip('badd:' + k, false, '+ ' + IC[k]); }).join('') + '</div>' +
           '<div class="tw-chips tw-sm2 tw-add">' + chip('ptank', t.tanks, '💧 Tanks on stairs') + [['3', 'Wall 3 ft'], ['4', 'Wall 4 ft+'], ['rail', 'Railing']].map(function (z) { return chip('ppar:' + z[0], a.par === z[0], z[1]); }).join('') + '</div>';
         }
       }
@@ -3224,6 +3224,7 @@
       if (p[0] === 'phz' && t && st.hsel) { t.hw = t.hw || {}; var hs = st.hsel, full = hs === 'back' ? t.pw : t.pd, o = t.hw[hs] = t.hw[hs] || { h: 12, l: full }; o.l = Math.min(o.l || full, full);
         if (p[1] === 'h') o.h = Math.max(4, Math.min(40, (+o.h || 12) + (p[2] === '+' ? 1 : -1))); else o.l = Math.max(2, Math.min(full, (+o.l || full) + (p[2] === '+' ? 1 : -1))); return paint(); }
       if (p[0] === 'pdoor' && t && t.blocks[bi]) { t.blocks[bi].door = p[1]; return paint(); }
+      if (p[0] === 'tmat' && t && t.blocks[bi]) { t.blocks[bi].mat = p[1]; return paint(); }   // 273: temporary room of net / PVC sheet
       if (p[0] === 'csel') { st.csel = st.csel === p[1] ? null : p[1]; st.sel = null; st.hsel = null; return paint(); }
       if (p[0] === 'pcut' && t) { t.cuts = t.cuts || {}; if (!p[2]) delete t.cuts[p[1]]; else { var c1 = t.cuts[p[1]] || { a: Math.round(t.pw * 0.3), b: Math.round(t.pd * 0.2) }; c1.type = p[2]; t.cuts[p[1]] = c1; } twCutFix(); return paint(); }
       if (p[0] === 'pcz' && t && st.csel && t.cuts && t.cuts[st.csel]) { var c2 = t.cuts[st.csel], lim = p[1] === 'a' ? t.pw - 4 : t.pd - 4; c2[p[1]] = Math.max(2, Math.min(lim, c2[p[1]] + (p[2] === '+' ? 1 : -1))); twCutFix(); return paint(); }
@@ -3236,7 +3237,7 @@
       if (['bsel', 'badd', 'bz', 'bwall', 'blk', 'bdel', 'bx'].indexOf(p[0]) >= 0 && t) { st.msg = '';
         if (p[0] === 'bsel') st.sel = +p[1];
         else if (p[0] === 'bx') st.sel = null;
-        else if (p[0] === 'badd') { var D0 = p[1] === 'lift' ? [+a.lw || 7, +a.ld || 7, 11] : p[1] === 'room' ? [+a.rw || 10, +a.rd || 10, 9] : p[1] === 'shaft' ? [+a.sw || 5, +a.sd || 6, 3] : TWD[p[1]], nb = { id: 'b' + Math.random().toString(36).slice(2, 8), type: p[1], w: D0[0], d: D0[1], h: D0[2], side: p[1] === 'ac' ? 'right' : 'free' }, ok = false;
+        else if (p[0] === 'badd') { var D0 = p[1] === 'lift' ? [+a.lw || 7, +a.ld || 7, 11] : p[1] === 'room' ? [+a.rw || 10, +a.rd || 10, 9] : p[1] === 'shaft' ? [+a.sw || 5, +a.sd || 6, 3] : TWD[p[1]], nb = { id: 'b' + Math.random().toString(36).slice(2, 8), type: p[1], w: D0[0], d: D0[1], h: D0[2], side: p[1] === 'ac' ? 'right' : 'free' }, ok = false; if (p[1] === 'troom') nb.mat = 'net';
           for (var zz = 0.75; !ok && zz <= t.pd; zz += 1) for (var xx = 0.75; !ok && xx <= t.pw; xx += 1) { nb.x = p[1] === 'ac' ? t.pw - 0.75 - nb.w : xx; nb.z = zz; if (!twHit(t, nb, -1)) ok = true; }
           if (ok) { t.blocks.push(nb); st.sel = t.blocks.length - 1; } else st.msg = 'No free space left for it'; }
         else if (bi != null && t.blocks[bi]) { var b = t.blocks[bi];
@@ -3317,6 +3318,7 @@
       if (k === 'src:pdf') return lPick();
       if (k === 'src:back') { st.step = 'kind'; return paint(); }
       if (k.indexOf('p:') === 0) { var p = list[+k.slice(2)]; close(); return cb({ plan: p, had: true }); }
+      if (k.indexOf('pren:') === 0) { var ri = +k.slice(5), rp = list[ri]; if (!rp || rp.local) return; var nn = prompt('Name this plan', rp.name || ''); if (!nn || !nn.trim()) return; nn = nn.trim().slice(0, 120); authRpc('plan_rename', { p_id: rp.id, p_name: nn }).then(function () { rp.name = nn; paint(); }, function (e) { alert((e && e.message) || 'Could not rename the plan'); }); return; }   // 273 (owner): own plans only (this list is my_plans)
       if (k.indexOf('pdup:') === 0) { var pi = +k.slice(5), pp = list[pi]; if (!pp || pp.local) return; authRpc('plan_duplicate', { p_id: pp.id }).then(function (r) { if (r && r.id) { list.splice(pi + 1, 0, { id: r.id, name: r.name, size: pp.size, kind: pp.kind, n: pp.n, at: r.updated_at }); paint(); } else alert('Could not copy the plan — 50 plans is the limit'); }, function (e) { alert((e && e.message) || 'Could not copy the plan'); }); return; }
       if (k.indexOf('pdel:') === 0) { var di = +k.slice(5), dp = list[di]; if (!dp || dp.local || !confirm('Delete "' + dp.name + '"? This cannot be undone.')) return; authRpc('plan_delete', { p_id: dp.id }).then(function (ok) { if (!ok) return alert('Could not delete the plan'); list.splice(di, 1); st.step = list.length ? 'plans' : 'kind'; paint(); }, function (e) { alert((e && e.message) || 'Could not delete the plan'); }); return; }
       if (k === 'k:terrace') { st.step = 'w'; st.q = 0; st.a = st.a || { pw: 30, pd: 60, plot: '200', shape: 'rect', la: 12, lb: 18, road: 'front', mpos: 'm-l', mw: 10, md: 16, door: 'right', lift: false, lw: 6, ld: 8, tanks: true, room: false, rw: 8, rd: 12, shaft: false, sw: 4, sd: 6, ac: false, acn: 2, rn: 1, sn: 1, high: {}, cuts: {}, par: '3' }; tmGet(); if (TMP) TMP.then(function () { if (st.step === 'w') paint(); }); return paint(); }
@@ -3423,7 +3425,7 @@
     '.tw-hb{position:absolute;z-index:4;border:1.5px dashed #9B8E7E;background:#fff;border-radius:999px;padding:3px 8px;font:600 11px Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}.tw-hb.on{border:1.5px solid #55634A;background:#55634A;color:#fff}.tw-hb-back{top:-15px;left:50%;transform:translateX(-50%)}.tw-hb-left{left:-14px;top:50%;transform:translate(-50%,-50%)}.tw-hb-right{right:-14px;top:50%;transform:translate(50%,-50%)}' +
     '.tw-hw{position:absolute;z-index:2;background:#55634A;display:none}.tw-hw.on{display:block}.tw-hw-back{left:0;right:0;top:-7px;height:7px}.tw-hw-left{top:0;bottom:0;left:-7px;width:7px}.tw-hw-right{top:0;bottom:0;right:-7px;width:7px}' +
     '.tw-plw{position:relative;margin:14px auto 30px;max-width:100%}.tw-plw.tw-meas{margin:44px auto 40px}.tw-plw .p2dims{z-index:2}.tw-plw .tw-pl{position:absolute;inset:0;margin:0}.tw-ck{position:absolute;z-index:3;width:28px;height:28px;border-radius:50%;border:1.5px dashed #9B8E7E;background:#fff;font-size:13px;cursor:pointer;padding:0;line-height:1}.tw-ck.cut{border-style:solid;border-color:#C26445;color:#C26445}.tw-ck.on{background:#C26445;color:#fff;border-color:#C26445}.tw-ck-bl{left:-14px;top:-14px}.tw-ck-br{right:-14px;top:-14px}.tw-ck-fl{left:-14px;bottom:-14px}.tw-ck-fr{right:-14px;bottom:-14px}' +
-    '.tw-pl{position:relative;margin:4px auto 26px;max-width:100%;background:#EADCC8;border:4px solid #9B8E7E;border-radius:6px;box-sizing:border-box;touch-action:none}.tw-b{position:absolute;box-sizing:border-box;border:2px solid #8E8578;background:#D6D2C7;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.tw-b span{font:700 11px Inter,system-ui,sans-serif;color:#3A3530;text-align:center;line-height:1.1;padding:1px;pointer-events:none}.tw-b.on{border-color:#C26445;background:#F6D9CC;box-shadow:0 0 0 3px rgba(194,100,69,.35)}.tw-b.tw-mumty{background:#CFC7BA}.tw-b.tw-ac{background:#BFD9E6}.tw-b.tw-shaft{background:#9C958A}.tw-b.tw-shaft span{color:#fff}' +
+    '.tw-pl{position:relative;margin:4px auto 26px;max-width:100%;background:#EADCC8;border:4px solid #9B8E7E;border-radius:6px;box-sizing:border-box;touch-action:none}.tw-b{position:absolute;box-sizing:border-box;border:2px solid #8E8578;background:#D6D2C7;border-radius:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.tw-b span{font:700 11px Inter,system-ui,sans-serif;color:#3A3530;text-align:center;line-height:1.1;padding:1px;pointer-events:none}.tw-b.on{border-color:#C26445;background:#F6D9CC;box-shadow:0 0 0 3px rgba(194,100,69,.35)}.tw-b.tw-mumty{background:#CFC7BA}.tw-b.tw-ac{background:#BFD9E6}.tw-b.tw-shaft{background:#9C958A}.tw-b.tw-shaft span{color:#fff}.tw-b.tw-troom{background:repeating-linear-gradient(45deg,#CFE0D3 0 4px,#E9F1EB 4px 8px);border-style:dashed}' +
     '.tw-rd{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font:700 12px inherit;font-family:inherit;font-style:normal;color:#8a3a1f}.tw-rl{bottom:auto;top:45%;left:-4px;right:auto;writing-mode:vertical-rl;transform:translateX(-100%)}.tw-rr{bottom:auto;top:45%;right:-4px;left:auto;writing-mode:vertical-rl;transform:translateX(100%)}.tw-rb{bottom:auto;top:-22px}' +
     '.tw-ed{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1.5px solid #C26445;border-radius:14px;padding:8px 10px;margin:0 0 10px}.tw-ed b{font-size:13px;margin-right:4px}.tw-ed span{font-size:12px;color:#7A7268}.tw-ed em{font-style:normal;font-weight:700;min-width:22px;text-align:center}.tw-ed button{width:36px;height:36px;border-radius:50%;border:1.5px solid #E2D6C4;background:#fff;font-size:17px;cursor:pointer}.tw-add{margin:0 0 8px}.tw-ed .tw-chips{width:100%;margin:2px 0 4px}.tw-ed .tw-chips button{width:auto;height:auto;border-radius:12px;font-size:13px;padding:7px 11px}' +
     '.tw-grid button em{display:block;font-style:normal;font-size:11px;font-weight:700;color:#8a3a1f;margin-top:2px}.tw-grid button.on em{color:#fff}.tw-lrn{background:#EEF3E8;border:1px solid #D3DEC5;border-radius:10px;padding:8px 10px;font-size:12.5px;color:#3D4A33;margin:6px 0 10px}' +

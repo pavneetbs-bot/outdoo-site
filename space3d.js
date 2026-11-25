@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=51';
-import { pergolaModel } from './pergola3d.js?v=39';
-import { outline, sofaLayout } from './plan2d.js?v=21';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=52';
+import { pergolaModel } from './pergola3d.js?v=40';
+import { outline, sofaLayout } from './plan2d.js?v=22';
 import { plantModel } from './plants3d.js?v=2';
 
 let R = null, HANDLER = null;
@@ -78,6 +78,18 @@ function ropeMat(pw, ph) {   // 261: woven rope (vertical cords with gaps) as a 
     ROPE_TX = new THREE.CanvasTexture(c); ROPE_TX.wrapS = ROPE_TX.wrapT = THREE.RepeatWrapping; if ('colorSpace' in ROPE_TX) ROPE_TX.colorSpace = THREE.SRGBColorSpace; }
   const t = ROPE_TX.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, pw * 7 / 4), Math.max(1, ph * 2)); return (ROPE_M[k] = new THREE.MeshStandardMaterial({ map: t, alphaTest: 0.4, transparent: false, side: THREE.DoubleSide, roughness: 0.9 })); }
 function box(g, w, h, d, x, y, z, m, sh = true) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = sh; b.receiveShadow = true; g.add(b); return b; }
+// 273 (owner): cushions that look real — rounded, puffed in the middle along their thinnest side, soft edges and a few wrinkles (geometry cached per size)
+const CUSH = {};
+function cushGeo(w, h, d) { const k = [w, h, d].map(v => Math.round(v * 20)).join('x'); if (CUSH[k]) return CUSH[k];
+  const g = new THREE.BoxGeometry(w, h, d, 16, 8, 16), P = g.attributes.position, A = [w, h, d], ax = A.indexOf(Math.min(...A)), o = [0, 1, 2].filter(i => i !== ax), t = A[ax];
+  for (let i = 0; i < P.count; i++) { const v = [P.getX(i), P.getY(i), P.getZ(i)], n = v.map((c, j) => c / (A[j] / 2)), a = n[o[0]], b = n[o[1]], c = n[ax];
+    const bulge = Math.max(0, (1 - a * a) * (1 - b * b));   // most in the middle
+    v[ax] = Math.sign(c || 1) * (Math.abs(v[ax]) * (0.4 + 0.6 * Math.pow(bulge, 0.6)) + (c > 0 ? t * 0.38 * bulge : t * 0.1 * bulge));   // pillowy faces, thin at the seams
+    const pinch = 1 - 0.09 * c * c; v[o[0]] *= pinch; v[o[1]] *= pinch;   // the sides round in toward the seam
+    if (c > 0.999 && Math.abs(a) < 0.999 && Math.abs(b) < 0.999) v[ax] += t * 0.07 * Math.sin(a * 7.3 + b * 3.1) * Math.sin(b * 8.7 - a * 2.3) * bulge + t * 0.05 * Math.sin(a * 13.1 - b * 1.7) * (1 - Math.abs(b)) * bulge;   // wrinkles
+    P.setXYZ(i, v[0], v[1], v[2]); }
+  g.computeVertexNormals(); return (CUSH[k] = g); }
+function cush(g, w, h, d, x, y, z, m) { const c = new THREE.Mesh(cushGeo(w, h, d), m); c.position.set(x, y, z); c.castShadow = true; c.receiveShadow = false; g.add(c); return c; }
 function cyl(g, r1, r2, h, x, y, z, m, seg = 20) { const c = new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg), m); c.position.set(x, y, z); c.castShadow = c.receiveShadow = true; g.add(c); return c; }
 
 const LITE = (() => { try { return matchMedia('(pointer: coarse)').matches || (window.innerWidth || 1000) < 760; } catch (e) { return false; } })();
@@ -353,17 +365,17 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const panel = (u, pw, ph, x, y, z, ry) => { const m = ropeMat(pw, ph), p = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), m); p.position.set(x, y, z); p.rotation.y = ry || 0; p.castShadow = true; u.add(p); };
     L.pieces.forEach(pc => { const u = new THREE.Group(); u.position.set(pc.x, 0, pc.z); u.rotation.y = pc.ry; root.add(u); const len = pc.len, bz = -SD / 2 + 0.12;
       box(u, len, 0.12, SD, 0, 0.5, 0, fr); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(u, 0.09, 0.45, 0.09, a * (len / 2 - 0.1), 0.23, b * (SD / 2 - 0.1), fr));   // slim seat frame on thin legs
-      box(u, len - 0.3, 0.42, SD - 0.45, 0, 0.77, 0.18, cu);   // seat cushion
+      cush(u, len - 0.3, 0.42, SD - 0.45, 0, 0.8, 0.18, cu);   // seat cushion
       box(u, len, 0.07, 0.07, 0, 2.45, bz, fr); panel(u, len - 0.1, 1.7, 0, 1.6, bz, 0);   // back: top rail + rope weave
       [-1, 1].forEach(a => { box(u, 0.07, 0.07, SD, a * (len / 2 - 0.04), 1.6, 0, fr); panel(u, SD - 0.15, 1.0, a * (len / 2 - 0.04), 1.1, 0, Math.PI / 2); });   // arms: rail + rope
-      const n = Math.max(1, pc.n); for (let k = 0; k < n; k++) { const x = -len / 2 + 0.2 + (len - 0.4) * (k + 0.5) / n, bw = Math.min(1.9, (len - 0.4) / n - 0.15); const c = box(u, bw, 1.15, 0.35, x, 1.55, bz + 0.3, cu); c.rotation.x = -0.12;
-        if (n > 1 && (k === 0 || k === n - 1)) { const q = box(u, 0.95, 0.95, 0.22, x + (k === 0 ? 0.25 : -0.25), 1.45, bz + 0.58, k === 0 ? ac1 : ac2); q.rotation.x = -0.15; } } });
+      const n = Math.max(1, pc.n); for (let k = 0; k < n; k++) { const x = -len / 2 + 0.2 + (len - 0.4) * (k + 0.5) / n, bw = Math.min(1.9, (len - 0.4) / n - 0.15); const c = cush(u, bw, 1.15, 0.38, x, 1.58, bz + 0.32, cu); c.rotation.x = -0.12;
+        if (n > 1 && (k === 0 || k === n - 1)) { const q = cush(u, 0.95, 0.95, 0.24, x + (k === 0 ? 0.25 : -0.25), 1.47, bz + 0.6, k === 0 ? ac1 : ac2); q.rotation.x = -0.15; q.rotation.z = k === 0 ? 0.08 : -0.08; } } });
     const T = L.table, tg = new THREE.Group(); tg.position.set(T.x, 0, T.z); root.add(tg); box(tg, T.w, 0.1, T.d, 0, 1.2, 0, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(tg, 0.08, 1.15, 0.08, a * (T.w / 2 - 0.15), 0.58, b * (T.d / 2 - 0.15), fr));
   } else if (cat === 'swing') {   // a hanging bench swing on an A-frame
     const H = h || 7, sw = Math.min(w - 1.6, 4.5), m = K.frame;
     [-w / 2 + 0.3, w / 2 - 0.3].forEach(x => { rodA(g, [x, 0, -d / 2 + 0.2], [x, H, 0], m); rodA(g, [x, 0, d / 2 - 0.2], [x, H, 0], m); });
     box(g, w - 0.4, 0.25, 0.25, 0, H, 0, m);
-    const sy = 1.6; box(g, sw, 0.15, 1.7, 0, sy, 0, K.wood); box(g, sw, 1.4, 0.15, 0, sy + 0.7, -0.8, K.wood); box(g, sw - 0.3, 0.3, 1.4, 0, sy + 0.22, 0.05, K.cush);
+    const sy = 1.6; box(g, sw, 0.15, 1.7, 0, sy, 0, K.wood); box(g, sw, 1.4, 0.15, 0, sy + 0.7, -0.8, K.wood); cush(g, sw - 0.3, 0.3, 1.4, 0, sy + 0.24, 0.05, K.cush);
     [-1, 1].forEach(a => [-0.7, 0.6].forEach(z => box(g, 0.05, H - sy, 0.05, a * (sw / 2 - 0.1), sy + (H - sy) / 2, z * 0.4, K.dark)));
   } else if (cat === 'accover') {   // a jali / louver box over an AC outdoor unit
     const H = h || 2.9, m = K.wood2; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, H, 0.15, a * (w / 2 - 0.08), H / 2, b * (d / 2 - 0.08), m));
@@ -371,12 +383,12 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     for (let y = 0.35; y < H - 0.2; y += 0.28) { box(g, w - 0.2, 0.08, 0.06, 0, y, d / 2 - 0.05, m); box(g, w - 0.2, 0.08, 0.06, 0, y, -d / 2 + 0.05, m); box(g, 0.06, 0.08, d - 0.2, -w / 2 + 0.05, y, 0, m); box(g, 0.06, 0.08, d - 0.2, w / 2 - 0.05, y, 0, m); }
   } else if (cat === 'dining') {
     const tw = Math.max(2.5, w - 2.6), td = Math.max(2.5, d - 2.6); box(g, tw, 0.15, td, 0, 2.5, 0, K.wood); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.2, 2.45, 0.2, a * (tw / 2 - 0.3), 1.22, b * (td / 2 - 0.3), K.frame));
-    const ch = (x, z, ry) => { const c = new THREE.Group(); c.position.set(x, 0, z); c.rotation.y = ry; g.add(c); box(c, 1.5, 0.15, 1.5, 0, 1.5, 0, K.cush); box(c, 1.5, 1.6, 0.15, 0, 2.3, -0.7, K.frame); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(c, 0.12, 1.5, 0.12, a * 0.65, 0.75, b * 0.65, K.frame)); };
+    const ch = (x, z, ry) => { const c = new THREE.Group(); c.position.set(x, 0, z); c.rotation.y = ry; g.add(c); cush(c, 1.45, 0.2, 1.45, 0, 1.58, 0, K.cush); box(c, 1.5, 1.6, 0.15, 0, 2.3, -0.7, K.frame); [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(c, 0.12, 1.5, 0.12, a * 0.65, 0.75, b * 0.65, K.frame)); };
     const nx = Math.max(1, Math.floor(tw / 2.2)); for (let i = 0; i < nx; i++) { const x = -tw / 2 + tw * (i + 0.5) / nx; ch(x, -td / 2 - 0.9, 0); ch(x, td / 2 + 0.9, Math.PI); }
   } else if (cat === 'stool') {   // 245: a bar chair — round seat, a slim post, a foot ring
     cyl(g, 0.6, 0.6, 0.15, 0, 2.55, 0, K.cush, 18); cyl(g, 0.07, 0.07, 2.45, 0, 1.25, 0, K.frame, 8); cyl(g, 0.5, 0.55, 0.06, 0, 0.03, 0, K.frame, 18); const r = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.035, 6, 20), K.frame); r.rotation.x = Math.PI / 2; r.position.y = 0.9; g.add(r);
   } else if (cat === 'chair') {
-    box(g, w * 0.8, 0.3, d * 0.8, 0, 1.4, 0, K.cush); box(g, w * 0.8, 1.8, 0.3, 0, 2.4, -d * 0.4 + 0.15, K.frame);
+    cush(g, w * 0.8, 0.3, d * 0.8, 0, 1.42, 0, K.cush); box(g, w * 0.8, 1.8, 0.3, 0, 2.4, -d * 0.4 + 0.15, K.frame);
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 1.3, 0.15, a * w * 0.35, 0.65, b * d * 0.35, K.frame)); box(g, 0.15, 0.6, d * 0.8, -w * 0.4, 1.9, 0, K.frame); box(g, 0.15, 0.6, d * 0.8, w * 0.4, 1.9, 0, K.frame);
   } else if (cat === 'shaftcover') {   // 241: on top of the shaft — an MS tube frame with a white polycarbonate sheet, a little sloped
     const y = (h || 3.4) - 0.4, fm = K.frame; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 0.5, 0.15, a * (w / 2 - 0.08), y + 0.25, b * (d / 2 - 0.08), fm));
@@ -390,7 +402,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     let x0 = -w / 2, x1 = w / 2; if (bk) pbox(g, w, PB, 0, -d / 2 + PB / 2, 2.6);
     if (sd && w > 4) { if (pe.l) { pbox(g, PB, d / 2 - zb, x0 + PB / 2, (zb + d / 2) / 2, 2.2); x0 += PB; } if (pe.r) { pbox(g, PB, d / 2 - zb, x1 - PB / 2, (zb + d / 2) / 2, 2.2); x1 -= PB; } }
     const sw = x1 - x0, sx = (x0 + x1) / 2, sdp = d / 2 - zb - 0.3, sz = zb + 0.3 + sdp / 2;
-    box(g, sw, 1.4, sdp, sx, 0.7, sz, K.stone); box(g, sw - 0.1, 0.25, sdp - 0.2, sx, 1.52, sz + 0.05, K.cush); box(g, sw, 1.5, 0.3, sx, 2.15, zb + 0.15, K.stone); box(g, sw - 0.2, 1.0, 0.25, sx, 2.15, zb + 0.45, K.cush2);
+    box(g, sw, 1.4, sdp, sx, 0.7, sz, K.stone); cush(g, sw - 0.1, 0.28, sdp - 0.2, sx, 1.54, sz + 0.05, K.cush); box(g, sw, 1.5, 0.3, sx, 2.15, zb + 0.15, K.stone); cush(g, sw - 0.2, 1.0, 0.3, sx, 2.15, zb + 0.47, K.cush2);
   } else if (cat === 'counter') {   // 239: food / buffet counter — base, stone top, a cooktop and a sink on it (back = −z, against the wall)
     box(g, w, 2.9, d * 0.9, 0, 1.45, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, mat('c_granite', 0x2F2E2D, { roughness: 0.25, metalness: 0.1 }));   // 258 (owner): no wall behind it, a plain granite top
   } else if (cat === 'bench') {
@@ -406,7 +418,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'fbench' && it && it.shape === 'curve') {   // 247: curved built-in seating — an arc hugging the corner, facing the terrace
     const R = Math.min(w, d) - 1.2, n = 10, cx = -w / 2 + 0.2 + R, cz = -d / 2 + 0.2 + R, seg = R * (Math.PI / 2) / n + 0.12;
     for (let k = 0; k < n; k++) { const a = (Math.PI / 2) * (k + 0.5) / n, sl = new THREE.Group(); sl.position.set(cx - R * Math.cos(a), 0, cz - R * Math.sin(a)); g.add(sl); sl.lookAt(cx, 0, cz);
-      box(sl, seg, 1.4, 1.7, 0, 0.7, 0, K.stone); box(sl, seg - 0.03, 0.25, 1.5, 0, 1.52, 0.05, K.cush); box(sl, seg, 1.5, 0.3, 0, 2.15, -0.75, K.stone); }
+      box(sl, seg, 1.4, 1.7, 0, 0.7, 0, K.stone); cush(sl, seg - 0.03, 0.28, 1.5, 0, 1.54, 0.05, K.cush); box(sl, seg, 1.5, 0.3, 0, 2.15, -0.75, K.stone); }
   } else if (cat === 'bar') {   // 241: island bar — free on both sides, stools at the front; L = a return arm on the right
     const L = it && it.shape === 'L', D = L ? 2.2 : d * 0.7, arm = (bw, bd, x, z, st) => { box(g, bw, 3.4, bd, x, 1.7, z, K.stone); box(g, bw + 0.3, 0.15, bd + 0.5, x, 3.5, z + 0.1, K.wood2); };
     const fl = it && it.flip ? -1 : 1;   // 258 (owner): main counter at the front, return arm on the right (left when flipped); the bar chairs are their own items, outside

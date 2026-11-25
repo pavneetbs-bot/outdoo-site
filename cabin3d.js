@@ -256,7 +256,7 @@ function site(g, L, W) {
 // Plot coords: x across the width (0 = left), z front-to-back (0 = back, pd = front / road). t.rot = where the cabin's front
 // faces (0 road, 90 right, 180 back, 270 left); (cx, cz) = the back-left corner of the cabin's footprint on the plot.
 // 'site' (at the cabin's centre, turned) holds 'plot' (in plot coords), so every drag converts with plot.worldToLocal().
-const BH_ = { mumty: 9, lift: 11, shaft: 3, room: 9, ac: 2.4 };
+const BH_ = { mumty: 9, lift: 11, shaft: 3, room: 9, ac: 2.4, troom: 8 };
 // 193: a terrace may have its corners cut (t.cuts {bl|br|fl|fr: {type: notch | slant, a: ft across, b: ft deep}}; b = back, f = front / road, l / r = left / right)
 // 244: or any shape — t.outline [[x, z], …] (ft, plot coords; mid-side cuts, L / U / T / plus, penthouse roofs); it wins over cuts
 export function olPts(t) { const O = t && t.outline; if (!Array.isArray(O) || O.length < 3) return null; let P = O.map(q => [+q[0], +q[1]]), a = 0;
@@ -315,10 +315,12 @@ function drawPlot(tg, t) {
   const P = (n, col) => M[n] || (M[n] = new THREE.MeshStandardMaterial({ color: col, roughness: 0.95 }));
   const plaster = P('t_pl', 0xEAE5DC), tile = P('t_tile', 0xC4BDB1), side2 = P('t_side', 0xDCD3C4), dark = P('t_dark', 0x2F3437), road = P('t_road', 0x6E6C68), win = P('t_win', 0x55626B);
   const wallm = t.wallFin === 'tiles' ? (t.wallTile ? tileMat(t.wallTile) : cladMat()) : t.wallFin === 'paint' ? P('t_paint', 0xF7F2EA) : plaster;   // 237: the stairs room, parapet and other walls — paint / tiles / as they are
+  const CPM = { cement: [0xDCD3C4, 0.95], kota: [0x9AA596, 0.6], granite: [0x34322F, 0.25], marble: [0xF1EEE8, 0.3], sandstone: [0xD8C9A8, 0.85], tiles: [0xC4BDB1, 0.5] }, cp = t.coping && CPM[t.coping.mat] ? t.coping.mat : null;   // 273 (owner): the coping on the parapet — as it is now, or the new one
+  const cop = cp ? M['t_cop_' + cp] || (M['t_cop_' + cp] = new THREE.MeshStandardMaterial({ color: CPM[cp][0], roughness: CPM[cp][1] })) : side2, cw = cp && cp !== 'cement' ? 0.35 : 0.1, ct = cp && cp !== 'cement' ? 0.12 : 0.15;
   const OL = plotOutline(t), shaped = OL.length > 4;
   if (!shaped) {
     box(tg, pw, 0.5, pd, pw / 2, Y - 0.25, pd / 2, tile).userData.under = 1;
-    [[pw / 2, PT / 2, pw, PT], [pw / 2, pd - PT / 2, pw, PT], [PT / 2, pd / 2, PT, pd], [pw - PT / 2, pd / 2, PT, pd]].forEach(([x, z, w, d]) => { box(tg, w, par, d, x, Y + par / 2, z, wallm); box(tg, w + 0.1, 0.15, d + 0.1, x, Y + par + 0.07, z, side2); });
+    [[pw / 2, PT / 2, pw, PT], [pw / 2, pd - PT / 2, pw, PT], [PT / 2, pd / 2, PT, pd], [pw - PT / 2, pd / 2, PT, pd]].forEach(([x, z, w, d]) => { box(tg, w, par, d, x, Y + par / 2, z, wallm); box(tg, w + cw, ct, d + cw, x, Y + par + ct / 2, z, cop); });
     box(tg, pw, BH, pd, pw / 2, Y - 0.5 - BH / 2, pd / 2, plaster, false).userData.under = 1;
   } else {   // 193: corners cut — slab + building follow the outline, a parapet along every edge
     const sh = new THREE.Shape(); OL.forEach(([x, z], i) => i ? sh.lineTo(x, z) : sh.moveTo(x, z)); sh.closePath();
@@ -326,7 +328,7 @@ function drawPlot(tg, t) {
     prism(0.5, Y, tile); prism(BH, Y - 0.5, plaster);
     OL.forEach((p0, i) => { const p1 = OL[(i + 1) % OL.length], dx = p1[0] - p0[0], dz = p1[1] - p0[1], L = Math.hypot(dx, dz); if (L < 0.05) return;
       const nx = -dz / L, nz = dx / L, ang = -Math.atan2(dz, dx), mx = (p0[0] + p1[0]) / 2 + nx * PT / 2, mz = (p0[1] + p1[1]) / 2 + nz * PT / 2;
-      box(tg, L + PT, par, PT, mx, Y + par / 2, mz, wallm).rotation.y = ang; box(tg, L + PT + 0.1, 0.15, PT + 0.1, mx, Y + par + 0.07, mz, side2).rotation.y = ang; });
+      box(tg, L + PT, par, PT, mx, Y + par / 2, mz, wallm).rotation.y = ang; box(tg, L + PT + cw, ct, PT + cw, mx, Y + par + ct / 2, mz, cop).rotation.y = ang; });
   }
   for (let f = 0; f < 4; f++) { const yb = Y - 0.5 - 10 * f - 5.5; box(tg, pw * 0.7, 4, 0.1, pw / 2, yb, pd + 0.05, win, false); box(tg, pw, 0.4, 3, pw / 2, yb - 2.6, pd + 1.5, side2, false); }
   const gy = Y - 0.5 - BH; const gr = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), P('t_gnd', 0xA9A296)); gr.rotation.x = -Math.PI / 2; gr.position.set(pw / 2, gy, pd / 2); tg.add(gr);
@@ -378,6 +380,19 @@ function drawPlot(tg, t) {
     }
     if (bk.type === 'shaft') { const th = 0.33; box(bg, bk.w, h, th, x, Y + h / 2, z - bk.d / 2 + th / 2, plaster); box(bg, bk.w, h, th, x, Y + h / 2, z + bk.d / 2 - th / 2, plaster);
       box(bg, th, h, bk.d, x - bk.w / 2 + th / 2, Y + h / 2, z, plaster); box(bg, th, h, bk.d, x + bk.w / 2 - th / 2, Y + h / 2, z, plaster); box(bg, bk.w - 0.6, 0.05, bk.d - 0.6, x, Y + 0.3, z, dark, false); return; }
+    if (bk.type === 'troom') {   // 273 (owner): a temporary room — MS posts + a sloped sheet roof, walls of net (jaal) or PVC sheet
+      const ms = P('t_trms', 0x3A3D40), net = bk.mat === 'pvc', H1 = h, H2 = h + 0.9, wl = new THREE.MeshStandardMaterial(net ? { color: 0x2F5A3A, transparent: true, opacity: 0.45, roughness: 1, side: THREE.DoubleSide } : { color: 0xE3ECF0, transparent: true, opacity: 0.55, roughness: 0.35, side: THREE.DoubleSide });
+      const x0 = +bk.x, z0 = +bk.z, nx = Math.max(1, Math.round(bk.w / 5)), nz = Math.max(1, Math.round(bk.d / 5)), post = (px, pz, ph) => box(bg, 0.17, ph, 0.17, px, Y + ph / 2, pz, ms);
+      for (let i = 0; i <= nx; i++) { const px = x0 + bk.w * i / nx; post(px, z0, H2); post(px, z0 + bk.d, H1); }
+      for (let j = 1; j < nz; j++) { const pz = z0 + bk.d * j / nz, ph = H2 - (H2 - H1) * j / nz; post(x0, pz, ph); post(x0 + bk.w, pz, ph); }
+      const wall = (L, ph, px, pz, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(L, ph), wl); m.position.set(px, Y + ph / 2, pz); m.rotation.y = ry; bg.add(m); };
+      wall(bk.w, H2, x, z0, 0); wall(bk.w, H1, x, z0 + bk.d, 0); wall(bk.d, (H1 + H2) / 2, x0, z, Math.PI / 2); wall(bk.d, (H1 + H2) / 2, x0 + bk.w, z, Math.PI / 2);
+      [z0, z0 + bk.d].forEach((pz, k) => box(bg, bk.w, 0.12, 0.12, x, Y + (k ? H1 : H2), pz, ms, false)); [x0, x0 + bk.w].forEach(px => { const rl = box(bg, 0.12, 0.12, Math.hypot(bk.d, H2 - H1), px, Y + (H1 + H2) / 2, z, ms, false); rl.rotation.x = Math.atan2(H2 - H1, bk.d); });
+      const rf = new THREE.Mesh(new THREE.BoxGeometry(bk.w + 0.6, 0.06, Math.hypot(bk.d, H2 - H1) + 0.6), net ? P('t_trrf', 0x8FA0A8) : P('t_trrf2', 0xC9D5DC)); rf.position.set(x, Y + (H1 + H2) / 2 + 0.1, z); rf.rotation.x = Math.atan2(H2 - H1, bk.d); rf.castShadow = true; bg.add(rf);
+      for (let i = 0; i < 6; i++) box(bg, 0.04, 0.05, Math.hypot(bk.d, H2 - H1) + 0.5, x0 + bk.w * (i + 0.5) / 6, Y + (H1 + H2) / 2 + 0.15, z, ms, false).rotation.x = Math.atan2(H2 - H1, bk.d);   // roof purlins
+      const dm = net ? wl : P('t_trdr', 0xB7C3CA), dz2 = bk.door || (Math.abs(pw / 2 - x) / pw > Math.abs(pd / 2 - z) / pd ? (pw / 2 > x ? 'right' : 'left') : (pd / 2 > z ? 'front' : 'back')); if (dz2 === 'front' || dz2 === 'back') box(bg, 3, 7, 0.06, x, Y + 3.5, dz2 === 'front' ? z0 + bk.d + 0.04 : z0 - 0.04, ms, false) && box(bg, 2.7, 6.7, 0.07, x, Y + 3.45, dz2 === 'front' ? z0 + bk.d + 0.05 : z0 - 0.05, dm, false);
+      else { box(bg, 0.06, 7, 3, dz2 === 'left' ? x0 - 0.04 : x0 + bk.w + 0.04, Y + 3.5, z, ms, false); box(bg, 0.07, 6.7, 2.7, dz2 === 'left' ? x0 - 0.05 : x0 + bk.w + 0.05, Y + 3.45, z, dm, false); }
+      return; }
     box(bg, bk.w, h, bk.d, x, Y + h / 2, z, wallm);
     if (bk.type === 'mumty') { const e = mumtyProj(t, bk), G = mstGap(t, bk), yS = Y + h + 0.17;   // 266 (owner): the stairs up come through a proper opening in the chajja
       if (!G) box(bg, bk.w + e.l + e.r, 0.35, bk.d + e.b + e.f, x + (e.r - e.l) / 2, yS, z + (e.f - e.b) / 2, side2);
@@ -398,7 +413,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=55').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=56').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
