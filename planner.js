@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=53';
-import * as P2 from './plan2d.js?v=19';
+import * as S3 from './space3d.js?v=54';
+import * as P2 from './plan2d.js?v=20';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=2';
-import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=49';
+import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=50';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -246,10 +246,10 @@ function roofScreen() { const t = S.site; if (t.kind !== 'terrace') return []; c
   const inB = (x, z, bs) => bs.some(b => x > b.x - 0.01 && x < b.x + b.w + 0.01 && z > b.z - 0.01 && z < b.z + b.d + 0.01), tall = t.blocks.filter(b => !U.includes(b) && H(b) > hm + 0.5 && b.type !== 'ac');
   const x0 = Math.min(...U.map(b => b.x)), x1 = Math.max(...U.map(b => b.x + b.w)), z0 = Math.min(...U.map(b => b.z)), z1 = Math.max(...U.map(b => b.z + b.d));
   const I0 = Math.floor(x0 / q), I1 = Math.ceil(x1 / q), J0 = Math.floor(z0 / q), J1 = Math.ceil(z1 / q), inU = (i, j) => inB((i + 0.5) * q, (j + 0.5) * q, U);
-  const away = (x, z) => x < P + 1.5 || x > t.pw - P - 1.5 || z < P + 1.5 || z > t.pd - P - 1.5, H2 = {}, V2 = {}; let par = false;
+  const away = (x, z, di) => di ? x < P + 1.5 || x > t.pw - P - 1.5 : z < P + 1.5 || z > t.pd - P - 1.5, H2 = {}, V2 = {}; let par = false;   // 271: only the way this side faces — a side running up to the back parapet keeps its screen to the end
   for (let j = J0; j < J1; j++) for (let i = I0; i < I1; i++) { if (!inU(i, j)) continue;
     [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([di, dj]) => { if (inU(i + di, j + dj)) return; const ox = (i + di + 0.5) * q, oz = (j + dj + 0.5) * q;
-      if (away(ox, oz)) { par = true; return; } if (inB(ox, oz, tall)) return;
+      if (away(ox, oz, di)) { par = true; return; } if (inB(ox, oz, tall)) return;
       if (dj) { const z = (dj < 0 ? j : j + 1) * q; (H2[z] = H2[z] || []).push([i * q, (i + 1) * q, dj]); } else { const x = (di < 0 ? i : i + 1) * q; (V2[x] = V2[x] || []).push([j * q, (j + 1) * q, di]); } }); }
   const run = (M, hor) => { const out = []; Object.keys(M).forEach(k => { const L = M[k].sort((a, b) => a[0] - b[0]); let cur = null; L.forEach(e => { if (cur && Math.abs(cur[1] - e[0]) < 0.01 && cur[2] === e[2]) cur[1] = e[1]; else { if (cur) out.push([+k, cur]); cur = e.slice(); } }); if (cur) out.push([+k, cur]); });
     return out.filter(([, e]) => e[1] - e[0] >= 1).map(([c, e]) => hor ? { x0: e[0], z0: c, x1: e[1], z1: c, out: [0, e[2]] } : { x0: c, z0: e[0], x1: c, z1: e[1], out: [e[2], 0] }); };
@@ -259,7 +259,8 @@ function roofScreen() { const t = S.site; if (t.kind !== 'terrace') return []; c
   return segs.map(sg => { let { x0, z0, x1, z1 } = sg; const hor = on(z0, z1);
     if (hor && (on(z0, mz0) || on(z0, mz1))) { const o = on(z0, mz0) ? -E.b : E.f; z0 = (on(z0, mz0) ? mz0 : mz1) + o; z1 = z0; if (on(x0, mx0)) x0 = mx0 - E.l; if (on(x1, mx1)) x1 = mx1 + E.r; }
     else if (!hor && (on(x0, mx0) || on(x0, mx1))) { const o = on(x0, mx0) ? -E.l : E.r; x0 = (on(x0, mx0) ? mx0 : mx1) + o; x1 = x0; if (on(z0, mz0)) z0 = mz0 - E.b; if (on(z1, mz1)) z1 = mz1 + E.f; }
-    return { x0, z0, x1, z1, y: hm + 0.35 }; }).flatMap(sg => { let G = null; try { G = t.mstair && t.mstair.state !== 'gone' ? mstGap(t, m) : null; } catch (er) {} if (!G) return [sg];   // the stairs up come through it
+    const cx = v => Math.max(P, Math.min(t.pw - P, v)), cz = v => Math.max(P, Math.min(t.pd - P, v));   // 271: never into the parapet
+    return { x0: cx(x0), z0: cz(z0), x1: cx(x1), z1: cz(z1), y: hm + 0.35 }; }).flatMap(sg => { let G = null; try { G = t.mstair && t.mstair.state !== 'gone' ? mstGap(t, m) : null; } catch (er) {} if (!G) return [sg];   // the stairs up come through it
     const xs = G.sd === 'left' || G.sd === 'right', hor = on(sg.z0, sg.z1), side = xs ? !hor && on(sg.x0, G.sd === 'left' ? mx0 - E.l : mx1 + E.r) : hor && on(sg.z0, G.sd === 'back' ? mz0 - E.b : mz1 + E.f); if (!side) return [sg];
     const o0 = xs ? m.z : m.x, g0 = o0 + G.g0, g1 = o0 + G.g1, a0 = xs ? sg.z0 : sg.x0, a1 = xs ? sg.z1 : sg.x1;
     return [[a0, Math.min(a1, g0)], [Math.max(a0, g1), a1]].filter(([a, b]) => b - a >= 1).map(([a, b]) => xs ? Object.assign({}, sg, { z0: a, z1: b }) : Object.assign({}, sg, { x0: a, x1: b })); }); }
@@ -2020,6 +2021,7 @@ export function open(seed) {
   for (const k in PC) delete PC[k]; shell(); TM.load().then(() => { try { if (EL && EL.style.display !== 'none' && S && S.step === 0) draw(); } catch (e) {} }); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
   S.items.forEach(it => { if (it.cat === 'cabin' && it.bcx != null && cabinCfg(it)) { cabinFoot(it); it.x = r2(it.bcx - foot(it)[0] / 2); it.z = r2(it.bcz - foot(it)[1] / 2); delete it.bcx; delete it.bcz; } });   // 193g: back from the studio
   S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
+  try { S.items.forEach((it, i) => { if (it.mode === 'tank') attach(it, i); }); } catch (e) {}   // 271: the stairs-room screen runs to the parapet (plans saved before)
   let q = null; try { q = new URLSearchParams(location.search).get('plan'); } catch (e) {}
   if (q && q.length > 10 && !S.linkDone) { S.linkDone = true; fromLink(q); }
   if (seed && seed.fresh) { const v = S && S.view; S = fresh(); S.hist = []; S.hi = -1; S.pid = null; S.pname = ''; if (v) S.view = v; if (seed.kind === 'ground') S.site.kind = 'ground';

@@ -99,7 +99,7 @@ function pOpenSide(t, items, r, c) { const E = 0.75, pw = +t.pw, pd = +t.pd; if 
   return !(items || []).some(o => o && !o.segs && !PEB_SKIP.has(o.cat) && ov({ x: +o.x, z: +o.z, w: (+o.rot || 0) % 180 ? +o.d : +o.w, d: (+o.rot || 0) % 180 ? +o.w : +o.d }) > A * 0.3); }
 function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r => { const x0 = Math.max(E, r[0]), z0 = Math.max(E, r[1]), x1 = Math.min(+t.pw - E, r[0] + r[2]), z1 = Math.min(+t.pd - E, r[1] + r[3]); return x1 - x0 > 0.3 && z1 - z0 > 0.3 ? [x0, z0, x1 - x0, z1 - z0] : null; };
   (items || []).forEach(it => { if (!it || it.segs) return; const rot = +it.rot || 0, sw = rot % 180 ? it.d : it.w, sd = rot % 180 ? it.w : it.d, x = +it.x, z = +it.z;
-    if (it.cat === 'deck') [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c && pOpenSide(t, items, r, c)) out.push(c); });   // 255 (owner): only on the open sides — not against the parapet, a wall or a built thing
+    if (it.cat === 'deck' && !it.old) [[x - b, z - b, sw + 2 * b, b], [x - b, z + sd, sw + 2 * b, b], [x - b, z, b, sd], [x + sw, z, b, sd]].forEach(r => { const c = cl(r); if (c && pOpenSide(t, items, r, c)) out.push(c); });   // 255 (owner): only on the open sides — not against the parapet, a wall or a built thing
     else if (it.cat === 'feature') { const f = { 0: [x, z + sd, sw, b], 180: [x, z - b, sw, b], 90: [x - b, z, b, sd], 270: [x + sw, z, b, sd] }[rot % 360]; const c = f && cl(f); if (c) out.push(c); } });
   return out; }
 export function svg(t, opts) {
