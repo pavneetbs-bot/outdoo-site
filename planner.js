@@ -4,7 +4,7 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=61';
+import * as S3 from './space3d.js?v=62';
 import * as P2 from './plan2d.js?v=27';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=2';
 import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=54';
@@ -800,7 +800,7 @@ function builder() {   // 231: one screen — a mood ticks things, tap tiles to 
 }
 // 234: terrace setup on a blank screen — mood → what → how many people → north → floor (grass / tiles) → the 2D plan (drag, size, 📏) → See it in 3D.
 // Structures stay locked; things move only on the 2D plan (the 3D only shows). Changing an answer sets it all up again.
-const SUQ = ['have', 'existing', 'remove', 'asbuilt', 'ab3d', 'mood', 'want', 'cabin', 'bar', 'fbs', 'wtr', 'ftr', 'gfw', 'roofx', 'seats', 'floor', 'north', 'eplan', 'e3d', 'decor', 'sofa', 'green', 'lights', 'plan', 'theme', 'flay'];   // 276c: … theme → floor layout   // 245 (owner): round 1 roof → round 2 the big pieces (eplan) → round 3 furniture, plants, lamps (plan)
+const SUQ = ['have', 'existing', 'remove', 'asbuilt', 'ab3d', 'mood', 'want', 'cabin', 'bar', 'fbs', 'wtr', 'ftr', 'gfw', 'roofx', 'seats', 'floor', 'north', 'eplan', 'e3d', 'decor', 'sofa', 'green', 'lights', 'plan', 'theme', 'flay', 'prop'];   // 277: … floor layout → the proposal   // 276c: … theme → floor layout   // 245 (owner): round 1 roof → round 2 the big pieces (eplan) → round 3 furniture, plants, lamps (plan)
 // 246 (owner): round 1 also asks what is ALREADY built on the roof (kept as 'Existing' things on the plan, never priced) and what is to be taken down
 const HAVE = [['pergola', 'Pergola'], ['bar', 'Bar counter'], ['cabin', 'Cabin / room'], ['planter', 'Built-in planters'], ['fbench', 'Fixed seating'], ['jacuzzi', 'Pool / jacuzzi'], ['water', 'Water feature'], ['deck', 'Deck'], ['privacy', 'Privacy screen']];
 const FLOOR0 = [['cement', 'Cement / PCC', 'raw, plastered'], ['tiles', 'Tiles', 'ceramic / vitrified'], ['kota', 'Kota stone', 'grey-green stone slabs'], ['marble', 'Marble', 'white, polished'], ['granite', 'Granite', 'dark, polished']];
@@ -1060,7 +1060,8 @@ function suPaint() { try { fl0Show(); } catch (e) {} if (S.magic) return;
     const card = L => { const z = FLAYS.find(q2 => q2[0] === L); return `<button type="button" data-su="flay:${L}" class="${cur === L ? 'on' : ''}"><span class="pl-flt">${flayThumb(k, L)}</span><b>${z[1]}</b><small>${z[2]}</small>${rec.includes(L) ? `<em>Best for ${esc(nm)}</em>` : ''}</button>`; };
     h += '<h2>Floor layout</h2><p class="pl-sub">How the floor is laid round your seating — paths, rugs, pods and borders, in ' + esc(nm) + ' materials.</p><div class="pl-fl">' + rec.map(card).join('') + (S.flMore ? FLAYS.map(z => z[0]).filter(L => !rec.includes(L)).map(card).join('') : '') + '</div>' +
       (S.flMore ? '' : '<button type="button" class="pl-flm" data-su="flmore">More layouts ▾</button>') + (() => { const g = (S.site.floor || {}).grass; return '<p class="pl-h" style="margin:6px 0 4px">Grass in the open areas</p><div class="pl-subig">' + chip('grass:1', !!g, 'Yes — a lawn') + chip('grass:0', !g, 'No grass') + '</div><p class="pl-sub" style="margin:2px 0 8px">Paths cross the grass on stepping stones.</p>'; })() + '<div id="suab3d" class="pl-ab3d pl-thv">' + V3T() + '</div>' +
-      '<div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>'; }
+      next('See my proposal →'); }
+  else if (q === 'prop') { h += '<div class="pp" id="ppRoot"><p class="pl-sub">Working out your proposal…</p></div><div class="pl-subar"><button type="button" class="pl-go" data-su="done">See my design in 3D →</button></div>'; setTimeout(propPaint, 0); }   // 277 (owner)
   else if (q === 'north') { const t = S.site; h += '<h2>Which side is north?</h2><p class="pl-sub">Tap the side — the seating goes where the afternoon sun is softer.</p>' +
       `<div class="pl-sun" style="aspect-ratio:${t.pw}/${t.pd}">${['back', 'left', 'right', 'front'].map(sd => `<button type="button" data-su="north:${sd}" class="pl-sn pl-sn-${sd}${su.north === sd ? ' on' : ''}">N</button>`).join('')}<span>▼ road</span></div>` +
       '<div class="pl-subig">' + chip('north:', false, 'Not sure') + '</div>' + (su.north ? next() : ''); }
@@ -1132,6 +1133,29 @@ const TH_ROLE = { tropical: { base: 'trop_field', path: 'trop_rug', rug: 'trop_r
   boho: { base: 'boho_field', path: 'boho_enc', rug: 'boho_rug', hub: 'boho_enc', band: 'boho_enc', deck: 'trop_rug', hard: 'turk_border', chk: 'boho_chk', stone: ['#C9B48E', '#B9A47F'], edge: '#8E4A2E', lawn: 1 } };
 const FLAYS = [['runner', 'Runner + rugs', 'a patterned runner from the stairs, rugs under the seating'], ['curve', 'Curved path', 'stepping stones curve to round sitting pods'], ['frame', 'Border frame', 'a band all round, diagonal floor, a medallion'], ['hub', 'Central hub', 'a round centre with paths to every sitting area'], ['deck', 'Deck + green edges', 'a deck for the lounge, planter beds, checker floor'], ['bands', 'Patterned bands', 'a plain floor with tile bands lined up with the seating']];
 const FL_REC = { tropical: ['curve', 'deck', 'hub'], turkish: ['runner', 'hub', 'frame'], santorini: ['curve', 'frame', 'runner'], modern: ['bands', 'deck', 'runner'], contemporary: ['frame', 'deck', 'curve'], minimal: ['bands', 'deck', 'frame'], boho: ['hub', 'curve', 'runner'] };
+// 277 (owner): the proposal step — estimate from this plan (proposal.js), Premium + Luxury, add-ons, 3D bird's-eye with numbered labels, Summary / Detailed, PDF
+const FLN = { trop_field: 'Sandstone, mixed sizes', trop_path: 'Flagstone with grass joints', trop_rug: 'WPC deck boards, teak', turk_base: 'Terracotta tiles 12″', turk_field: 'Encaustic cement tiles 6″', turk_border: 'Terracotta hex border', turk_path: 'Zellige mosaic', sant_field: 'Lime-washed stone, French pattern', sant_path: 'Pebble mosaic', sant_enc: 'Blue & white encaustic tiles', sant_border: 'Blue glazed tiles', mod_plain: 'Concrete pavers 2 × 4 ft', mod_field: 'Concrete pavers with grass strips', mod_rug: 'Charcoal pavers', mod_border: 'Black granite', cont_field: 'Travertine, French pattern', cont_enc: 'Soft-grey encaustic tiles', cont_rug: 'WPC deck boards, oak', min_field: 'Microcement / large terrazzo', min_path: 'Light grey pavers', min_rug: 'WPC deck boards, light oak', boho_field: 'Terracotta brick herringbone', boho_rug: 'Brick basketweave', boho_border: 'Brick soldier course', boho_enc: 'Terracotta encaustic tiles', boho_path: 'Flagstone with grass joints', wpc_grey: 'WPC deck boards, grey', wpc_walnut: 'WPC deck boards, walnut', trop_chk: 'Sandstone checker', turk_chk: 'Terracotta & cream checker', sant_chk: 'White & grey checker', mod_chk: 'Light & charcoal checker', cont_chk: 'Travertine octagon with black inserts', min_chk: 'Two-tone microcement checker', boho_chk: 'Terracotta & cream checker' };
+let PPM = null;
+async function propRates() { if (S._prates) return S._prates; let db = null; try { const C = window.OUTRR_SUPA || {}; if (C.url) { const r = await fetch(C.url + '/rest/v1/rpc/company_public', { method: 'POST', headers: { apikey: C.anon, 'Content-Type': 'application/json' }, body: '{}' }); const j = await r.json(); db = j && j.prop_rates; } } catch (e) {} return (S._prates = PPM.mergeRates(db)); }
+function propPlan() { const t = S.site, f = t.floor || {}, k = (S.su || {}).thm, R = TH_ROLE[k] || {}, Z = f.zones || [], has = fn => Z.some(fn), rows = [];
+  if (f.lay) rows.push(['Main floor', FLN[f.lay] || 'Tiles']); if (f.border && f.border.lay) rows.push(['Border', FLN[f.border.lay] || 'Border band']);
+  if (has(z => z.run)) rows.push(['Paths', FLN[R.path] || 'Laid path']); if (has(z => z.k === 'prug' && !z.run && !z.wpc && z.s === R.rug)) rows.push(['Under the seating', FLN[R.rug] || 'Tile rug']);
+  if (has(z => z.k === 'circ' && !z.wpc && z.s === R.hub)) rows.push(['Hub / medallion', FLN[R.hub] || 'Patterned']); if (has(z => z.wpc)) rows.push(['Decks', FLN[R.deck] || 'WPC deck boards']);
+  if (has(z => z.k === 'prug' && z.s === R.band && !z.run)) rows.push(['Bands', FLN[R.band] || 'Tile bands']); if (has(z => z.s === R.hard)) rows.push(['Under the fire pit', FLN[R.hard] || 'Stone']);
+  if (has(z => z.k === 'poly' && z.s === 'turf')) rows.push(['Lawn', 'Artificial grass']); if (has(z => z.k === 'stone')) rows.push(['Across the lawn', 'Stepping stones']); if (has(z => z.k === 'bed')) rows.push(['Planter beds', 'Built beds with ground cover and shrubs']);
+  return { site: t, items: S.items, su: S.su, name: S.pname, themeName: (THEMES6.find(z => z[0] === k) || [0, ''])[1], layoutName: (FLAYS.find(z => z[0] === f.layout) || [0, ''])[1], floorDesc: rows, who: (window.ACC && window.ACC.name) || '' }; }
+async function propPaint() { const el = document.getElementById('ppRoot'); if (!el) return;
+  if (!S._ppOk && window.acRequire && !window.ASSIST && !window.outrrPropTest && (window.OUTRR_SUPA || {}).url) return window.acRequire(() => { S._ppOk = 1; propPaint(); }, 'Sign in to see your proposal');
+  S._ppOk = 1; PPM = PPM || await import('./proposal.js?v=1'); const R = await propRates(), plan = propPlan(), E = PPM.estimate(plan, R); S.padd = S.padd || {};
+  el.innerHTML = `<style>${PPM.CSS}</style>` + PPM.page(plan, R, E, { tab: S.ptab, add: S.padd });
+  el.onclick = ev => { const b = ev.target.closest('[data-pp]'); if (!b) return; const a = b.getAttribute('data-pp').split(':');
+    if (a[0] === 'tab') { S.ptab = a[1]; propPaint(); } else if (a[0] === 'pdf') propPdf(plan, R, E); };
+  el.onchange = ev => { const b = ev.target.closest('[data-pp]'); if (!b) return; const a = b.getAttribute('data-pp').split(':'); if (a[0] === 'add') { S.padd[a[1]] = b.checked; ev_('plan_prop_add', a[1]); propPaint(); } };
+  const v = document.getElementById('ppv'); if (v) { try { S3.show(v, { site: S.site, items: S.items, sel: null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW', noDrag: true, labels: false, ptags: PPM.tags(plan), theme: (S.su && S.su.theme) || 'natural' }, { view: '3d', on: () => {} }); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 80); } catch (e) {} }
+  if (!S._ppEv) { S._ppEv = 1; ev_('plan_proposal', E.lw ? 'lifewall' : 'outrr'); } }
+function ev_(k, r) { try { ev(k, { ref: r }); } catch (e) {} }
+function propPdf(plan, R, E) { let img = null; try { img = S3.snapshot(); } catch (e) {} const w = window.open('', '_blank'); if (!w) return;
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${(E.lw ? 'LifeWall' : 'outrr')} proposal — ${String(plan.name || 'Terrace plan').replace(/[<>]/g, '')}</title><style>body{margin:24px}${PPM.CSS}@page{margin:14mm}</style></head><body><div class="pp">${PPM.page(plan, R, E, { print: true, add: S.padd, img })}</div><script>setTimeout(function(){print()},400)<\/script></body></html>`); w.document.close(); ev_('plan_prop_pdf', E.lw ? 'lifewall' : 'outrr'); }
 function themeFloor(k) { const t = S.site; if (!TH_FLOOR[k]) return; const su = S.su || {}, L = su.flay || (FL_REC[k] || ['runner'])[0];
   t.floor = floorFor(k, L);
   if (su.walls !== 'tiles') { t.wallFin = 'paint'; t.paintC = TH_PAINT[k]; } }
@@ -2258,6 +2282,7 @@ function lockGo(take) {   // hold the edit lock while the plan is open (renewed 
 }
 addEventListener('pagehide', () => lockGo(false));
 window.outrrPlanFloor = (k, L) => { S.su = S.su || { green: 'balanced', have: {}, rm: {} }; S.su.flay = L; themeApply(k); };   // for tests
+window.outrrPlanProp = () => { window.outrrPropTest = 1; S.su = S.su || { green: 'balanced', have: {}, rm: {} }; suOpen(SUQ.indexOf('prop')); };   // for tests
 window.outrrPlanTheme = k => { S.su = S.su || { green: 'balanced', have: {}, rm: {} }; themeApply(k); };   // for tests
 window.outrrPlanState = () => S; window.outrrPlanMove = (i, x, z) => on3d({ t: 'move', i, x, z }); window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
 // 193j: the cabin studio / pergola designer add things around their design with the planner's own rules, on a plan object { site, items, sel }

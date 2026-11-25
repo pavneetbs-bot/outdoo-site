@@ -622,7 +622,7 @@ const foot = it => (+it.rot || 0) % 180 ? [it.d, it.w] : [it.w, it.d];
 
 function build(P) {
   if (R) R.nl = []; const g = new THREE.Group(), t = P.site || {}, terr = t.kind === 'terrace';
-  if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; if (P.labels !== false) (t.blocks || []).forEach(b => { const nm = b.type === 'mumty' ? 'Stairs' : b.type === 'shaft' ? 'Shaft' : b.type === 'lift' ? 'Lift' : ''; if (!nm) return; const tg = tag(nm); tg.position.set(+b.x + b.w / 2, (b.type === 'shaft' ? Math.max(+b.h || 0, 1) : (+b.h || 9)) + 2, +b.z + b.d / 2); g.add(tg); }); /* 253: what the roof's own blocks are */ if (t.floor) try { floorFin(g, t, P.items || []); cozy(g, t, P.items || []); } catch (e) { console.warn(e); } } else { lawn(g, t); R.plot = null; }
+  if (terr) { const pg = plotModel(t); pg.position.y = 0.6; g.add(pg); R.plot = pg; if (P.labels !== false) (t.blocks || []).forEach(b => { const nm = b.type === 'mumty' ? 'Stairs' : b.type === 'shaft' ? 'Shaft' : b.type === 'lift' ? 'Lift' : ''; if (!nm) return; const tg = tag(nm); tg.position.set(+b.x + b.w / 2, (b.type === 'shaft' ? Math.max(+b.h || 0, 1) : (+b.h || 9)) + 2, +b.z + b.d / 2); g.add(tg); }); /* 253: what the roof's own blocks are */ if (t.floor) try { floorFin(g, t, P.items || []); cozy(g, t, P.items || []); } catch (e) { console.warn(e); } (P.ptags || []).forEach(q => { const tg = tag(q.text); tg.scale.set(8.5, 1.85, 1); tg.position.set(q.x, q.y, q.z); g.add(tg); }); /* 277: the proposal's numbered labels */ } else { lawn(g, t); R.plot = null; }
   const items = new THREE.Group(); items.name = 'items'; g.add(items); R.holders = [];
   drawItems(items, R.holders, P);
   if (P.measure && terr) { try { g.add(measures(P)); } catch (e) {} }
@@ -894,7 +894,7 @@ function camHome(t, view) {
 }
 export function show(el, P, opts) {
   opts = opts || {}; ensure(el); R.dirty = true; R.P = P; R.place = !!opts.place; R.on = opts.on || null; THEME = P.theme || 'natural'; night(!!P.night);   // 223: a screen may take the 3D's events for itself (the terrace wizard)
-  const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels, P.measure, P.theme]), dims = [t.kind, t.pw, t.pd].join('x');
+  const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels, P.measure, P.theme, P.ptags]), dims = [t.kind, t.pw, t.pd].join('x');
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     R.group = build(P); R.scene.add(R.group); R.key = key;
