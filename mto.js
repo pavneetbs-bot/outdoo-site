@@ -621,7 +621,7 @@
     var el = document.getElementById('cb3d'); if (!el || !S || !S.wz) return;
     var hd = S.pdp && document.querySelector('header'), box = el.parentNode; if (box && box.classList.contains('wz-3d')) box.style.top = (hd ? Math.max(0, Math.round(hd.getBoundingClientRect().height)) : 52) + 'px';   // stay under the store header
     if (C3.st === 2) { try { if (!C3.ev) { C3.ev = 1; window.Cabin3D.onEvent(on3d); }
-      window.Cabin3D.show(el, PRODS[S.id].cz.cabin, S.o.layout, S.view3, { sel: S.sel3 ? { bay: S.sel3 } : S.psel != null ? { pl: S.psel } : null, furn: S.furn || 'none', night: !!S.night, site: S.studio ? tsOpts() : null }); } catch (er) { C3.st = -1; if (window.console) console.warn(er); } return; }
+      window.Cabin3D.show(el, PRODS[S.id].cz.cabin, S.o.layout, S.view3, { sel: S.sel3 ? { bay: S.sel3 } : S.psel != null ? { pl: S.psel } : null, furn: S.furn || 'none', night: !!S.night, site: S.studio ? tsOpts() : null, studio: !!(DS_SOLO && S.studio && !S.site) }); } catch (er) { C3.st = -1; if (window.console) console.warn(er); } return; }
     if (C3.st !== 0) return;
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
@@ -910,9 +910,9 @@
     var v3 = S.view3 = S.studio ? (S.v3 || (st === 3 && !w.adv ? 'cut' : '3d')) : S.v3 || (w.adv ? (w.aside || 'front') : wzAuto(st, w, lay));
     var h = S.pdp ? '' : '<div class="wz-3d"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(c, lay)) + '</div>' + (C3.st === -1 ? '' : '<div class="wz-views" role="tablist" aria-label="Views">' + V3.map(function (v) { return '<button type="button" role="tab" data-wzv="' + v[0] + '" class="' + (v[0] === v3 ? 'on' : '') + '" aria-selected="' + (v[0] === v3) + '">' + v[1] + '</button>'; }).join('') + '</div>') + '</div>';
     var SHORT = ['Glass & roof', 'Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Done'];
-    var off = S.studio ? 1 : 0, sE = S.studio && S.siteEd;   // studio: step 1 is "Where" (lawn / terrace)
+    var off = S.studio && !DS_SOLO ? 1 : 0, sE = S.studio && S.siteEd;   // studio: step 1 is "Where" (lawn / terrace)
     var chips = '<div class="wz-stc" role="tablist" aria-label="Steps">' + (off ? '<button type="button" role="tab" data-ts="open" class="' + (sE ? 'on' : 'dn') + '" aria-selected="' + sE + '">' + (sE ? '' : '✓ ') + '1 · Where</button>' : '') + SHORT.map(function (t, i) { var mx = Math.max(w.max || 0, st), cur = i === st && !w.adv && !sE; return '<button type="button" role="tab" data-wzgo="' + i + '" class="' + (cur ? 'on' : i <= mx && !(sE && !S.siteDone) ? 'dn' : '') + '" aria-selected="' + cur + '"' + (i > mx || (sE && !S.siteDone && i > 0) ? ' disabled' : '') + '>' + ((i < st || (i <= mx && i !== st)) && !(sE && !S.siteDone) ? '✓ ' : '') + (i + 1 + off) + ' · ' + t + '</button>'; }).join('') + '</div>';
-    if (S.studio) { var hc = document.getElementById('cbsSteps'); if (hc) { hc.innerHTML = chips; var on = hc.querySelector('.on'), sc = hc.querySelector('.wz-stc'); [hc, sc].forEach(function (b) { if (b && on && b.scrollWidth > b.clientWidth) b.scrollLeft = Math.max(0, on.offsetLeft - b.clientWidth / 2 + on.offsetWidth / 2); }); } }
+    if (S.studio) { var hc = document.getElementById('cbsSteps'); if (hc && DS_SOLO) hc.innerHTML = ''; else if (hc) { hc.innerHTML = chips; var on = hc.querySelector('.on'), sc = hc.querySelector('.wz-stc'); [hc, sc].forEach(function (b) { if (b && on && b.scrollWidth > b.clientWidth) b.scrollLeft = Math.max(0, on.offsetLeft - b.clientWidth / 2 + on.offsetWidth / 2); }); } }
     if (S.studio && S.siteEd) return terraceUI(lay);   // step 1: where it goes (the terrace only — 193e)
     if (S.studio && S.whole && S.site && S.site.kind === 'terrace') h += '<div class="cbs-t ts-place">' + placeBox(lay) + arUI() + '</div>';   // 193f: ▦ Whole terrace = where the cabin stands
     h += S.studio ? '' : S.pdp ? chips
@@ -1018,9 +1018,14 @@
       if (S.pdp) h += pdpTail(PRODS[S.id], m, o);
       h += partsMini();
       if (S && !S.cabDone) { S.cabDone = true; setTimeout(function () { try { var x0 = PRODS[S.id]; if (x0 && document.getElementById('mtoFull') && !document.getElementById('mfParts')) window.mtoShowParts(); } catch (e) {} }, 0); }
-      h += '<button type="button" class="wz-back" data-wzadv="1">✎ Edit each wall yourself</button>';
+      if (!DS_SOLO) h += '<button type="button" class="wz-back" data-wzadv="1">✎ Edit each wall yourself</button>';   // 283 (owner): no wall-by-wall editing in the studio
     }
     if (S.studio && !w.adv && st < 6) h = cqSplit(h, st);   // 202: one kind of choice at a time inside the step
+    if (S.pdp && S.studio && DS_SOLO && !w.adv) {   // 283: the design studio's stage panel (same base as the pergola)
+      var gz = function (re) { var x = (lay.walls || {}), n = 0; SIDES.forEach(function (sd) { arr(x[sd]).forEach(function (k) { if (re.test(String(k))) n++; }); }); return n; };
+      var SM = [esc(String(lay.glaze || lay.preset || '').replace(/_/g, ' ')), lay.L + ' × ' + lay.W + ' ft', (gz(/door/) || 1) + ' door' + (gz(/door/) > 1 ? 's' : ''), arr(lay.places).length ? arr(lay.places).map(function (p) { return p.k || p.type || ''; }).filter(Boolean).join(', ') : 'Open room', lay.proj && arr(lay.proj.sides).length ? 'Projection on ' + arr(lay.proj.sides).join(', ') : 'No projection', ''];
+      return dsStages(['Glass & roof', 'Size', 'Doors', 'Rooms inside', 'Outside', 'The look', 'Your cabin'].map(function (t, i) { return { k: String(i), t: t, sum: SM[i] || '' }; }), st, h + '</div>', 'wzgo');
+    }
     if (S.pdp) return S.studio ? h + '</div>' : h;
     h += dimsBox + '<div class="wz-nav">' + (st > 0 ? '<button type="button" class="wz-prev" data-wzgo="' + (st - 1) + '">← Back</button>' : '<span></span>') + (st < 6 ? '<button type="button" class="wz-next" data-wzgo="' + (st + 1) + '">Next →</button>' : '') + '</div>';
     return h;
@@ -1227,7 +1232,7 @@
     if (S.studio) {
       var cS = PRODS[S.id].cz.cabin, vS = S.view3 === 'cut' ? 'cut' : '3d', flS = (FURN.filter(function (f) { return f[0] === (S.furn || 'none'); })[0] || FURN[4])[1], ok3 = C3.st !== -1;
       st.innerHTML = '<div class="cbs-v"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(cS, S.o.layout)) + '</div>' +
-        (C3.st === 2 ? '<div class="cb-ov"><button type="button" data-cbroof="1" aria-pressed="' + (vS === 'cut') + '">' + (vS === 'cut' ? '⌂ Roof on' : '⌂ Roof off') + '</button><button type="button" data-e3furn="1">🛋 ' + esc(flS) + '</button><button type="button" data-e3night="1" aria-pressed="' + !!S.night + '">' + (S.night ? '🌙 Evening' : '☀ Day') + '</button><button type="button" data-cbsite="1" aria-pressed="' + !!S.siteEd + '">' + (S.site && S.site.kind === 'terrace' ? '🏙 Terrace' : '🌳 Lawn') + '</button></div>' +
+        (C3.st === 2 ? '<div class="cb-ov"><button type="button" data-cbroof="1" aria-pressed="' + (vS === 'cut') + '">' + (vS === 'cut' ? '⌂ Roof on' : '⌂ Roof off') + '</button><button type="button" data-e3furn="1">🛋 ' + esc(flS) + '</button><button type="button" data-e3night="1" aria-pressed="' + !!S.night + '">' + (S.night ? '🌙 Evening' : '☀ Day') + '</button>' + (DS_SOLO ? '' : '<button type="button" data-cbsite="1" aria-pressed="' + !!S.siteEd + '">' + (S.site && S.site.kind === 'terrace' ? '🏙 Terrace' : '🌳 Lawn') + '</button>') + '</div>' +
           '<div class="cbs-z"><button type="button" data-cbz="undo" aria-label="Undo" title="Undo (Ctrl+Z)"' + (S.hi > 0 ? '' : ' disabled') + '>↶</button><button type="button" data-cbz="redo" aria-label="Redo" title="Redo (Ctrl+Y)"' + (S.hist && S.hi < S.hist.length - 1 ? '' : ' disabled') + '>↷</button>' +
           (S.site && S.site.kind === 'terrace' && !S.siteEd ? '<button type="button" data-cbz="whole" class="' + (S.whole ? 'on' : '') + '" aria-pressed="' + !!S.whole + '" aria-label="' + (S.whole ? 'Back to the cabin' : 'See the whole terrace') + '" title="' + (S.whole ? 'Back to the cabin' : 'Whole terrace') + '">' + (S.whole ? '◎' : '▦') + '</button>' : '') +
           '<button type="button" data-cbz="in" aria-label="Zoom in">+</button><button type="button" data-cbz="out" aria-label="Zoom out">−</button>' +
@@ -1296,7 +1301,7 @@
   function cbBar(q) {
     var ct = document.querySelector('.ctas'); if (!ct) return; var b = ct.querySelector('.cbbar'); if (!b) { b = document.createElement('div'); b.className = 'cbbar'; ct.appendChild(b); }
     var x = PRODS[S.id], last = S.wz.step >= 6 && !S.wz.adv, closed = x.oo === false, o = S.o, needPin = !(q.ok && q.install && q.install.available);
-    var NX = ['Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Review'], hs = document.getElementById('cbsStep'), sE = S.studio && S.siteEd; if (hs) hs.textContent = S.wz.adv ? 'Edit each wall' : S.studio ? 'Step ' + (sE ? 1 : S.wz.step + 2) + ' of 8' : 'Step ' + (S.wz.step + 1) + ' of 7';
+    var NX = ['Size', 'Doors', 'Rooms', 'Outside', 'Look', 'Review'], hs = document.getElementById('cbsStep'), sE = S.studio && S.siteEd; if (hs) hs.textContent = S.wz.adv ? 'Edit each wall' : S.studio ? (DS_SOLO ? 'Step ' + (S.wz.step + 1) + ' of 7' : 'Step ' + (sE ? 1 : S.wz.step + 2) + ' of 8') : 'Step ' + (S.wz.step + 1) + ' of 7';
     if (sE) last = false;
     b.innerHTML = (S.studio && !sE ? '<button type="button" class="cbb" onclick="cbPrev()" aria-label="Back">←</button>' : '') + (S.fromPlan != null && !last ? '<button type="button" class="cbb" style="width:auto;padding:0 12px;font-size:13px;font-weight:600" onclick="mtoBackToPlan()">View in plan</button>' : '') +
       (last && S.fromPlan == null && !closed && !needPin && q.ok && !isProp(S.id) ? '<button type="button" class="cbb" style="width:auto;padding:0 12px;font-size:13px;font-weight:600" onclick="mtoAddCart()">' + (S.editK ? 'Update cart' : '+ Cart') + '</button>' : '') + '<button type="button" class="cbp" onclick="cbOpenSheet()">' + (q.ok ? '<b>' + rs(q.total) + '</b><small>Price details ▴</small>' : '<small>' + esc(q.error) + '</small>') + '</button>' +
@@ -1345,6 +1350,7 @@
   }
   window.cbStudio = function (on, fresh) {
     if (!S || !S.pdp || !S.wz) return;
+    if (on && DS_SOLO && S.fromPlan == null) { S.site = null; S.siteDone = true; S.siteEd = false; S.spaceDone = true; }   // 283: straight onto the studio floor (a terrace corner)
     if (on && S.fromPlan == null && !S.spaceDone && !S.siteDone) return window.mtoSpaceAsk('cabin', function (r) { spaceApply(r, S.o.layout).then(function () { if (S.site && (S.site.kind === 'ground' || r.site)) { S.siteDone = true; S.siteEd = false; } window.cbStudio(true, fresh); }); });   // 199
     var el = document.getElementById('cbStudio');
     if (on) {

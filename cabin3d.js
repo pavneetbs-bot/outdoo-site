@@ -5,6 +5,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
+import { studioFloor, wall as sWall, person } from './studio3d.js?v=1';   // 283: the design studio setting
 
 const SIDES = ['front', 'right', 'back', 'left'];
 let R = null;   // { renderer, scene, cam, ortho, controls, key, view, group, L, W, H, raf, el }
@@ -92,7 +93,7 @@ function spanOf(c, k) { const b = bayOf(c, k); return b ? Math.max(Math.trunc(+b
 function build(c, lay, opts) {
   const g = new THREE.Group(), L = +lay.L, W = +lay.W, H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = +(c.bay || 4), FM = frameMat(lay), T = 0.25, DH = lay.full_doors ? H : 8;
   const tracks = Math.max(2, parseInt(lay.tracks || '2', 10) || 2);
-  if (opts && opts.bare) {} else if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site); else site(g, L, W);   // 192: bare = the cabin alone (space planner)
+  if (opts && opts.bare) {} else if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site); else if (opts && opts.studio) studio(g, L, W, lay, c); else site(g, L, W);   // 192: bare = the cabin alone (space planner)
   box(g, L + 0.6, 0.6, W + 0.6, L / 2, -0.3, W / 2, mat('deck')).userData.under = 1;
   const ff = String(lay.floor || ''), FL = /wood|plank|laminate/i.test(ff) ? floorTex('wood') : /no finish|client/i.test(ff) ? mat('cement') : /vinyl/i.test(ff) ? floorTex('vinyl') : mat('floor');   // 188: floor finish
   box(g, L, 0.05, W, L / 2, 0.02, W / 2, FL, false).userData.under = 1;
@@ -236,6 +237,15 @@ function build(c, lay, opts) {
 }
 
 // ---- the garden around it: grass, a paved apron, a few trees and shrubs (same every time: seeded)
+// 283 design studio: a terrace corner — grey 2 × 4 tiles, a 3 ft parapet behind and on the left (the cabin's usual spot),
+// a person in front for scale; the gap to the parapet leaves room for the projection on those sides
+function studio(g, L, W, lay, c) {
+  const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); const Y = -0.6, sd = lay && lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : [], pj = sd.includes('back') || sd.includes('left') ? +(c && c.proj && c.proj.depth || 1.5) : 0, gp = pj + 1.25;
+  studioFloor(sg, -gp - 0.75, -gp - 0.75, L + gp + 14, W + gp + 14, Y);
+  sWall(sg, -gp - 0.75, -gp - 0.375, L + 12, -gp - 0.375, 3, 0.75, Y);   // back
+  sWall(sg, -gp - 0.375, -gp - 0.75, -gp - 0.375, W + 12, 3, 0.75, Y);   // left
+  person(sg, L + 2.8, W + 3.2, -0.6, Y);
+}
 function site(g, L, W) {
   const sg = new THREE.Group(); sg.name = 'site'; g.add(sg);
   const gr = new THREE.Mesh(new THREE.CircleGeometry(140, 64), mat('grass')); gr.rotation.x = -Math.PI / 2; gr.position.set(L / 2, -0.63, W / 2); gr.receiveShadow = true; sg.add(gr);
@@ -587,7 +597,7 @@ function setView(v, keepCam) {
   } else {   // 3d / roof off / 360
     R.active = R.cam; C.minDistance = 3; C.maxDistance = Math.max(d * 4, R.ts ? Math.max(R.ts.pw, R.ts.pd) * 2.4 : 0); C.maxPolarAngle = Math.PI * 0.93;   // go round and under: see the ceiling from below
     C.enablePan = true; C.screenSpacePanning = true; buttons();   // move the model: right-drag / two fingers, or the ✋ move mode
-    if (!keepCam) { const k = Math.max(1.25, 1.5 / R.cam.aspect) * (R.ts && (R.ts.place || R.ts.whole) ? 2.1 : 1), hi = v === 'cut' ? 1.7 : 1;
+    if (!keepCam) { const k = Math.max(1.25, 1.5 / R.cam.aspect) * (R.ts && (R.ts.place || R.ts.whole) ? 2.1 : R.studio ? 1.45 : 1), hi = v === 'cut' ? 1.7 : 1;
       R.cam.position.set(cx + d * 0.95 * k, H * 0.4 + (H * 1.2 + d * 0.25) * k * hi, cz + d * 1.35 * k / (v === 'cut' ? 1.15 : 1)); C.target.set(cx, H * 0.3, cz); }
   }
   R.cam.updateProjectionMatrix(); fitOrtho(); C.update(); selBox();
@@ -699,9 +709,9 @@ function startSpot(c, lay, L, W) {   // where "Inside" starts: 2½ ft in from th
 }
 
 export function show(el, c, lay, view, opts) {
-  opts = opts || {}; ensure(el); R.last = [el, c, lay, view, opts];
+  opts = opts || {}; ensure(el); R.last = [el, c, lay, view, opts]; R.studio = !!opts.studio;
   const ts = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
-  const key = JSON.stringify(lay) + '|' + (opts.furn || 'none') + '|' + JSON.stringify(ts), dimKey = [lay.L, lay.W, lay.height, ts ? 't' + (ts.place || ts.whole ? 'W' : 'c') : 'g'].join('x');
+  const key = JSON.stringify(lay) + '|' + (opts.furn || 'none') + '|' + JSON.stringify(ts) + (opts.studio ? '|S' : ''), dimKey = [lay.L, lay.W, lay.height, ts ? 't' + (ts.place || ts.whole ? 'W' : 'c') : 'g'].join('x');
   let reset = view !== R.view;
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
