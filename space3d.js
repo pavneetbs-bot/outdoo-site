@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=61';
-import { pergolaModel } from './pergola3d.js?v=48';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=62';
+import { pergolaModel } from './pergola3d.js?v=49';
 import { outline, sofaLayout } from './plan2d.js?v=32';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=6';
@@ -103,10 +103,21 @@ const zelMat = () => M.c_zel || (M.c_zel = new THREE.MeshStandardMaterial({ map:
 function zelPlane(g, w, h, x, y, z, ry) { const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w, uv.getY(i) * h); const m = new THREE.Mesh(geo, zelMat()); m.position.set(x, y, z); m.rotation.y = ry || 0; m.receiveShadow = true; g.add(m); return m; }
 function keyhole(a, c, r) {   // 294: keyhole (horseshoe) arch — opening 2a wide, the circle of radius r centred c up
   const k = Math.sqrt(Math.max(0.01, r * r - a * a)), s = new THREE.Shape(); s.moveTo(-a, 0); s.lineTo(-a, c - k); s.absarc(0, c, r, Math.atan2(-k, -a), Math.atan2(-k, a), true); s.lineTo(a, 0); s.lineTo(-a, 0); return s; }
-function turCabin(g) {   // 294 (owner, Turkish guide): lime-white walls, walnut wood, sand-cream roof edge
-  const lw = mat('c_tk_lime', 0xF4EFE6, { roughness: 0.95 }), wn = mat('c_tk_wal', 0x5A3B26, { roughness: 0.7 }), sd = mat('c_tk_sand', 0xE3CFAE, { roughness: 0.9 }); g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex(); if (c === 0xF2F0EB || c === 0x6E6C68) o.material = lw; else if (c === 0xE4E1DA) o.material = sd; else if (c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = wn; }); }
+const khPts = (a, c, r) => { const p = keyhole(a, c, r).getPoints(24); while (p.length > 1 && p[p.length - 1].distanceTo(p[0]) < 1e-4) p.pop(); return p; };   // (-a,0) up, over the arch, down to (a,0)
+const khWall = (w, h, a, c, r) => new THREE.Shape([new THREE.Vector2(-w / 2, 0)].concat(khPts(a, c, r), [new THREE.Vector2(w / 2, 0), new THREE.Vector2(w / 2, h), new THREE.Vector2(-w / 2, h)]));   // the wall round a keyhole opening (no holes — one outline)
+const khRim = (a, c, r, t) => new THREE.Shape(khPts(a + t, c, r + t).concat(khPts(a, c, r).reverse()));
+function turCabin(g) {   // 294 (owner, Turkish guide): lime-white walls, brass frames + fascia, sand plinth / roof edge, a keyhole arch over every glass bay, lanterns by the doors, bougainvillea on a corner
+  const lw = mat('c_tk_lime', 0xF4EFE6, { roughness: 0.95 }), wn = mat('c_tk_wal', 0x5A3B26, { roughness: 0.7 }), sd = mat('c_tk_sand', 0xE3CFAE, { roughness: 0.9 }), br = mat('c_tk_brass', 0xC9A86C, { metalness: 0.6, roughness: 0.32 }), pl = mat('c_tk_plinth', 0xC9AE86, { roughness: 0.9 });
+  const gl = []; g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color) return; const c = o.material.color.getHex(); if (c === 0xBFDCE6 && o.material.opacity < 0.34) { gl.push(o); return; } if (o.material.map) return;
+    if (c === 0xF2F0EB || c === 0x6E6C68) o.material = lw; else if (c === 0xE4E1DA) o.material = sd; else if (c === 0x2B2B2B) o.material = br; else if (c === 0x5A564F) o.material = pl; else if (c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = wn; });
+  g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3(), V0 = new THREE.Vector3(), V1 = new THREE.Vector3(), ar = new THREE.Group(); ar.name = 'tk_arches';
+  gl.forEach(o => { B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const vx = V0.x < 0.3, vz = V0.z < 0.3; if (!(vx || vz) || V0.y < 4.5) return; const w = vx ? V0.z : V0.x, h = V0.y; if (w < 1.6) return;
+    const a = w / 2 - 0.28, r = a * 1.12, c0 = Math.max(r * 0.4, h - r - 0.3), sh = khWall(w, h, a, c0, r);
+    const geo = new THREE.ShapeGeometry(sh, 20); [-1, 1].forEach(sg => { const m = new THREE.Mesh(geo, lw); m.castShadow = true; m.receiveShadow = true; const t = (vx ? V0.x : V0.z) / 2 + 0.03; if (vx) { m.rotation.y = Math.PI / 2; m.position.set(V1.x + sg * t, B.min.y, V1.z); } else m.position.set(V1.x, B.min.y, V1.z + sg * t); ar.add(m);
+      const rim = new THREE.Mesh(new THREE.ShapeGeometry(khRim(a, c0, r, 0.14), 20), sd); rim.position.copy(m.position); rim.rotation.copy(m.rotation); if (vx) rim.position.x += sg * 0.01; else rim.position.z += sg * 0.01; ar.add(rim); }); });
+  g.add(ar); }
 function tropCabin(g) {   // 292 (owner, Tropical guide): the cabin's outer walls grey textured, its roof edge / projection dark wood
-  const gt = greyTex(), dw = mat('c_tcab_dw', 0x4A3020, { roughness: 0.75 }); g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex(); if (c === 0xF2F0EB || c === 0x6E6C68) o.material = gt; else if (c === 0xE4E1DA || c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = dw; }); }
+  const gt = greyTex(), dw = mat('c_tcab_dw', 0x4A3020, { roughness: 0.75 }); g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex(); if (c === 0xF2F0EB || c === 0x6E6C68) o.material = gt; else if (c === 0xE4E1DA || c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537 || c === 0x2B2B2B) o.material = dw; }); }
 function lantern(g, x, y, z, s) { const br = mat('c_brass', 0xB08D57, { metalness: 0.8, roughness: 0.35 }), gl = mat('c_lglow', 0xFFD9A0, { emissive: 0xFFB050, emissiveIntensity: 0.9, transparent: true, opacity: 0.85 }); s = s || 1;
   const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28 * s, 0.22 * s, 0.75 * s, 8), gl); b.position.set(x, y, z); g.add(b);
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.32 * s, 0.35 * s, 8), br); cap.position.set(x, y + 0.55 * s, z); g.add(cap); const ft = new THREE.Mesh(new THREE.CylinderGeometry(0.24 * s, 0.3 * s, 0.12 * s, 8), br); ft.position.set(x, y - 0.42 * s, z); g.add(ft);
@@ -992,6 +1003,7 @@ export function busy(fn, msgs) {   // 268 (owner): switching the lights takes a 
   const L = msgs || ['Switching on the lights…', 'Setting the mood…', 'Creating the ambience…'], k0 = Date.now(); let k = 0; ov.textContent = L[0]; ov.style.display = ''; const iv = setInterval(() => { k = (k + 1) % L.length; ov.textContent = L[k]; }, 650);
   setTimeout(() => { try { fn(); } catch (e) {} if (R) { R.dirty = true; try { R.renderer.compile(R.scene, R.cam); R.renderer.render(R.scene, R.cam); } catch (e) {} } setTimeout(() => { clearInterval(iv); ov.style.display = 'none'; }, Math.max(300, 900 - (Date.now() - k0))); }, 60); }
 export function topView(on) { if (!R || !R.P) return; R.view = on ? 'top' : '3d'; camHome(R.P.site || {}, R.view); R.dirty = true; }
+export function look(p, t) { if (!R) return; R.cam.position.set(p[0], p[1], p[2]); R.controls.target.set(t[0], t[1], t[2]); R.controls.update(); R.dirty = true; }   // 294: put the camera somewhere (tests / renders)
 export function home() { if (R) R.dirty = true; if (R && R.P) camHome(R.P.site || {}, R.view); }
 export function resize() { size(); }
 export function azimuth() { try { return R && R.controls ? R.controls.getAzimuthalAngle() : 0; } catch (e) { return 0; } }   // 278: for the planner's compass
