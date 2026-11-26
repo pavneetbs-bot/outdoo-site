@@ -7,8 +7,8 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=54';
 import { pergolaModel } from './pergola3d.js?v=42';
-import { outline, sofaLayout } from './plan2d.js?v=28';
-import { plantModel } from './plants3d.js?v=2';
+import { outline, sofaLayout } from './plan2d.js?v=29';
+import { plantModel } from './plants3d.js?v=3';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=3';
 const LAYK = k => !!LSPEC[k];
 
@@ -370,10 +370,14 @@ let GC = null; function groundCover(g, w, d, x, z, y, seed) {   // 268 (owner): 
   GC.m.forEach((m, k) => { const im = new THREE.InstancedMesh(GC.geo, m, per); for (let i = 0; i < per; i++) { const edge = rnd() < 0.22, u = edge ? (rnd() < 0.5 ? -0.5 : 0.5) : rnd() - 0.5, v = rnd() - 0.5, sw = rnd() < 0.5; let px = sw ? u * w : (rnd() - 0.5) * w, pz = sw ? v * d : u * d;
       if (edge) { if (sw) px += Math.sign(px) * 0.08; else pz += Math.sign(pz) * 0.08; } const sc = 0.7 + rnd() * 0.8; Sc.set(sc * 1.3, sc * (edge ? 0.9 : 0.55), sc * 1.3); E.set(edge ? (rnd() - 0.5) * 0.8 : 0, rnd() * 6.28, edge ? (rnd() - 0.5) * 0.8 : 0); Q.setFromEuler(E); V.set(x + px, y + (edge ? -0.06 : 0.04), z + pz); M.compose(V, Q, Sc); im.setMatrixAt(i, M); }
     im.castShadow = false; im.receiveShadow = !LITE; g.add(im); });
+  { const np = Math.min(LITE ? 6 : 12, Math.max(1, Math.round(area / (LITE ? 2.2 : 1.3)))), cols = Math.max(1, Math.round(Math.sqrt(np * w / Math.max(0.3, d)))), rows = Math.max(1, Math.ceil(np / cols));   // 284 (owner): real ground-cover plants, not only green bits
+    for (let i = 0; i < np; i++) { const c = i % cols, r = Math.floor(i / cols), k = GCK[(Math.floor(rnd() * 97) + i) % GCK.length], edge = k === 'MONEYPLANT' || k === 'CHLOROPHYTUM', m = noSh(plantModel(THREE, k, k === 'DRACAENA' || k === 'ZZ' ? 1.5 : 1.2, { pot: 'none', seed: 2 }));
+      m.position.set(x + (-w / 2 + w * (c + 0.5) / cols) + (rnd() - 0.5) * 0.25, y - 0.02, z + (-d / 2 + d * (r + 0.5) / rows) + (rnd() - 0.5) * 0.25); m.rotation.y = rnd() * 6.28; m.scale.setScalar(edge ? 0.75 : 0.6); g.add(m); } }
   if (!LITE) { const nf = Math.round(n / 8), fl = new THREE.InstancedMesh(GC.geo, GC.f, Math.max(1, nf)); for (let i = 0; i < Math.max(1, nf); i++) { Sc.set(0.25, 0.25, 0.25); Q.identity(); V.set(x + (rnd() - 0.5) * w, y + 0.14, z + (rnd() - 0.5) * d); M.compose(V, Q, Sc); fl.setMatrixAt(i, M); } g.add(fl); } }
 function pbox(g, bw, bd, x, z, ht, pm) { box(g, bw, ht, bd, x, ht / 2, z, pm || C().stone); box(g, bw - 0.2, 0.08, bd - 0.2, x, ht + 0.02, z, mat('pb_soil', 0x4A3A2A)); groundCover(g, bw - 0.25, bd - 0.25, x, z, ht + 0.06);
   let sd = Math.abs(Math.round(x * 7 + z * 13 + bw * 3)) + 1; const rnd = () => (sd = (sd * 9301 + 49297) % 233280) / 233280, lng = Math.max(bw, bd), along = bw >= bd, n = Math.max(1, Math.round(lng / (LITE ? 2.6 : 2)));   // 262 (owner): our real plant models, a tropical mix (few kinds, cached)
   for (let i = 0; i < n; i++) { const k = TROP_S[(Math.floor(rnd() * 97) + i) % TROP_S.length], u = -lng / 2 + lng * (i + 0.5) / n, m = noSh(plantModel(THREE, k, 1.8 + (i % 2) * 1, { pot: 'none', seed: 1 })); m.position.set(x + (along ? u : 0), ht, z + (along ? 0 : u)); m.rotation.y = rnd() * 6.28; g.add(m); } }
+const GCK = ['CHLOROPHYTUM', 'SYNGONIUM', 'MONEYPLANT', 'ZZ', 'DRACAENA'];   // 284 (owner): ground cover + living walls
 const TROP_S = ['SNAKEPLANT', 'CROTON', 'RHAPIS', 'FOUNTAINGRASS'], TROP_B = ['ARECA', 'BIRDPARADISE', 'RHAPIS', 'FISHTAIL'];   // 263: few kinds → shared, light
 const noSh = m => { if (LITE) m.traverse(o => { o.castShadow = false; }); return m; };
 let COVT = null; function coveStrip(g, bw, bd, x, z, y) { if (!R) return;   // 268 (owner): a soft warm line of light on the floor just outside each edge (was a lit square under the whole thing)
@@ -515,7 +519,10 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     if (it && it.fdesign === 'stone') { [-0.35, 0, 0.35].forEach(f => box(g, 0.3, 0.2, 0.3, w * f, 0.1, Math.max(0.4, d) / 2 + 0.25, K.dark)); for (let y = 0.4; y < H - 0.5; y += 0.45) { const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3 + (y % 0.9) * 0.2, 0), y % 0.9 > 0.45 ? K.leaf : K.leaf2); lf.position.set(-w / 2 + 0.35 + Math.sin(y * 3) * 0.25, y, Math.max(0.4, d) / 2 + 0.2); g.add(lf); } }
   } else if (cat === 'vgarden') {
     const H = h || 6; box(g, w, H, 0.3, 0, H / 2, -0.1, K.wood2);
-    for (let x = -w / 2 + 0.5; x < w / 2; x += 0.9) for (let y = 0.6; y < H; y += 0.9) { const s = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 0), (x + y) % 2 > 1 ? K.leaf : K.leaf2); s.position.set(x, y, 0.2); g.add(s); }
+    const sp = LITE ? 1.4 : 1.05, VGK = ['SYNGONIUM', 'MONEYPLANT', 'CHLOROPHYTUM', 'ZZ', 'DRACAENA', 'SYNGONIUM', 'MONEYPLANT'];   // 284 (owner): a living wall of real plants — syngonium, money plant, chlorophytum, ZZ, dracaena
+    box(g, w - 0.1, H - 0.2, 0.06, 0, H / 2, 0.08, mat('vg_felt', 0x2C3A24, { roughness: 1 }), false); let vi = 0;
+    for (let y = 0.55; y < H - 0.2; y += sp) for (let x = -w / 2 + sp / 2 + ((Math.round(y / sp) % 2) ? sp / 2 : 0); x < w / 2 - 0.15; x += sp) { const k = VGK[(vi * 3 + Math.round(y * 7)) % VGK.length], m = noSh(plantModel(THREE, k, 1.3, { pot: 'none', seed: 3 })); vi++;
+      m.position.set(x, y - 0.3, 0.12); m.rotation.x = 1.05; m.rotation.z = ((vi * 37) % 10 - 5) * 0.06; m.scale.setScalar(k === 'MONEYPLANT' || k === 'CHLOROPHYTUM' ? 0.95 : 0.8); g.add(m); }
   } else if (cat === 'graffiti') {
     const H = h || 6, op = (it && it.open) || [], pcs = [];   // painted pieces round any door (u from the left end)
     let u = 0; op.slice().sort((a, b) => a.u0 - b.u0).forEach(o => { if (o.u0 > u) pcs.push([u, o.u0, 0, H]); if (H > o.h) pcs.push([o.u0, o.u1, o.h, H]); u = o.u1; }); if (u < w) pcs.push([u, w, 0, H]);

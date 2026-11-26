@@ -39,6 +39,12 @@ const SP = {
   BANANA:       { f: 'banana', stem: 0x7E8E44, leaf: [0x5E9A3A, 0x6EAA44, 0x4E8A32], spread: 0.85 },
   BLACKFICUS:   { f: 'bush', tree: 0.32, trunk: 0x8A8478, core: 0x14280F, leaf: [0x1A3418, 0x22401E, 0x2A4A24], flN: 0, dense: 1, shape: [0.5, 0.6], spread: 0.7 },
   PACHIRA:      { f: 'pachira', trunk: 0x8E8A6A, leaf: [0x3A7A2E, 0x478A36, 0x326E28], spread: 0.6 },
+  // 284 (owner): ground cover / living-wall plants — under the bigger plants in planters and on vertical gardens
+  DRACAENA:     { f: 'strap', leaf: [0x2E5A2A, 0x6A1E2E, 0x3A6A30], canes: 3, top: 1, spread: 0.45 },
+  ZZ:           { f: 'bush', core: 0x14300F, leaf: [0x1E4A1A, 0x25561F, 0x2C6224], big: 1, narrow: 0, shape: [0.38, 0.7], spread: 0.45, flN: 0, dense: 1 },
+  CHLOROPHYTUM: { f: 'grass', arch: 1, bw: 0.09, leaf: [0x8CC04E, 0xEEF2D6, 0x6FA83E], spread: 0.6 },
+  MONEYPLANT:   { f: 'bush', core: 0x3A6A22, leaf: [0x6AA83A, 0xC8D46A, 0x5A9630], big: 1, loose: 1, shape: [0.62, 0.38], spread: 0.8, flN: 0 },
+  SYNGONIUM:    { f: 'bush', core: 0x5E8A50, leaf: [0xA6C88E, 0xD8B6AE, 0x86B070], big: 1, shape: [0.5, 0.55], spread: 0.6, flN: 0 },
   CHAMPA:       { f: 'champa', trunk: 0x7A7268, leaf: [0x3C7A2E, 0x4A8A36, 0x356E2A], fl: [0xFFF8F0, 0xFFF8F0, 0xF4B8C8], spread: 1.0 },
 };
 export const PLANT_KEYS = Object.keys(SP);
@@ -162,8 +168,8 @@ const FAM = {
       B.add(ballGeo(), 'tuft', new T.Matrix4().compose(p, new T.Quaternion().setFromEuler(new T.Euler(0, -a, 0.9 + rnd() * 0.4)), V(0.08, 0.32, 0.18)), pick(rnd, sp.leaf), { side: T.FrontSide }); }
     B.add(blobGeo(), 'core', new T.Matrix4().compose(V(0, y0 + h * 0.4, 0), new T.Quaternion(), V(R * 0.75, h * 0.42, R * 0.75)), sp.leaf[1], { side: T.FrontSide }); },
   grass(g, B, rnd, sp, H, y0) { const h = H - y0;
-    for (let i = 0; i < 90; i++) B.add(strapGeo('blade'), 'blade', strapM(V((rnd() - 0.5) * 0.25, y0, (rnd() - 0.5) * 0.25), rnd() * 6.283, 0.15 + rnd() * 0.75, h * (0.6 + rnd() * 0.35), 0.06), pick(rnd, sp.leaf), {});
-    for (let i = 0; i < 14; i++) { const yaw = rnd() * 6.283, tilt = 0.25 + rnd() * 0.45, L = h * (0.85 + rnd() * 0.2), d = V(Math.sin(yaw) * Math.sin(tilt), Math.cos(tilt), Math.cos(yaw) * Math.sin(tilt)), tip = V(0, y0, 0).add(d.clone().multiplyScalar(L));
+    for (let i = 0; i < 90; i++) B.add(strapGeo('blade'), 'blade', strapM(V((rnd() - 0.5) * 0.25, y0, (rnd() - 0.5) * 0.25), rnd() * 6.283, sp.arch ? 0.5 + rnd() * 0.9 : 0.15 + rnd() * 0.75, h * (sp.arch ? 0.9 + rnd() * 0.5 : 0.6 + rnd() * 0.35), sp.bw || 0.06), pick(rnd, sp.leaf), {});
+    if (sp.plume) for (let i = 0; i < 14; i++) { const yaw = rnd() * 6.283, tilt = 0.25 + rnd() * 0.45, L = h * (0.85 + rnd() * 0.2), d = V(Math.sin(yaw) * Math.sin(tilt), Math.cos(tilt), Math.cos(yaw) * Math.sin(tilt)), tip = V(0, y0, 0).add(d.clone().multiplyScalar(L));
       stick(g, V(0, y0, 0), tip, 0.008, 0.006, 0x7E5A3A, 3);
       B.add(ballGeo(), 'plume', new T.Matrix4().compose(tip.clone().add(d.clone().multiplyScalar(-0.25)).add(V(Math.sin(yaw) * 0.12, -0.1, Math.cos(yaw) * 0.12)), new T.Quaternion().setFromUnitVectors(UP(), d.clone().add(V(Math.sin(yaw) * 0.8, -0.6, Math.cos(yaw) * 0.8)).normalize()), V(0.07, 0.45, 0.07)), sp.plume, { roughness: 1, side: T.FrontSide }); } },
   agave(g, B, rnd, sp, H, y0) { const h = H - y0;
