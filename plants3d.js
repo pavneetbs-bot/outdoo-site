@@ -38,6 +38,7 @@ const SP = {
   TRAVELLER:    { f: 'ravenala', trunk: 0x8A8478, leaf: [0x4E7A3A, 0x5A8A42], spread: 0.95 },
   BANANA:       { f: 'banana', stem: 0x7E8E44, leaf: [0x5E9A3A, 0x6EAA44, 0x4E8A32], spread: 0.85 },
   BLACKFICUS:   { f: 'bush', tree: 0.32, trunk: 0x8A8478, core: 0x14280F, leaf: [0x1A3418, 0x22401E, 0x2A4A24], flN: 0, dense: 1, shape: [0.5, 0.6], spread: 0.7 },
+  OLIVE:        { f: 'bush', tree: 0.42, trunk: 0x7A6A58, core: 0x4A5A3A, leaf: [0x8A9878, 0x9AA886, 0x7A8A68, 0xA8B496], flN: 0, loose: 1, shape: [0.5, 0.5], spread: 0.4 },   // 294: olive tree — silvery grey-green, airy crown on a grey trunk (Turkish theme)
   PACHIRA:      { f: 'pachira', trunk: 0x8E8A6A, leaf: [0x3A7A2E, 0x478A36, 0x326E28], spread: 0.6 },
   // 284 (owner): ground cover / living-wall plants — under the bigger plants in planters and on vertical gardens
   DRACAENA:     { f: 'strap', leaf: [0x2E5A2A, 0x6A1E2E, 0x3A6A30], canes: 3, top: 1, spread: 0.45 },
@@ -49,7 +50,7 @@ const SP = {
 };
 export const PLANT_KEYS = Object.keys(SP);
 // light each plant wants (S = full sun, SS = semi-shade, B = either) — the planner's auto setup puts sun plants in the open, semi-shade ones by walls / under shade
-export const PLANT_LIGHT = { BLACKFICUS: 'B', PACHIRA: 'B', ARECA: 'B', RHAPIS: 'SS', FISHTAIL: 'B', BAMBOO: 'B', PHOENIX: 'B', LIVISTONA: 'B', CYCAS: 'B', FOXTAIL: 'S', TRAVELLER: 'S', BANANA: 'S', HIBISCUS: 'S', IXORA: 'B', MOGRA: 'S', CHANDNI: 'B', RAATKIRANI: 'B', TECOMA: 'S', KANER: 'S', ADENIUM: 'S', BIRDPARADISE: 'B', CROTON: 'B', CORDYLINE: 'SS', SCHEFFLERA: 'B', SONGOFINDIA: 'SS', KAMINI: 'B', DURANTA: 'S', FICUSPANDA: 'B', MORPANKHI: 'S', FOUNTAINGRASS: 'S', AGAVE: 'S', SNAKEPLANT: 'B', BOUGAINVILLEA: 'S', MADHUMALTI: 'S', CHAMPA: 'S' };
+export const PLANT_LIGHT = { OLIVE: 'B', BLACKFICUS: 'B', PACHIRA: 'B', ARECA: 'B', RHAPIS: 'SS', FISHTAIL: 'B', BAMBOO: 'B', PHOENIX: 'B', LIVISTONA: 'B', CYCAS: 'B', FOXTAIL: 'S', TRAVELLER: 'S', BANANA: 'S', HIBISCUS: 'S', IXORA: 'B', MOGRA: 'S', CHANDNI: 'B', RAATKIRANI: 'B', TECOMA: 'S', KANER: 'S', ADENIUM: 'S', BIRDPARADISE: 'B', CROTON: 'B', CORDYLINE: 'SS', SCHEFFLERA: 'B', SONGOFINDIA: 'SS', KAMINI: 'B', DURANTA: 'S', FICUSPANDA: 'B', MORPANKHI: 'S', FOUNTAINGRASS: 'S', AGAVE: 'S', SNAKEPLANT: 'B', BOUGAINVILLEA: 'S', MADHUMALTI: 'S', CHAMPA: 'S' };
 export const hasPlant = k => !!SP[String(k || '').replace(/^LP-/, '').toUpperCase()];
 // how wide the plant is (ft) at this height — the planner uses it for the footprint
 export function plantSpread(key, h) { const s = SP[String(key).replace(/^LP-/, '').toUpperCase()]; return Math.max(1, Math.round((s ? s.spread : 0.7) * (+h || 3) * 2) / 2); }

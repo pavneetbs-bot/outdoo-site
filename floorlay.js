@@ -15,9 +15,9 @@ export const SPECS = {
   trop_path: { pat: 'flag', n: 16, P: 6, g: 0.13, pal: ['#9A9892', '#8A8882', '#A8A6A0', '#7E7C77'], v: 0.08, j: 'grass', m: 'stone' },
   trop_rug: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#4E3322', '#462E1F', '#553826', '#3F2A1C'], v: 0.06, j: '#1C130C', m: 'wpc' },   // 276: decks are always WPC boards (fabricated, not civil) — teak
   // Turkish — 6" encaustic cement tiles, terracotta hex border, kilims
-  turk_field: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#E9DCC4', '#E4D6BC', '#EDE1CB'], ink: ['#2F6F7E'], ink2: '#C27A4E', v: 0.04, j: '#D6CEC0', m: 'cement' },
-  turk_border: { pat: 'hex', u: 0.38, g: 0.04, pal: ['#C27A4E', '#B56E45', '#CC8659', '#A9643E'], v: 0.08, j: '#E6DCCB', m: 'clay' },
-  turk_path: { pat: 'zellige', u: 0.33, g: 0.025, pal: ['#2F6F7E', '#2A6575', '#357A8A', '#285F6D', '#3A8290'], v: 0.12, j: '#E9E2D6', m: 'glaze' },
+  turk_field: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#EFE6D4', '#E9DFCB', '#F2EADA'], ink: ['#B08D57'], ink2: '#2F6E73', v: 0.04, j: '#DDD2BF', m: 'cement' },   // 294: beige encaustic, brass + a little teal
+  turk_border: { pat: 'hex', u: 0.38, g: 0.04, pal: ['#C9AE86', '#D6BE97', '#BFA27A', '#CDB48E'], v: 0.08, j: '#EFE7D8', m: 'clay' },
+  turk_path: { pat: 'zellige', u: 0.33, g: 0.025, pal: ['#E3CFAE', '#D9C39E', '#C9AE86', '#E8D8BC', '#2F6E73'], v: 0.1, j: '#F1E9DA', m: 'glaze' },
   // Santorini — lime-washed stone, grey pebble mosaic paths
   sant_field: { pat: 'french', u: 0.9, g: 0.06, pal: ['#F6F4EF', '#F1EEE7', '#F8F7F3', '#ECE8DF'], v: 0.03, j: '#D9D3C7', m: 'lime' },
   sant_path: { pat: 'pebmosaic', P: 3, pal: ['#8E949A', '#9EA3A8', '#7D838A', '#B4B7B9'], v: 0.1, j: '#EDEAE3', m: 'stone' },
@@ -43,14 +43,14 @@ export const SPECS = {
 
 // 276c (owner): the floor-layout roles — a calm base, the feature (runners, rugs, hubs), checkers
 Object.assign(SPECS, {
-  turk_base: { pat: 'stack', w: 1, d: 1, g: 0.03, pal: ['#B9714C', '#B06A46', '#C27A52', '#A9643F', '#BC7650'], v: 0.07, j: '#D9CBB4', m: 'clay' },
+  turk_base: { pat: 'oct', u: 2, g: 0.03, pal: ['#EDE4D3', '#E6DBC6', '#F0E8D9'], pal2: ['#C9AE86', '#BFA27A', '#B08D57', '#C9AE86', '#BFA27A', '#2F6E73'], v: 0.04, j: '#D8CCB6', m: 'trav' },   // 294: cream travertine, brass / teal cabochon dots
   mod_plain: { pat: 'stack', w: 2, d: 4, g: 0.02, pal: ['#B7B6B1', '#AEADA8', '#BFBEB9', '#A6A5A0'], v: 0.04, j: '#8E8C87', m: 'cement' },
   min_path: { pat: 'stack', w: 1, d: 3, g: 0.015, pal: ['#D9D6D0', '#D3D0C9', '#DEDBD5'], v: 0.02, j: '#BDB8AF', m: 'micro' },
   cont_enc: { pat: 'enc', u: 0.67, g: 0.012, pal: ['#E6DCC9', '#E1D6C2', '#EADFCD'], ink: ['#8E8A84'], ink2: '#B9A487', v: 0.03, j: '#CFC4B0', m: 'cement' },
   boho_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#EFE4D2', '#EADFCB', '#F2E8D8'], ink: ['#B5562F'], ink2: '#6B7A4A', v: 0.04, j: '#D8C6AA', m: 'cement' },
   sant_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#F6F4EF', '#F1EEE7'], ink: ['#2B5DA8'], ink2: '#6FA3D9', v: 0.03, j: '#D9D3C7', m: 'cement' },
   trop_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.04, pal: ['#A6A49E', '#9C9A94'], pal2: ['#7E7C77', '#75736E'], v: 0.05, j: '#6A6863', m: 'stone' },
-  turk_chk: { pat: 'stack', alt: 1, w: 1, d: 1, g: 0.03, pal: ['#B9714C', '#B06A46'], pal2: ['#EFE7D8', '#E9DCC4'], v: 0.05, j: '#D9CBB4', m: 'clay' },
+  turk_chk: { pat: 'stack', alt: 1, w: 1, d: 1, g: 0.03, pal: ['#D6BE97', '#CDB48E'], pal2: ['#F1E9DA', '#EDE4D3'], v: 0.05, j: '#D9CBB4', m: 'clay' },
   sant_chk: { pat: 'stack', alt: 1, w: 1.5, d: 1.5, g: 0.04, pal: ['#F6F4EF', '#F1EEE7'], pal2: ['#9EA3A8', '#8E949A'], v: 0.04, j: '#D9D3C7', m: 'lime' },
   mod_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.02, pal: ['#C9C8C4', '#C2C1BD'], pal2: ['#5A5A58', '#626260'], v: 0.04, j: '#8E8C87', m: 'stone' },
   cont_chk: { pat: 'oct', u: 2, g: 0.03, pal: ['#E2D5BE', '#DCCDB3', '#E7DCC7'], pal2: ['#3A3835', '#2F2E2C'], v: 0.04, j: '#CBBC9F', m: 'trav' },
