@@ -5,12 +5,13 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=60';
-import { pergolaModel } from './pergola3d.js?v=47';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=61';
+import { pergolaModel } from './pergola3d.js?v=48';
 import { outline, sofaLayout } from './plan2d.js?v=32';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=6';
 import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=2';   // 294: the design studio setting (planters)
+import { barStudio, barSpec } from './bar3d.js?v=1';   // 295: the bar studio
 const LAYK = k => !!LSPEC[k];
 
 let R = null, HANDLER = null;
@@ -1082,6 +1083,13 @@ export function preview(el, items, opts) {
   if (PV.group) PV.scene.remove(PV.group);
   const corner = opts && opts.studio === 'corner'; PV.fl.visible = PV.wall.visible = !corner; PV.scene.background = new THREE.Color(corner ? 0xF4F2EE : 0xF1ECE3);
   if (corner) return cornerStudio(items, first);
+  if (opts && opts.studio === 'bar') {   // 295: one bar frame with the design's look + the customer's picks, a 9 ft wall 3 ft behind it
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
+    const it0 = items[0] || {}, B = barStudio(Object.assign(it0.m ? barSpec(it0.sku, it0.m, it0.o || {}) : it0, { view: opts.view })); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const vk = (opts.view || 'front') + Math.round(B.span); if (first || PV.vk !== vk) { PV.vk = vk; const sp = B.span, bk = opts.view === 'back';
+      PV.controls.target.set(0, 2.6, bk ? -1 : 0.6); PV.cam.position.set(sp * 0.5, sp * 0.5 + 2.5, (bk ? -1 : 1) * sp * 1.2); PV.controls.update(); }
+    return;
+  }
   const g = new THREE.Group(); let x = 0, W = 0, D = 0, H = 0;
   (items || []).forEach(it => { const m = generic(it.cat, +it.w || 2, +it.d || 2, +it.h || 2, it), y = it.par ? 3 : 0; m.position.set(x + (+it.w || 2) / 2, y, 0); g.add(m);
     if (it.par) box(g, (+it.w || 2) + 1, 3, 0.75, x + (+it.w || 2) / 2, 1.5, 0, mat('pv_par', 0xE3DDD2));   // 211: a screen that goes on the parapet / boundary wall, shown on one

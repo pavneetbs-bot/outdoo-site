@@ -626,8 +626,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=60').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=60'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=61').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=61'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1947,7 +1947,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=116').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=117').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2435,7 +2435,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=47').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=48').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -2790,9 +2790,9 @@
     if (m0.hr && num(o0.h) == null && num(m0.ht)) o0.h = Math.round(num(m0.ht) * 4) / 4;   // 204: the design's own height to start
     arr(m0.groups).forEach(function (g) { if (g.name && !(o0.groups || {})[g.name] && arr(g.options)[0]) { o0.groups = Object.assign({}, o0.groups); o0.groups[g.name] = g.options[0].name; } });   // 199: first choice of each option group (e.g. No light)
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(short(x.n)) + ' · Customise</b><button type="button" data-cu="close" aria-label="Close">✕ Close</button></div>' +
-      '<div class="pg3-bd"><div class="pg3-st cu-st"><img id="cuImg" alt="">' + (PCAT[x.col] ? '<div id="cu3d" class="cu3d"></div><div class="cu-vw"><button type="button" data-cuv="3d" class="on">3D</button><button type="button" data-cuv="photo">Photo</button></div>' : '') + '<div class="pg3-cap" id="cuCap"></div></div><div class="pg3-pn" id="cuPn"></div></div>' +
+      '<div class="pg3-bd"><div class="pg3-st cu-st"><img id="cuImg" alt="">' + (cuHas3d(x, S.id) ? '<div id="cu3d" class="cu3d"></div><div class="cu-vw"><button type="button" data-cuv="3d" class="on">3D</button>' + (isBar(S.id) ? '<button type="button" data-cuside="back">Back side</button>' : '') + '<button type="button" data-cuv="photo">Photo</button></div>' : '') + '<div class="pg3-cap" id="cuCap"></div></div><div class="pg3-pn" id="cuPn"></div></div>' +
       '<div class="pg3-ft">' + (PCAT[x.col] && !DS_SOLO ? '<button type="button" data-cu="space" class="cu-sp">📐 See it in my space</button>' : '') + '<button type="button" data-cu="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button></div>';
-    CU.stg = 0; ov.classList.add('open'); document.body.classList.add('pg3-on'); CU.open = true; cuDraw();
+    CU.stg = 0; CU.side = 'front'; ov.classList.add('open'); document.body.classList.add('pg3-on'); CU.open = true; cuDraw();
     try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: 'form' }); } catch (e) {}
   };
   // 294: the general customiser on the studio base — Size → Look → Extras (a stage with nothing to ask is left out) → Your proposal
@@ -2819,7 +2819,7 @@
     pn.scrollTop = st; var im = document.getElementById('cuImg'); if (im) { var u = refPhoto(x); if (im.getAttribute('src') !== u) im.src = u; }
     var cp = document.getElementById('cuCap'); if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);
     try { cuPrice(priceR(S.id, m, o, PCT)); } catch (e) {}
-    if (PCAT[x.col]) cu3dDraw();
+    if (cuHas3d(x, S.id)) cu3dDraw();
   }
   function cuClick(e) {
     var t = e.target.closest('button'); if (!t || !S) return; var o = S.o, m = PRODS[S.id].cz, a = t.getAttribute('data-cu');
@@ -2827,6 +2827,7 @@
     var sg = t.getAttribute('data-custg'); if (sg) { var L0 = cuStages(PRODS[S.id], m, o); CU.stg = Math.max(0, L0.map(function (z) { return z.k; }).indexOf(sg)); return cuDraw(); }   // 294
     if (a === 'next' || a === 'back') { var L1 = cuStages(PRODS[S.id], m, o), i1 = (CU.stg || 0) + (a === 'next' ? 1 : -1); if (a === 'next' && (CU.stg || 0) === 0) { var q1 = priceR(S.id, m, o, PCT); if (!q1.ok && q1.error && !/sign|price/i.test(q1.error)) return toast(q1.error); } CU.stg = Math.max(0, Math.min(L1.length - 1, i1)); var pn1 = document.getElementById('cuPn'); if (pn1) pn1.scrollTop = 0; return cuDraw(); }
     if (a === 'done') { var q = priceR(S.id, m, o, PCT); if (!q.ok && mtoOk()) return toast(q.error || 'Choose your size'); window.cuOpen(false); return propGo(); }
+    var sd = t.getAttribute('data-cuside'); if (sd) { CU.side = CU.side === 'back' ? 'front' : 'back'; t.textContent = CU.side === 'back' ? 'Front side' : 'Back side'; t.classList.toggle('on', CU.side === 'back'); var st4 = document.querySelector('#cuOv .cu-st'); if (st4) st4.classList.remove('photo'); return cu3dDraw(); }   // 295
     var vw = t.getAttribute('data-cuv'); if (vw) { var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.toggle('photo', vw === 'photo'); document.querySelectorAll('#cuOv [data-cuv]').forEach(function (b) { b.classList.toggle('on', b === t); }); if (vw === '3d') cu3dDraw(); return; }
     var pp = t.getAttribute('data-cupcs'); if (pp) { o.pcs = Math.max(1, Math.min(num(m.pcs && m.pcs.max) || 1, (num(o.pcs) || 1) + (+pp))); return draw(); }   // 199
     if (a === 'space') return cuSpace();
@@ -2842,6 +2843,8 @@
   }
   // 199: designs that sit in the planner as one of its things (planters…): "See it in my space" puts the pieces on a plan — the one on this device, a saved one, or a new space
   var PCAT = { planters: 'planter', 'privacy-screens': 'privacy' };
+  function isBar(sku) { return /^MTO-BR-/.test(sku || ''); }   // 295: bars get the bar studio
+  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku); }
   function cuSpace() {
     var x = PRODS[S.id], m = x.cz, o = S.o, cat = PCAT[x.col]; if (!cat || !window.outrrPlan || !window.mtoSpaceAsk) return;
     var q = price(m, o, PCT); if (!q.ok) return toast(q.error || 'Choose your size');
@@ -2866,7 +2869,8 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=70').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=71').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (isBar(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups, min_size: m.min_size }, o: { l: o.l, material: o.material, groups: o.groups, addons: o.addons }, view: CU.side }], { studio: 'bar', view: CU.side }); } catch (e) { if (window.console) console.warn(e); } return; }   // 295
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -3108,7 +3112,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=70').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=71').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
