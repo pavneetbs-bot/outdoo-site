@@ -106,7 +106,7 @@ export function calc(plan, R, tier, brandLW) { const t = plan.site || {}, f = t.
   const base = Math.max(0, A - feat - deck - turf - grav - (things(plan).filter(x => x.k === 'deck').reduce((a, x) => a + x.q, 0)));
   if (f.lay) { add('floor_base', base); add('floor_feat', feat); }
   add('deck', deck); add('turf', turf); add('gravel', grav); add('stone', stones); add('bed', bed);
-  if (rugs) add('rug', rugs); if (f.theme && f.theme !== 'minimal') add('decor', 1);
+  if (rugs) add('rug', rugs); if (f.theme) add('decor', 1);
   // lighting, civil & services
   if (t.light === 'soft') add('light_soft', A); else if (t.light === 'full') add('light_full', A);
   const su0 = plan.su || {}, sp = su0.seep || {}, sA = sp.has ? A * ({ little: 0.15, some: 0.4, whole: 1 }[sp.amt || 'some'] || 0.4) : 0;   // 278 (owner): seepage + heatproofing

@@ -5,7 +5,7 @@
 // Setting by the design's place: entrance = a house front with a door beside it, terrace / café = a 10 ft wall on grey tiles,
 // garden = free-standing on a lawn, cabin = the wall of a small room. Units: feet, y up, the wall's face looks at +z.
 import * as THREE from './vendor/three/three.module.min.js';
-import { studioFloor, person } from './studio3d.js?v=3';
+import { studioFloor, person } from './studio3d.js?v=4';
 
 const M = {}, T = {};
 const mt = (k, o) => M[k] || (M[k] = new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.8 }, o)));

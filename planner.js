@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=75';
+import * as S3 from './space3d.js?v=76';
 import * as P2 from './plan2d.js?v=33';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=4';
-import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=65';
+import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=66';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -1110,7 +1110,7 @@ function suPaint() { try { fl0Show(); } catch (e) {} if (S.magic) return; try { 
   else if (q === 'green') h += '<h2>How much greenery?</h2><div class="pl-subig pl-col">' + big('green:none', su.green === 'none', P2.ico('none'), 'No plants', 'no planters, no creepers') + big('green:light', su.green === 'light', P2.ico('sprout'), 'A little', 'a few plants in the corners') + big('green:balanced', su.green === 'balanced', P2.ico('planter'), 'Balanced', 'corners, a wall of plants, a green wall') + big('green:lush', su.green === 'lush', P2.ico('lush'), 'Lush', 'thick greenery all round') + '</div>' + next();
   else if (q === 'lights') h += '<h2>Lights for the evenings?</h2><div class="pl-subig pl-col3">' + big('light:none', su.light === 'none', P2.ico('sun'), 'No lights', 'only daytime use') + big('light:soft', su.light === 'soft', P2.ico('moon'), 'Soft & warm', 'pergola profile, cove lights, plant spikes') + big('light:full', su.light === 'full', P2.ico('sparkle'), 'All lit up', '+ wall lights and screen downlights') + '</div>' + next();
   else if (q === 'floor') h += '<h2>The floor</h2><p class="pl-sub">Pick a look — we lay it out round your layout.</p><div class="pl-floors">' + (['tiles', 'kota', 'marble', 'granite'].includes(su.floor0) && !su.rm.floor0 ? [['keep', 'Keep my floor', 'The ' + (FLOOR0.find(z => z[0] === su.floor0) || [0, 'floor'])[1].toLowerCase() + ' stays as it is']] : []).concat(FLOORS).map(z => `<button type="button" data-su="flr:${z[0]}" class="${su.flr === z[0] ? 'on' : ''}">${P2.floorThumb(z[0])}<b>${z[1]}</b><small>${z[2]}</small></button>`).join('') + '</div>' + (su.flr ? next() : '');   // 255: coming back, Next keeps the pick
-  else if (q === 'theme') { if (!su.thm) themeApply(({ party: 'modern', spa: 'tropical', green: 'tropical', yoga: 'minimal', work: 'contemporary', chill: 'boho' })[S.bth] || 'contemporary', true);   // 274 (owner): the last step — same layout, the look changes
+  else if (q === 'theme') { if (!su.thm) themeApply(({ party: 'modern', spa: 'tropical', green: 'tropical', yoga: 'contemporary', work: 'contemporary', chill: 'boho' })[S.bth] || 'contemporary', true);   // 274 (owner): the last step — same layout, the look changes
     h += '<h2>Pick a theme</h2><p class="pl-sub">Same layout — tap a theme to see your terrace in it. The floor, finishes, fabrics and plants change with it.</p>' +
       '<!--L--><div id="suab3d" class="pl-ab3d pl-thv">' + V3T() + '</div><!--/L--><div class="pl-thm">' + THEMES6.map(([k, n, d, c]) => `<button type="button" data-su="thm:${k}" class="${su.thm === k ? 'on' : ''}"><i>${c.map(x => `<s style="background:${x}"></s>`).join('')}</i><b>${n}</b><small>${d}</small></button>`).join('') + '</div>' + (() => { const F = S.items.filter(o => o.cat === 'feature' && !o.old); if (!F.length) return ''; fdTheme(); return F.map((o, i) => `<p class="pl-h" style="margin:12px 0 4px">Feature wall${F.length > 1 ? ' ' + (i + 1) : ''} <small style="font-weight:400;color:#8A8278">· ${(su.fdU || {})[i] ? 'your pick' : 'goes with the theme'}</small></p><div class="pl-sucs">` + FDES.map(z => chip(`fdt:${i}:${z[0]}`, o.fdesign === z[0], z[1])).join('') + '</div>').join(''); })() + next('Next: floor layout →'); }   // 278 (owner): the choices in the right panel, the 3D on the left
   else if (q === 'flay') { const k = su.thm || 'contemporary', rec = FL_REC[k] || FL_REC.contemporary, cur = (S.site.floor || {}).layout || rec[0], nm = (THEMES6.find(z => z[0] === k) || [0, ''])[1];   // 276c (owner): the floor layout, in the picked theme, on their own terrace
@@ -1165,7 +1165,6 @@ const THEMES6 = [['tropical', 'Tropical', 'dark wood, grey stone, loaded with pl
   ['santorini', 'Santorini', 'white lime, Aegean blue, bougainvillea, flagstone', ['#F6F5F1', '#1F4FA8', '#C2187A', '#8E9AA3']],
   ['modern', 'Modern', 'clean lines, charcoal, concrete', ['#2E2E2E', '#B9B8B4', '#6B4A33', '#55634A']],
   ['contemporary', 'Contemporary', 'warm neutrals, travertine, curves', ['#D9CDB8', '#8C6A43', '#8FA38A', '#EDE6DA']],
-  ['minimal', 'Minimal', 'few things, white, light oak', ['#F5F3EF', '#C8A97E', '#D9D6D0', '#1E1E1E']],
   ['boho', 'Boho', 'rustic: terracotta brick, jute, poufs, string lights', ['#B8643F', '#C98B3A', '#6B7A4A', '#EFE4D2']]];
 // 276 (owner): each theme's floor recipe — the field (laid pattern), a border, a paver 'rug' where people sit and under the pergola,
 // the path from the stairs door, lawn, inlay, textile rugs. Patterns: floorlay.js SPECS
@@ -1174,10 +1173,9 @@ const TH_FLOOR = { tropical: { tile: 'stone', lay: 'trop_field', border: { w: 1,
   santorini: { tile: 'lime', lay: 'sant_field', border: { w: 0.67, c: 'blue', lay: 'sant_border' }, inlay: 'mosaic', path: 'sant_path', rugs: 'berber', fire: 'sant_field' },
   modern: { tile: 'grey', ts: [2, 4], lay: 'mod_field', border: { w: 0.75, c: 'granite', lay: 'mod_border' }, seat: 'mod_rug', pg: 'wpc_grey', fire: 'mod_border' },
   contemporary: { tile: 'trav', lay: 'cont_field', turf: true, path: 'stones', pathTurf: true, seat: 'cont_rug', pg: 'cont_rug', rugs: 'sand', fire: 'cont_field' },
-  minimal: { tile: 'terrazzo', lay: 'min_field', seat: 'min_rug', fire: 'min_field' },
   boho: { tile: 'terracotta', lay: 'boho_field', border: { w: 0.67, c: 'terracotta', lay: 'boho_border' }, path: 'boho_path', seat: 'boho_rug', rugs: 'boho', jute: true, fire: 'boho_rug' } };
 // 276 (owner): grass never under a fire pit — it always stands on the theme's stone / Moroccan / tiles; decks are always WPC boards (fabricated, never civil)
-const TH_PAINT = { boho: 0xEADBC4, tropical: 0xB9B6AF, turkish: 0xF1E8D8, santorini: 0xFAFAF7, modern: 0xB9B8B4, contemporary: 0xEFE8DC, minimal: 0xF4F2EE };   // the walls' paint per theme
+const TH_PAINT = { boho: 0xEADBC4, tropical: 0xB9B6AF, turkish: 0xF1E8D8, santorini: 0xFAFAF7, modern: 0xB9B8B4, contemporary: 0xEFE8DC };   // the walls' paint per theme
 const V3T = () => '<div class="pl-ab3t"><button type="button" data-su="v3:zin" aria-label="Zoom in">+</button><button type="button" data-su="v3:zout" aria-label="Zoom out">−</button><button type="button" data-su="v3:pan" aria-label="Move the view" title="Move the view">✋</button><button type="button" data-su="v3:top" aria-label="Top view" title="Top view">▦</button><button type="button" data-su="v3:night" aria-label="Night view" title="Night view">🌙</button><button type="button" data-su="v3:home" aria-label="Whole space" title="Whole space">⌖</button></div>';
 const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-shade)
   tropical: { corner: { S: ['BANANA', 'TRAVELLER', 'FISHTAIL', 'FOXTAIL'], SS: ['ARECA', 'FISHTAIL', 'RHAPIS'] }, wall: { S: ['BIRDPARADISE', 'CROTON', 'HIBISCUS', 'IXORA', 'BANANA'], SS: ['SONGOFINDIA', 'CORDYLINE', 'SCHEFFLERA', 'CROTON'] }, accent: { S: ['BIRDPARADISE', 'BANANA', 'CROTON', 'TRAVELLER'], SS: ['SCHEFFLERA', 'BIRDPARADISE', 'CORDYLINE', 'SONGOFINDIA'] } },   // 293 (owner): loaded tropical
@@ -1185,13 +1183,12 @@ const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-sh
   santorini: { corner: { S: ['OLIVE', 'PHOENIX', 'BOUGAINVILLEA'], SS: ['OLIVE', 'RHAPIS'] }, wall: { S: ['BOUGAINVILLEA', 'BOUGAINVILLEA', 'KANER', 'AGAVE'], SS: ['CHANDNI', 'MOGRA'] }, accent: { S: ['OLIVE', 'AGAVE', 'BOUGAINVILLEA', 'CYCAS'], SS: ['CHANDNI'] }, olive: { S: ['OLIVE'], SS: ['OLIVE'] } },   // 296: bougainvillea everywhere, olives in pairs
   modern: { corner: { S: ['BAMBOO', 'MORPANKHI', 'FOXTAIL'], SS: ['BAMBOO', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'SNAKEPLANT', 'AGAVE'], SS: ['SNAKEPLANT', 'CORDYLINE'] }, accent: { S: ['AGAVE', 'BLACKFICUS'], SS: ['SNAKEPLANT', 'BLACKFICUS'] } },
   contemporary: { corner: { S: ['FICUSPANDA', 'BLACKFICUS', 'FOXTAIL'], SS: ['PACHIRA', 'RHAPIS', 'SCHEFFLERA'] }, wall: { S: ['FOUNTAINGRASS', 'DURANTA', 'KAMINI'], SS: ['SCHEFFLERA', 'SNAKEPLANT'] }, accent: { S: ['BIRDPARADISE', 'FICUSPANDA'], SS: ['PACHIRA', 'BIRDPARADISE'] } },
-  boho: { corner: { S: ['PHOENIX', 'FICUSPANDA', 'BANANA'], SS: ['ARECA', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'BOUGAINVILLEA', 'MOGRA', 'AGAVE'], SS: ['SNAKEPLANT', 'CHANDNI'] }, accent: { S: ['BIRDPARADISE', 'AGAVE', 'FOUNTAINGRASS'], SS: ['PACHIRA', 'SNAKEPLANT'] } },
-  minimal: { corner: { S: ['FICUSPANDA'], SS: ['FICUSPANDA', 'PACHIRA'] }, wall: { S: ['FOUNTAINGRASS', 'SNAKEPLANT'], SS: ['SNAKEPLANT'] }, accent: { S: ['FICUSPANDA', 'AGAVE'], SS: ['SNAKEPLANT'] } } };
-const TH_FD = { tropical: 'stone', turkish: 'stone', santorini: 'stone', modern: 'fluted', contemporary: 'fluted', minimal: 'slats', boho: 'slats' };   // 284 (owner): the feature wall follows the theme; changeable on the theme step
+  boho: { corner: { S: ['PHOENIX', 'FICUSPANDA', 'BANANA'], SS: ['ARECA', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'BOUGAINVILLEA', 'MOGRA', 'AGAVE'], SS: ['SNAKEPLANT', 'CHANDNI'] }, accent: { S: ['BIRDPARADISE', 'AGAVE', 'FOUNTAINGRASS'], SS: ['PACHIRA', 'SNAKEPLANT'] } } };
+const TH_FD = { tropical: 'stone', turkish: 'stone', santorini: 'stone', modern: 'fluted', contemporary: 'fluted', boho: 'slats' };   // 284 (owner): the feature wall follows the theme; changeable on the theme step
 function fdTheme() { const su = S.su; if (!su) return; const v = TH_FD[su.thm] || 'fluted', U = su.fdU || {}; su.fd = su.fd || [];
   S.items.filter(o => o.cat === 'feature' && !o.old).forEach((o, i) => { const d = U[i] || v; su.fd[i] = d; o.fdesign = d; o.label = (FDES.find(z => z[0] === d) || [0, 'Feature wall'])[1]; }); }
-const TH_GREEN = { tropical: 'lush', boho: 'lush', minimal: 'light' }, TH_LIGHT = { minimal: 'soft', santorini: 'soft' };   // 291 (owner): the theme decides greenery + lighting
-function themeApply(k, quiet) { const su = S.su; if (!su) return; su.thm = k; su.theme = k; try { fdTheme(); } catch (e) {}
+const TH_GREEN = { tropical: 'lush', boho: 'lush' }, TH_LIGHT = { santorini: 'soft' };   // 291 (owner): the theme decides greenery + lighting
+function themeApply(k, quiet) { const su = S.su; if (!su) return; if (k === 'minimal') k = 'modern';   // 297 (owner): Minimal dropped — old plans open in Modern su.thm = k; su.theme = k; try { fdTheme(); } catch (e) {}
   su.green = TH_GREEN[k] || 'balanced'; su.light = TH_LIGHT[k] || 'full'; if (S.site) S.site.light = su.light;
   S.items = S.items.filter(o => o.old || !(o.cat === 'plant' || (o.cat === 'planter' && !o.pick && !o.cfgId)));   // plants to suit the theme (every planted plant is re-picked)
   themeFloor(k);   // the floor first (lawn, path, inlay laid on the open floor), then the plants — they may stand in the lawn
@@ -1206,10 +1203,9 @@ const TH_ROLE = { tropical: { base: 'trop_field', path: 'trop_rug', rug: 'trop_r
   santorini: { base: 'sant_field', path: 'sant_path', rug: 'sant_enc', hub: 'sant_path', inlay: 'mosaic', band: 'sant_border', deck: 'min_rug', hard: 'sant_field', chk: 'sant_chk', stone: ['#8E9AA3', '#A6AEB3', '#7F8A93'], edge: '#1F4FA8' },
   modern: { base: 'mod_plain', path: 'mod_rug', rug: 'mod_rug', hub: 'mod_rug', band: 'mod_border', deck: 'wpc_grey', hard: 'mod_border', chk: 'mod_chk', stone: ['#5A5A58', '#6A6A67'], lawn: 1 },
   contemporary: { base: 'cont_field', path: 'cont_enc', rug: 'cont_enc', hub: 'cont_enc', band: 'cont_enc', deck: 'cont_rug', hard: 'mod_border', chk: 'cont_chk', stone: ['#CDBFA6', '#BFAE91'], edge: '#A8987C', lawn: 1 },
-  minimal: { base: 'min_field', path: 'min_path', rug: 'min_rug', hub: 'mod_rug', band: 'mod_border', deck: 'min_rug', hard: 'mod_border', chk: 'min_chk', stone: ['#D9D6D0', '#CFCBC4'] },
   boho: { base: 'boho_field', path: 'boho_enc', rug: 'boho_rug', hub: 'boho_enc', band: 'boho_enc', deck: 'trop_rug', hard: 'turk_border', chk: 'boho_chk', stone: ['#C9B48E', '#B9A47F'], edge: '#8E4A2E', lawn: 1 } };
 const FLAYS = [['runner', 'Runner + rugs', 'a patterned runner from the stairs, rugs under the seating'], ['curve', 'Curved path', 'stepping stones curve to round sitting pods'], ['frame', 'Border frame', 'a band all round, diagonal floor, a medallion'], ['hub', 'Central hub', 'a round centre with paths to every sitting area'], ['deck', 'Deck + green edges', 'a deck for the lounge, planter beds, checker floor'], ['bands', 'Patterned bands', 'a plain floor with tile bands lined up with the seating']];
-const FL_REC = { tropical: ['curve', 'deck', 'hub'], turkish: ['runner', 'hub', 'frame'], santorini: ['curve', 'frame', 'runner'], modern: ['bands', 'deck', 'runner'], contemporary: ['frame', 'deck', 'curve'], minimal: ['bands', 'deck', 'frame'], boho: ['hub', 'curve', 'runner'] };
+const FL_REC = { tropical: ['curve', 'deck', 'hub'], turkish: ['runner', 'hub', 'frame'], santorini: ['curve', 'frame', 'runner'], modern: ['bands', 'deck', 'runner'], contemporary: ['frame', 'deck', 'curve'], boho: ['hub', 'curve', 'runner'] };
 // 277 (owner): the proposal step — estimate from this plan (proposal.js), Premium + Luxury, add-ons, 3D bird's-eye with numbered labels, Summary / Detailed, PDF
 const FLN = { trop_field: 'Sandstone, mixed sizes', trop_path: 'Flagstone with grass joints', trop_rug: 'WPC deck boards, teak', turk_base: 'Terracotta tiles 12″', turk_field: 'Encaustic cement tiles 6″', turk_border: 'Terracotta hex border', turk_path: 'Zellige mosaic', sant_field: 'Lime-washed stone, French pattern', sant_path: 'Pebble mosaic', sant_enc: 'Blue & white encaustic tiles', sant_border: 'Blue glazed tiles', mod_plain: 'Concrete pavers 2 × 4 ft', mod_field: 'Concrete pavers with grass strips', mod_rug: 'Charcoal pavers', mod_border: 'Black granite', cont_field: 'Travertine, French pattern', cont_enc: 'Soft-grey encaustic tiles', cont_rug: 'WPC deck boards, oak', min_field: 'Microcement / large terrazzo', min_path: 'Light grey pavers', min_rug: 'WPC deck boards, light oak', boho_field: 'Terracotta brick herringbone', boho_rug: 'Brick basketweave', boho_border: 'Brick soldier course', boho_enc: 'Terracotta encaustic tiles', boho_path: 'Flagstone with grass joints', wpc_grey: 'WPC deck boards, grey', wpc_walnut: 'WPC deck boards, walnut', trop_chk: 'Sandstone checker', turk_chk: 'Terracotta & cream checker', sant_chk: 'White & grey checker', mod_chk: 'Light & charcoal checker', cont_chk: 'Travertine octagon with black inserts', min_chk: 'Two-tone microcement checker', boho_chk: 'Terracotta & cream checker' };
 let PPM = null;
@@ -1223,7 +1219,7 @@ function propPlan() { const t = S.site, f = t.floor || {}, k = (S.su || {}).thm,
   return { site: t, items: S.items, su: S.su, name: S.pname, themeName: (THEMES6.find(z => z[0] === k) || [0, ''])[1], layoutName: (FLAYS.find(z => z[0] === f.layout) || [0, ''])[1], floorDesc: rows, who: (window.ACC && window.ACC.name) || '' }; }
 async function propPaint() { const el = document.getElementById('ppRoot'); if (!el) return;
   if (!S._ppOk && window.acRequire && !window.ASSIST && !window.outrrPropTest && (window.OUTRR_SUPA || {}).url) return window.acRequire(() => { S._ppOk = 1; propPaint(); }, 'Sign in to see your proposal');
-  S._ppOk = 1; PPM = PPM || await import('./proposal.js?v=4'); const R = await propRates(), plan = propPlan(), E = PPM.estimate(plan, R); S.padd = S.padd || {};
+  S._ppOk = 1; PPM = PPM || await import('./proposal.js?v=5'); const R = await propRates(), plan = propPlan(), E = PPM.estimate(plan, R); S.padd = S.padd || {};
   const su = S.su || {}, snapSvg = sn => { try { return sn ? P2.svg(Object.assign({}, S.site, { blocks: sn.blocks, floor: null }), { items: sn.items, road: ['front'] }) : ''; } catch (e) { return ''; } }, bef = snapSvg(su.before), bas = rmAny() ? snapSvg(su.base) : '';   // 284 (owner): before → base → after
   let aft = ''; try { aft = P2.svg(S.site, { items: S.items, north: su.north, road: ['front'] }); } catch (e) {}
   el.innerHTML = `<style>${PPM.CSS}</style>` + PPM.page(plan, R, E, { tab: S.ptab, add: S.padd, before: bef, base: bas, after: bef ? aft : '' });
@@ -2047,7 +2043,7 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
     if (TKM) S.items.filter(o => !o.old && ['feature', 'water'].includes(o.cat)).forEach(o => { const r = rectI(o), v = r.w >= r.d; (v ? [[r.x - 2.8, r.z + r.d / 2], [r.x + r.w + 2.8, r.z + r.d / 2]] : [[r.x + r.w / 2, r.z - 2.8], [r.x + r.w / 2, r.z + r.d + 2.8]]).forEach(tg => quiet(tg, 3.5, null, 'olive')); });
     if (LOAD) S.items.filter(o => !o.old && ['feature', 'water', 'bar', 'fbench', 'counter', 'sofa', 'vgarden', 'graffiti', 'swing'].includes(o.cat)).forEach(o => { const r = rectI(o); quiet([r.x - 1.4, r.z + r.d / 2], 2.5, null, 'accent'); quiet([r.x + r.w + 1.4, r.z + r.d / 2], 2.5, null, 'accent'); quiet([r.x + r.w / 2, r.z - 1.4], 2.5, null, 'wall'); }); };
   if (B.turf && false && PH !== 'decor') grassFill(g, B.pathway, notes, mumtyFace());   // 245: the grass fills the open space left once the big pieces stand
-  if (PH === 'old') { if (B.planter) plants('light', B.planter); } else if (PH !== 'el' && !(opt && opt.noPlants)) { if (S.su && S.su.green) { plants(S.su.thm === 'minimal' ? 'light' : S.su.green); notes.push('Plants in the corners and along the walls, spaced out'); } else if (B.planter) plants('light', B.planter); }
+  if (PH === 'old') { if (B.planter) plants('light', B.planter); } else if (PH !== 'el' && !(opt && opt.noPlants)) { if (S.su && S.su.green) { plants(S.su.green); notes.push('Plants in the corners and along the walls, spaced out'); } else if (B.planter) plants('light', B.planter); }
   if (B.stool) all('bar').forEach(b => barStools(b));
   S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); });
   S.bnote = notes; return miss;
@@ -2215,7 +2211,7 @@ const SUV = 253;   // 253: a setup made before the placement fixes is set up aga
 function suMig() { const su = S.su; if (!su || su.cv === SUV) return false; su.cv = SUV; if (!(su.q >= SUQ.indexOf('eplan') || su.done) || !S.items.some(o => !o.old)) return false;
   if (!S.bsel || !Object.keys(S.bsel).length) { const B = {}; S.items.forEach(o => { if (!o.old && CAT[o.cat] && !att(o) && o.cat !== 'pathway') B[o.cat] = (B[o.cat] || 0) + 1; }); if (S.items.some(o => o.cat === 'privacy' && o.mode === 'par')) B.privacy = 1; if (S.items.some(o => o.cat === 'accover')) B.accover = 1; S.bsel = B; }
   try { suCompose(su.decorDone ? 'all' : 'el'); } catch (e) { return false; } return true; }
-function draw(rec) { if (QUIET) return; if (suMig()) return;
+function draw(rec) { if (QUIET) return; if (S.su && S.su.thm === 'minimal') { try { themeApply('modern', true); } catch (e) {} }   /* 297: Minimal dropped */ if (suMig()) return;
   if (QUIET) return;
   if (S.items) { S.items.forEach((it, i) => { if (att(it)) attach(it, i); }); S.items = S.items.filter(it => it.mode !== 'ac' || it.box); S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); }); if (S.sel != null && !S.items[S.sel]) S.sel = null; }
   if (rec !== false) hist(); save();

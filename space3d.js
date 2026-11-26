@@ -5,13 +5,13 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=65';
-import { pergolaModel } from './pergola3d.js?v=52';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=66';
+import { pergolaModel } from './pergola3d.js?v=53';
 import { outline, sofaLayout } from './plan2d.js?v=33';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=7';
-import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=3';   // 294: the design studio setting (planters)
-import { barStudio, barSpec } from './bar3d.js?v=2';   // 295: the bar studio
+import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=4';   // 294: the design studio setting (planters)
+import { barStudio, barSpec } from './bar3d.js?v=3';   // 295: the bar studio
 import { fwStudio } from './fw3d.js?v=1';   // 296: the feature wall studio   // 295: the bar studio
 const LAYK = k => !!LSPEC[k];
 
@@ -210,7 +210,7 @@ const THEMES = { modern: { frame: 0x2E2E2E, wood: 0x8C8C8C, wood2: 0x5E5E5E, cus
   modern: { frame: 0x2E2E2E, wood: 0x6B4A33, wood2: 0x3A3A3A, cush: 0xD9D8D4, cush2: 0x9E9C97, stone: 0xB9B8B4, pot: 0x2E2E2E, acc1: 0x55634A, acc2: 0x9E9C97, frp: 0x2E2E2E },
   contemporary: { frame: 0x8C6A43, wood: 0xB08560, wood2: 0x8C6A4E, cush: 0xEDE6DA, cush2: 0xD8C9A8, stone: 0xD9CDB8, pot: 0xA89A88, acc1: 0x8FA38A, acc2: 0xC26445, frp: 0xA89A88, metal: 1 },
   boho: { frame: 0x4A3424, wood: 0x7A5233, wood2: 0x5A3B26, cush: 0xEFE4D2, cush2: 0xB5562F, stone: 0xD6B896, pot: 0xB8643F, acc1: 0xC98B3A, acc2: 0x6B7A4A, frp: 0xB8643F },   // 276 (owner): Boho / rustic — terracotta, rust, mustard, olive, jute, cream, dark wood
-  minimal: { frame: 0x1E1E1E, wood: 0xC8A97E, wood2: 0xB09370, cush: 0xF5F3EF, cush2: 0xE6E2DA, stone: 0xF2F0EC, pot: 0xF2F2EE, acc1: 0xE6E2DA, acc2: 0xD9D6D0, frp: 0xF2F2EE } };
+};
 THEMES.modern0 = THEMES.modern;
 let THEME = 'natural';
 const C = () => { const T = THEMES[THEME] || THEMES.natural, k = '_' + THEME; return {
@@ -629,11 +629,11 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const n = Math.max(1, Math.floor(L / 2.2)); for (let k = 0; k < n; k++) { const u = -L / 2 + L * (k + 0.5) / n; box(g, al ? W - 0.5 : 1.8, 0.1, al ? 1.8 : W - 0.5, al ? 0 : u, 0.08, al ? u : 0, mat('c_slab', 0x8F8A82), false); }
   } else if (cat === 'turf') {
     const n = Math.max(1, Math.round(d / 2)); for (let k = 0; k < n; k++) box(g, w, 0.08, d / n, 0, 0.04, -d / 2 + d * (k + 0.5) / n, k % 2 ? mat('c_turf', 0x6FA24A) : mat('c_turf2', 0x63963F), false);
-  } else if (cat === 'firepit' && ['turkish', 'modern', 'minimal', 'contemporary'].includes(themeKey())) {   // 275: the theme's fire pit
+  } else if (cat === 'firepit' && ['turkish', 'modern', 'contemporary'].includes(themeKey())) {   // 275: the theme's fire pit
     const TK = themeKey(), r = Math.min(w, d) / 2, fl = () => [[0, 0, 1.2], [0.4, 0.2, 0.9], [-0.35, 0.25, 1]].forEach(([x, z, hh]) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.3, hh, 8), mat('c_flame', 0xFF8A2A, { emissive: 0xFF6A00, emissiveIntensity: 1.2, roughness: 1 })); f.position.set(x * r / 2, (TK === 'turkish' ? 2.1 : TK === 'minimal' ? 1.3 : 1.25) + hh / 2, z * r / 2); g.add(f); });
     if (TK === 'turkish') { const cu = mat('c_copper', 0xB26A3C, { metalness: 0.85, roughness: 0.35 }); const bowl = new THREE.Mesh(new THREE.SphereGeometry(r * 0.8, 22, 12, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), cu); bowl.rotation.x = Math.PI; bowl.position.y = 2.1; bowl.scale.y = 0.55; g.add(bowl); [0, 1, 2].forEach(k => { const a = k / 3 * Math.PI * 2; box(g, 0.1, 1.9, 0.1, Math.cos(a) * r * 0.6, 0.95, Math.sin(a) * r * 0.6, cu); }); fl(); }
     else if (TK === 'modern') { box(g, w * 0.9, 1.2, d * 0.9, 0, 0.6, 0, mat('c_fpblk', 0x232323, { roughness: 0.6 })); box(g, w * 0.6, 0.05, d * 0.3, 0, 1.22, 0, mat('c_glassb', 0x111111, { roughness: 0.1 })); fl(); }
-    else if (TK === 'minimal') { box(g, w * 0.95, 1.2, Math.min(d, 1.6), 0, 0.6, 0, mat('c_fpwh', 0xEDEAE4)); box(g, w * 0.7, 0.04, 0.2, 0, 1.22, 0, K.dark); fl(); }
+    
     else { cyl(g, r, r * 0.75, 1.2, 0, 0.6, 0, mat('c_conc', 0xBDB6AA, { roughness: 0.85 }), 28); cyl(g, r - 0.25, r - 0.25, 0.05, 0, 1.2, 0, mat('c_ember', 0x3A1A0A), 28); fl(); }
   } else if (cat === 'firepit' && ['santorini', 'tropical', 'boho'].includes(themeKey())) {   // 276: Santorini white lime bowl with a blue band, Tropical low lava-rock ring, Boho stacked stone with logs
     const TK = themeKey(), r = Math.min(w, d) / 2, fla = (y0, s0) => [[0, 0, 1.2], [0.4, 0.2, 0.9], [-0.35, 0.25, 1]].forEach(([x, z, hh]) => { const f = new THREE.Mesh(new THREE.ConeGeometry(0.3 * s0, hh * s0, 8), mat('c_flame', 0xFF8A2A, { emissive: 0xFF6A00, emissiveIntensity: 1.2, roughness: 1 })); f.position.set(x * r / 2, y0 + hh * s0 / 2, z * r / 2); g.add(f); });
@@ -886,7 +886,7 @@ export function pebNear(t, items) { const out = [], E = 0.75, b = 0.6, cl = r =>
   return out; }
 // 276 (owner): warmth — string lights over the main seating (hung from the pergola when it stands there, else on four slim poles),
 // floor lanterns, and for boho poufs + a pampas vase; bulbs glow at night
-function cozy(g, t, items) { const th = (t.floor || {}).theme; if (!th || th === 'minimal') return; const E = 0.75, pw = +t.pw, pd = +t.pd;
+function cozy(g, t, items) { const th = (t.floor || {}).theme; if (!th) return; const E = 0.75, pw = +t.pw, pd = +t.pd;
   const R = it => { const r = (+it.rot || 0) % 180; return { x: +it.x, z: +it.z, w: r ? +it.d : +it.w, d: r ? +it.w : +it.d }; };
   const L = (items || []).filter(o => o && !o.segs && !o.old && o.w > 0), seat = ['sofa', 'fbench', 'dining'].map(c => L.find(o => o.cat === c)).find(Boolean); if (!seat) return;
   let c = R(seat); L.forEach(o => { if (!['chair', 'table', 'firepit', 'stool', 'sofa', 'fbench', 'dining'].includes(o.cat)) return; const r = R(o); if (r.x > c.x + c.w + 3 || r.x + r.w < c.x - 3 || r.z > c.z + c.d + 3 || r.z + r.d < c.z - 3) return; const x0 = Math.min(c.x, r.x), z0 = Math.min(c.z, r.z); c = { x: x0, z: z0, w: Math.max(c.x + c.w, r.x + r.w) - x0, d: Math.max(c.z + c.d, r.z + r.d) - z0 }; });
