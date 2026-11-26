@@ -93,7 +93,7 @@ function spanOf(c, k) { const b = bayOf(c, k); return b ? Math.max(Math.trunc(+b
 function build(c, lay, opts) {
   const g = new THREE.Group(), L = +lay.L, W = +lay.W, H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = +(c.bay || 4), FM = frameMat(lay), T = 0.25, DH = lay.full_doors ? H : 8;
   const tracks = Math.max(2, parseInt(lay.tracks || '2', 10) || 2);
-  if (opts && opts.bare) {} else if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site); else if (opts && opts.studio) studio(g, L, W, lay, c); else site(g, L, W);   // 192: bare = the cabin alone (space planner)
+  if (opts && opts.bare) {} else if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site); else if (opts && opts.studio) { studio(g, L, W, lay, c); if (opts.look && opts.look.items && opts.look.items.length) { const lg = new THREE.Group(); lg.position.y = -0.6; g.add(lg); aroundOn(lg, { around: opts.look.items, nolab: true }, 0); } } else site(g, L, W);   // 299: Complete the look round the cabin   // 192: bare = the cabin alone (space planner)
   box(g, L + 0.6, 0.6, W + 0.6, L / 2, -0.3, W / 2, mat('deck')).userData.under = 1;
   const ff = String(lay.floor || ''), FL = /wood|plank|laminate/i.test(ff) ? floorTex('wood') : /no finish|client/i.test(ff) ? mat('cement') : /vinyl/i.test(ff) ? floorTex('vinyl') : mat('floor');   // 188: floor finish
   box(g, L, 0.05, W, L / 2, 0.02, W / 2, FL, false).userData.under = 1;
@@ -423,8 +423,8 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=78').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
-  try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: true }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=79').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
 function plotOf() { return R.group && R.group.getObjectByName('plot'); }
@@ -711,7 +711,7 @@ function startSpot(c, lay, L, W) {   // where "Inside" starts: 2½ ft in from th
 export function show(el, c, lay, view, opts) {
   opts = opts || {}; ensure(el); R.last = [el, c, lay, view, opts]; R.studio = !!opts.studio;
   const ts = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
-  const key = JSON.stringify(lay) + '|' + (opts.furn || 'none') + '|' + JSON.stringify(ts) + (opts.studio ? '|S' : ''), dimKey = [lay.L, lay.W, lay.height, ts ? 't' + (ts.place || ts.whole ? 'W' : 'c') : 'g'].join('x');
+  const key = JSON.stringify(lay) + '|' + (opts.furn || 'none') + '|' + JSON.stringify(ts) + (opts.studio ? '|S' + JSON.stringify(opts.look || '') : ''), dimKey = [lay.L, lay.W, lay.height, ts ? 't' + (ts.place || ts.whole ? 'W' : 'c') : 'g'].join('x');
   let reset = view !== R.view;
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }

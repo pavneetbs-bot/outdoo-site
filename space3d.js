@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=68';
-import { pergolaModel } from './pergola3d.js?v=55';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=69';
+import { pergolaModel } from './pergola3d.js?v=56';
 import { outline, sofaLayout } from './plan2d.js?v=35';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=9';
@@ -1153,7 +1153,11 @@ window.Space3D = { show, onEvent, zoom, home, resize, snapshot, panMode, nightMo
 let PV = null;
 // 294 (owner): the planter studio — grey 2 × 4 ft tiles, a 3 ft parapet in an L (back + left), the pieces along it from the corner
 // (back wall first, then the side wall; a round one sits in the corner), real plants in them, a 5 ft 9 in person for scale.
-function cornerStudio(items, first) {
+function lookOn(g, look, ox, oz) {   // 299: Complete the look pieces round a studio design (its footprint from (ox, oz)); returns how wide it all is now
+  if (!look || !look.items || !look.items.length) return 0;
+  try { const gi = itemsGroup(look.items, { labels: false, site: { kind: 'lawn', light: '' } }).g; gi.position.set(ox, 0, oz); g.add(gi); const b = new THREE.Box3().setFromObject(gi); return isFinite(b.max.x) ? Math.max(b.max.x - b.min.x, (b.max.z - b.min.z) * 1.4) : 0; } catch (e) { if (window.console) console.warn(e); return 0; }
+}
+function cornerStudio(items, first, look) {
   const g = new THREE.Group(), GAP = 0.35, IN = 0.25, PT = 0.75, n = (items || []).length, nb = /-CW$/.test(((items || [])[0] || {}).pick || '') ? n : Math.ceil(n / 2);   // a corner quarter keeps its corner against the back wall
   let bx = IN, sz = 0, H = 0, D0 = 0;
   (items || []).forEach(it => D0 = Math.max(D0, +it.d || 2));
@@ -1161,12 +1165,13 @@ function cornerStudio(items, first) {
     if (i < nb) { m.position.set(bx + w / 2, 0, IN + d / 2); bx += w + GAP; }
     else { if (!sz) sz = IN + D0 + GAP; m.rotation.y = Math.PI / 2; m.position.set(IN + d / 2, 0, sz + w / 2); sz += w + GAP; }
     g.add(m); });
-  const L1 = Math.max(10, bx + 4), L2 = Math.max(10, sz + 4);
+  lookOn(g, look, 0, 0); let lx = bx, lz = sz; if (look && look.items) look.items.forEach(i => { lx = Math.max(lx, i.x + Math.max(i.w, i.d)); lz = Math.max(lz, i.z + Math.max(i.w, i.d)); });
+  const L1 = Math.max(10, lx + 4), L2 = Math.max(10, lz + 4);
   sWall(g, -PT, -PT / 2, L1, -PT / 2, 3, PT); sWall(g, -PT / 2, 0, -PT / 2, L2, 3, PT);
   studioFloor(g, -PT, -PT, L1 + PT, L2 + PT);
-  const px = Math.max(bx, 3) + 1.4; sPerson(g, px, IN + 1.3, -0.35);   // beside the last piece on the back wall, out of the way
+  const px = Math.max(lx, 3) + 1.4; sPerson(g, px, IN + 1.3, -0.35);   // beside the last piece on the back wall, out of the way
   if (PV.group) PV.scene.remove(PV.group); PV.group = g; PV.scene.add(g);
-  const cx = (px + 0.6) / 2, cz = Math.max(sz, D0 + 2) / 2, span = Math.max(px + 1, sz, 8) + 4;
+  const cx = (px + 0.6) / 2, cz = Math.max(lz, D0 + 2) / 2, span = Math.max(px + 1, lz, 8) + 4;
   if (first || PV.span !== Math.round(span * 2)) { PV.span = Math.round(span * 2); PV.controls.target.set(cx, 2.2, cz); PV.cam.position.set(cx + span * 0.45, span * 0.55 + 3, cz + span * 1.25); PV.controls.update(); }
 }
 export function preview(el, items, opts) {
@@ -1188,20 +1193,22 @@ export function preview(el, items, opts) {
     PV.size = size; size(); try { PV.ro = new ResizeObserver(size); PV.ro.observe(el); } catch (e) {}
     const loop = () => { if (!PV || PV.renderer !== renderer) return; if (el.isConnected && el.offsetParent !== null) { controls.update(); renderer.render(scene, cam); } requestAnimationFrame(loop); }; loop();
   }
-  const key = JSON.stringify(items); if (key === PV.key) return; const first = !PV.key; PV.key = key;
+  const key = JSON.stringify(items) + JSON.stringify((opts && opts.look) || ''); if (key === PV.key) return; const first = !PV.key; PV.key = key;
   if (PV.group) PV.scene.remove(PV.group);
   const corner = opts && opts.studio === 'corner'; PV.fl.visible = PV.wall.visible = !corner; PV.scene.background = new THREE.Color(corner ? 0xF4F2EE : 0xF1ECE3);
-  if (corner) return cornerStudio(items, first);
+  if (corner) return cornerStudio(items, first, opts.look);
   if (opts && opts.studio === 'fw') {   // 296: a feature wall built from its parts, in its place (entrance / terrace / garden / café / cabin)
     PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
     const B = fwStudio(items[0] || {}); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
-    const vk = 'fw' + Math.round(B.span); if (first || PV.vk !== vk) { PV.vk = vk; const sp = B.span; PV.controls.target.set(0, Math.min(B.H * .48, 5), 1); PV.cam.position.set(-sp * 0.22, B.H * .5 + sp * .14, sp * 1.25); PV.controls.update(); }
+    const lw = lookOn(B.g, opts.look, -Math.max(2, +(items[0] || {}).W || 8) / 2, 0), bsp = Math.max(B.span, lw ? lw + 4 : 0);
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'fw' + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * (lw ? nar : 1); /* 299: a phone sees the pieces at the sides too */ PV.controls.target.set(0, Math.min(B.H * .48, 5), 1); PV.cam.position.set(-sp * 0.22, B.H * .5 + sp * .14, sp * 1.25); PV.controls.update(); }
     return;
   }
   if (opts && opts.studio === 'bar') {   // 295: one bar frame with the design's look + the customer's picks, a 9 ft wall 3 ft behind it
     PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
     const it0 = items[0] || {}, B = barStudio(Object.assign(it0.m ? barSpec(it0.sku, it0.m, it0.o || {}) : it0, { view: opts.view })); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
-    const vk = (opts.view || 'front') + Math.round(B.span); if (first || PV.vk !== vk) { PV.vk = vk; const sp = B.span, bk = opts.view === 'back';
+    const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = (opts.view || 'front') + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * (lw ? nar : 1), bk = opts.view === 'back';
       PV.controls.target.set(0, 2.6, bk ? -1 : 0.6); PV.cam.position.set(sp * 0.5, sp * 0.5 + 2.5, (bk ? -1 : 1) * sp * 1.2); PV.controls.update(); }
     return;
   }
