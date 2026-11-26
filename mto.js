@@ -2224,12 +2224,20 @@
     var v = function (k) { var i = document.getElementById('mp-' + k); return i ? i.value : ''; };
     d.innerHTML = '<div class="mto-pbox" role="dialog" aria-modal="true" aria-label="Your details"><h3>One last step</h3><p>So our design team can help you with this order.</p>' +
       '<label>Your name<input id="mp-n" autocomplete="name" value="' + esc(v('n')) + '"></label><label>Mobile number<input id="mp-p" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10-digit mobile" value="' + esc(v('p')) + '"></label>' +
-      '<label>City<input id="mp-c" autocomplete="address-level2" placeholder="e.g. Gurugram" value="' + esc(v('c')) + '"></label>' + (err ? '<div class="mto-err">' + esc(err) + '</div>' : '') +
+      '<label>Pincode<input id="mp-z" inputmode="numeric" maxlength="6" autocomplete="postal-code" placeholder="6-digit pincode" value="' + esc(v('z')) + '"></label>' +
+      '<label>City<input id="mp-c" list="mp-cl" autocomplete="address-level2" placeholder="Filled from your pincode" value="' + esc(v('c')) + '"></label><datalist id="mp-cl">' + (typeof CITIES !== 'undefined' ? CITIES.map(function (x) { return '<option value="' + esc(x.name) + '">'; }).join('') : '') + '</datalist>' + (err ? '<div class="mto-err">' + esc(err) + '</div>' : '') +
       '<button type="button" class="mto-go" id="mp-go">See the price</button></div>';
     d.classList.add('open');
+    // Ishita T-006: the city comes from the pincode (a wrong spelling like "Guru Ram" was accepted); a city that is in our list must match the pincode's state
+    var cityOfPin = function (z) { var l = window.locFromPin && locFromPin(z); if (!l) return null; var c = typeof CITIES !== 'undefined' && l.city ? CITIES.filter(function (x) { return x.slug === l.city; })[0] : null, st = typeof STATES !== 'undefined' ? STATES.filter(function (x) { return x[0] === l.state; })[0] : null; return { city: c ? c.name : '', state: l.state, stateName: st ? st[1] : '' }; };
+    var zi = document.getElementById('mp-z'); if (zi) zi.oninput = function () { var z = zi.value.replace(/\D/g, '').slice(0, 6); zi.value = z; var k = /^[1-9]\d{5}$/.test(z) ? cityOfPin(z) : null, ci = document.getElementById('mp-c'); if (k && k.city && ci) ci.value = k.city; else if (k && ci && !ci.value) ci.placeholder = 'Your town in ' + (k.stateName || 'your state'); };
     document.getElementById('mp-go').onclick = async function () {
-      var n = v('n').trim(), ph = v('p').replace(/\D/g, '').slice(-10), c = v('c').trim();
-      if (n.length < 2) return profileForm(id, 'Enter your name'); if (!/^[6-9]\d{9}$/.test(ph)) return profileForm(id, 'Enter a valid 10-digit mobile number'); if (c.length < 2) return profileForm(id, 'Enter your city');
+      var n = v('n').trim(), ph = v('p').replace(/\D/g, '').slice(-10), c = v('c').trim().replace(/\s+/g, ' '), z = v('z').replace(/\D/g, '');
+      if (n.length < 2) return profileForm(id, 'Enter your name'); if (!/^[6-9]\d{9}$/.test(ph)) return profileForm(id, 'Enter a valid 10-digit mobile number');
+      var k = /^[1-9]\d{5}$/.test(z) ? cityOfPin(z) : null; if (!k || !k.state) return profileForm(id, 'Enter your 6-digit pincode');
+      if (k.city) c = k.city; if (c.length < 2) return profileForm(id, 'Enter your city');
+      var known = typeof CITIES !== 'undefined' ? CITIES.filter(function (x) { return x.name.toLowerCase() === c.toLowerCase(); })[0] : null;
+      if (known && known.state !== k.state) return profileForm(id, 'This pincode is not in ' + known.name + ' — check the pincode or the city');
       this.disabled = true; this.textContent = 'Saving…';
       try { var t = await window.acToken(), A = window.OUTRR_SUPA || {};
         var r = await fetch(A.url + '/rest/v1/rpc/customer_save_profile', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' }, body: JSON.stringify({ p: { name: n, phone: ph, city: c } }) });

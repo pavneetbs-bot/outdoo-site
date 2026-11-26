@@ -203,7 +203,7 @@ css.textContent = '.near-ov{position:fixed;inset:0;background:rgba(30,29,27,.45)
  + '.pc.near-off,.mpc.near-off{opacity:.55}'
  + '.co-near{background:#fdf1ec;border:1px solid #f0c9bb;border-radius:12px;padding:12px;margin:0 0 12px;font-size:14px}.co-near b{display:block;margin-bottom:6px}'
  + '.co-near .ln{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:6px 0;border-top:1px solid #f3d9cf}.co-near .ln button{border:1px solid #e2b3a2;background:#fff;border-radius:8px;padding:5px 10px;font:600 12px Inter,sans-serif;cursor:pointer;color:#a14f33}'
- + '@media(max-width:600px){.near-ov{align-items:flex-end;padding:0}.near-card{border-radius:18px 18px 0 0;max-width:none}.near-pill{bottom:76px}}';
+ + '@media(max-width:600px){.near-ov{align-items:flex-end;padding:0}.near-card{border-radius:18px 18px 0 0;max-width:none}.near-pill{bottom:calc(80px + env(safe-area-inset-bottom))}}';
 document.head.appendChild(css);
 
 var TOP = ['delhi', 'gurgaon', 'noida', 'mumbai', 'bangalore', 'hyderabad', 'pune', 'jaipur', 'chennai', 'kolkata', 'ahmedabad', 'chandigarh'];
