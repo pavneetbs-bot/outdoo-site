@@ -1947,7 +1947,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=100').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=101').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2793,7 +2793,7 @@
     window.cuOpen(false); try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: 'space' }); } catch (e) {}
     window.mtoSpaceAsk(cat, async function (r) {
       var seed = { items: items };
-      if (r.plan) { if (!r.plan.local) { try { var g = await authRpc('plan_get', { p_id: r.plan.id }); if (g && g.site) localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: 1, site: g.site, items: arr(g.items), pid: g.id, pname: g.name, source: g.source || 'planner' })); } catch (e) {} } seed.reload = true; }
+      if (r.plan) { if (!r.plan.local) { try { var g = await authRpc('plan_get', { p_id: r.plan.id }); if (g && g.site) localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: 1, site: g.site, items: arr(g.items), pid: g.id, pname: g.name, source: g.source || 'planner', su: (g.setup || {}).su || null, bsel: (g.setup || {}).bsel || null, ctabs: (g.setup || {}).ctabs || [] })); } catch (e) {} } seed.reload = true; }
       else { seed.fresh = true; seed.kind = r.kind; if (r.site) seed.site = r.site; }
       try { window.mtoClose(); } catch (e) {}
       window.outrrPlan(seed);
@@ -2907,7 +2907,7 @@
     S.projPicked = true;
     if (id === 'new') { S.proj = 'new'; S.projAsk = null; S.site = null; S.pl = null; draw(); return p3Draw(); }
     var it = (S.projAsk && S.projAsk.list || []).filter(function (p) { return p.id === id; })[0]; S.projAsk = null; S.proj = 'same';
-    if (it && !it.local) { var r = await authRpc('plan_get', { p_id: id }); if (r && r.site) { try { localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: 1, site: r.site, items: arr(r.items), pid: r.id, pname: r.name, source: r.source || 'planner' })); if (r.site.kind === 'terrace') localStorage.setItem('outrr_site', JSON.stringify(r.site)); } catch (e) {} } }
+    if (it && !it.local) { var r = await authRpc('plan_get', { p_id: id }); if (r && r.site) { try { localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: 1, site: r.site, items: arr(r.items), pid: r.id, pname: r.name, source: r.source || 'planner', su: (r.setup || {}).su || null, bsel: (r.setup || {}).bsel || null, ctabs: (r.setup || {}).ctabs || [] })); if (r.site.kind === 'terrace') localStorage.setItem('outrr_site', JSON.stringify(r.site)); } catch (e) {} } }
     S.site = null; S.pl = null; var sh = sharedSite(); if (sh) { S.site = sh; tsCentre(sh, pgLay()); } else { try { var pl = JSON.parse(localStorage.getItem('outrr_plan') || 'null'); if (pl && pl.site && pl.site.kind === 'ground') S.site = { kind: 'ground' }; } catch (e) {} }
     draw(); p3Draw();
   }
@@ -3397,7 +3397,7 @@
   async function spaceApply(r, lay) {   // the answer → this designer's site (and the plan it belongs to)
     S.spaceDone = true; S.pl = null; S.site = null; S.tsq = 0;
     if (r.plan) { S.proj = 'same';
-      if (!r.plan.local) { var g = await authRpc('plan_get', { p_id: r.plan.id }); if (g && g.site) { try { localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: 1, site: g.site, items: arr(g.items), pid: g.id, pname: g.name, source: g.source || 'planner' })); if (g.site.kind === 'terrace') localStorage.setItem('outrr_site', JSON.stringify(g.site)); else localStorage.removeItem('outrr_site'); } catch (e) {} } }
+      if (!r.plan.local) { var g = await authRpc('plan_get', { p_id: r.plan.id }); if (g && g.site) { try { localStorage.setItem('outrr_plan', JSON.stringify({ v: 1, step: 1, site: g.site, items: arr(g.items), pid: g.id, pname: g.name, source: g.source || 'planner', su: (g.setup || {}).su || null, bsel: (g.setup || {}).bsel || null, ctabs: (g.setup || {}).ctabs || [] })); if (g.site.kind === 'terrace') localStorage.setItem('outrr_site', JSON.stringify(g.site)); else localStorage.removeItem('outrr_site'); } catch (e) {} } }
       var sh = sharedSite(), pl = null; try { pl = JSON.parse(localStorage.getItem('outrr_plan') || 'null'); } catch (e) {}
       if (pl && pl.site && pl.site.kind === 'ground') S.site = { kind: 'ground' }; else if (sh) { S.site = sh; tsCentre(sh, lay); }
     } else { S.proj = 'same';   // 202: a new space becomes the one on this device — every change to it is kept (the old plan stays in the account)
