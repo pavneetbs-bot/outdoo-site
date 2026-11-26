@@ -5,11 +5,11 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=56';
-import { pergolaModel } from './pergola3d.js?v=43';
-import { outline, sofaLayout } from './plan2d.js?v=30';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=57';
+import { pergolaModel } from './pergola3d.js?v=44';
+import { outline, sofaLayout } from './plan2d.js?v=31';
 import { plantModel } from './plants3d.js?v=3';
-import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=4';
+import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=5';
 const LAYK = k => !!LSPEC[k];
 
 let R = null, HANDLER = null;
@@ -24,7 +24,7 @@ const WMAP = { cascade: 'WC-TRIPLE', wall: 'WW-SPIL', rain: 'WW-MIRR', geyser: '
 function wCode(it) { const id = String(it.wsku || it.pick || it.cfgId || '').replace(/^MTO-/, ''); return WLIB[id] ? id : WMAP[it.mech] || ''; }
 let WTX = {};
 function finTx(k) { if (WTX[k]) return WTX[k]; const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
-  const P = { zellige: ['#1F6F7E', '#2A8494', '#175C69', 16], slate: ['#3B3E42', '#4A4E53', '#2F3236', 32], stack: ['#8C7A64', '#A08B70', '#6F604E', 0], cement: ['#9A9893', '#A9A7A2', '#8E8C87', 0], wpc: ['#6B4A33', '#7D5A40', '#5A3D2A', -1], green: ['#2F6B34', '#4C8A3C', '#22552A', 0] }[k] || ['#999', '#aaa', '#888', 0];
+  const P = { zellige: ['#1F6F7E', '#2A8494', '#175C69', 16], slate: ['#3B3E42', '#4A4E53', '#2F3236', 32], stack: ['#8C7A64', '#A08B70', '#6F604E', 0], tstone: ['#7A7873', '#8C8A84', '#66645F', 0], cement: ['#9A9893', '#A9A7A2', '#8E8C87', 0], wpc: ['#6B4A33', '#7D5A40', '#5A3D2A', -1], green: ['#2F6B34', '#4C8A3C', '#22552A', 0] }[k] || ['#999', '#aaa', '#888', 0];
   x.fillStyle = P[0]; x.fillRect(0, 0, 128, 128);
   if (P[3] > 0) { for (let i = 0; i < 128; i += P[3]) for (let j = 0; j < 128; j += P[3]) { x.fillStyle = (i + j) % (P[3] * 2) ? P[1] : P[2]; x.fillRect(i + 1, j + 1, P[3] - 2, P[3] - 2); } }
   else if (P[3] < 0) { for (let i = 0; i < 128; i += 16) { x.fillStyle = P[1]; x.fillRect(i, 0, 10, 128); x.fillStyle = P[2]; x.fillRect(i + 10, 0, 6, 128); } }
@@ -33,7 +33,7 @@ function finTx(k) { if (WTX[k]) return WTX[k]; const c = document.createElement(
 function finMat(k) { if (k === 'mirror') return mat('c_wmir', 0xD7DCE0, { metalness: 0.95, roughness: 0.12 }); if (k === 'granite') return mat('c_wgran', 0x1D1E20, { roughness: 0.25, metalness: 0.2 }); if (k === 'marble') return mat('c_wmarb', 0xEDEBE6, { roughness: 0.3 }); if (k === 'corten') return mat('c_wcor', 0x8B4A2B, { roughness: 0.85 }); if (k === 'concrete') return mat('c_wconc', 0xB4B1AA, { roughness: 0.9 });
   if (k === 'glass') return mat('c_wglass', 0xCFE6EC, { transparent: true, opacity: 0.35, roughness: 0.05, metalness: 0.1 }); return mat('c_wf_' + k, 0xffffff, { map: finTx(k), roughness: 0.85 }); }
 function waterLib(g, w, d, code, K) {
-  const [fin, kind, ex] = WLIB[code], FM = finMat(fin), sheet = mat('c_wsheet2', 0xCFEFF8, { transparent: true, opacity: 0.42, roughness: 0.05, metalness: 0.05, emissive: 0x2E6F86, emissiveIntensity: 0.2, side: THREE.DoubleSide, depthWrite: false }), wat = mat('c_wpool', 0x5FA9C4, { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.85 }), ss = mat('c_wss', 0xC9CED2, { metalness: 0.9, roughness: 0.25 }), led = mat('c_wled', 0xFFE2B0, { emissive: 0xFFB866, emissiveIntensity: 1.6 });
+  const [fin0, kind, ex] = WLIB[code], fin = themeKey() === 'tropical' && !['glass', 'green', 'mirror'].includes(fin0) ? 'tstone' : fin0, FM = finMat(fin),   /* 292: tropical = rough grey stone face */ sheet = mat('c_wsheet2', 0xCFEFF8, { transparent: true, opacity: 0.42, roughness: 0.05, metalness: 0.05, emissive: 0x2E6F86, emissiveIntensity: 0.2, side: THREE.DoubleSide, depthWrite: false }), wat = mat('c_wpool', 0x5FA9C4, { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.85 }), ss = mat('c_wss', 0xC9CED2, { metalness: 0.9, roughness: 0.25 }), led = mat('c_wled', 0xFFE2B0, { emissive: 0xFFB866, emissiveIntensity: 1.6 });
   const pebbles = (pw, pd, y, z0) => { const pb = mat('c_wpeb', 0xD9D2C6, { roughness: 0.9 }); for (let i = 0; i < Math.min(40, Math.round(pw * 3)); i++) { const r = 0.08 + (i % 3) * 0.03, m0 = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 4), pb); m0.scale.y = 0.5; m0.position.set(-pw / 2 + 0.2 + ((i * 0.6173) % 1) * (pw - 0.4), y, z0 - pd / 2 + 0.15 + ((i * 0.381) % 1) * (pd - 0.3)); g.add(m0); } };
   if (kind === 'geyser') { const H = code === 'TG-CUBE1' ? 2 : 1.5, wall = 0.25; box(g, w, H, d, 0, H / 2, 0, FM); box(g, w - wall * 2, 0.04, d - wall * 2, 0, H + 0.01, 0, wat); [[w + 0.15, 0.2, 0, d / 2], [w + 0.15, 0.2, 0, -d / 2], [0.2, d + 0.15, w / 2, 0], [0.2, d + 0.15, -w / 2, 0]].forEach(([a, b, x, z]) => box(g, a, 0.12, b, x, H + 0.06, z, fin === 'stack' ? K.stone : FM));
     const n = ex.length, pts = code === 'TG-QUINT' ? [[0, 0], [-w / 4, -d / 4], [w / 4, -d / 4], [-w / 4, d / 4], [w / 4, d / 4]] : ex.map((_, k) => [-w / 2 + w * (k + 0.5) / n, 0]), foam = mat('c_wfoam', 0xF7FBFC, { transparent: true, opacity: 0.85, roughness: 0.6, emissive: 0x8FB8C8, emissiveIntensity: 0.15 });
@@ -81,6 +81,12 @@ function ropeMat(pw, ph) {   // 261: woven rope (vertical cords with gaps) as a 
   const t = ROPE_TX.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, pw * 7 / 4), Math.max(1, ph * 2)); return (ROPE_M[k] = new THREE.MeshStandardMaterial({ map: t, alphaTest: 0.4, transparent: false, side: THREE.DoubleSide, roughness: 0.9 })); }
 function box(g, w, h, d, x, y, z, m, sh = true) { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z); b.castShadow = sh; b.receiveShadow = true; g.add(b); return b; }
 // 275 (owner): theme shapes — lanterns, pendants, globes, arches, reed roof, curtains (used by the simple pergola, fire pit, umbrella, swing, fixed seating)
+function greyTex() {   // 292: grey textured plaster for the tropical cabin
+  if (M['c_greytex']) return M['c_greytex']; const cv = document.createElement('canvas'); cv.width = cv.height = 256; const x = cv.getContext('2d'); x.fillStyle = '#6E6C68'; x.fillRect(0, 0, 256, 256);
+  let sd = 7; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647; for (let i = 0; i < 4200; i++) { const v = 90 + Math.round(r() * 40); x.fillStyle = `rgba(${v},${v - 2},${v - 6},${0.25 + r() * 0.4})`; x.fillRect(r() * 256, r() * 256, 1 + r() * 3, 1 + r() * 3); }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); return (M['c_greytex'] = new THREE.MeshStandardMaterial({ map: t, roughness: 1 })); }
+function tropCabin(g) {   // 292 (owner, Tropical guide): the cabin's outer walls grey textured, its roof edge / projection dark wood
+  const gt = greyTex(), dw = mat('c_tcab_dw', 0x4A3020, { roughness: 0.75 }); g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex(); if (c === 0xF2F0EB || c === 0x6E6C68) o.material = gt; else if (c === 0xE4E1DA || c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = dw; }); }
 function lantern(g, x, y, z, s) { const br = mat('c_brass', 0xB08D57, { metalness: 0.8, roughness: 0.35 }), gl = mat('c_lglow', 0xFFD9A0, { emissive: 0xFFB050, emissiveIntensity: 0.9, transparent: true, opacity: 0.85 }); s = s || 1;
   const b = new THREE.Mesh(new THREE.CylinderGeometry(0.28 * s, 0.22 * s, 0.75 * s, 8), gl); b.position.set(x, y, z); g.add(b);
   const cap = new THREE.Mesh(new THREE.ConeGeometry(0.32 * s, 0.35 * s, 8), br); cap.position.set(x, y + 0.55 * s, z); g.add(cap); const ft = new THREE.Mesh(new THREE.CylinderGeometry(0.24 * s, 0.3 * s, 0.12 * s, 8), br); ft.position.set(x, y - 0.42 * s, z); g.add(ft);
@@ -143,7 +149,7 @@ function lawn(g, t) {
 const THEMES = { modern: { frame: 0x2E2E2E, wood: 0x8C8C8C, wood2: 0x5E5E5E, cush: 0xEDEDED, cush2: 0x3A4A5A, stone: 0xC9C6C0 }, natural: { frame: 0x6B4A2E, wood: 0xA8784C, wood2: 0x7A5537, cush: 0xE8E1D4, cush2: 0x8A9A5B, stone: 0xC8B89A },
   moroccan: { frame: 0x3A2A22, wood: 0x8E5A3A, wood2: 0x6A3F28, cush: 0xF2E2C8, cush2: 0x1F6F7E, stone: 0xD9B48C },
   // 274 (owner): the six themes of the "Pick a theme" step — frames, wood, cushions, accents, stone, pots
-  tropical: { frame: 0x5A4632, wood: 0x8A5A35, wood2: 0x6E4B33, cush: 0xEFE8DA, cush2: 0x3E6B3A, stone: 0xCBBFA8, pot: 0xB46A4A, acc1: 0xD9A441, acc2: 0x3E6B3A, frp: 0x6E4B33 },
+  tropical: { frame: 0x4A3020, wood: 0x5A3A24, wood2: 0x3E2818, cush: 0xEFE8DA, cush2: 0x3E6B3A, stone: 0x8C8A84, pot: 0x8C8A84, acc1: 0xB4532E, acc2: 0x3E6B3A, frp: 0x4A3020 },   // 292 (owner locked the Tropical guide): dark wood, grey stone, green; terracotta only as an accent
   turkish: { frame: 0xB08D57, wood: 0x5E3B26, wood2: 0x4A2E1E, cush: 0xF3EEE6, cush2: 0x1F6F7E, stone: 0xF1ECE3, pot: 0x1F6F7E, acc1: 0x9E2B25, acc2: 0xE0A33B, frp: 0xC9774A, metal: 1 },
   santorini: { frame: 0xF2F2EE, wood: 0xD8C6A5, wood2: 0xBFAE8E, cush: 0xF7F7F4, cush2: 0x2B5DA8, stone: 0xF4F4F0, pot: 0xF2F2EE, acc1: 0x2B5DA8, acc2: 0x6FA3D9, frp: 0xF2F2EE },
   modern: { frame: 0x2E2E2E, wood: 0x6B4A33, wood2: 0x3A3A3A, cush: 0xD9D8D4, cush2: 0x9E9C97, stone: 0xB9B8B4, pot: 0x2E2E2E, acc1: 0x55634A, acc2: 0x9E9C97, frp: 0x2E2E2E },
@@ -439,7 +445,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     let x0 = -w / 2, x1 = w / 2; if (bk) pbox(g, w, PB, 0, -d / 2 + PB / 2, 2.6);
     if (sd && w > 4) { if (pe.l) { pbox(g, PB, d / 2 - zb, x0 + PB / 2, (zb + d / 2) / 2, 2.2); x0 += PB; } if (pe.r) { pbox(g, PB, d / 2 - zb, x1 - PB / 2, (zb + d / 2) / 2, 2.2); x1 -= PB; } }
     const sw = x1 - x0, sx = (x0 + x1) / 2, sdp = d / 2 - zb - 0.3, sz = zb + 0.3 + sdp / 2;
-    box(g, sw, 1.4, sdp, sx, 0.7, sz, K.stone); cush(g, sw - 0.1, 0.28, sdp - 0.2, sx, 1.54, sz + 0.05, K.cush); box(g, sw, 1.5, 0.3, sx, 2.15, zb + 0.15, K.stone); cush(g, sw - 0.2, 1.0, 0.3, sx, 2.15, zb + 0.47, K.cush2);
+    const SB = themeKey() === 'tropical' ? K.wood2 : K.stone; box(g, sw, 1.4, sdp, sx, 0.7, sz, SB); if (SB !== K.stone) for (let x = sx - sw / 2 + 0.25; x < sx + sw / 2; x += 0.35) box(g, 0.05, 1.2, 0.03, x, 0.72, sz + sdp / 2 + 0.01, K.frame, false); cush(g, sw - 0.1, 0.28, sdp - 0.2, sx, 1.54, sz + 0.05, K.cush); box(g, sw, 1.5, 0.3, sx, 2.15, zb + 0.15, SB); cush(g, sw - 0.2, 1.0, 0.3, sx, 2.15, zb + 0.47, K.cush2);   // 292: tropical = dark-wood slatted seat
   } else if (cat === 'counter') {   // 239: food / buffet counter — base, stone top, a cooktop and a sink on it (back = −z, against the wall)
     box(g, w - 0.1, 0.35, d * 0.9 - 0.25, 0, 0.175, -d * 0.05 - 0.12, K.frame); box(g, w, 2.55, d * 0.9, 0, 1.625, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, mat('c_granite', 0x2F2E2D, { roughness: 0.25, metalness: 0.1 }));   // 285: cabinets — plinth, door lines, handles
     { const nd = Math.max(2, Math.round(w / 2)), fz = -d * 0.05 + d * 0.45 + 0.02, hm = mat('c_steel', 0xA8A8A6, { metalness: 0.8, roughness: 0.3 }); for (let i = 1; i < nd; i++) box(g, 0.03, 2.4, 0.03, -w / 2 + i * w / nd, 1.6, fz, K.frame); for (let i = 0; i < nd; i++) box(g, 0.5, 0.05, 0.06, -w / 2 + (i + 0.5) * w / nd, 2.6, fz + 0.02, hm); }   // 258 (owner): no wall behind it, a plain granite top
@@ -460,14 +466,14 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'bar') {   // 241: island bar — free on both sides, stools at the front; L = a return arm on the right
     const L = it && it.shape === 'L', D = L ? 2.2 : d * 0.7, stl = mat('c_steel', 0xA8A8A6, { metalness: 0.8, roughness: 0.3 }), arm = (bw, bd, x, z) => {   // 285 (owner): a real bar, not a box — toe kick, slatted front, top with a front overhang, foot rail
       box(g, bw - 0.1, 0.35, bd - 0.35, x, 0.175, z - 0.1, K.frame); box(g, bw, 3.0, bd, x, 1.85, z, K.stone);
-      const n = Math.max(3, Math.round(bw / 0.4)); for (let i = 0; i < n; i++) box(g, bw / n - 0.08, 2.8, 0.07, x - bw / 2 + (i + 0.5) * bw / n, 1.85, z + bd / 2 + 0.035, K.wood);
+      const n = Math.max(3, Math.round(bw / 0.4)), TB = themeKey() === 'tropical'; for (let i = 0; i < n; i++) box(g, bw / n - 0.08, TB ? 2.2 : 2.8, 0.07, x - bw / 2 + (i + 0.5) * bw / n, TB ? 2.2 : 1.85, z + bd / 2 + 0.035, K.wood);   // 292: tropical = dark-wood slats over a grey stone plinth
       box(g, bw + 0.3, 0.16, bd + 0.9, x, 3.43, z + 0.4, K.wood2); box(g, bw - 0.4, 0.07, 0.07, x, 0.8, z + bd / 2 + 0.45, stl); [-1, 1].forEach(sg => box(g, 0.06, 0.06, 0.45, x + sg * (bw / 2 - 0.4), 0.8, z + bd / 2 + 0.23, stl)); };
     const fl = it && it.flip ? -1 : 1;   // 258 (owner): main counter at the front, return arm on the right (left when flipped); the bar chairs are their own items, outside
     if (L) { arm(w, D, 0, d / 2 - D / 2); arm(D, d - D, fl * (w / 2 - D / 2), -D / 2); } else arm(w, D, 0, -d * 0.15);
   } else if (cat === 'planter' && it && /^MTO-PL-[A-Z]{2}$/.test(it.cfgId || it.pick || '')) {   // 199: an outrr planter — its own size, finish colour, plinth, plants, LED glow underneath
     planterModel(g, w, d, h, it, K);
   } else if (cat === 'plant') {   // 218b: a real Landscape Plant (its own model at the picked size), in a plain pot on the plan
-    const m = plantModel(THREE, (it && it.plant) || 'ARECA', h || 4, { pot: 'pot', seed: 5 }); if (K.tpot) m.traverse(o => { if (o.isMesh && o.material && o.material.color && o.material.color.getHex() === 0x6A6A66) o.material = K.tpot; });   // 274: the pot in the theme's colour
+    const m = plantModel(THREE, (it && it.plant) || 'ARECA', h || 4, { pot: 'pot', seed: 5 }), pq = Math.abs(Math.round((+(it && it.x) || 1) * 7 + (+(it && it.z) || 1) * 13)), tp = themeKey() === 'tropical' && pq % 4 === 0 ? mat('c_pott', 0xB06A47, { roughness: 0.9 }) : K.tpot; if (tp) m.traverse(o => { if (o.isMesh && o.material && o.material.color && o.material.color.getHex() === 0x6A6A66) o.material = tp; });   // 274: the pot in the theme's colour
     m.rotation.y = (Math.abs(Math.round((+(it && it.x) || 1) * 7 + (+(it && it.z) || 1) * 13)) % 12) * 0.52; g.add(m);
   } else if (cat === 'planter' && it && it.frp) {   // 258 (owner): a rectangular FRP trough along the parapet, planted
     pbox(g, w, d, 0, 0, 2, K.frp);   // 274: trough in the theme's colour
@@ -476,7 +482,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'water' && it && WLIB[wCode(it)]) { waterLib(g, w, d, wCode(it), K);   // 262 (owner): the water features as in our library (MTO-WW / WC / TG)
   } else if (cat === 'water' && it && it.mech) {   // 247 (owner): water feature by its mechanism — cascade / wall fall / rain curtain / geyser jets
     const sheet = mat('c_wsheet', 0xA9DCEB, { transparent: true, opacity: 0.55, roughness: 0.05, metalness: 0.1, emissive: 0x2E6F86, emissiveIntensity: 0.15, side: THREE.DoubleSide }), m = it.mech;
-    const pool = (pw, pd, z0) => { box(g, pw, 0.9, pd, 0, 0.45, z0, K.stone); box(g, pw - 0.3, 0.06, pd - 0.3, 0, 0.88, z0, K.water); };
+    const pool = (pw, pd, z0) => { box(g, pw, 0.9, pd, 0, 0.45, z0, K.stone); box(g, pw - 0.3, 0.06, pd - 0.3, 0, 0.88, z0, K.water); if (themeKey() === 'tropical') { box(g, pw + 0.1, 0.12, 0.3, 0, 0.96, z0 + pd / 2 - 0.1, K.wood2); box(g, pw + 0.1, 0.12, 0.3, 0, 0.96, z0 - pd / 2 + 0.1, K.wood2); box(g, 0.3, 0.12, pd, -pw / 2 + 0.1, 0.96, z0, K.wood2); box(g, 0.3, 0.12, pd, pw / 2 - 0.1, 0.96, z0, K.wood2); } };   // 292: tropical = dark-wood edge
     const fall = (fw, top, bot, z0) => { const p0 = new THREE.Mesh(new THREE.PlaneGeometry(fw, top - bot), sheet); p0.position.set(0, (top + bot) / 2, z0); g.add(p0); };
     if (m === 'cascade') { pool(w, d * 0.45, d / 2 - d * 0.225); [[3.6, 0.32], [2.5, 0.18], [1.5, 0.05]].forEach(([hh, zf], k) => { const tw = w * (0.86 - k * 0.12), tz = -d / 2 + d * (0.18 + k * 0.17); box(g, tw, hh, d * 0.3, 0, hh / 2, tz, K.stone); box(g, tw - 0.3, 0.05, d * 0.3 - 0.3, 0, hh + 0.02, tz, K.water); fall(tw * 0.7, hh, k === 2 ? 0.9 : hh - 1.1, tz + d * 0.15 + 0.04); }); }
     else if (m === 'wall') { const H = 6; box(g, w, H, 0.6, 0, H / 2, -d / 2 + 0.3, K.stone); box(g, w, 0.18, 0.9, 0, H + 0.09, -d / 2 + 0.45, K.dark); fall(w - 0.6, H - 0.1, 0.9, -d / 2 + 0.66); pool(w, d - 0.6, 0.3); }
@@ -508,7 +514,8 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'privacy') {
     if (it && /^MTO-P[ST]-/.test(String(it.cfgId || it.pick || ''))) { screenModel(g, w, h, it, K); return g; }
     const H = h || 6, n = Math.max(3, Math.round(w / 0.45)); box(g, w, 0.2, 0.3, 0, H, 0, K.frame); box(g, w, 0.2, 0.3, 0, 0.3, 0, K.frame);
-    for (let i = 0; i < n; i++) box(g, 0.28, H - 0.4, 0.15, -w / 2 + w * (i + 0.5) / n, H / 2, 0, K.wood);
+    if (themeKey() === 'tropical') { const np = Math.max(2, Math.round(w / 4) + 1); for (let i = 0; i < np; i++) box(g, 0.3, H, 0.3, -w / 2 + 0.15 + (w - 0.3) * i / (np - 1), H / 2, 0, K.frame); for (let y = 0.6; y < H - 0.2; y += 0.42) box(g, w, 0.26, 0.12, 0, y, 0.05, K.wood); }   // 292: tropical = horizontal dark-wood slats
+    else for (let i = 0; i < n; i++) box(g, 0.28, H - 0.4, 0.15, -w / 2 + w * (i + 0.5) / n, H / 2, 0, K.wood);
   } else if (cat === 'feature' && it && it.fdesign && it.fdesign !== 'stone') {   // 247 (owner): designer feature walls — light and a bit of green
     const H = h || 8, D0 = Math.max(0.4, d), led = mat('c_cove', 0xFFD9A0, { emissive: 0xFFB15E, emissiveIntensity: 1.8 }), fd = it.fdesign;
     if (fd === 'fluted') { box(g, w, H, D0, 0, H / 2, -0.05, mat('c_flbase', 0xD8CFC2)); const n = Math.max(6, Math.round(w / 0.35)); for (let k = 0; k < n; k++) { const c0 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, H - 1.6, 10, 1, false, 0, Math.PI), mat('c_flute', 0xE6DED2)); c0.rotation.y = -Math.PI / 2; c0.position.set(-w / 2 + w * (k + 0.5) / n, H / 2 + 0.4, D0 / 2 - 0.05); g.add(c0); }
@@ -518,6 +525,11 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     else { box(g, w, H, D0, 0, H / 2, -0.05, mat('c_plast', 0xEDE7DD)); const gw = w * 0.5; box(g, gw, H - 1, 0.3, -w / 2 + gw / 2 + 0.2, H / 2, D0 / 2 + 0.1, K.wood2);
       for (let x = -w / 2 + 0.6; x < -w / 2 + gw; x += 0.75) for (let y = 0.9; y < H - 0.6; y += 0.75) { const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), (x + y) % 1.5 > 0.75 ? K.leaf : K.leaf2); lf.position.set(x, y, D0 / 2 + 0.35); g.add(lf); }
       [0.25, 0.55, 0.85].forEach(f => { box(g, 0.25, 0.25, 0.3, -w / 2 + w * f + gw * 0.5 * (1 - f) + 0.6, 0.4, D0 / 2 + 0.2, K.dark); }); box(g, w - gw - 0.6, 0.06, 0.1, gw / 2 + 0.1, H - 0.4, D0 / 2 + 0.1, led); }
+  } else if (cat === 'feature' && themeKey() === 'tropical') {   // 292 (owner, Tropical guide): rough grey stone, creepers over it, big leaves at the foot
+    const H = h || 8, D0 = Math.max(0.4, d), sh = [mat('c_rs1', 0x8C8A84, { roughness: 1 }), mat('c_rs2', 0x7A7873, { roughness: 1 }), mat('c_rs3', 0xA3A19B, { roughness: 1 })]; box(g, w, H, D0, 0, H / 2, -0.04, mat('c_rs0', 0x6E6C68, { roughness: 1 }));
+    let r = 0; for (let y = 0.05; y < H - 0.1; y += 0.55, r++) { let x = -w / 2 + (r % 2 ? 0.35 : 0); while (x < w / 2 - 0.05) { const bw = Math.min(w / 2 - x, 0.9 + ((r * 7 + Math.round(x * 3)) % 5) * 0.18); if (bw > 0.08) box(g, bw - 0.06, 0.49, 0.1 + ((r + Math.round(x)) % 3) * 0.03, x + bw / 2, y + 0.25, D0 / 2 - 0.02, sh[(r + Math.round(x * 2)) % 3], false); x += bw; } }
+    const cr = C(); for (let k = 0; k < Math.round(w * 2.2); k++) { const x = -w / 2 + 0.2 + ((k * 0.618) % 1) * (w - 0.4), len = 1.5 + ((k * 37) % 10) / 3; for (let j = 0; j < len / 0.35; j++) { const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.18 + ((k + j) % 3) * 0.05, 0), (k + j) % 2 ? cr.leaf : cr.leaf2); lf.position.set(x + Math.sin(j * 1.3 + k) * 0.18, H - 0.15 - j * 0.35, D0 / 2 + 0.12); g.add(lf); } }
+    [-0.3, 0.25].forEach((f, i) => { const m = noSh(plantModel(THREE, i ? 'BIRDPARADISE' : 'BANANA', 4.5, { pot: 'none', seed: 7 + i })); m.position.set(w * f, 0, D0 / 2 + 0.9); g.add(m); });
   } else if (cat === 'feature') {
     const H = h || 8; box(g, w, H, Math.max(0.4, d), 0, H / 2, 0, K.stone); for (let y = 0.5; y < H; y += 0.8) box(g, w + 0.02, 0.06, Math.max(0.4, d) + 0.02, 0, y, 0, mat('c_joint', 0x9C958A), false);
     if (it && it.fdesign === 'stone') { [-0.35, 0, 0.35].forEach(f => box(g, 0.3, 0.2, 0.3, w * f, 0.1, Math.max(0.4, d) / 2 + 0.25, K.dark)); for (let y = 0.4; y < H - 0.5; y += 0.45) { const lf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3 + (y % 0.9) * 0.2, 0), y % 0.9 > 0.45 ? K.leaf : K.leaf2); lf.position.set(-w / 2 + 0.35 + Math.sin(y * 3) * 0.25, y, Math.max(0.4, d) / 2 + 0.2); g.add(lf); } }
@@ -600,9 +612,10 @@ function pgO(it) {   // 193g: the pergola as set up in its designer (finish, col
   return { l: it.w, w: it.d, height: String(+it.h || 8), colour: c.colour || 'Black', material: c.material, cover: gv(/roof|cover/i), layout: gv(/layout/i) };
 }
 function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w, d)
-  if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { const b = cabinModel(P.cabinCfg(it), P.cabinLay(it)); { const lb = b.g.getObjectByName('labels'); if (lb) lb.visible = false; } const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }   // 253: no "Wall / Swing door" tags in the plan
+  if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { let c0 = P.cabinCfg(it), l0 = P.cabinLay(it); if (themeKey() === 'tropical') { c0 = Object.assign({}, c0, { shades: [{ name: 'TropGrey', hex: '#6E6C68' }].concat(c0.shades || []) }); l0 = Object.assign({}, l0, { wall_fin: { front: { shade: 'TropGrey' }, back: { shade: 'TropGrey' }, right: { shade: 'TropGrey' }, left: { fin: 'wpc' } } }); }   // 292: tropical cabin = grey textured walls + a dark-wood clad side
+    const b = cabinModel(c0, l0); { const lb = b.g.getObjectByName('labels'); if (lb) lb.visible = false; } if (themeKey() === 'tropical') tropCabin(b.g); const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }   // 253: no "Wall / Swing door" tags in the plan
   if (it.cat === 'pergola' && !it.cfgId && !it.pick && !P.fullPergola) {   // 245 (owner): in the plan a light, simple pergola — 4 slim posts, a frame, thin rafters; the chosen design shows in full
-    const h = new THREE.Group(), y0 = it.deck ? 0.6 : 0, H = (+it.h || 8), w = +it.w, d = +it.d, fm = (THEMES[THEME] || {}).pot != null ? mat('c_pgs_' + THEME, THEMES[THEME].frame, { metalness: THEMES[THEME].metal ? 0.55 : 0.3, roughness: 0.5 }) : mat('c_pgs', 0x2F2F2F, { metalness: 0.35, roughness: 0.5 }), sp = Math.max(w, d) > 16 ? 3 : 2;   // 274: the theme's frame
+    const h = new THREE.Group(), y0 = it.deck ? 0.6 : 0, H = (+it.h || 8), w = +it.w, d = +it.d, TW = themeKey() === 'tropical', fm = (THEMES[THEME] || {}).pot != null ? mat('c_pgs_' + THEME, THEMES[THEME].frame, { metalness: THEMES[THEME].metal ? 0.55 : TW ? 0.02 : 0.3, roughness: TW ? 0.8 : 0.5 }) : mat('c_pgs', 0x2F2F2F, { metalness: 0.35, roughness: 0.5 }), sp = Math.max(w, d) > 16 ? 3 : 2;   // 274: the theme's frame
     if (it.deck && !deckUnder(it, P)) { const dk = mat('c_pdeck', 0x8B6A4A); box(h, w, DECK_H, d, w / 2, DECK_H / 2, d / 2, dk); }
     const px = [0.2, w - 0.2].concat(w > 16 ? [w / 2] : []), pz = [0.2, d - 0.2].concat(d > 16 ? [d / 2] : []);
     const st = P.site || {}, sh = st.kind === 'terrace' ? (st.blocks || []).filter(b => b.type === 'shaft') : [], E = 0.75, par = +st.par || 3, f0 = foot(it), cx0 = +it.x + f0[0] / 2, cz0 = +it.z + f0[1] / 2, ph = -(+it.rot || 0) * Math.PI / 180, cs = Math.cos(ph), sn = Math.sin(ph);
@@ -610,16 +623,20 @@ function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w
     const post = (x, z) => { let [X, Z] = toW(x, z), base = y0; const s0 = sh.find(b => X > +b.x - 0.15 && X < +b.x + +b.w + 0.15 && Z > +b.z - 0.15 && Z < +b.z + +b.d + 0.15);   // 259 (owner): a post never stands in a shaft — it goes just outside it, or onto the parapet when the shaft is against it
       if (s0) { const c = [[+s0.x - 0.3, Z], [+s0.x + +s0.w + 0.3, Z], [X, +s0.z - 0.3], [X, +s0.z + +s0.d + 0.3]].map(([a, b]) => { const out = a < E || a > (+st.pw || 30) - E || b < E || b > (+st.pd || 60) - E; return [Math.max(E / 2, Math.min((+st.pw || 30) - E / 2, a)), Math.max(E / 2, Math.min((+st.pd || 60) - E / 2, b)), out]; }).sort((p, q) => Math.hypot(p[0] - X, p[1] - Z) - Math.hypot(q[0] - X, q[1] - Z))[0];
         X = c[0]; Z = c[1]; if (c[2]) base = par; }
-      const [lx, lz] = toL(X, Z), hh = Math.max(0.5, y0 + H - base); const p0 = box(h, 0.3, hh, 0.3, lx, base + hh / 2, lz, fm); p0.userData.post = 1; };
+      const [lx, lz] = toL(X, Z), hh = Math.max(0.5, y0 + H - base); const ps = TW ? 0.5 : 0.3, p0 = box(h, ps, hh, ps, lx, base + hh / 2, lz, fm); p0.userData.post = 1; };   // 292: tropical = 6" timber posts
     px.forEach(x => pz.forEach(z => { if ((x === w / 2 && z !== 0.2 && z !== d - 0.2) || (z === d / 2 && x !== 0.2 && x !== w - 0.2)) return; post(x, z); }));
     box(h, w, 0.35, 0.18, w / 2, y0 + H - 0.18, 0.2, fm); box(h, w, 0.35, 0.18, w / 2, y0 + H - 0.18, d - 0.2, fm); box(h, 0.18, 0.35, d, 0.2, y0 + H - 0.18, d / 2, fm); box(h, 0.18, 0.35, d, w - 0.2, y0 + H - 0.18, d / 2, fm);
-    for (let x = 1.2; x < w - 0.6; x += 1.2) box(h, 0.1, 0.22, d - 0.2, x, y0 + H + 0.05, d / 2, fm, false);
+    for (let x = TW ? 0.7 : 1.2; x < w - 0.4; x += TW ? 0.7 : 1.2) box(h, TW ? 0.16 : 0.1, TW ? 0.3 : 0.22, d - 0.2, x, y0 + H + (TW ? 0.1 : 0.05), d / 2, fm, false);
     const TK = themeKey(), yb = y0 + H - 0.4;   // 275 (owner): the simple pergola dressed for the theme
     if (TK === 'turkish') { [[0.2, 0.2, w - 0.2, 0.2], [0.2, d - 0.2, w - 0.2, d - 0.2], [0.2, 0.2, 0.2, d - 0.2], [w - 0.2, 0.2, w - 0.2, d - 0.2]].forEach(([x1, z1, x2, z2]) => { const L = Math.hypot(x2 - x1, z2 - z1), n = Math.max(1, Math.round(L / 6)); for (let k = 0; k < n; k++) { const sp = L / n, a = new THREE.Mesh(new THREE.TorusGeometry(sp / 2 - 0.15, 0.09, 6, 24, Math.PI), fm); const u = (k + 0.5) / n; a.position.set(x1 + (x2 - x1) * u, yb - sp / 2 + 0.3, z1 + (z2 - z1) * u); if (x1 === x2) a.rotation.y = Math.PI / 2; a.scale.y = Math.min(1, 1.6 / (sp / 2)); h.add(a); } });
       [[w * 0.35, d * 0.4], [w * 0.65, d * 0.6], [w * 0.5, d * 0.25]].forEach(([x, z]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.6, 4), mat('c_cord', 0x222222)); c.position.set(x, y0 + H - 0.9, z); h.add(c); lantern(h, x, y0 + H - 2.1, z, 1); }); }
     else if (TK === 'santorini') { const rd = mat('c_reed', 0xD9C9A3, { roughness: 1 }); for (let z = 0.4; z < d - 0.3; z += 0.18) box(h, w - 0.3, 0.05, 0.12, w / 2, y0 + H + 0.2, z, rd, false); }   // reed shade roof
-    else if (TK === 'tropical') { const bb = mat('c_bamboo', 0xC9A46B, { roughness: 0.9 }); const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, w - 0.5, 10), bb); roll.rotation.z = Math.PI / 2; roll.position.set(w / 2, yb, 0.3); h.add(roll); box(h, w - 0.6, 1.6, 0.04, w / 2, yb - 0.9, 0.3, bb, false);   // bamboo blind half down at the back
-      [[w * 0.3, d * 0.45], [w * 0.7, d * 0.45]].forEach(([x, z]) => pendant(h, x, y0 + H - 1.6, z, 'rattan')); }
+    else if (TK === 'tropical') {   // 292 (owner, Tropical guide): close dark-wood rafters under clear polycarbonate, hanging lanterns + hanging planters
+      box(h, w - 0.1, 0.04, d - 0.1, w / 2, y0 + H + 0.28, d / 2, mat('c_polyc', 0xDCEBF2, { transparent: true, opacity: 0.18, roughness: 0.15, metalness: 0, depthWrite: false }), false);
+      const cord = mat('c_cord', 0x222222), cx = (x, z, L) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, L, 4), cord); c.position.set(x, y0 + H - L / 2, z); h.add(c); };
+      const nl = Math.max(1, Math.round(w / 8)); for (let k = 0; k < nl; k++) { const x = w * (k + 0.5) / nl; cx(x, d / 2, 1.4); lantern(h, x, y0 + H - 2.2, d / 2, 1.1); }
+      [[0.9, 0.9], [w - 0.9, 0.9], [0.9, d - 0.9], [w - 0.9, d - 0.9]].forEach(([x, z], k) => { cx(x, z, 1.1); const hp = new THREE.Group(); hp.position.set(x, y0 + H - 1.6, z); h.add(hp); cyl(hp, 0.45, 0.32, 0.45, 0, 0, 0, k % 2 ? mat('c_pott', 0xB06A47, { roughness: 0.9 }) : C().stone, 12);
+        for (let j = 0; j < 7; j++) { const a = j / 7 * 6.28, v = new THREE.Mesh(new THREE.ConeGeometry(0.12, 1.4 + (j % 3) * 0.5, 4), j % 2 ? C().leaf : C().leaf2); v.position.set(Math.cos(a) * 0.35, -0.7 - (j % 3) * 0.25, Math.sin(a) * 0.35); v.rotation.x = Math.PI; hp.add(v); } }); }
     else if (TK === 'contemporary') { const cu = mat('c_sheer', 0xF4EFE6, { transparent: true, opacity: 0.55, side: THREE.DoubleSide, roughness: 1 }); [[0.2, 0.2], [w - 0.2, 0.2], [0.2, d - 0.2], [w - 0.2, d - 0.2]].forEach(([x, z]) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.6, H - 0.6, 10, 1, true), cu); c.position.set(x + (x < w / 2 ? 0.4 : -0.4), y0 + (H - 0.6) / 2, z + (z < d / 2 ? 0.4 : -0.4)); h.add(c); });
       [[w * 0.35, d * 0.5], [w * 0.65, d * 0.5]].forEach(([x, z]) => pendant(h, x, y0 + H - 1.7, z, 'globe')); }
     else if (TK === 'modern') box(h, w - 1, 0.06, 0.08, w / 2, y0 + H - 0.38, d / 2, mat('c_led', 0xFFF4E0, { emissive: 0xFFE0B0, emissiveIntensity: 1.2 }), false);
@@ -672,7 +689,7 @@ function measures(P) {
 function night(on) { if (!R || R.night === on) return; R.night = on; R.dirty = true; (R.nl || []).forEach(m => { m.visible = on; }); R.scene.background = new THREE.Color(on ? 0x141B2B : 0xeef0ea); R.sun.intensity = on ? 0.08 : 1.8; R.hemi.intensity = on ? 0.2 : 0.75; if ('environmentIntensity' in R.scene) R.scene.environmentIntensity = on ? 0.15 : 1; }
 // 241: tropical planting in a pot — areca palm / big-leaf (monstera, bird of paradise) / round bush, size varies from pot to pot
 function tropical(g, w, d, it) { const sd = Math.abs(Math.round((+(it && it.x) || 1) * 13 + (+(it && it.z) || 1) * 7)), rnd = (k => () => (k = (k * 16807) % 2147483647) / 2147483647)(sd + 11), r = Math.min(w, d) / 2, sz = 0.8 + rnd() * 0.9, ty = sd % 3;
-  const KT = C(), pot = KT.tpot || (sd % 2 ? mat('c_potc', 0x3A3836, { roughness: 0.7 }) : mat('c_pott', 0xB06A47, { roughness: 0.9 })); cyl(g, r * 0.92, r * 0.72, r * 1.7, 0, r * 0.85, 0, pot, 20); const y0 = r * 1.7;
+  const KT = C(), pot = (themeKey() === 'tropical' && sd % 4 === 0 ? mat('c_pott', 0xB06A47, { roughness: 0.9 }) : KT.tpot) || (sd % 2 ? mat('c_potc', 0x3A3836, { roughness: 0.7 }) : mat('c_pott', 0xB06A47, { roughness: 0.9 })); cyl(g, r * 0.92, r * 0.72, r * 1.7, 0, r * 0.85, 0, pot, 20); const y0 = r * 1.7;
   const L1 = mat('c_lf1', 0x2F6B34, { roughness: 0.8, side: THREE.DoubleSide }), L2 = mat('c_lf2', 0x4C8A3C, { roughness: 0.8, side: THREE.DoubleSide }), L3 = mat('c_lf3', 0x22552A, { roughness: 0.85, side: THREE.DoubleSide });
   const leaf = (len, wid, m) => { const sh = new THREE.Shape(); sh.moveTo(0, 0); sh.quadraticCurveTo(wid, len * 0.45, 0, len); sh.quadraticCurveTo(-wid, len * 0.45, 0, 0); const o = new THREE.Mesh(new THREE.ShapeGeometry(sh, 6), m); o.castShadow = true; return o; };
   if (ty === 0) { const n = 5 + Math.floor(rnd() * 4), H = (3.2 + rnd() * 2.5) * sz;   // areca palm: stems with arching fronds

@@ -11,9 +11,9 @@ const shade = (c, f) => { const [r, g, b] = hx(c); const k = v => Math.max(0, Ma
 // m: surface (stone, trav, brick, clay, wood, lime, cement, glaze, terrazzo) · rot: the whole pattern turned (deg)
 export const SPECS = {
   // Tropical — mixed-size sandstone, grass in the joints of the paths, teak deck
-  trop_field: { pat: 'french', u: 1, g: 0.05, pal: ['#D2BE96', '#C9AE82', '#DCCBA6', '#BFA57C', '#D6C29C', '#B89B72'], v: 0.07, j: '#A8987C', m: 'stone' },
-  trop_path: { pat: 'flag', n: 16, P: 6, g: 0.13, pal: ['#B9A47F', '#A99470', '#C4B08C', '#9E8A68'], v: 0.08, j: 'grass', m: 'stone' },
-  trop_rug: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#8A5A35', '#7E5230', '#93613A', '#74492A'], v: 0.06, j: '#2A1E14', m: 'wpc' },   // 276: decks are always WPC boards (fabricated, not civil) — teak
+  trop_field: { pat: 'french', u: 1, g: 0.05, pal: ['#9C9A94', '#8C8A84', '#A6A49E', '#83817B', '#96948E', '#7C7A75'], v: 0.07, j: '#6A6863', m: 'stone' },   // 292 (owner): Tropical = grey stone pavers
+  trop_path: { pat: 'flag', n: 16, P: 6, g: 0.13, pal: ['#9A9892', '#8A8882', '#A8A6A0', '#7E7C77'], v: 0.08, j: 'grass', m: 'stone' },
+  trop_rug: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#4E3322', '#462E1F', '#553826', '#3F2A1C'], v: 0.06, j: '#1C130C', m: 'wpc' },   // 276: decks are always WPC boards (fabricated, not civil) — teak
   // Turkish — 6" encaustic cement tiles, terracotta hex border, kilims
   turk_field: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#E9DCC4', '#E4D6BC', '#EDE1CB'], ink: ['#2F6F7E'], ink2: '#C27A4E', v: 0.04, j: '#D6CEC0', m: 'cement' },
   turk_border: { pat: 'hex', u: 0.38, g: 0.04, pal: ['#C27A4E', '#B56E45', '#CC8659', '#A9643E'], v: 0.08, j: '#E6DCCB', m: 'clay' },
@@ -49,7 +49,7 @@ Object.assign(SPECS, {
   cont_enc: { pat: 'enc', u: 0.67, g: 0.012, pal: ['#E6DCC9', '#E1D6C2', '#EADFCD'], ink: ['#8E8A84'], ink2: '#B9A487', v: 0.03, j: '#CFC4B0', m: 'cement' },
   boho_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#EFE4D2', '#EADFCB', '#F2E8D8'], ink: ['#B5562F'], ink2: '#6B7A4A', v: 0.04, j: '#D8C6AA', m: 'cement' },
   sant_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#F6F4EF', '#F1EEE7'], ink: ['#2B5DA8'], ink2: '#6FA3D9', v: 0.03, j: '#D9D3C7', m: 'cement' },
-  trop_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.04, pal: ['#DCCBA6', '#D6C29C'], pal2: ['#A99470', '#9E8A68'], v: 0.05, j: '#A8987C', m: 'stone' },
+  trop_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.04, pal: ['#A6A49E', '#9C9A94'], pal2: ['#7E7C77', '#75736E'], v: 0.05, j: '#6A6863', m: 'stone' },
   turk_chk: { pat: 'stack', alt: 1, w: 1, d: 1, g: 0.03, pal: ['#B9714C', '#B06A46'], pal2: ['#EFE7D8', '#E9DCC4'], v: 0.05, j: '#D9CBB4', m: 'clay' },
   sant_chk: { pat: 'stack', alt: 1, w: 1.5, d: 1.5, g: 0.04, pal: ['#F6F4EF', '#F1EEE7'], pal2: ['#9EA3A8', '#8E949A'], v: 0.04, j: '#D9D3C7', m: 'lime' },
   mod_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.02, pal: ['#C9C8C4', '#C2C1BD'], pal2: ['#5A5A58', '#626260'], v: 0.04, j: '#8E8C87', m: 'stone' },

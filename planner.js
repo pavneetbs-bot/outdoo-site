@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=66';
-import * as P2 from './plan2d.js?v=30';
+import * as S3 from './space3d.js?v=67';
+import * as P2 from './plan2d.js?v=31';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=3';
-import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=56';
+import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=57';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -1156,7 +1156,7 @@ const suDoors = c => Array.isArray(c && c.door) ? c.door : c && c.door && c.door
 const EXQ = [['floor', 'The floor'], ['seep', 'Seepage'], ['heat', 'Heatproofing'], ['pipes', 'Pipes on the stairs room'], ['mumty', 'The stairs room'], ['mstair', 'Stairs up to its roof'], ['tank', 'Water tanks'], ['shafth', 'Shaft heights'], ['shaft', 'Shaft covers'], ['walls', 'The walls'], ['coping', 'The parapet top'], ['room', 'Rooms on the roof']];   // 284: the stairs room / shafts in small steps
 
 // ---------------------------------------------------------------- 274 (owner): "Pick a theme" — the same layout in 6 looks: finishes / fabrics (space3d THEMES), plants, floor + the open floor landscaped
-const THEMES6 = [['tropical', 'Tropical', 'resort, teak, palms, a lawn', ['#8A5A35', '#3E6B3A', '#D9A441', '#CBBFA8']],
+const THEMES6 = [['tropical', 'Tropical', 'dark wood, grey stone, loaded with plants', ['#4A3020', '#3E6B3A', '#8C8A84', '#EFE8DA']],
   ['turkish', 'Turkish', 'arches, jaali, mosaic, kilims', ['#1F6F7E', '#E0A33B', '#9E2B25', '#B08D57']],
   ['santorini', 'Santorini', 'white-washed, Aegean blue, bougainvillea', ['#F4F4F0', '#2B5DA8', '#C2187A', '#D8C6A5']],
   ['modern', 'Modern', 'clean lines, charcoal, concrete', ['#2E2E2E', '#B9B8B4', '#6B4A33', '#55634A']],
@@ -1173,7 +1173,7 @@ const TH_FLOOR = { tropical: { tile: 'stone', lay: 'trop_field', border: { w: 1,
   minimal: { tile: 'terrazzo', lay: 'min_field', seat: 'min_rug', fire: 'min_field' },
   boho: { tile: 'terracotta', lay: 'boho_field', border: { w: 0.67, c: 'terracotta', lay: 'boho_border' }, path: 'boho_path', seat: 'boho_rug', rugs: 'boho', jute: true, fire: 'boho_rug' } };
 // 276 (owner): grass never under a fire pit — it always stands on the theme's stone / Moroccan / tiles; decks are always WPC boards (fabricated, never civil)
-const TH_PAINT = { boho: 0xEADBC4, tropical: 0xE6D8BF, turkish: 0xF3ECE0, santorini: 0xFAFAF7, modern: 0xB9B8B4, contemporary: 0xEFE8DC, minimal: 0xF4F2EE };   // the walls' paint per theme
+const TH_PAINT = { boho: 0xEADBC4, tropical: 0xB9B6AF, turkish: 0xF3ECE0, santorini: 0xFAFAF7, modern: 0xB9B8B4, contemporary: 0xEFE8DC, minimal: 0xF4F2EE };   // the walls' paint per theme
 const V3T = () => '<div class="pl-ab3t"><button type="button" data-su="v3:zin" aria-label="Zoom in">+</button><button type="button" data-su="v3:zout" aria-label="Zoom out">−</button><button type="button" data-su="v3:pan" aria-label="Move the view" title="Move the view">✋</button><button type="button" data-su="v3:top" aria-label="Top view" title="Top view">▦</button><button type="button" data-su="v3:night" aria-label="Night view" title="Night view">🌙</button><button type="button" data-su="v3:home" aria-label="Whole space" title="Whole space">⌖</button></div>';
 const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-shade)
   turkish: { corner: { S: ['MORPANKHI', 'PHOENIX', 'CYCAS'], SS: ['RHAPIS', 'MORPANKHI'] }, wall: { S: ['BOUGAINVILLEA', 'KANER', 'MOGRA', 'MADHUMALTI'], SS: ['MOGRA', 'CHANDNI', 'SNAKEPLANT'] }, accent: { S: ['CHAMPA', 'AGAVE', 'ADENIUM'], SS: ['SNAKEPLANT', 'CHANDNI'] } },
@@ -1182,7 +1182,7 @@ const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-sh
   contemporary: { corner: { S: ['FICUSPANDA', 'BLACKFICUS', 'FOXTAIL'], SS: ['PACHIRA', 'RHAPIS', 'SCHEFFLERA'] }, wall: { S: ['FOUNTAINGRASS', 'DURANTA', 'KAMINI'], SS: ['SCHEFFLERA', 'SNAKEPLANT'] }, accent: { S: ['BIRDPARADISE', 'FICUSPANDA'], SS: ['PACHIRA', 'BIRDPARADISE'] } },
   boho: { corner: { S: ['PHOENIX', 'FICUSPANDA', 'BANANA'], SS: ['ARECA', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'BOUGAINVILLEA', 'MOGRA', 'AGAVE'], SS: ['SNAKEPLANT', 'CHANDNI'] }, accent: { S: ['BIRDPARADISE', 'AGAVE', 'FOUNTAINGRASS'], SS: ['PACHIRA', 'SNAKEPLANT'] } },
   minimal: { corner: { S: ['FICUSPANDA'], SS: ['FICUSPANDA', 'PACHIRA'] }, wall: { S: ['FOUNTAINGRASS', 'SNAKEPLANT'], SS: ['SNAKEPLANT'] }, accent: { S: ['FICUSPANDA', 'AGAVE'], SS: ['SNAKEPLANT'] } } };
-const TH_FD = { tropical: 'green', turkish: 'stone', santorini: 'stone', modern: 'fluted', contemporary: 'fluted', minimal: 'slats', boho: 'slats' };   // 284 (owner): the feature wall follows the theme; changeable on the theme step
+const TH_FD = { tropical: 'stone', turkish: 'stone', santorini: 'stone', modern: 'fluted', contemporary: 'fluted', minimal: 'slats', boho: 'slats' };   // 284 (owner): the feature wall follows the theme; changeable on the theme step
 function fdTheme() { const su = S.su; if (!su) return; const v = TH_FD[su.thm] || 'fluted', U = su.fdU || {}; su.fd = su.fd || [];
   S.items.filter(o => o.cat === 'feature' && !o.old).forEach((o, i) => { const d = U[i] || v; su.fd[i] = d; o.fdesign = d; o.label = (FDES.find(z => z[0] === d) || [0, 'Feature wall'])[1]; }); }
 const TH_GREEN = { tropical: 'lush', boho: 'lush', minimal: 'light' }, TH_LIGHT = { minimal: 'soft', santorini: 'soft' };   // 291 (owner): the theme decides greenery + lighting
@@ -1196,7 +1196,7 @@ function themeApply(k, quiet) { const su = S.su; if (!su) return; su.thm = k; su
 function flPlantsOff() { const Zs = ((S.site.floor || {}).zones || []).filter(z => z.run || z.k === 'stone' || z.k === 'path'); if (!Zs.length) return; S.items = S.items.filter(o => { if (o.old || !(o.cat === 'plant' || (o.cat === 'planter' && !o.pick && !o.cfgId && !o.frp))) return true; const r = rectI(o); return !Zs.some(z => { const b = z.k === 'stone' ? { x: z.cx - 1.3, z: z.cz - 1.3, w: 2.6, d: 2.6 } : z.pts ? null : z; if (!b) return z.pts.some(([px, pz]) => px > r.x - 0.5 && px < r.x + r.w + 0.5 && pz > r.z - 0.5 && pz < r.z + r.d + 0.5); return r.x < b.x + b.w && b.x < r.x + r.w && r.z < b.z + b.d && b.z < r.z + r.d; }); }); }   // 276c: no plant stands on a path
 // 276c (owner): the floor layout — picked after the theme; the same six layouts in every theme, the theme only fills the materials.
 // roles: base (calm field), path (runner / spokes), rug (under seating), hub (hub / medallion), band, deck (WPC), hard (fire pit), chk (checker), stone (stepping stones), edge (trim colour), lawn
-const TH_ROLE = { tropical: { base: 'trop_field', path: 'trop_rug', rug: 'trop_rug', hub: 'turk_border', band: 'trop_rug', deck: 'trop_rug', hard: 'turk_border', chk: 'trop_chk', stone: ['#9E8A68', '#B9A47F', '#A99470'], lawn: 1 },
+const TH_ROLE = { tropical: { base: 'trop_field', path: 'trop_rug', rug: 'trop_rug', hub: 'turk_border', band: 'trop_rug', deck: 'trop_rug', hard: 'turk_border', chk: 'trop_chk', stone: ['#8A8882', '#9A9892', '#7E7C77'], lawn: 1 },
   turkish: { base: 'turk_base', path: 'turk_field', rug: 'turk_field', hub: 'turk_field', inlay: 'star', band: 'turk_field', deck: 'wpc_walnut', hard: 'turk_border', chk: 'turk_chk', stone: ['#C9B79A', '#B9A487'], edge: '#2F6F7E' },
   santorini: { base: 'sant_field', path: 'sant_path', rug: 'sant_enc', hub: 'sant_enc', inlay: 'mosaic', band: 'sant_border', deck: 'min_rug', hard: 'sant_path', chk: 'sant_chk', stone: ['#8E949A', '#A7ABAE', '#9C8E78'], edge: '#2B5DA8' },
   modern: { base: 'mod_plain', path: 'mod_rug', rug: 'mod_rug', hub: 'mod_rug', band: 'mod_border', deck: 'wpc_grey', hard: 'mod_border', chk: 'mod_chk', stone: ['#5A5A58', '#6A6A67'], lawn: 1 },
