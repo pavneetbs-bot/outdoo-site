@@ -3436,16 +3436,19 @@ function renderMini(){
 function miniCard(id){const x=PRODS[id];
   return `<div class="mpc" onclick="openProduct('${id}')"><div class="im"><img loading="lazy" src="${IMGS[x.img]}" alt=""></div>
     <div class="bd"><div class="nm">${vName(id)}</div><div class="pr">${vPriceHTML(id)}</div>${vCardNote(id)}${tbHTML(id)}</div></div>`;}
-function fillStrip(el, ids){const d=document.getElementById(el); if(d) d.innerHTML=ids.map(miniCard).join('');}
+// 233 (owner): fruit / vegetable / herb plants, seeds, soil, fertilisers — only in their own category, never on the homepage
+window.homeHide=function(id){const x=PRODS[id]; if(!x) return false; return x.col==='garden-care'||/^(Fruit Plants|Medicinal & Herbs)$/.test(x.sb||'')||(x.col==='plants'&&!/ornamental/i.test(x.n||'')&&/\b(fruit|mango|orange|mandarin|guava|plum|fig|anjeer|apple|lime|lemon|avocado|cherry|grapes?|blueberry|berry|musambi|mosambi|malta|cashew|litchi|lychee|longan|mulberry|banana|coconut|pomelo|pomegranate|anar|aloo bukhara|ber|kinnow|kiwi|persimmon|jackfruit|pineapple|chiku|chikoo|sapota|amla|jamun|rambutan|tamarind|custard apple|bilva|bael|olive|noni|strawberry|papaya|peach|pear|apricot|vegetables?|tomato|chilli|brinjal|clove|loung|dalchini|cinnamon|elaichi|cardamom|spice|tulsi|curry leaf|mint|stevia|ajwain|herbs?)\b/i.test(x.n||''))||/(fruit|vegetable|veggie|\bseeds?\b|fertili[sz]er|manure|compost|potting|\bsoil\b|cocopeat|coco peat|vermi)/i.test(x.n||'');};
+const HOME_NO_COL=['garden-care'];
+function fillStrip(el, ids){const d=document.getElementById(el); if(d) d.innerHTML=ids.filter(i=>!homeHide(i)).map(miniCard).join('');}
 function byCol(c,n,skip=0){return Object.keys(PRODS).filter(i=>PRODS[i].col===c).slice(skip,skip+n);}
 function byPrice(max,n){return Object.keys(PRODS).filter(i=>PRODS[i].p<=max).sort((a,b)=>PRODS[a].p-PRODS[b].p).slice(0,n);}
 fillStrip('stripSofas', byCol('furniture',10,4));
 function winterIds(){const one=l=>(window.vOnePerGroup?vOnePerGroup(l):l); const f=one(Object.keys(PRODS).filter(i=>PRODS[i].col==='furniture'&&PRODS[i].p>0&&(!window.IMGS||IMGS[PRODS[i].img]))); const r=i=>/sofa/i.test(PRODS[i].n)?0:/lounge|chair/i.test(PRODS[i].n)?1:2; return f.sort((a,b)=>r(a)-r(b)).slice(0,12);}
 // live plants in this slot once 4+ are on sale (winter is planting season); until then the outdoor furniture
-function winterPlants(){return Object.keys(PRODS).filter(i=>PRODS[i].col==='plants'&&PRODS[i].p>0&&PRODS[i].oo!==false&&(!window.IMGS||IMGS[PRODS[i].img])).slice(0,12);}
+function winterPlants(){return Object.keys(PRODS).filter(i=>PRODS[i].col==='plants'&&!homeHide(i)&&PRODS[i].p>0&&PRODS[i].oo!==false&&(!window.IMGS||IMGS[PRODS[i].img])).slice(0,12);}
 function fillWinter(){const pl=winterPlants(),h=document.getElementById('hsSeason'),pv=document.getElementById('winPill'); if(h&&h.dataset.ai) return;   // today's AI season picks win
   if(pl.length>=4){ if(h&&!h.dataset.ai) h.innerHTML='<h2>Live plants for the winter season</h2><p>Healthy plants for your balcony, terrace and garden — winter is planting season.</p>'; if(pv){pv.dataset.col='plants'; pv.textContent='View all plants';} fillStrip('stripWinter',pl); }
-  else fillStrip('stripWinter', winterIds());}
+  else { if(h&&!h.dataset.ai) h.innerHTML='<h2>Winter-ready outdoor furniture</h2><p>All-weather rope, wicker and teak, made to stay outside.</p>'; if(pv){pv.dataset.col='furniture'; pv.textContent='View all outdoor furniture';} fillStrip('stripWinter', winterIds()); }}   // 233: back to the furniture heading when the plants row has too few
 fillWinter();
 fillStrip('stripLight', byCol('lighting',10));
 fillStrip('stripRugs', byPrice(12000,10));
@@ -3488,7 +3491,7 @@ function offerRows(f,ids){return (f.offer?'<div class="r"'+(ids?' id="coOffR"':'
 // 180: deal of the day = today's AI pick (deals_public); none → the section stays hidden
 function dealDayPaint(){
   const card=document.getElementById('dealCard'), sec=card&&card.closest('.sec2'); if(!card) return;
-  const id=Object.keys(DEALS).find(i=>DEALS[i].kind==='day'&&PRODS[i]&&!soon(i));
+  const id=Object.keys(DEALS).find(i=>DEALS[i].kind==='day'&&PRODS[i]&&!soon(i)&&!homeHide(i));
   if(!id){ if(sec) sec.style.display='none'; return; }
   const x=PRODS[id], dp=x.p-dealSave(id);
   if(sec) sec.style.display='';
@@ -3678,7 +3681,8 @@ function mHome(){
   }
   const tiles = (window.MTILES || ARCH || []);
   let CL = []; try{ CL = catList(); }catch(e){}
-  const cols = CL.length ? CL.map(c => c.k) : [...new Set(tiles.map(t => t[1]))].filter(c => COLS[c] && !/^(sp|bg|md)-/.test(c));
+  const colsAll = CL.length ? CL.map(c => c.k) : [...new Set(tiles.map(t => t[1]))].filter(c => COLS[c] && !/^(sp|bg|md)-/.test(c));
+  const cols = colsAll.filter(c => !HOME_NO_COL.includes(c));   // 233: home chips / circles only — the menu keeps every category
   if(MCHIP && !cols.includes(MCHIP)) MCHIP = '';
   const cimg = c => { const x = CL.find(y => y.k === c); if(x && x.img) return x.img; const t = tiles.find(y => y[1] === c); return t ? (IMGS[t[2]] || '') : ''; };
   const ch = document.getElementById('mchips');
@@ -3689,7 +3693,7 @@ function mHome(){
     : tiles.filter(t => t[1] === MCHIP).map(t => circ(t[0], t[2], t[3] ? `openSub('${t[1]}','${esc(t[3])}')` : `openCol('${t[1]}')`));
   document.getElementById('mcircles').innerHTML = list.join('');
   const mc = document.getElementById('mmCats');
-  if(mc) mc.innerHTML = cols.map(c => `<a onclick="mMenu(false);openCol('${c}')"><img src="${cimg(c)}" alt="" loading="lazy">${COLS[c].t}</a>`).join('');
+  if(mc) mc.innerHTML = colsAll.map(c => `<a onclick="mMenu(false);openCol('${c}')"><img src="${cimg(c)}" alt="" loading="lazy">${COLS[c].t}</a>`).join('');
   const ms = document.getElementById('mmSpaces');
   if(ms) ms.innerHTML = Object.keys(COLS).filter(c => /^sp-/.test(c)).map(c => `<a onclick="mMenu(false);openCol('${c}')">${COLS[c].t}</a>`).join('');
 }
@@ -3702,7 +3706,7 @@ function archFromTiles(tiles){ if(!tiles.length) return;
   const out=[]; for(let r=0;out.length<12&&r<6;r++) for(const k of ks){ if(by[k][r]) out.push(by[k][r]); if(out.length>=12) break; }
   ARCH.length=0; out.forEach(t=>ARCH.push(t)); fillArch(); }
 function liveHome(){
-  const ids = Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0);
+  const ids = Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0 && !homeHide(i));   // 233
   if(!ids.length) return;
   LIVE_HOME = true;
   const one = l => (window.vOnePerGroup ? vOnePerGroup(l) : l);
@@ -3765,13 +3769,13 @@ function oTile(id){const x=PRODS[id];
      ${soon(x)?'':`<span class="addp" onclick="event.stopPropagation();addCart('${id}')">+ Add</span>`}</div>
    <div class="nm2">${x.n}</div>
    <div class="pw">${soon(x)?soonH():`${inr(x.p)}${x.m>x.p?`<s>${inr(x.m)}</s>`:''}`}</div></div>`;}
-function fillTiles(el,ids){const d=document.getElementById(el); if(d) d.innerHTML=ids.map(oTile).join('');}
+function fillTiles(el,ids){const d=document.getElementById(el); if(d) d.innerHTML=ids.filter(i=>!homeHide(i)).map(oTile).join('');}   // 233
 
 // ---- 180: Deals you can't miss = today's AI picks, one tab per category (deals_public); none → hidden ----
 let DTABS=[], dtabOn=0;
 function fillDealTabs(){
   const t=document.getElementById('dealTabs'), sec=t&&t.closest('.sec2'); if(!t) return;
-  const by={}; Object.keys(DEALS).filter(i=>DEALS[i].kind==='pick'&&PRODS[i]&&!soon(i)).sort((a,b)=>DEALS[a].sort-DEALS[b].sort).forEach(i=>{const k=DEALS[i].tab||PRODS[i].col;(by[k]=by[k]||[]).push(i)});
+  const by={}; Object.keys(DEALS).filter(i=>DEALS[i].kind==='pick'&&PRODS[i]&&!soon(i)&&!homeHide(i)).sort((a,b)=>DEALS[a].sort-DEALS[b].sort).forEach(i=>{const k=DEALS[i].tab||PRODS[i].col;(by[k]=by[k]||[]).push(i)});
   DTABS=Object.keys(by).map(k=>[(COLS[k]&&COLS[k].t)||k,k,by[k]]);
   if(!DTABS.length){ if(sec) sec.style.display='none'; return; }
   if(sec) sec.style.display=''; if(dtabOn>=DTABS.length) dtabOn=0;
@@ -4043,7 +4047,7 @@ function catList(){
   _CATS={l,r:!!MENU.rank,h:HOMECATS.join()}; _CATS_N=ids.length; return l;
 }
 function fillCatGrid(){const el=document.getElementById('cgrid'); if(!el) return;
-  el.innerHTML=catList().map(c=>`<div class="cg" data-col="${c.k}" role="link" tabindex="0"><div class="im"><img loading="lazy" src="${c.img}" alt="${_esc(c.t)}"></div><b>${_esc(c.t)}</b><small>${c.from?'From '+inr(c.from):'Explore →'}</small></div>`).join('');}
+  el.innerHTML=catList().filter(c=>!HOME_NO_COL.includes(c.k)).map(c=>`<div class="cg" data-col="${c.k}" role="link" tabindex="0"><div class="im"><img loading="lazy" src="${c.img}" alt="${_esc(c.t)}"></div><b>${_esc(c.t)}</b><small>${c.from?'From '+inr(c.from):'Explore →'}</small></div>`).join('');}
 function _catGo(e){const t=e.target.closest('[data-col]'); if(!t) return; e.preventDefault(); e.stopPropagation();
   const k=t.dataset.col,sb=t.dataset.sub; navPick(); sb?openSub(k,sb):openCol(k);}
 document.addEventListener('DOMContentLoaded',()=>{
@@ -4601,7 +4605,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     if(typeof fillStrip === 'function'){   // the home tiles / strips show the live catalogue (one card per variant group) when their sample products are gone
       try{
         const one = l => (window.vOnePerGroup ? vOnePerGroup(l) : l);
-        const pool = one(Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0));
+        const pool = one(Object.keys(PRODS).filter(i => IMGS[PRODS[i].img] && PRODS[i].p > 0 && !homeHide(i)));   // 233
         const pick = (keep, f, n, skip) => keep.filter(id => PRODS[id]).length === keep.length ? keep : pool.filter(f || (() => true)).slice(skip || 0, (skip || 0) + n);
         const big = i => ['furniture', 'shade'].includes(PRODS[i].col);
         fillTiles('tilesBest', pick(['lounge','dining','umbp12','awl124'], null, 4));
