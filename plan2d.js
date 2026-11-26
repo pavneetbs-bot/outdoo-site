@@ -1,4 +1,4 @@
-import { layUrl, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=8';
+import { layUrl, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=9';
 // outrr 2D plan (234): the terrace drawn from above as an SVG — roof structures, the things set up on it, floor finishes — and,
 // when asked, AutoCAD-style dimensions (extension lines, arrows, the size written inside the line) for the terrace, every structure
 // and thing, and the biggest free spaces left. Used by the roof plan (mto.js) and the setup plan (planner.js). Units: ft,

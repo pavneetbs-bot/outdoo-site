@@ -37,9 +37,9 @@ export const SPECS = {
   wpc_grey: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#8E8A84', '#86827C', '#96928B'], v: 0.04, j: '#3A3835', m: 'wpc' },
   wpc_walnut: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#5E3B26', '#56361F', '#66422B'], v: 0.06, j: '#24170E', m: 'wpc' },
   // Boho / rustic — terracotta brick herringbone, a basketweave "rug" where people sit, brick soldier border
-  boho_field: { pat: 'herring', w: 0.33, l: 0.67, g: 0.028, pal: ['#A9583A', '#9A4F33', '#B5623F', '#8E482E', '#B86B47', '#9F5537'], v: 0.1, j: '#9C8566', m: 'brick', rot: 45 },
-  boho_rug: { pat: 'basket', w: 0.33, n: 2, g: 0.04, pal: ['#7A3E27', '#86452B', '#713924', '#8E4D31'], v: 0.08, j: '#BFA98A', m: 'brick' },
-  boho_border: { pat: 'stack', w: 0.33, d: 0.67, g: 0.04, pal: ['#8E4A2E', '#9A5233', '#84442A'], v: 0.08, j: '#CDB998', m: 'brick' },
+  boho_field: { pat: 'flag', n: 16, P: 7, g: 0.16, pal: ['#E6D9C3', '#DCCDB3', '#EADFCB', '#D6C6AA', '#E1D2B8'], v: 0.05, j: '#F1EBE1', m: 'stone' },
+  boho_rug: { pat: 'stack', w: 2, d: 2, g: 0.03, pal: ['#D8C8AC', '#CFBEA0', '#DDCEB4'], v: 0.06, j: '#EDE5D8', m: 'stone' },
+  boho_border: { pat: 'stack', w: 1, d: 2, g: 0.03, pal: ['#CBB894', '#C2AE89', '#D2C09E'], v: 0.06, j: '#EDE5D8', m: 'stone' },
   boho_path: { pat: 'flag', n: 14, P: 6, g: 0.12, pal: ['#C9B48E', '#BFA982', '#D3C09C'], v: 0.08, j: 'grass', m: 'stone' } };
 
 // 276c (owner): the floor-layout roles — a calm base, the feature (runners, rugs, hubs), checkers
@@ -48,7 +48,7 @@ Object.assign(SPECS, {
   mod_plain: { pat: 'stack', w: 2, d: 4, g: 0.02, pal: ['#D9D2C5', '#D2CBBE', '#DED8CC', '#CFC8BA'], v: 0.04, j: '#A8A198', m: 'cement' },
   min_path: { pat: 'stack', w: 1, d: 3, g: 0.015, pal: ['#D9D6D0', '#D3D0C9', '#DEDBD5'], v: 0.02, j: '#BDB8AF', m: 'micro' },
   cont_enc: { pat: 'enc', u: 0.67, g: 0.012, pal: ['#E6DCC9', '#E1D6C2', '#EADFCD'], ink: ['#8E8A84'], ink2: '#B9A487', v: 0.03, j: '#CFC4B0', m: 'cement' },
-  boho_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#EFE4D2', '#EADFCB', '#F2E8D8'], ink: ['#B5562F'], ink2: '#6B7A4A', v: 0.04, j: '#D8C6AA', m: 'cement' },
+  boho_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#EFE4D2', '#EADFCB', '#F2E8D8'], ink: ['#B79A70'], ink2: '#8A6A48', v: 0.04, j: '#D8C6AA', m: 'cement' },
   sant_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#F6F4EF', '#F1EEE7'], ink: ['#2B5DA8'], ink2: '#6FA3D9', v: 0.03, j: '#D9D3C7', m: 'cement' },
   trop_chk: { pat: 'stack', alt: 1, w: 2, d: 2, g: 0.04, pal: ['#A6A49E', '#9C9A94'], pal2: ['#7E7C77', '#75736E'], v: 0.05, j: '#6A6863', m: 'stone' },
   turk_chk: { pat: 'stack', alt: 1, w: 1, d: 1, g: 0.03, pal: ['#D6BE97', '#CDB48E'], pal2: ['#F1E9DA', '#EDE4D3'], v: 0.05, j: '#D9CBB4', m: 'clay' },
