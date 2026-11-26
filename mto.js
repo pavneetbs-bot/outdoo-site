@@ -1126,7 +1126,7 @@
      
       groups: arr(m.groups).reduce(function (g, x) { var f = arr(x.options).filter(function (y) { return String(y.name || '').trim(); })[0]; if (f) g[x.name] = f.name; return g; }, {}),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
-    czLoad();   // 298: the customer's last choices for this design come back (a re-opened page / reload used to reset them)
+    S.o0 = JSON.parse(JSON.stringify(S.o)); czLoad();   // 246: the fresh choices kept for "+ New design" · 298: the customer's last choices for this design come back (a re-opened page / reload used to reset them)
     if (!window.__ad3d && /[?&]3d(=|&|$)/.test(location.search)) {   // ad links: /p/<design>/?3d opens the 3D designer / cabin studio straight away
       window.__ad3d = true; try { if (window.otrack) otrack('customise_start', { sku: id, ref: 'ad3d' }); } catch (e) {}
       if (m.unit === 'cabin') window.__cbsOpen = id; else if (/^MTO-PG-/.test(id)) window.__mtoPre = Object.assign({}, window.__mtoPre && window.__mtoPre.id === id ? window.__mtoPre : { id: id }, { open3d: true });
@@ -2360,6 +2360,15 @@
       '.ds-apb{display:flex;gap:4px;margin:10px 0 2px}.ds-apb i{flex:1;height:4px;border-radius:2px;background:#E6DFD6}.ds-apb i.d{background:#C26445}.ds-apb i.c{background:#2E2E2E}' +
       '.ds-aall{display:none;margin:10px 0 0;padding:8px;border:1px solid #E6DFD6;border-radius:14px;background:#F7F3EE}.ds-g.all .ds-aall{display:block}.ds-aq{padding:10px 0 4px}' +
       '.ds-hdl{display:none;justify-content:center;align-items:center;width:100%;height:24px;border:0;background:none;padding:0;margin:0;touch-action:none;cursor:grab}.ds-hdl i{width:44px;height:5px;border-radius:4px;background:#CFC5B6}' +
+      /* 246: design name + stages, My designs sheet */
+      '.ds-life{margin:2px 0 10px;padding:0 0 10px;border-bottom:1px solid #F0EAE1}.ds-nm{display:flex;align-items:center;gap:7px;width:100%;border:0;background:none;padding:2px 0;margin:0;font:600 13px Inter,sans-serif;color:#2E2E2E;cursor:pointer;text-align:left}.ds-nm span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-nm em{font-style:normal;font-weight:500;font-size:11.5px;color:#8a857c;flex:none}.ds-nm svg{flex:none;color:#C26445}' +
+      '.ds-lf{display:flex;gap:4px;margin:8px 0 0}.ds-lf i{flex:1;font-style:normal;text-align:center;font:600 10.5px Inter,sans-serif;letter-spacing:.02em;color:#A59C90;padding:5px 2px;border-radius:6px;background:#F4F0EA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-lf i.d{background:#F6E3DA;color:#8a3a1f}.ds-lf i.c{background:#C26445;color:#fff}' +
+      '.ds-my{position:fixed;inset:0;z-index:420;background:rgba(30,26,22,.42);display:none;align-items:center;justify-content:center;padding:16px}.ds-my.open{display:flex}.ds-myb{background:#fff;border-radius:16px;width:min(440px,100%);max-height:84dvh;overflow:auto;padding:14px 16px 16px;box-shadow:0 12px 40px rgba(0,0,0,.25);font-family:Inter,sans-serif}' +
+      '.ds-myh{display:flex;align-items:center;gap:10px;margin:0 0 10px}.ds-myh b{flex:1;font:700 16px "Plus Jakarta Sans",Inter,sans-serif}.ds-myh button{border:1px solid #E6DFD6;background:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer}' +
+      '.ds-new{width:100%;height:40px;border:1.5px dashed #C26445;background:#FFF8F2;color:#8a3a1f;border-radius:10px;font:600 13px Inter,sans-serif;cursor:pointer;margin:0 0 10px}.ds-mys{font-size:12px;color:#8a857c;margin:8px 0 0}' +
+      '.ds-row{border:1px solid #E6DFD6;border-radius:12px;margin:0 0 8px;overflow:hidden}.ds-row.on{border-color:#C26445}.ds-ro{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;border:0;background:none;padding:10px 12px;text-align:left;cursor:pointer;font-family:inherit}.ds-ro b{font:600 13px Inter,sans-serif;color:#2E2E2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-ro small{grid-column:1;font-size:11.5px;color:#8a857c}' +
+      '.ds-st{grid-row:1/3;grid-column:2;align-self:center;font:600 10.5px Inter,sans-serif;padding:4px 8px;border-radius:999px;background:#F4F0EA;color:#6B6660}.ds-st.proposal{background:#FBEFE9;color:#8a3a1f}.ds-st.transformation{background:#E7F0DE;color:#3B6D11}' +
+      '.ds-ra{display:flex;border-top:1px solid #F0EAE1}.ds-ra button{flex:1;border:0;background:#FBF9F6;padding:8px 4px;font:500 12px Inter,sans-serif;color:#2E2E2E;cursor:pointer}.ds-ra button+button{border-left:1px solid #F0EAE1}.ds-ra button:last-child{color:#B3261E}' +
       /* the question + its controls, planner sizes (pergola + customiser panels) */
       '.pg3-pn .ds-aq .pg3-sh{font:700 19px/1.25 "Plus Jakarta Sans",Inter,sans-serif;color:#2E2E2E;margin:2px 0 4px}.pg3-pn .ds-aq .pg3-note,.pg3-pn .ds-aq .mto-hint{font:400 12.5px/1.5 Inter,sans-serif;color:#6B6660}' +
       '.pg3-pn .ds-aq .pq-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pg3-pn .ds-aq .pq-cards button{position:relative;padding:10px 12px;border-radius:12px;border-width:1.5px;border-color:#E6DFD6}.pg3-pn .ds-aq .pq-cards button b{font:600 13px/1.3 Inter,sans-serif;display:block;padding-right:16px}.pg3-pn .ds-aq .pq-cards button small{font:400 11.5px/1.35 Inter,sans-serif;color:#6B6660}' +
@@ -2379,6 +2388,8 @@
       '.pg3-ov .pg3-bd:has(.ds-g)>.pg3-pn{position:relative;z-index:2;margin-top:-14px;border:0;border-top:1px solid #E2D6C4;border-radius:18px 18px 0 0;box-shadow:0 -6px 18px rgba(0,0,0,.08);background:#fff;overflow:visible;min-height:calc(100dvh - var(--ulh,58dvh) - 40px);padding:0 16px 150px}' +
       '.pg3-ov .pg3-bd:has(.ds-g)>.pg3-pn .ds-hdl{margin:0 0 -2px}.pg3-ov .pg3-bd:has(.ds-g) .pg3-cap{bottom:24px;font-size:11px;padding:5px 9px}.pg3-ov .pg3-ft:has(.ds-ft){width:100%;border-left:0;z-index:5;box-shadow:0 -2px 10px rgba(0,0,0,.05)}}';
     document.head.appendChild(st);
+    document.addEventListener('click', function (e) { var m = e.target.closest && e.target.closest('[data-dsmy],[data-dsx]'); if (m) { e.stopPropagation(); if (m.hasAttribute('data-dsmy')) dsMy(); else dsAct(m.getAttribute('data-dsx')); return; }
+      var dm = e.target.id === 'dsMy' && e.target; if (dm) { dm.classList.remove('open'); return; } }, true);
     document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-dsall]'); if (!b) return; e.stopPropagation(); DS_ALL = !DS_ALL; var g = b.closest('.ds-g'); if (g) g.classList.toggle('all', DS_ALL); b.textContent = 'All steps ' + (DS_ALL ? '▴' : '▾'); b.setAttribute('aria-expanded', DS_ALL); }, true);
     document.addEventListener('pointerdown', function (e) { var hd = e.target.closest && e.target.closest('.ds-hdl'); if (!hd) return; var ov = hd.closest('.pg3-ov'); if (!ov) return; e.preventDefault();
       var y0 = e.clientY, H = innerHeight / 100, h0 = DS_ULH, moved = false, fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
@@ -2392,9 +2403,74 @@
   function dsMax(ov) { var hd = ov.querySelector('.pg3-hd'), ft = ov.querySelector('.pg3-ft'), H = innerHeight || 700, px = H - (hd ? hd.offsetHeight : 50) - (ft ? ft.offsetHeight : 120) - 150; return Math.max(30, Math.min(66, px / H * 100)); }
   function dsFit(ov) { if (!ov || innerWidth > 900) return; var mx = dsMax(ov); if (DS_ULH > mx) DS_ULH = mx; ov.style.setProperty('--ulh', DS_ULH + 'dvh'); }
   function czKey() { return 'outrr_cz_' + (S && S.id); }
-  function czSave() { if (!S || !S.id) return; try { localStorage.setItem(czKey(), JSON.stringify({ t: Date.now(), o: S.o, pgS: S.pgS, pq: S.pq, look: S.look, stg: CU && CU.open ? CU.stg : undefined })); } catch (e) {} }
+  function czSave() { if (!S || !S.id) return; try { localStorage.setItem(czKey(), JSON.stringify({ t: Date.now(), o: S.o, pgS: S.pgS, pq: S.pq, look: S.look, stg: CU && CU.open ? CU.stg : undefined,
+    did: S.did, dname: S.dname, dstage: S.dstage, wz: S.wz && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin' && S.cbsInit ? S.wz : undefined })); } catch (e) {} dsSave(); }
   function czLoad() { try { var v = JSON.parse(localStorage.getItem(czKey()) || 'null'); if (!v || !v.o || Date.now() - v.t > 14 * 864e5) return;
-    Object.keys(v.o).forEach(function (k) { if (v.o[k] != null && v.o[k] !== '') S.o[k] = v.o[k]; }); if (v.pgS) S.pgS = v.pgS; if (v.pq != null) S.pq = v.pq; if (v.look) S.look = v.look; if (v.stg != null) S.czStg = v.stg; } catch (e) {} }
+    Object.keys(v.o).forEach(function (k) { if (v.o[k] != null && v.o[k] !== '') S.o[k] = v.o[k]; }); if (v.pgS) S.pgS = v.pgS; if (v.pq != null) S.pq = v.pq; if (v.look) S.look = v.look; if (v.stg != null) S.czStg = v.stg; if (v.did) { S.did = v.did; S.dname = v.dname; S.dstage = v.dstage; } if (v.wz && v.o.layout) { S.wz = v.wz; S.cbsInit = true; } } catch (e) {} }
+  // 246 (owner): My designs in every customiser, like the planner's plans — saved while you customise (design_save, one file per
+  // design, updated in place), switch / rename / duplicate / delete from the name button, stages Conceptualisation → Proposal →
+  // Transformation set by the database (proposal page / paid order). Signed out: kept on the device only (298).
+  var DSV = { t: null, key: '', list: null };
+  var STG3 = [['concept', 'Conceptualisation'], ['proposal', 'Proposal'], ['transformation', 'Transformation']];
+  function dsOn() { return !!(S && S.id && PRODS[S.id] && PRODS[S.id].cz && ((typeof P3 !== 'undefined' && P3.open) || CU.open || S.studio)); }
+  function dsIn() { try { return !!(window.acToken && localStorage.getItem('outrr_session')); } catch (e) { return false; } }
+  function dsSave(now) {
+    if (!dsOn() || !dsIn() || S.dsHold) return; var b; try { b = propBody(); } catch (e) { return; } delete b._q;
+    var key = JSON.stringify([S.id, S.did || '', b.cfg, b.name]); if (key === DSV.key && !now) return; clearTimeout(DSV.t);
+    DSV.t = setTimeout(async function () { var id0 = S && S.id; try { var r = await authRpc('design_save', { p_id: S.did || null, p: b });
+      if (r && r.id && S && S.id === id0) { DSV.key = key; var nw = !S.did; S.did = r.id; S.dname = r.name; S.dstage = r.stage || S.dstage || 'concept'; DSV.list = null; czSaveQuiet(); dsHead(); if (nw) toast('Saved to My designs'); } } catch (e) {} }, now ? 0 : 2200);
+  }
+  function czSaveQuiet() { var h = S.dsHold; S.dsHold = true; czSave(); S.dsHold = h; }
+  function dsLife() {   // the design's name (opens My designs) + where it stands
+    var st = S.dstage || 'concept', i = STG3.map(function (z) { return z[0]; }).indexOf(st), sv = dsIn();
+    return '<div class="ds-life"><button type="button" class="ds-nm" data-dsmy="1" title="My designs"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>' +
+      esc(sv ? (S.dname || 'New design') : 'Sign in to save this design') + '</span><em>' + (sv ? (S.did ? 'Saved' : 'Saving…') : '') + ' ▾</em></button>' +
+      '<div class="ds-lf">' + STG3.map(function (z, k) { return '<i class="' + (k < i ? 'd' : k === i ? 'c' : '') + '">' + z[1] + '</i>'; }).join('') + '</div></div>';
+  }
+  function dsHead() { [].slice.call(document.querySelectorAll('.ds-life')).forEach(function (el) { var d = document.createElement('div'); d.innerHTML = dsLife(); el.replaceWith(d.firstChild); }); }
+  function dsRedraw() { try { if (typeof P3 !== 'undefined' && P3.open) { draw(); p3Draw(); } else if (CU.open) cuDraw(); else if (S.studio) draw(); } catch (e) {} }
+  function dsApply(r) {   // a saved design → the customiser's choices
+    var c = r.cfg || {}; S.dsHold = true;
+    Object.keys(c).forEach(function (k) { if (k[0] === '_' || c[k] === undefined) return; S.o[k] = k === 'addons' ? arr(c[k]).slice() : k === 'groups' ? Object.assign({}, c[k]) : k === 'layout' ? JSON.parse(JSON.stringify(c[k])) : c[k]; });
+    if (c._wz) { S.wz = JSON.parse(JSON.stringify(c._wz)); S.cbsInit = true; } S.look = arr(c._look).slice();
+    if (/^\d{6}$/.test(r.pincode || '')) S.o.pin = r.pincode;
+    S.did = r.id; S.dname = r.name; S.dstage = r.stage || 'proposal'; S.pgS = 'size'; S.pq = 0; CU.stg = 0; S.czStg = 0;
+    S.dsHold = false; czSaveQuiet(); try { var b = propBody(); DSV.key = JSON.stringify([S.id, S.did, b.cfg, b.name]); } catch (e) { DSV.key = ''; }
+  }
+  function dsNew() { if (!S.o0) return; S.dsHold = true; S.o = JSON.parse(JSON.stringify(S.o0)); S.look = []; S.did = null; S.dname = ''; S.dstage = 'concept'; S.pgS = 'size'; S.pq = 0; CU.stg = 0; S.czStg = 0;
+    if (PRODS[S.id].cz.unit === 'cabin') { S.cbsInit = false; } S.dsHold = false; DSV.key = ''; }
+  async function dsList(force) { if (DSV.list && !force) return DSV.list; var r = await authRpc('my_proposals', {}); DSV.list = Array.isArray(r) ? r : []; return DSV.list; }
+  function dsAgo(t) { var m = Math.round((Date.now() - new Date(t)) / 6e4); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : new Date(t).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); }
+  async function dsMy() {
+    if (!dsIn()) { if (window.acRequire) window.acRequire(function () { dsSave(true); setTimeout(dsMy, 900); }, 'Sign in to save your designs'); return; }
+    var ov = document.getElementById('dsMy'); if (!ov) { ov = document.createElement('div'); ov.id = 'dsMy'; ov.className = 'ds-my'; document.body.appendChild(ov); }
+    ov.innerHTML = '<div class="ds-myb" role="dialog" aria-label="My designs"><div class="ds-myh"><b>My designs</b><button type="button" data-dsx="close" aria-label="Close">✕</button></div><p class="ds-mys">Loading…</p></div>'; ov.classList.add('open');
+    var L = []; try { L = (await dsList(true)).filter(function (z) { return z.sku === S.id; }); } catch (e) {}
+    var nm = short(PRODS[S.id].n);
+    ov.querySelector('.ds-myb').innerHTML = '<div class="ds-myh"><b>My designs · ' + esc(nm) + '</b><button type="button" data-dsx="close" aria-label="Close">✕</button></div>' +
+      '<button type="button" class="ds-new" data-dsx="new">+ New design</button>' +
+      (L.length ? L.map(function (z) { var on = z.id === S.did, st = STG3.filter(function (y) { return y[0] === (z.stage || 'proposal'); })[0] || STG3[1], pr = z.price && z.price.total ? rs(z.price.total) + ' · ' : '';
+        return '<div class="ds-row' + (on ? ' on' : '') + '"><button type="button" class="ds-ro" data-dsx="open:' + z.id + '"><b>' + esc(z.name) + '</b><small>' + pr + 'saved ' + dsAgo(z.updated_at) + (on ? ' · open now' : '') + '</small><span class="ds-st ' + st[0] + '">' + st[1] + '</span></button>' +
+          '<div class="ds-ra"><button type="button" data-dsx="ren:' + z.id + '">Rename</button><button type="button" data-dsx="dup:' + z.id + '">Duplicate</button><button type="button" data-dsx="del:' + z.id + '">Delete</button></div></div>'; }).join('')
+        : '<p class="ds-mys">No saved ' + esc(nm) + ' designs yet — this one saves itself as you customise.</p>') +
+      '<p class="ds-mys">All your designs: My account → My designs</p>';
+  }
+  async function dsAct(a) {
+    var ov = document.getElementById('dsMy'), cl = function () { if (ov) ov.classList.remove('open'); };
+    if (a === 'close') return cl();
+    if (a === 'new') { cl(); dsNew(); if (S.studio && PRODS[S.id].cz.unit === 'cabin') { window.cbStudio(true, true); } else dsRedraw(); dsSave(true); return; }
+    var p = a.split(':'), id = p[1], z = (DSV.list || []).filter(function (y) { return y.id === id; })[0];
+    if (p[0] === 'open') { if (!z) return; cl(); dsApply(z); dsRedraw(); toast('Opened ' + z.name); return; }
+    if (p[0] === 'ren') { var n = window.prompt('Name this design', z ? z.name : ''); if (n == null || !n.trim()) return; var r = await authRpc('design_rename', { p_id: id, p_name: n.trim() }); if (r == null) return toast('Could not rename — try again');
+      if (id === S.did) { S.dname = n.trim().slice(0, 140); czSaveQuiet(); dsHead(); } return dsMy(); }
+    if (p[0] === 'dup') { var d = await authRpc('design_duplicate', { p_id: id }); if (!d) return toast('Could not duplicate — you may have 100 designs'); toast('Copied as ' + d.name); return dsMy(); }
+    if (p[0] === 'del') { if (!window.confirm('Delete "' + (z ? z.name : 'this design') + '"?')) return; var x = await authRpc('proposal_delete', { p_id: id }); if (x == null) return toast('Could not delete — try again');
+      if (id === S.did) { S.did = null; S.dname = ''; S.dstage = 'concept'; try { var b = propBody(); DSV.key = JSON.stringify([S.id, '', b.cfg, b.name]); } catch (e) {} czSaveQuiet(); dsHead(); } return dsMy(); }
+  }
+  window.mtoOpenDesign = function (r) {   // My account → My designs → Open: the product page, those choices, its customiser
+    if (!r || !PRODS[r.sku]) return toast('This design is not on the store now'); try { openProduct(r.sku); } catch (e) { return; }
+    var n = 0; (function w() { if (!S || S.id !== r.sku || !S.pdp) { if (n++ < 80) return setTimeout(w, 100); return; } dsApply(r); draw(); window.mtoCustomise(); })();
+  };
   // stages: [{k, t, sum}] · cur: index of the open one · body: its question (html) · go: the data attribute that opens a stage (data-<go>="k")
   function dsStages(stages, cur, body, go) {
     dsCss(); var n = stages.length, g = stages[cur] || { t: '' };
@@ -2403,7 +2479,8 @@
       if (i < cur) return '<div class="ds-sg done"><button type="button" class="ds-sgh" data-' + go + '="' + esc(s.k) + '"><i>✓</i><span><b>' + esc(s.t) + '</b>' + (s.sum ? '<small>' + esc(s.sum) + '</small>' : '') + '</span><em>✎</em></button></div>';
       return '<div class="ds-sg lock"><div class="ds-sgh"><i>' + (i + 1) + '</i><span><b>' + esc(s.t) + '</b></span></div></div>';
     }).join('') + '</div></div>';
-    return '<div class="ds-g' + (DS_ALL ? ' all' : '') + '"><button type="button" class="ds-hdl" aria-label="Drag to resize"><i></i></button><div class="ds-ah"><div class="ds-ahr"><span>Step ' + (cur + 1) + ' of ' + n + ' · ' + esc(g.t) + '</span><button type="button" data-dsall aria-expanded="' + DS_ALL + '">All steps ' + (DS_ALL ? '▴' : '▾') + '</button></div><div class="ds-apb">' +
+    if (S && S.studio) setTimeout(function () { if (S && S.studio) czSave(); }, 0);   // 246: the cabin studio saves like the others
+    return '<div class="ds-g' + (DS_ALL ? ' all' : '') + '"><button type="button" class="ds-hdl" aria-label="Drag to resize"><i></i></button>' + dsLife() + '<div class="ds-ah"><div class="ds-ahr"><span>Step ' + (cur + 1) + ' of ' + n + ' · ' + esc(g.t) + '</span><button type="button" data-dsall aria-expanded="' + DS_ALL + '">All steps ' + (DS_ALL ? '▴' : '▾') + '</button></div><div class="ds-apb">' +
       stages.map(function (s, i) { return '<i class="' + (i < cur ? 'd' : i === cur ? 'c' : '') + '"></i>'; }).join('') + '</div></div>' + all + '<div class="ds-aq">' + body + '</div></div>';
   }
   var PG_ORD = DS_SOLO ? ['size', 'look', 'extras'] : ['size', 'look', 'extras', 'around'];
@@ -2723,10 +2800,11 @@
     var its = arOthers(S.pl && S.plFor === S.id ? S.pl : null); if (!its.length && S.proj === 'same' && (isPg(S.id) || PRODS[S.id].cz.unit === 'cabin')) { var lp = localPlan(); if (lp) its = lp.items; }
     var me = isPg(S.id) ? 'pergola' : PRODS[S.id].cz.unit === 'cabin' ? 'cabin' : ''; return its.filter(function (o) { return o && o.cat !== me; });
   }
-  window.mtoOpenProposal = function (id, cfg, pin) {   // My account → Proposals → Open: the product page with those choices, then the proposal
+  window.mtoOpenProposal = function (id, cfg, pin, row) {   // 246: row = one of my saved designs (its proposal updates that design)   // My account → Proposals → Open: the product page with those choices, then the proposal
     if (!PRODS[id]) return toast('This design is not on the store now'); try { openProduct(id); } catch (e) { return; }
     var n = 0; (function w() { if (!S || S.id !== id || !S.pdp) { if (n++ < 80) return setTimeout(w, 100); return; }
-      Object.keys(cfg || {}).forEach(function (k) { if (cfg[k] !== undefined && k !== 'layout') S.o[k] = k === 'addons' ? arr(cfg[k]).slice() : k === 'groups' ? Object.assign({}, cfg[k]) : cfg[k]; });
+      if (row && row.id) { dsApply(row); S.proj = 'same'; draw(); return window.mtoProposal(true); }
+      Object.keys(cfg || {}).forEach(function (k) { if (cfg[k] !== undefined && k !== 'layout' && k[0] !== '_') S.o[k] = k === 'addons' ? arr(cfg[k]).slice() : k === 'groups' ? Object.assign({}, cfg[k]) : cfg[k]; });
       if (/^\d{6}$/.test(pin || '')) S.o.pin = pin; S.proj = 'same'; draw(); window.mtoProposal(true); })();
   };
   function propCss() {
@@ -2841,15 +2919,22 @@
     if (!S || !S.prop || !(window.acToken)) return; clearTimeout(propT);
     var key = S.id + JSON.stringify(cfgOf(S.o)) + (S.o.pin || '') + JSON.stringify(extra || {}); if (key === S.propKey) return;
     propT = setTimeout(async function () { try {
+      var b = propBody(), q = b._q; delete b._q;
+      if (!S.did && dsIn()) { var b0 = Object.assign({}, b); delete b0.pin; var r0 = await authRpc('design_save', { p_id: null, p: b0 }); if (r0 && r0.id) { S.did = r0.id; S.dname = r0.name; } }
+      b.design_id = S.did || null;   // 246: the saved design moves to stage Proposal
+      var r = await authRpc('proposal_save', { p: Object.assign(b, extra || {}) });
+      S.propKey = key; if (r && r.stage) { S.dstage = r.stage; czSave(); } if (r && r.no) { S.propNo = r.no; S.propMail = r.email || ''; propCta(q, true); }
+    } catch (e) {} }, extra ? 0 : 1800);
+  }
+  function propBody() {   // what a saved design / proposal holds (246: also the customiser's autosave)
       var x = PRODS[S.id], o = S.o, q = priceR(S.id, x.cz, o, PCT), sp = isPg(S.id) ? pgSpec(S.id, pgOpts()) : null, ar = aroundList();
-      var pg = isPg(S.id), szT = pg ? sp.L + ' × ' + sp.W + ' ft' : sizeTxt(x.cz, o);
-      var r = await authRpc('proposal_save', { p: Object.assign({ sku: S.id, name: short(x.n) + (szT ? ' · ' + szT : ''), cfg: cfgOf(o), pin: o.pin || '',
+      var pg = isPg(S.id), szT = pg ? sp.L + ' × ' + sp.W + ' ft' : sizeTxt(x.cz, o), cfg = cfgOf(o);
+      if (S.wz && x.cz.unit === 'cabin') cfg._wz = JSON.parse(JSON.stringify(S.wz)); if (arr(S.look).length) cfg._look = S.look;
+      return { _q: q, sku: S.id, name: short(x.n) + (szT ? ' · ' + szT : ''), cfg: cfg, pin: o.pin || '',
         summary: pg ? { size: szT, area: Math.round(sp.L * sp.W), height: pgOpts().height, finish: o.material, colour: o.colour, cover: String(pgOpts().cover || '').split(' (')[0], layout: String(pgOpts().layout || '').split(' (')[0], addons: arr(o.addons), posts: sp.posts }
           : { size: szT, finish: x.cz.unit === 'cabin' ? '' : o.material, colour: o.colour, addons: arr(o.addons), options: Object.keys(o.groups || {}).map(function (k) { return k + ': ' + String(o.groups[k]).split(' (')[0]; }) },
         price: q && q.ok ? { total: Math.round(q.total), pay_now: Math.round(q.pay_now), later: Math.round(q.before_dispatch || 0), install: !!o.install } : null,
-        around: ar.slice(0, 30).map(function (it) { return { cat: it.cat, label: it.label || '', w: it.w, d: it.d, h: it.h || null, pick: it.pick || null }; }) }, extra || {}) });
-      S.propKey = key; if (r && r.no) { S.propNo = r.no; S.propMail = r.email || ''; propCta(q, true); }
-    } catch (e) {} }, extra ? 0 : 1800);
+        around: ar.slice(0, 30).map(function (it) { return { cat: it.cat, label: it.label || '', w: it.w, d: it.d, h: it.h || null, pick: it.pick || null }; }) };
   }
 
   // ------------------------------------------------------------ 198: every outrr make + install design (not furniture / sculptures) — same as pergolas:

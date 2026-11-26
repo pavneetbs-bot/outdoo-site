@@ -167,30 +167,36 @@
     const T = (k, l) => `<button class="${tab === k ? 'on' : ''}" onclick="acTab('${k}')">${l}</button>`
     view(`<div class="pagetop"><span class="bk" onclick="showHome()">←</span><h2>My account</h2></div>
       <div class="ac-hello"><div><b>Hi${me.name ? ', ' + esc(me.name.split(' ')[0]) : ''}</b><span>${esc(me.email)}</span></div><a onclick="acSignOut()">Sign out</a></div>
-      <div class="ac-tabs">${T('orders', 'Orders')}${T('proposals', 'Proposals')}${T('plans', 'Saved plans')}${T('shared', 'Shared with me')}${T('addresses', 'Addresses')}${T('profile', 'Profile & GST')}</div>
+      <div class="ac-tabs">${T('orders', 'Orders')}${T('proposals', 'My designs')}${T('plans', 'Saved plans')}${T('shared', 'Shared with me')}${T('addresses', 'Addresses')}${T('profile', 'Profile & GST')}</div>
       <div id="acBody"></div>`)
     tab === 'orders' ? drawOrders() : tab === 'proposals' ? drawProposals() : tab === 'plans' ? drawPlans() : tab === 'shared' ? drawShared() : tab === 'addresses' ? drawAddresses() : drawProfile()
   }
   window.acTab = t => { tab = t; draw() }
 
-  // ---------------------------------------------------------------- 197: proposals (pergola customiser → proposal page)
+  // ---------------------------------------------------------------- 197 / 246: My designs (every customiser saves here; stages set by outrr)
+  const STG3 = { concept: ['Conceptualisation', '#F4F0EA', '#6B6660'], proposal: ['Proposal', '#FBEFE9', '#8a3a1f'], transformation: ['Transformation', '#E7F0DE', '#3B6D11'] }
   async function drawProposals() {
-    const b = $('acBody'); if (!b) return; b.innerHTML = '<p class="mut">Loading your proposals…</p>'
+    const b = $('acBody'); if (!b) return; b.innerHTML = '<p class="mut">Loading your designs…</p>'
     let list = []; try { list = await rpc('my_proposals') || [] } catch (e) { b.innerHTML = `<p class="mut">${esc(e.message)}</p>`; return }
-    b.innerHTML = '<p class="mut sm" style="margin:4px 0 12px">Every design you customised, with its price, drawings and specifications. Open one to change it or add it to the cart.</p>' +
-      (list.length ? list.map(p => { const s = p.summary || {}, pr = p.price || {}, img = typeof PRODS !== 'undefined' && PRODS[p.sku] && typeof IMGS !== 'undefined' ? IMGS[PRODS[p.sku].img] : ''
+    b.innerHTML = '<p class="mut sm" style="margin:4px 0 12px">Every design you customise saves itself here. <b>Conceptualisation</b> while you design it → <b>Proposal</b> once you see your proposal → <b>Transformation</b> once it is ordered.</p>' +
+      (list.length ? list.map(p => { const s = p.summary || {}, pr = p.price || {}, img = typeof PRODS !== 'undefined' && PRODS[p.sku] && typeof IMGS !== 'undefined' ? IMGS[PRODS[p.sku].img] : '', st = STG3[p.stage || 'proposal'] || STG3.proposal
         return `<div class="ac-order" style="padding:14px 16px"><div style="display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">
           <div style="display:flex;gap:12px;align-items:flex-start;min-width:0">${img ? `<img src="${esc(img)}" alt="" style="width:76px;height:60px;object-fit:cover;border-radius:8px;flex:none">` : ''}
-          <div><b>${esc(p.name)}</b><div class="mut sm">${esc(p.no)} · ${[s.height ? s.height + ' clear' : '', s.colour, s.cover, s.layout].filter(Boolean).map(esc).join(' · ')}</div>
+          <div><b>${esc(p.name)}</b> <span style="display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:${st[1]};color:${st[2]};margin-left:4px">${st[0]}</span>
+            <div class="mut sm">${esc(p.no)} · ${[s.size, s.height ? s.height + ' clear' : '', s.colour, s.cover, s.layout].filter(Boolean).map(esc).join(' · ')}</div>
             ${(s.addons || []).length ? `<div class="mut sm">Add-ons: ${s.addons.map(esc).join(', ')}</div>` : ''}
-            <div class="mut sm">${pr.total ? '<b>' + rs(pr.total) + '</b> incl. GST' + (pr.install ? ' and installation' : '') + ' · ' : ''}Saved ${d8(p.updated_at, true)}${p.carted_at ? ' · <b>added to cart</b>' : ''}${p.around ? ' · ' + p.around + ' more thing' + (p.around > 1 ? 's' : '') + ' around it' : ''}</div></div></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPropOpen('${p.id}')">Open</button><button class="btn ghost" style="padding:8px 12px" onclick="acShare('proposal','${p.id}')">Share</button><button class="btn ghost" style="padding:8px 12px" onclick="acPropDel('${p.id}')">Delete</button></div>
-        </div></div>` }).join('') : '<div class="ac-empty"><p>No proposals yet.</p><p class="mut sm">Customise a pergola in 3D — your proposal with price, drawings and specifications is saved here.</p></div>')
+            <div class="mut sm">${pr.total ? '<b>' + rs(pr.total) + '</b> incl. GST' + (pr.install ? ' and installation' : '') + ' · ' : ''}Saved ${d8(p.updated_at, true)}${p.carted_at && p.stage !== 'transformation' ? ' · <b>in the cart</b>' : ''}${p.around ? ' · ' + p.around + ' more thing' + (p.around > 1 ? 's' : '') + ' around it' : ''}</div></div></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPropOpen('${p.id}')">Open</button>${p.stage !== 'concept' ? `<button class="btn ghost" style="padding:8px 12px" onclick="acPropSee('${p.id}')">Proposal</button>` : ''}<button class="btn ghost" style="padding:8px 12px" onclick="acPropRen('${p.id}')">Rename</button><button class="btn ghost" style="padding:8px 12px" onclick="acPropDup('${p.id}')">Duplicate</button><button class="btn ghost" style="padding:8px 12px" onclick="acShare('proposal','${p.id}')">Share</button><button class="btn ghost" style="padding:8px 12px" onclick="acPropDel('${p.id}')">Delete</button></div>
+        </div></div>` }).join('') : '<div class="ac-empty"><p>No designs yet.</p><p class="mut sm">Customise a pergola, cabin, planter, bar or feature wall — it saves itself here as you go.</p></div>')
     drawProposals.list = list
-    if (window._acPropWant) { const w = window._acPropWant; window._acPropWant = null; if (list.some(x => x.id === w)) acPropOpen(w) }
+    if (window._acPropWant) { const w = window._acPropWant; window._acPropWant = null; if (list.some(x => x.id === w)) acPropSee(w) }
   }
-  window.acPropOpen = id => { const p = (drawProposals.list || []).find(x => x.id === id); if (p && window.mtoOpenProposal) mtoOpenProposal(p.sku, p.cfg, p.pincode) }
-  window.acPropDel = async id => { if (!confirm('Delete this proposal?')) return; try { await rpc('proposal_delete', { p_id: id }); drawProposals() } catch (e) { say(e.message) } }
+  const propRow = id => (drawProposals.list || []).find(x => x.id === id)
+  window.acPropOpen = id => { const p = propRow(id); if (!p) return; if (window.mtoOpenDesign) mtoOpenDesign(p); else if (window.mtoOpenProposal) mtoOpenProposal(p.sku, p.cfg, p.pincode) }
+  window.acPropSee = id => { const p = propRow(id); if (p && window.mtoOpenProposal) mtoOpenProposal(p.sku, p.cfg, p.pincode, p) }
+  window.acPropRen = async id => { const p = propRow(id), n = prompt('Name this design', p ? p.name : ''); if (n == null || !n.trim()) return; try { await rpc('design_rename', { p_id: id, p_name: n.trim() }); drawProposals() } catch (e) { say(e.message) } }
+  window.acPropDup = async id => { try { await rpc('design_duplicate', { p_id: id }); drawProposals() } catch (e) { say(e.message) } }
+  window.acPropDel = async id => { if (!confirm('Delete this design?')) return; try { await rpc('proposal_delete', { p_id: id }); drawProposals() } catch (e) { say(e.message) } }
 
   // ---------------------------------------------------------------- 195: saved plans ("Plan your space")
   const CATN = { cabin: 'Cabin', pergola: 'Pergola', sofa: 'Sofa set', swing: 'Swing', dining: 'Dining set', chair: 'Chairs', bench: 'Bench', table: 'Table', bar: 'Bar counter', planter: 'Planter', water: 'Water feature', sculpture: 'Sculpture', deck: 'Decking', railing: 'Railing', privacy: 'Privacy screen', feature: 'Feature wall', vgarden: 'Vertical garden', graffiti: 'Graffiti art', accover: 'AC cover', gate: 'Gate' }
