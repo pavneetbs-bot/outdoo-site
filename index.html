@@ -3009,7 +3009,8 @@ var GAL = window.GAL || {}; window.GAL = GAL;
 var GALC = {};   // 187: sku → [[url, colour]] — photos that show one finish
 function pdColList(id){ const c=window.mtoColourOf&&mtoColourOf(id), l=(GALC[id]||[]).filter(g=>g[1]===c).map(g=>g[0]); return l.length?l:null; }
 function pdThumbs(id){
-  const x=PRODS[id]; if(!x) return; const cl=pdColList(id), list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
+  const x=PRODS[id]; if(!x) return; const cl=pdColList(id); let list=(cl||[bigImg(IMGS[x.img],1600), ...(GAL[id]||[])]).filter(Boolean).filter((u,i,a)=>a.indexOf(u)===i);
+  { const ph=list.filter(u=>!isDrawImg(u)); if(ph.length&&ph.length<list.length){ const moved=list[0]!==ph[0]; list=ph.concat(list.filter(isDrawImg)); if(moved){ const im=document.getElementById('pdImg'); if(im) im.src=bigImg(list[0],1600); } } }   // drawings / exploded views never in front: photos first, drawings last
   if(/^MTO-PG-/.test(id)) list.push('/img/trust/pg-assurance.jpg?v=2');
   if(lpOf(x)) list.push('/img/trust/lp-assurance.jpg');   // 218/222: local nursery, delivered upright, 7-day replacement
   if(/^MTO-CB-(GLASS|HYBRID|PORTA)$/.test(id)) list.push('/img/trust/cb-assurance.jpg');   // cabins: factory-made, kit, 2–5 day assembly, 10-year warranty
@@ -3387,9 +3388,12 @@ function pgRate(x){if(!x||!x.cz||!/^MTO-/.test(x.img||'')||/^MTO-PL-\d/.test(x.i
 // Made to Order cards: a random photo of the design (day / night / other scenes, not drawings) and a second one on hover
 const _picK={};
 function mtoPics(id){const x=PRODS[id]; if(!x||!x.cz) return null; const all=[...new Set([IMGS[x.img]].concat((window.GAL&&GAL[id])||[]).filter(Boolean))];
-  const bad=u=>/measure|exploded|draw|_iso|plan[_.]|factory|trust|banner/i.test(u), ai=all.filter(u=>/\/ai\//.test(u)&&!bad(u)), L=ai.length>=2?ai:all.filter(u=>!bad(u)&&!/\/mto\//.test(u));
+  const bad=u=>isDrawImg(u)||/factory|trust|banner/i.test(u), ai=all.filter(u=>/\/ai\//.test(u)&&!bad(u)), L=ai.length>=2?ai:all.filter(u=>!bad(u)&&!/\/mto\//.test(u));
   if(L.length<2) return null; if(_picK[id]==null) _picK[id]=Math.floor(Math.random()*L.length); const a=_picK[id]%L.length; return [L[a],L[(a+1)%L.length]];}
-function cardIm(id,alt){const p=mtoPics(id); if(!p) return `<div class="im"><img loading="lazy" src="${IMGS[PRODS[id].img]}" alt="${alt||''}"></div>`;
+var DRAWU=new Set();   // 240: urls the database marks as drawings (product_images.drawing)
+function isDrawImg(u){u=String(u||''); return DRAWU.has(u)||DRAWU.has(u.split('?')[0])||/measure|exploded|draw|_iso|plan[_.]|working|boq|dimension/i.test(u);}
+function frontImg(id){const m=IMGS[PRODS[id].img]; if(!isDrawImg(m)) return m; const ph=((window.GAL&&GAL[id])||[]).find(u=>!isDrawImg(u)); return ph?bigImg(ph,640):m;}   // a design whose main image is a drawing shows its first real photo on cards
+function cardIm(id,alt){const p=mtoPics(id); if(!p) return `<div class="im"><img loading="lazy" src="${frontImg(id)}" alt="${alt||''}"></div>`;
   return `<div class="im im-sw"><img loading="lazy" src="${bigImg(p[0],640)}" alt="${alt||''}"><img loading="lazy" class="im2" src="${bigImg(p[1],640)}" alt="" decoding="async" onload="this.classList.add('ok')"></div>`;}   // card-size copies (the originals are big PNGs that drew in top to bottom on hover); the 2nd shows only once loaded
 function pgRateH(x){const u=x.cz.unit; return `<span class="vfrom">From</span> ${inr(pgRate(x))}${u==='fixed'||x.cz.pcs?'':`<span class="vfrom"> / ${u==='length'?'running ft':'sq ft'}</span>`}`;}
 function pgCard(id,how){openProduct(id); setTimeout(()=>{try{ if(how==='3d'||(window.mtoOk&&mtoOk())) window.mtoCustomise&&mtoCustomise(); else mtoUnlock(id); }catch(e){}},400);}
@@ -4701,10 +4705,15 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     cartX(); CART = CART.filter(c => PRODS[c.id]); updBadge();
     // each product's other photos (Image Studio: side, front, close-up, measurements) for the product page gallery
     try{
-      let gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort,colour');   // 187: the finish a photo shows
+      let gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort,colour,drawing');   // 187: the finish a photo shows · 240: drawings
+      if(!gr.ok) gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort,colour');
       if(!gr.ok) gr = await pages(S.url + '/rest/v1/product_images?select=product_id,url,sort');
       if(gr.ok){ const bySku = {}; prods.forEach(p => bySku[p.id] = p.sku);
-        (await gr.json()).sort((a,b) => (a.sort||0) - (b.sort||0)).forEach(g => { const k = bySku[g.product_id]; if(k){ (GAL[k] = GAL[k] || []).push(g.url); if(g.colour) (GALC[k] = GALC[k] || []).push([g.url, g.colour]); } });
+        (await gr.json()).sort((a,b) => (a.drawing?1:0) - (b.drawing?1:0) || (a.sort||0) - (b.sort||0)).forEach(g => { const k = bySku[g.product_id]; if(k){ if(g.drawing) DRAWU.add(g.url); (GAL[k] = GAL[k] || []).push(g.url); if(g.colour) (GALC[k] = GALC[k] || []).push([g.url, g.colour]); } });
+        // a design whose main image is a drawing / exploded view: its first real photo goes in front everywhere, the drawing to the end of the gallery
+        try{ let sw=0; Object.keys(PRODS).forEach(id => { const x=PRODS[id], m=IMGS[x.img]; if(!x.cz||!isDrawImg(m)) return; const ph=(GAL[id]||[]).find(u=>!isDrawImg(u)); if(!ph) return;
+          IMGS['fr_'+id]=ph; x.img='fr_'+id; GAL[id]=(GAL[id]||[]).filter(u=>u!==ph); if(!GAL[id].includes(m)) GAL[id].push(m); sw++; });
+          if(sw && typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none') renderPLP(lastCol); }catch(e){}
         try{ if(curPid && document.getElementById('pdp').style.display==='block' && window.PDG && PDG.id===curPid) pdThumbs(curPid); }catch(e){} }   // 164: a product page opened before the photos loaded
     }catch(e){}
     try{ window.dispatchEvent(new Event('outrr-catalog')); }catch(e){}
