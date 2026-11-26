@@ -2479,7 +2479,9 @@ export function open(seed) {
   if (seed && seed.sload) return openSaved(seed.sload, true);
   if (seed && seed.shared) return openShared(seed.shared);
   if (seed && seed.link) return openLink(seed.link);   // 231
+  const hid0 = !EL || EL.style.display === 'none';
   for (const k in PC) delete PC[k]; shell(); TM.load().then(() => { try { if (EL && EL.style.display !== 'none' && S && S.step === 0) draw(); } catch (e) {} }); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
+  if (S && S.su && S.su.on && hid0) { S.su.on = false; if (!S.su.done) S.su.left = true; if (SUEL) SUEL.style.display = 'none'; }   // 293 (owner: phone still on Add / Pick): a page closed mid-setup saved su.on = true — nothing opened the setup again
   if (S && !S.su && S.site && S.site.kind === 'terrace' && (S.items || []).some(o => o && !o.old)) { const f = setupFor({ id: S.pid, site: S.site, items: S.items }); if (f.su) { S.su = f.su; S.bsel = S.bsel && Object.keys(S.bsel).length ? S.bsel : f.bsel; if (S.step === 2) S.step = 1; } }
   else if (S && S.su && !S.su.done && !S.su.left && !S.su.on && S.site && S.site.kind === 'terrace' && (S.items || []).some(o => o && !o.old)) { const f = setupFor({ id: 'x', site: S.site, items: S.items }); S.su = Object.assign({}, f.su || {}, S.su, { done: true, decorDone: true, oldPlaced: true, cv: SUV }); if (!S.bsel || !Object.keys(S.bsel).length) S.bsel = f.bsel; if (S.step === 2) S.step = 1; }   // 282: a setup that was left half-way in the old flow (su without done / left) — same as set up, never the old tabs   // 281 (owner): any laid-out terrace without a setup (saved before 231, or loaded by the space picker) opens in the new flow — no old tabs / Add more / dragging in 3D
   if (S && !(S.su && S.su.done) && S.site && S.site.kind === 'terrace' && S.step === 0 && S.tsDone) S.step = 1;   // 293: a terrace set up on the roof wizard never shows the old Your space step
