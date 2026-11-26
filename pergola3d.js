@@ -4,7 +4,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=55';   // 193f: the same terrace as the cabin studio and the planner
+import { plotModel } from './cabin3d.js?v=56';
+import { layCanvas, layPeriod } from './floorlay.js?v=4';   // design studio floor (283)   // 193f: the same terrace as the cabin studio and the planner
 
 const MM = v => v / 304.8;   // mm → ft
 // design recipes: post = SHS size (mm); roof: flat | tiers | gable | xgable | hip | barrel | wave | louvre | grid | float;
@@ -235,6 +236,27 @@ function setNight(on) {
 }
 // 193f: on a terrace (opts.site: the studio's terrace — cx / cz = the pergola's corner, rot = where its front faces), with an optional deck and furniture to see it
 let FURN = null, FURN_LOADING = false, ITEMS = null;
+// 283 design studio: the basic setting every customiser opens in — plain grey 2 × 4 ft tiles, a soft ground beyond, and a
+// 5 ft 9 in person standing by it so the height reads at a glance (no furniture / planters)
+let STX = null;
+function studioFloor(g, x0, z0, w, d) {
+  if (!STX) { const P = layPeriod('studio_grey'), L = layCanvas('studio_grey', 96), t = new THREE.CanvasTexture(L.cv); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; STX = { t, P }; }
+  const geo = new THREE.PlaneGeometry(w, d), uv = geo.attributes.uv, ps = geo.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, (x0 + w / 2 + ps.getX(i)) / STX.P[0], (z0 + d / 2 - ps.getY(i)) / STX.P[1]);
+  const m = new THREE.Mesh(geo, mat('studioFloor', { map: STX.t, roughness: 0.9 })); m.rotation.x = -Math.PI / 2; m.position.set(x0 + w / 2, 0.005, z0 + d / 2); m.receiveShadow = true; g.add(m);
+  const far = new THREE.Mesh(new THREE.CircleGeometry(Math.max(w, d) * 2.2, 48), mat('studioGround', { color: 0xE4E1DA, roughness: 1 })); far.rotation.x = -Math.PI / 2; far.position.set(x0 + w / 2, -0.01, z0 + d / 2); far.receiveShadow = true; g.add(far);
+}
+function person(g, x, z, ry) {   // a plain grey figure, 5 ft 9 in, facing the camera side
+  const p = new THREE.Group(), sk = mat('pSkin', { color: 0xC9B8A6, roughness: 0.8 }), cl = mat('pCloth', { color: 0x5B6068, roughness: 0.9 }), pt = mat('pPant', { color: 0x3A3D42, roughness: 0.9 });
+  const cyl = (rt, rb, h, m, px, py, pz) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 14), m); c.position.set(px, py, pz); c.castShadow = true; p.add(c); return c; };
+  cyl(0.2, 0.17, 2.85, pt, -0.24, 1.43, 0); cyl(0.2, 0.17, 2.85, pt, 0.24, 1.43, 0);                 // legs
+  const sh = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.16, 0.62), pt); sh.position.set(-0.24, 0.08, 0.12); p.add(sh); const sh2 = sh.clone(); sh2.position.x = 0.24; p.add(sh2);
+  const tor = cyl(0.62, 0.5, 2.0, cl, 0, 3.85, 0); tor.scale.z = 0.62;                               // body
+  const a1 = cyl(0.13, 0.11, 2.2, cl, -0.72, 3.75, 0); a1.rotation.z = 0.06; const a2 = cyl(0.13, 0.11, 2.2, cl, 0.72, 3.75, 0); a2.rotation.z = -0.06;
+  cyl(0.15, 0.17, 0.3, sk, 0, 4.98, 0);                                                              // neck
+  const hd = new THREE.Mesh(new THREE.SphereGeometry(0.4, 20, 16), sk); hd.scale.set(0.95, 1.12, 1); hd.position.set(0, 5.32, 0); hd.castShadow = true; p.add(hd);
+  p.position.set(x, 0, z); p.rotation.y = ry || 0; p.userData.person = 1; g.add(p); return p;
+}
 function extras(g, L, W, opts, wall) {   // deck under it (fits the pergola unless sized) + a furniture set, both to see it; returns the pergola's lift
   const dk = opts.deck, y0 = dk ? 0.6 : 0;
   if (dk) { const dl = +dk.l || L + 1, dw = +dk.w || W + 1, x0 = L / 2 - dl / 2, z0 = wall ? -0.25 : W / 2 - dw / 2, nose = 0.15, th = 0.12, op = { front: 1, left: 1, right: 1, back: wall ? 0 : 1 };
@@ -263,14 +285,19 @@ export function show(el, sku, o, opts) {
   opts = opts || {}; ensure(el); ptr();
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
-  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=65').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=66').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' + JSON.stringify(opts.deck) : '') + (opts.furn || '') + (FURN ? 'F' : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
     const dimsK = [o.l, o.w, o.height, mode, t ? [t.pw, t.pd].join('x') : ''].join('x'), redo = !R.group || dimsK !== R.dims;
     if (R.group) { R.scene.remove(R.group); R.group.traverse(m => { if (m.geometry) m.geometry.dispose(); }); }
     let root, b;
-    if (!t && !opts.deck && !opts.furn) { b = build(sku, o); root = b.g; }
+    if (!t && !opts.deck && !opts.furn && !opts.studio) { b = build(sku, o); root = b.g; }
+    else if (!t && opts.studio) {   // 283: the design studio — grey 2 × 4 tiles all round, the wall behind when it is fixed to one, a person for scale
+      b = build(sku, o, true); root = new THREE.Group(); const L = b.L, W = b.W, wl = /wall/i.test(String(o.layout || ''));
+      studioFloor(root, -8, wl ? -1.05 : -8, L + 16, W + (wl ? 9.05 : 16));
+      if (wl) box(root, L + 10, Math.max(10, b.H + 2), 0.75, L / 2, Math.max(10, b.H + 2) / 2, -0.43, mat('studioWall', { color: 0xE9E5DE, roughness: 0.95 }));
+      const y0 = extras(root, L, W, opts, wl); b.g.position.y = y0; root.add(b.g); person(root, L + 2.6, W * 0.7, -0.5); }
     else if (!t) {   // a lawn with a deck / furniture: the ground drawn here, the pergola lifted onto the deck
       b = build(sku, o, true); root = new THREE.Group(); const X = S(), L = b.L, W = b.W; box(root, L + 16, 0.1, W + 16, L / 2, -0.05, W / 2, X.ground);
       if (/wall/i.test(String(o.layout || ''))) box(root, L + 4, b.H + 3, 0.6, L / 2, (b.H + 3) / 2, -0.45, X.wall);

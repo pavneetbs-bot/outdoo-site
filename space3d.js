@@ -5,11 +5,11 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=55';
-import { pergolaModel } from './pergola3d.js?v=42';
-import { outline, sofaLayout } from './plan2d.js?v=29';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=56';
+import { pergolaModel } from './pergola3d.js?v=43';
+import { outline, sofaLayout } from './plan2d.js?v=30';
 import { plantModel } from './plants3d.js?v=3';
-import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=3';
+import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=4';
 const LAYK = k => !!LSPEC[k];
 
 let R = null, HANDLER = null;

@@ -32,6 +32,7 @@ export const SPECS = {
   // Minimal — microcement, big faint joints
   min_field: { pat: 'stack', w: 4, d: 4, g: 0.012, pal: ['#E9E6E0', '#E5E2DB', '#ECE9E3'], v: 0.015, j: '#D2CEC6', m: 'micro' },
   min_rug: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.025, pal: ['#D2B994', '#CDB38D', '#D8C09C'], v: 0.04, j: '#8E7A5E', m: 'wpc' },   // WPC light oak
+  studio_grey: { pat: 'stack', w: 2, d: 4, g: 0.02, pal: ['#7E7D79', '#787773', '#84837F', '#73726E'], v: 0.025, j: '#5F5E5A', m: 'cement' },   // design studio: plain grey 2 × 4 ft tiles under every customiser
   wpc_grey: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#8E8A84', '#86827C', '#96928B'], v: 0.04, j: '#3A3835', m: 'wpc' },
   wpc_walnut: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#5E3B26', '#56361F', '#66422B'], v: 0.06, j: '#24170E', m: 'wpc' },
   // Boho / rustic — terracotta brick herringbone, a basketweave "rug" where people sit, brick soldier border

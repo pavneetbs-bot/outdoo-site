@@ -626,8 +626,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=55').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=55'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=56').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=56'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -770,7 +770,7 @@
   // 202: the terrace one kind of question at a time — Quick: Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof
   // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
   var TMM = null, TMP = null;
-  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=29').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
+  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=30').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
   function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=5').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
   function tsTpl() {
     var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -2332,7 +2332,30 @@
     return h;
   }
   function q2(q) { return q.l + ' × ' + q.w + ' ft'; }
-  var PG_ORD = ['size', 'look', 'extras', 'around'];
+  // 283 (owner): ONE customiser base for the whole design studio — big 3D on the left, a stage panel on the right like the planner:
+  // done stages collapsed with a summary + ✎, the current one open with its question, later ones locked; price + the button at the bottom.
+  // Every designer (pergola now; cabin, bar, feature wall, planters… next) renders its panel with dsStages() and uses dsCss().
+  // "See it in my space" is on hold (DS_SOLO): designers open straight on the studio floor — no "which space" screen, no terrace / around steps.
+  var DS_SOLO = true;
+  function dsCss() {
+    if (document.getElementById('dsCss')) return; var st = document.createElement('style'); st.id = 'dsCss';
+    st.textContent = '.ds-sgs{display:flex;flex-direction:column;gap:8px}.ds-sg{border:1px solid #E8DFD2;border-radius:12px;background:#fff}.ds-sg.cur{border:2px solid #C26445;padding:10px 12px 12px}' +
+      '.ds-sgh{display:flex;gap:10px;align-items:center;width:100%;border:0;background:none;padding:9px 12px;text-align:left;font:inherit;cursor:pointer;color:inherit}.ds-sg.cur .ds-sgh{padding:0 0 6px;cursor:default}' +
+      '.ds-sgh i{font-style:normal;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;background:#F2EEE7;color:#8A8278}' +
+      '.ds-sg.done .ds-sgh i{background:#E7F0DE;color:#3B6D11}.ds-sg.cur .ds-sgh i{background:#C26445;color:#fff}.ds-sgh span{flex:1;min-width:0}.ds-sgh b{display:block;font-size:13.5px;color:#2E2E2E}' +
+      '.ds-sg.lock .ds-sgh{cursor:default}.ds-sg.lock b{color:#A59C90}.ds-sgh small{display:block;font-size:11.5px;color:#8A8278;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-sgh em{font-style:normal;font-size:12px;color:#C26445;font-weight:700}' +
+      '.ds-sgt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#C26445;font-weight:700}';
+    document.head.appendChild(st);
+  }
+  // stages: [{k, t, sum}] · cur: index of the open one · body: its question (html) · go: the data attribute that opens a stage (data-<go>="k")
+  function dsStages(stages, cur, body, go) {
+    dsCss(); return '<div class="ds-sgs">' + stages.map(function (g, i) {
+      if (i === cur) return '<div class="ds-sg cur"><div class="ds-sgh"><i>' + (i + 1) + '</i><span><span class="ds-sgt">Step ' + (i + 1) + ' of ' + stages.length + '</span><b>' + esc(g.t) + '</b></span></div>' + body + '</div>';
+      if (i < cur) return '<div class="ds-sg done"><button type="button" class="ds-sgh" data-' + go + '="' + esc(g.k) + '"><i>✓</i><span><b>' + esc(g.t) + '</b>' + (g.sum ? '<small>' + esc(g.sum) + '</small>' : '') + '</span><em>✎</em></button></div>';
+      return '<div class="ds-sg lock"><div class="ds-sgh"><i>' + (i + 1) + '</i><span><b>' + esc(g.t) + '</b></span></div></div>';
+    }).join('') + '</div>';
+  }
+  var PG_ORD = DS_SOLO ? ['size', 'look', 'extras'] : ['size', 'look', 'extras', 'around'];
   function pgStep() { var k = S.pgS === 'design' || !S.pgS ? 'size' : S.pgS; return PG_ORD.indexOf(k) >= 0 ? k : 'size'; }
   function p3Steps() {   // Terrace → Size → Look → Extras → Around → Proposal (the proposal only from the last step)
     var terr = S.site && S.site.kind === 'terrace', cur = S.pgW ? 0 : PG_ORD.indexOf(pgStep()) + 1, L = [terr ? 'Terrace' : 'Space', 'Size', 'Look', 'Extras', 'Around', 'Proposal'], K = ['site'].concat(PG_ORD);
@@ -2343,6 +2366,7 @@
     if (S.pgW) return tsLast() ? '<button type="button" data-p3="wdone">Done — put the pergola on it →</button>' : '<button type="button" data-ts="tsq:1">Next →</button>'; var k = pgStep(), NX = { size: 'Next — the look →', look: 'Next — extras →', extras: 'Next — add things around it →' };
     var sv = S.fromPlan != null ? '<button type="button" data-p3="toplan"' + (k === 'extras' || k === 'around' ? '' : ' class="pg3-sec"') + '>View in plan →</button>' : '';
     if (S.fromPlan != null && (k === 'extras' || k === 'around')) return sv;
+    if (DS_SOLO && S.fromPlan == null && k === 'extras' && p3Q(k).i >= p3Q(k).n - 1) return '<button type="button" data-p3="done">See my proposal →</button>';   // 283: the last step goes straight to the proposal
     if (k !== 'around') { var cq = p3Q(k); return sv + '<button type="button" data-p3="next">' + (cq.i < cq.n - 1 ? 'Next →' : NX[k]) + '</button>'; }
     return '<button type="button" class="plan-card" data-p3="plan"><span>🗺️</span><span><b>Plan the whole ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'lawn') + '</b><small>Seating, planters, a bar, a cabin… with this pergola, in the planner</small></span><i>→</i></button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button>';
   }
@@ -2355,7 +2379,7 @@
     if (k === 'size') {
       var szIn = function (key, lbl, v) { return '<div><span>' + lbl + '</span><button type="button" data-p3d="' + key + ',-1" aria-label="Less">−</button><input type="number" inputmode="decimal" min="1" step="1" data-p3n="' + key + '" value="' + v + '"><i>ft</i><button type="button" data-p3d="' + key + ',1" aria-label="More">+</button></div>'; };
       var hg = gs.filter(function (g) { return /height/i.test(g.name); })[0];
-      L.push(['How big?', 'Length, width and height — the 3D changes as you go', '<div class="pq-sz">' + szIn('l', 'Length', q.l) + szIn('w', 'Width', q.w) + '</div><p class="pg3-note">' + Math.round(q.l * q.w) + ' sq ft · up to ' + (num(m.l && m.l.max) || 20) + ' × ' + (num(m.w && m.w.max) || 16) + ' ft</p>' +
+      L.push(['How big?', 'Length, width and height — the 3D changes as you go', '<div class="pq-sz">' + szIn('l', 'Length', q.l) + szIn('w', 'Width', q.w) + '</div><p class="pg3-note">' + Math.round(q.l * q.w) + ' sq ft' + (num(m.min_size) ? ' · smallest we make: ' + num(m.min_size) + ' sq ft' : '') + '</p>' +
         (hg ? '<p class="pq-sub">' + esc(hg.name) + ' <small>floor to the underside of the beams</small></p><div class="pq-chips">' + arr(hg.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === gv(hg) ? 'on' : '') + '" data-p3g="' + esc(hg.name) + '" data-v="' + esc(y.name) + '">' + esc(y.name.split(' (')[0]) + '</button>'; }).join('') + '</div>' : '')]);
       gs.filter(function (g) { return /layout/i.test(g.name); }).forEach(function (g) { L.push(['How does it stand?', on ? 'On its own posts, or fixed to a wall — drag it next to the mumty and it fixes itself to it' : 'On its own posts, or fixed to a wall', cards(g, gv(g))]); });
     } else if (k === 'look') {
@@ -2384,11 +2408,15 @@
     if (S.pgW) return p3Steps() + p3Where();
     var k = pgStep(), x = PRODS[S.id], m = x.cz, o = S.o, ok = mtoOk();
     if (k === 'around') return p3Steps() + '<h4 class="pg3-sh">Add things around it</h4><p class="pg3-note" style="margin-top:0">To see how it looks — seating, planters, a bar… Optional.</p>' + p3Around() + '<button type="button" class="pg3-bk" data-p3="back">← Back</button>';
-    var L = p3Qs(k), c = p3Q(k), cur = L[c.i], h = p3Steps();
+    var L = p3Qs(k), c = p3Q(k), cur = L[c.i], h = DS_SOLO ? '' : p3Steps();
     h += '<div class="ts-qh"><span>' + (c.i + 1) + ' of ' + c.n + '</span><i>' + L.map(function (z, i) { return '<b class="' + (i === c.i ? 'on' : i < c.i ? 'dn' : '') + '"></b>'; }).join('') + '</i></div>';
     h += '<h4 class="pg3-sh">' + esc(cur[0]) + '</h4>' + (cur[1] ? '<p class="pg3-note" style="margin-top:0">' + cur[1] + '</p>' : '') + cur[2];
     if (ok) { var pq = null; try { pq = priceR(S.id, m, o, PCT); } catch (e) {} if (pq && pq.ok) h += '<div class="pg3-pr">Your price so far <b>' + rs(pq.total) + '</b><small>incl. GST' + (pq.install && pq.install.amount ? ' and installation' : '') + ' · delivery as per pincode</small></div>'; }
-    return h + '<button type="button" class="pg3-bk" data-p3="back">← Back</button>';
+    h += (k === 'size' && c.i === 0 ? '' : '<button type="button" class="pg3-bk" data-p3="back">← Back</button>');
+    if (!DS_SOLO) return h;
+    var q0 = pgOpts(), ad = arr(o.addons).length, SUM = { size: q0.l + ' × ' + q0.w + ' ft · ' + q0.height + (q0.layout ? ' · ' + String(q0.layout).split(' (')[0] : ''),
+      look: [q0.material, q0.colour, q0.cover ? String(q0.cover).split(' (')[0] : ''].filter(Boolean).join(' · '), extras: (ad ? ad + ' extra' + (ad > 1 ? 's' : '') : 'No extras') + (o.deck ? ' · deck' : '') };
+    return dsStages([{ k: 'size', t: 'Size & layout', sum: SUM.size }, { k: 'look', t: 'Look — finish, colour, roof', sum: SUM.look }, { k: 'extras', t: 'Extras', sum: SUM.extras }, { k: 'prop', t: 'Your proposal' }], PG_ORD.indexOf(k), h, 'p3s');
   }
   function p3Draw() {
     var ov = document.getElementById('pg3'); if (!ov || !P3.open || !S || !isPg(S.id)) return; var q = pgOpts();
@@ -2398,18 +2426,19 @@
     var cap = document.getElementById('pg3Cap'); if (cap) cap.textContent = q.l + ' × ' + q.w + ' ft · ' + q.height + ' clear · ' + (q.colour || '') + (q.cover && !/^open/i.test(q.cover) ? ' · ' + String(q.cover).split(' (')[0] : '') + (q.layout && !/free/i.test(q.layout) ? ' · ' + String(q.layout).split(' (')[0] : '');
     var nb = document.getElementById('pg3Night'); if (nb) nb.textContent = P3.night ? '☀ Day' : '☾ Night';
     if (P3.st === 2) { try { if (!P3.ev && window.Pergola3D.onEvent) { P3.ev = 1; window.Pergola3D.onEvent(pgEv); }
-      window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, furn: S.site && S.site.kind === 'terrace' ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
+      window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=42').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=43').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
     if (on === false) { if (ov) ov.classList.remove('open'); document.body.classList.remove('pg3-on'); P3.open = false; return; }
     if (!ov) { ov = document.createElement('div'); ov.id = 'pg3'; ov.className = 'pg3-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Design your pergola in 3D'); document.body.appendChild(ov);
       ov.addEventListener('click', p3Click); ov.addEventListener('change', function (e) { var nk = e.target.getAttribute && e.target.getAttribute('data-p3n'); if (nk && S && isPg(S.id)) { if (/^dk/.test(nk)) { var ds = deckSize(); S.o.dk = { l: ds.l, w: ds.w }; S.o.dk[nk.slice(2)] = Math.max(4, Math.min(40, Math.round(+e.target.value * 2) / 2 || ds[nk.slice(2)])); } else pgSize(nk, e.target.value); draw(); return p3Draw(); } if (S && isPg(S.id) && tsInput(e.target)) { if (S.site && S.site.cx == null) tsCentre(S.site, pgLay()); keepSite(); draw(); p3Draw(); } }); }
-    if (on && S.fromPlan == null && !S.spaceDone) return window.mtoSpaceAsk('pergola', function (r) { spaceApply(r, pgLay()).then(function () { S.pgW = !!((r.kind === 'terrace' && !r.site) || (r.plan && S.site && S.site.kind === 'terrace' && !arr(S.site.blocks).length)); S.pgS = 'size'; window.pg3Open(true); }); });
-    if (!S.site && S.proj !== 'new') { var sh = sharedSite(); if (sh) { S.site = sh; tsCentre(sh, pgLay()); } }
+    if (on && DS_SOLO && S.fromPlan == null) { S.site = null; S.pgW = false; S.proj = 'same'; }   // 283: straight onto the studio floor
+    if (on && !DS_SOLO && S.fromPlan == null && !S.spaceDone) return window.mtoSpaceAsk('pergola', function (r) { spaceApply(r, pgLay()).then(function () { S.pgW = !!((r.kind === 'terrace' && !r.site) || (r.plan && S.site && S.site.kind === 'terrace' && !arr(S.site.blocks).length)); S.pgS = 'size'; window.pg3Open(true); }); });
+    if (!DS_SOLO && !S.site && S.proj !== 'new') { var sh = sharedSite(); if (sh) { S.site = sh; tsCentre(sh, pgLay()); } }
     var x = PRODS[S.id];
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(x.n) + ' · 3D</b><button type="button" id="pg3Night" data-p3="night">☾ Night</button><button type="button" data-p3="close" aria-label="Close">✕ Close</button></div>' +
       '<div class="pg3-bd"><div class="pg3-st" id="pg3St"><div class="pg3-cap" id="pg3Cap"></div><div class="pg3-vw" id="pg3Vw"></div></div><div class="pg3-pn" id="pg3Pn"></div></div>' +
@@ -2810,7 +2839,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=65').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=66').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
@@ -3052,7 +3081,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=65').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=66').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
