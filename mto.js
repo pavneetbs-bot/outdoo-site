@@ -2343,23 +2343,59 @@
   // Every designer (pergola now; cabin, bar, feature wall, planters… next) renders its panel with dsStages() and uses dsCss().
   // "See it in my space" is on hold (DS_SOLO): designers open straight on the studio floor — no "which space" screen, no terrace / around steps.
   var DS_SOLO = true;
+  // 297 (owner: "sheet ka UI planner jaisa, fonts chhote"): the designers' panel = the planner's guided panel — "Step N of M · stage" + one progress bar,
+  // "All steps" opens the stage list, the question below; on phones the 3D sits on top (--ulh, 58 dvh) and the panel is a sheet with a handle (drag 26–84 dvh, tap swaps).
+  var DS_ALL = false;
   function dsCss() {
     if (document.getElementById('dsCss')) return; var st = document.createElement('style'); st.id = 'dsCss';
-    st.textContent = '.ds-sgs{display:flex;flex-direction:column;gap:8px}.ds-sg{border:1px solid #E8DFD2;border-radius:12px;background:#fff}.ds-sg.cur{border:2px solid #C26445;padding:10px 12px 12px}' +
-      '.ds-sgh{display:flex;gap:10px;align-items:center;width:100%;border:0;background:none;padding:9px 12px;text-align:left;font:inherit;cursor:pointer;color:inherit}.ds-sg.cur .ds-sgh{padding:0 0 6px;cursor:default}' +
-      '.ds-sgh i{font-style:normal;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;background:#F2EEE7;color:#8A8278}' +
-      '.ds-sg.done .ds-sgh i{background:#E7F0DE;color:#3B6D11}.ds-sg.cur .ds-sgh i{background:#C26445;color:#fff}.ds-sgh span{flex:1;min-width:0}.ds-sgh b{display:block;font-size:13.5px;color:#2E2E2E}' +
-      '.ds-sg.lock .ds-sgh{cursor:default}.ds-sg.lock b{color:#A59C90}.ds-sgh small{display:block;font-size:11.5px;color:#8A8278;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-sgh em{font-style:normal;font-size:12px;color:#C26445;font-weight:700}' +
-      '.ds-sgt{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#C26445;font-weight:700}';
+    var CK = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'white\' stroke-width=\'3\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M5 12l5 5 9-10\'/%3E%3C/svg%3E") center/10px no-repeat';
+    st.textContent = '.ds-sgs{display:flex;flex-direction:column;gap:6px}.ds-sg{border:1px solid #EAE3D9;border-radius:12px;background:#fff}.ds-sg.cur0{border:1.5px solid #2E2E2E}' +
+      '.ds-sgh{display:flex;gap:10px;align-items:center;width:100%;border:0;background:none;padding:9px 12px;text-align:left;font:inherit;cursor:pointer;color:inherit;min-height:0;margin:0}' +
+      '.ds-sgh i{font-style:normal;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none;background:#F2EEE7;color:#8A8278}' +
+      '.ds-sg.done .ds-sgh i{background:#E7F0DE;color:#3B6D11}.ds-sg.cur0 .ds-sgh i{background:#2E2E2E;color:#fff;font-size:8px}.ds-sgh span{flex:1;min-width:0}.ds-sgh b{display:block;font:600 13px Inter,sans-serif;color:#2E2E2E}' +
+      '.ds-sg.lock .ds-sgh,.ds-sg.cur0 .ds-sgh{cursor:default}.ds-sg.lock b{color:#A59C90}.ds-sgh small{display:block;font:400 11.5px Inter,sans-serif;color:#8A8278;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-sgh em{font-style:normal;font-size:12px;color:#C26445;font-weight:700}' +
+      '.ds-ah{padding:4px 0 0}.ds-ahr{display:flex;align-items:center;justify-content:space-between;gap:10px}.ds-ahr span{font:700 11px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#C26445;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.ds-ahr button{flex:none;height:28px;padding:0 10px;border-radius:8px;border:1px solid #E6DFD6;background:#fff;font:500 12px Inter,sans-serif;color:#2E2E2E;cursor:pointer;margin:0}.ds-g.all .ds-ahr button{background:#2E2E2E;color:#fff;border-color:#2E2E2E}' +
+      '.ds-apb{display:flex;gap:4px;margin:10px 0 2px}.ds-apb i{flex:1;height:4px;border-radius:2px;background:#E6DFD6}.ds-apb i.d{background:#C26445}.ds-apb i.c{background:#2E2E2E}' +
+      '.ds-aall{display:none;margin:10px 0 0;padding:8px;border:1px solid #E6DFD6;border-radius:14px;background:#F7F3EE}.ds-g.all .ds-aall{display:block}.ds-aq{padding:10px 0 4px}' +
+      '.ds-hdl{display:none;justify-content:center;align-items:center;width:100%;height:24px;border:0;background:none;padding:0;margin:0;touch-action:none;cursor:grab}.ds-hdl i{width:44px;height:5px;border-radius:4px;background:#CFC5B6}' +
+      /* the question + its controls, planner sizes (pergola + customiser panels) */
+      '.pg3-pn .ds-aq .pg3-sh{font:700 19px/1.25 "Plus Jakarta Sans",Inter,sans-serif;color:#2E2E2E;margin:2px 0 4px}.pg3-pn .ds-aq .pg3-note,.pg3-pn .ds-aq .mto-hint{font:400 12.5px/1.5 Inter,sans-serif;color:#6B6660}' +
+      '.pg3-pn .ds-aq .pq-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.pg3-pn .ds-aq .pq-cards button{position:relative;padding:10px 12px;border-radius:12px;border-width:1.5px;border-color:#E6DFD6}.pg3-pn .ds-aq .pq-cards button b{font:600 13px/1.3 Inter,sans-serif;display:block;padding-right:16px}.pg3-pn .ds-aq .pq-cards button small{font:400 11.5px/1.35 Inter,sans-serif;color:#6B6660}' +
+      '.pg3-pn .ds-aq .pq-cards button.on,.pg3-pn .ds-aq .pq-sw button.on,.pg3-pn .ds-aq .pq-chips button.on{border-color:#C26445;background:#FBEFE9}.pg3-pn .ds-aq .pq-cards button.on::after{content:"";position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:#C26445 ' + CK + '}' +
+      '.pg3-pn .ds-aq .pq-add{grid-column:1/-1}.pg3-pn .ds-aq .pq-sw button{font:600 12.5px Inter,sans-serif;padding:8px 10px;border-color:#E6DFD6}.pg3-pn .ds-aq .pq-sw i{width:24px;height:24px}' +
+      '.pg3-pn .ds-aq .pq-chips{gap:6px}.pg3-pn .ds-aq .pq-chips button,.pg3-pn .ds-aq .pq-sides button{height:34px;padding:0 12px;font:600 12.5px Inter,sans-serif;border-color:#E6DFD6}.pg3-pn .ds-aq .pq-sub{font:600 13px Inter,sans-serif;margin:14px 0 6px}' +
+      '.pg3-pn .ds-aq .pq-sz>div{padding:8px 12px;border-color:#E6DFD6}.pg3-pn .ds-aq .pq-sz span{font:500 13px Inter,sans-serif}.pg3-pn .ds-aq .pq-sz b{font:600 14px Inter,sans-serif;min-width:54px}.pg3-pn .ds-aq .pq-sz button{width:32px;height:32px;font-size:16px;border-color:#E6DFD6}.pg3-pn .ds-aq .pq-sz input{font:600 14px Inter,sans-serif;width:54px;padding:5px 4px}' +
+      '.pg3-pn .ds-aq .lb,.pg3-pn .ds-aq .mto-lbl,.pg3-pn .ds-aq label>span{font-size:11px}.pg3-pn .ds-aq .lk-cats button{font-size:12.5px}' +
+      '.pg3-pn .ds-aq input[type=number],.pg3-pn .ds-aq select{font-size:14px}.pg3-pn .ds-aq .pg3-pr{margin:12px 0 0;padding:10px 12px;font-size:12px}.pg3-pn .ds-aq .pg3-pr b{font-size:17px}' +
+      /* footer: price line + Back | Next, like the planner */
+      '.pg3-ov .pg3-ft:has(.ds-ft){padding:0;display:flex;flex-direction:column;z-index:5}.ds-fpr{display:flex;align-items:baseline;gap:8px;padding:9px 16px;border-bottom:1px solid #E6DFD6;background:#F7F3EE;font:500 12px Inter,sans-serif;color:#6B6660}.ds-fpr b{font:700 15px Inter,sans-serif;color:#2E2E2E}.ds-fpr small{margin-left:auto;font-size:11px;color:#8a857c;text-align:right}' +
+      '.ds-fpr .pg3-pr{margin:0;padding:0;background:none;font-size:12px;display:flex;align-items:baseline;gap:8px;width:100%}.ds-fpr .pg3-pr b{display:inline;font-size:15px;margin:0}.ds-fpr .pg3-pr small{margin-left:auto}.ds-fpr:empty,.ds-fpr:not(:has(*)):empty{display:none}#cuPr:empty{display:none}.ds-fpr .mto-err{margin:0!important;font-size:12px}' +
+      '.ds-ft{display:flex;gap:10px;padding:10px 16px calc(10px + env(safe-area-inset-bottom))}.pg3-ft .ds-ft button{width:auto;flex:1;height:44px;padding:0 14px;border-radius:10px;border:0;background:#2E2E2E;color:#fff;font:600 14px Inter,sans-serif;margin:0}.pg3-ft .ds-ft button.ds-bk{flex:none;padding:0 18px;border:1px solid #E6DFD6!important;background:#fff!important;color:#2E2E2E!important;margin:0}' +
+      /* phones: 3D on top, the panel a sheet over it */
+      '@media(max-width:900px){.pg3-ov .ds-hdl{display:flex}.pg3-ov .pg3-hd{padding:8px 12px}.pg3-ov .pg3-hd b{font-size:14px}.pg3-ov .pg3-hd button{padding:6px 10px;font-size:12px}' +
+      '.pg3-ov .pg3-bd:has(.ds-g){display:block;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}.pg3-ov .pg3-bd:has(.ds-g)>.pg3-st{position:sticky;top:0;z-index:1;height:var(--ulh,58dvh);min-height:0}' +
+      '.pg3-ov .pg3-bd:has(.ds-g)>.pg3-pn{position:relative;z-index:2;margin-top:-14px;border:0;border-top:1px solid #E2D6C4;border-radius:18px 18px 0 0;box-shadow:0 -6px 18px rgba(0,0,0,.08);background:#fff;overflow:visible;min-height:calc(100dvh - var(--ulh,58dvh) - 40px);padding:0 16px 150px}' +
+      '.pg3-ov .pg3-bd:has(.ds-g)>.pg3-pn .ds-hdl{margin:0 0 -2px}.pg3-ov .pg3-bd:has(.ds-g) .pg3-cap{bottom:24px;font-size:11px;padding:5px 9px}.pg3-ov .pg3-ft:has(.ds-ft){width:100%;border-left:0;z-index:5;box-shadow:0 -2px 10px rgba(0,0,0,.05)}}';
     document.head.appendChild(st);
+    document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-dsall]'); if (!b) return; e.stopPropagation(); DS_ALL = !DS_ALL; var g = b.closest('.ds-g'); if (g) g.classList.toggle('all', DS_ALL); b.textContent = 'All steps ' + (DS_ALL ? '▴' : '▾'); b.setAttribute('aria-expanded', DS_ALL); }, true);
+    document.addEventListener('pointerdown', function (e) { var hd = e.target.closest && e.target.closest('.ds-hdl'); if (!hd) return; var ov = hd.closest('.pg3-ov'); if (!ov) return; e.preventDefault();
+      var y0 = e.clientY, H = innerHeight / 100, h0 = DS_ULH, moved = false, fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
+      var set = function (v) { DS_ULH = Math.max(26, Math.min(84, v)); ov.style.setProperty('--ulh', DS_ULH + 'dvh'); };
+      var mv = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) set(h0 + d); }, up = function () { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); if (!moved) set(DS_ULH >= 70 ? 40 : 82); fit(); setTimeout(fit, 150); };
+      document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up); }, true);
   }
+  var DS_ULH = 58;
   // stages: [{k, t, sum}] · cur: index of the open one · body: its question (html) · go: the data attribute that opens a stage (data-<go>="k")
   function dsStages(stages, cur, body, go) {
-    dsCss(); return '<div class="ds-sgs">' + stages.map(function (g, i) {
-      if (i === cur) return '<div class="ds-sg cur"><div class="ds-sgh"><i>' + (i + 1) + '</i><span><span class="ds-sgt">Step ' + (i + 1) + ' of ' + stages.length + '</span><b>' + esc(g.t) + '</b></span></div>' + body + '</div>';
-      if (i < cur) return '<div class="ds-sg done"><button type="button" class="ds-sgh" data-' + go + '="' + esc(g.k) + '"><i>✓</i><span><b>' + esc(g.t) + '</b>' + (g.sum ? '<small>' + esc(g.sum) + '</small>' : '') + '</span><em>✎</em></button></div>';
-      return '<div class="ds-sg lock"><div class="ds-sgh"><i>' + (i + 1) + '</i><span><b>' + esc(g.t) + '</b></span></div></div>';
-    }).join('') + '</div>';
+    dsCss(); var n = stages.length, g = stages[cur] || { t: '' };
+    var all = '<div class="ds-aall"><div class="ds-sgs">' + stages.map(function (s, i) {
+      if (i === cur) return '<div class="ds-sg cur0"><div class="ds-sgh"><i>●</i><span><b>' + esc(s.t) + '</b><small>You are here</small></span></div></div>';
+      if (i < cur) return '<div class="ds-sg done"><button type="button" class="ds-sgh" data-' + go + '="' + esc(s.k) + '"><i>✓</i><span><b>' + esc(s.t) + '</b>' + (s.sum ? '<small>' + esc(s.sum) + '</small>' : '') + '</span><em>✎</em></button></div>';
+      return '<div class="ds-sg lock"><div class="ds-sgh"><i>' + (i + 1) + '</i><span><b>' + esc(s.t) + '</b></span></div></div>';
+    }).join('') + '</div></div>';
+    return '<div class="ds-g' + (DS_ALL ? ' all' : '') + '"><button type="button" class="ds-hdl" aria-label="Drag to resize"><i></i></button><div class="ds-ah"><div class="ds-ahr"><span>Step ' + (cur + 1) + ' of ' + n + ' · ' + esc(g.t) + '</span><button type="button" data-dsall aria-expanded="' + DS_ALL + '">All steps ' + (DS_ALL ? '▴' : '▾') + '</button></div><div class="ds-apb">' +
+      stages.map(function (s, i) { return '<i class="' + (i < cur ? 'd' : i === cur ? 'c' : '') + '"></i>'; }).join('') + '</div></div>' + all + '<div class="ds-aq">' + body + '</div></div>';
   }
   var PG_ORD = DS_SOLO ? ['size', 'look', 'extras'] : ['size', 'look', 'extras', 'around'];
   function pgStep() { var k = S.pgS === 'design' || !S.pgS ? 'size' : S.pgS; return PG_ORD.indexOf(k) >= 0 ? k : 'size'; }
@@ -2372,7 +2408,10 @@
     if (S.pgW) return tsLast() ? '<button type="button" data-p3="wdone">Done — put the pergola on it →</button>' : '<button type="button" data-ts="tsq:1">Next →</button>'; var k = pgStep(), NX = { size: 'Next — the look →', look: 'Next — extras →', extras: 'Next — add things around it →' };
     var sv = S.fromPlan != null ? '<button type="button" data-p3="toplan"' + (k === 'extras' || k === 'around' ? '' : ' class="pg3-sec"') + '>View in plan →</button>' : '';
     if (S.fromPlan != null && (k === 'extras' || k === 'around')) return sv;
-    if (DS_SOLO && S.fromPlan == null && k === 'extras' && p3Q(k).i >= p3Q(k).n - 1) return '<button type="button" data-p3="done">See my proposal →</button>';   // 283: the last step goes straight to the proposal
+    if (DS_SOLO && S.fromPlan == null && k !== 'around') {   // 297: price line + Back | Next, like the planner
+      var dq = p3Q(k), last = k === 'extras' && dq.i >= dq.n - 1, first = k === 'size' && dq.i === 0, pr = '';
+      if (mtoOk()) { var pz = null; try { pz = priceR(S.id, PRODS[S.id].cz, S.o, PCT); } catch (e) {} if (pz && pz.ok) pr = '<div class="ds-fpr"><span>Your price so far</span><b>' + rs(pz.total) + '</b><small>incl. GST' + (pz.install && pz.install.amount ? ' + installation' : '') + '</small></div>'; }
+      return pr + '<div class="ds-ft">' + (first ? '' : '<button type="button" class="ds-bk" data-p3="back">Back</button>') + (last ? '<button type="button" data-p3="done">See my proposal →</button>' : '<button type="button" data-p3="next">Next →</button>') + '</div>'; }
     if (k !== 'around') { var cq = p3Q(k); return sv + '<button type="button" data-p3="next">' + (cq.i < cq.n - 1 ? 'Next →' : NX[k]) + '</button>'; }
     return '<button type="button" class="plan-card" data-p3="plan"><span>🗺️</span><span><b>Plan the whole ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'lawn') + '</b><small>Seating, planters, a bar, a cabin… with this pergola, in the planner</small></span><i>→</i></button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button>';
   }
@@ -2497,14 +2536,15 @@
     var k = pgStep(), x = PRODS[S.id], m = x.cz, o = S.o, ok = mtoOk();
     if (k === 'around') return p3Steps() + '<h4 class="pg3-sh">Add things around it</h4><p class="pg3-note" style="margin-top:0">To see how it looks — seating, planters, a bar… Optional.</p>' + p3Around() + '<button type="button" class="pg3-bk" data-p3="back">← Back</button>';
     var L = p3Qs(k), c = p3Q(k), cur = L[c.i], h = DS_SOLO ? '' : p3Steps();
-    h += '<div class="ts-qh"><span>' + (c.i + 1) + ' of ' + c.n + '</span><i>' + L.map(function (z, i) { return '<b class="' + (i === c.i ? 'on' : i < c.i ? 'dn' : '') + '"></b>'; }).join('') + '</i></div>';
+    if (!DS_SOLO) h += '<div class="ts-qh"><span>' + (c.i + 1) + ' of ' + c.n + '</span><i>' + L.map(function (z, i) { return '<b class="' + (i === c.i ? 'on' : i < c.i ? 'dn' : '') + '"></b>'; }).join('') + '</i></div>';
+    else if (c.n > 1) h += '<div class="pg3-note" style="margin:0;font-size:11.5px;color:#8a857c">Question ' + (c.i + 1) + ' of ' + c.n + '</div>';
     h += '<h4 class="pg3-sh">' + esc(cur[0]) + '</h4>' + (cur[1] ? '<p class="pg3-note" style="margin-top:0">' + cur[1] + '</p>' : '') + cur[2];
-    if (ok) { var pq = null; try { pq = priceR(S.id, m, o, PCT); } catch (e) {} if (pq && pq.ok) h += '<div class="pg3-pr">Your price so far <b>' + rs(pq.total) + '</b><small>incl. GST' + (pq.install && pq.install.amount ? ' and installation' : '') + ' · delivery as per pincode</small></div>'; }
-    h += (k === 'size' && c.i === 0 ? '' : '<button type="button" class="pg3-bk" data-p3="back">← Back</button>');
+    if (ok && !DS_SOLO) { var pq = null; try { pq = priceR(S.id, m, o, PCT); } catch (e) {} if (pq && pq.ok) h += '<div class="pg3-pr">Your price so far <b>' + rs(pq.total) + '</b><small>incl. GST' + (pq.install && pq.install.amount ? ' and installation' : '') + ' · delivery as per pincode</small></div>'; }
+    h += (k === 'size' && c.i === 0 || DS_SOLO ? '' : '<button type="button" class="pg3-bk" data-p3="back">← Back</button>');
     if (!DS_SOLO) return h;
     var q0 = pgOpts(), ad = arr(o.addons).length, SUM = { size: q0.l + ' × ' + q0.w + ' ft · ' + q0.height + (q0.layout ? ' · ' + String(q0.layout).split(' (')[0] : ''),
       look: [q0.material, q0.colour, q0.cover ? String(q0.cover).split(' (')[0] : ''].filter(Boolean).join(' · '), extras: (ad ? ad + ' extra' + (ad > 1 ? 's' : '') : 'No extras') + (o.deck ? ' · deck' : '') + (arr(S.look).length ? ' · ' + arr(S.look).length + ' in the look' : '') };
-    return dsStages([{ k: 'size', t: 'Size & layout', sum: SUM.size }, { k: 'look', t: 'Look — finish, colour, roof', sum: SUM.look }, { k: 'extras', t: 'Extras', sum: SUM.extras }, { k: 'prop', t: 'Your proposal' }], PG_ORD.indexOf(k), h, 'p3s');
+    return dsStages([{ k: 'size', t: 'Size & layout', sum: SUM.size }, { k: 'look', t: 'Look', sum: SUM.look }, { k: 'extras', t: 'Extras', sum: SUM.extras }, { k: 'prop', t: 'Your proposal' }], PG_ORD.indexOf(k), h, 'p3s');
   }
   function p3Draw() {
     var ov = document.getElementById('pg3'); if (!ov || !P3.open || !S || !isPg(S.id)) return; var q = pgOpts();
@@ -2929,13 +2969,13 @@
   function ctlCart() { ctlList().forEach(function (k) { if (ctlOpen(k)) { try { addCart(k); } catch (e) {} } }); }
   function cuFt() {
     var ft = document.querySelector('#cuOv .pg3-ft'); if (!ft || !S) return; var x = PRODS[S.id], L = cuStages(x, x.cz, S.o), i = Math.min(CU.stg || 0, L.length - 1), lab = mtoOk() ? 'See my proposal →' : 'See my price →';
-    ft.innerHTML = (i > 0 ? '<button type="button" data-cu="back" class="cu-sp">← Back</button>' : '') + (i < L.length - 1 ? '<button type="button" data-cu="next">Next — ' + esc(L[i + 1].t.toLowerCase()) + ' →</button>' : '<button type="button" data-cu="done">' + lab + '</button>');
+    ft.innerHTML = '<div class="ds-fpr" id="cuPr"></div><div class="ds-ft">' + (i > 0 ? '<button type="button" data-cu="back" class="ds-bk">Back</button>' : '') + (i < L.length - 1 ? '<button type="button" data-cu="next">Next →</button>' : '<button type="button" data-cu="done">' + lab + '</button>') + '</div>';   // 297
   }
   function cuDraw() {
     var pn = document.getElementById('cuPn'); if (!pn || !CU.open || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, st = pn.scrollTop;
     if (DS_SOLO) { var L = cuStages(x, m, o), ci = Math.max(0, Math.min(CU.stg || 0, L.length - 1)); CU.stg = ci; var k = L[ci].k;
       var hint = k === 'size' ? '<p class="mto-hint" style="margin:0 0 6px">' + (m.unit === 'area' ? (m.round ? 'Size across, in feet' : 'Length × width of the planter, in feet') + (m.hr ? ' — and how tall.' : '.') : m.unit === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : m.unit === 'face' ? 'Width × height of the wall or opening, in feet.' : m.unit === 'length' ? 'Total running length, in feet.' : 'Pick the size.') + (num(m.min_size) && m.unit !== 'seat' && m.unit !== 'fixed' ? ' Any size — the smallest we bill is ' + num(m.min_size) + ' ' + UW(m.unit) + '.' : '') + '</p>' : '';
-      pn.innerHTML = dsStages(L, ci, hint + (k === 'ctl' ? ctlHtml() : optForm(x, m, o, k)), 'custg') + (m.photo_note ? '<p class="mto-hint" style="margin-top:10px">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + '<div id="cuPr"></div>';
+      pn.innerHTML = dsStages(L, ci, hint + (k === 'ctl' ? ctlHtml() : optForm(x, m, o, k)), 'custg') + (m.photo_note ? '<p class="mto-hint" style="margin-top:10px">Photo shows: ' + esc(m.photo_note) + '</p>' : '');
       cuFt();
     } else
     pn.innerHTML = '<p class="mto-hint" style="margin:0 0 6px">' + (m.unit === 'area' ? 'Length × width of the floor it covers, in feet.' : m.unit === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : m.unit === 'face' ? 'Width × height of the wall or opening, in feet.' : m.unit === 'length' ? 'Total running length, in feet.' : 'Pick the size and finish.') + '</p>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + optForm(x, m, o);
