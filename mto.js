@@ -626,8 +626,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=62').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=62'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=63').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=63'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1947,7 +1947,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=118').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=119').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2377,6 +2377,87 @@
     return '<button type="button" class="plan-card" data-p3="plan"><span>🗺️</span><span><b>Plan the whole ' + (S.site && S.site.kind === 'terrace' ? 'terrace' : 'lawn') + '</b><small>Seating, planters, a bar, a cabin… with this pergola, in the planner</small></span><i>→</i></button><button type="button" data-p3="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button>';
   }
   // 202: inside each step one kind of question at a time (a wizard within the wizard): Size → height → layout → where; finish → colour → roof…; add-ons → deck
+  // 296 (owner): Complete the look — real outrr products around the pergola in the studio 3D. Only to see it: not priced, not in the proposal / cart (yet).
+  var LOOKC = [
+    { k: 'planters', t: 'Planters', col: 'planters', cat: 'planter' },
+    { k: 'furniture', t: 'Furniture', col: 'furniture', not: /swing|jhool|jhul/i },
+    { k: 'plants', t: 'Plants', col: 'plants', cat: 'plant' },
+    { k: 'lights', t: 'Cane lights', col: 'lighting', first: /cane|rattan|wicker/i, cat: 'lights' },
+    { k: 'feature', t: 'Feature walls', col: 'feature-walls', cat: 'feature' },
+    { k: 'partition', t: 'Partition walls', col: 'privacy-screens', re: /^MTO-PT-/, cat: 'privacy' },
+    { k: 'bar', t: 'Bar counters', col: 'bar-counters', not: /food|buffet|kitchen|grill|bbq|rack|bottle/i, cat: 'bar' },
+    { k: 'food', t: 'Food counters', col: 'bar-counters', has: /food|buffet|kitchen|grill|bbq/i, cat: 'counter' },
+    { k: 'swing', t: 'Swings', col: 'furniture', has: /swing|jhool|jhul/i, cat: 'swing' }
+  ];
+  var LK_SZ = { sofa: [8, 6, 3], dining: [7, 6, 3.2], chair: [2.5, 2.5, 3], bench: [5, 2, 1.6], table: [3, 3, 2.5], stool: [1.5, 1.5, 2.6], swing: [6, 4.5, 7], planter: [2, 2, 3.5], plant: [2, 2, 5], feature: [10, 0.6, 8], privacy: [8, 0.5, 6], bar: [8, 2.5, 3.6], counter: [8, 2.5, 3], lights: [0.8, 0.8, 3] };
+  var LK_PL = ['OLIVE', 'BLACKFICUS', 'PACHIRA', 'ARECA', 'RHAPIS', 'FISHTAIL', 'BAMBOO', 'PHOENIX', 'LIVISTONA', 'CYCAS', 'FOXTAIL', 'TRAVELLER', 'BANANA', 'HIBISCUS', 'IXORA', 'MOGRA', 'CHANDNI', 'RAATKIRANI', 'TECOMA', 'KANER', 'ADENIUM', 'BIRDPARADISE', 'CROTON', 'CORDYLINE', 'SCHEFFLERA', 'SONGOFINDIA', 'KAMINI', 'DURANTA', 'FICUSPANDA', 'MORPANKHI', 'FOUNTAINGRASS', 'AGAVE', 'SNAKEPLANT', 'BOUGAINVILLEA', 'MADHUMALTI', 'CHAMPA'];
+  function lookC(k) { return LOOKC.filter(function (c) { return c.k === k; })[0]; }
+  function lookList(c) {   // the listed products of a category, one per variant group, the preferred ones first
+    var seen = {}, L = Object.keys(PRODS).filter(function (id) { var x = PRODS[id]; if (!x || x.bun || x.col !== c.col) return false; if (c.re && !c.re.test(id)) return false; if (c.has && !c.has.test(x.n || '')) return false; if (c.not && c.not.test(x.n || '')) return false;
+      if (x.vg) { if (seen[x.vg]) return false; seen[x.vg] = 1; } return true; });
+    return c.first ? L.filter(function (id) { return c.first.test(PRODS[id].n); }).concat(L.filter(function (id) { return !c.first.test(PRODS[id].n); })) : L;
+  }
+  function lookFurn(n) { n = n || ''; return /swing|jhool|jhul/i.test(n) ? 'swing' : /dining/i.test(n) ? 'dining' : /sofa|sectional|lounge set|daybed|couch|lounge/i.test(n) ? 'sofa' : /bar (chair|stool)|stool/i.test(n) ? 'stool' : /bench/i.test(n) ? 'bench' : /table/i.test(n) ? 'table' : /chair|lounger|recliner|armchair/i.test(n) ? 'chair' : 'sofa'; }
+  function lookPlant(id, n) { var m = /^LP-(.+)-(\d+(\.\d+)?)$/.exec(id), up = String(n || '').toUpperCase().replace(/[^A-Z]/g, '').replace('BIRDOFPARADISE', 'BIRDPARADISE');
+    var k = m && LK_PL.indexOf(m[1]) >= 0 ? m[1] : LK_PL.filter(function (z) { return up.indexOf(z) >= 0; })[0] || (/PALM/.test(up) ? 'ARECA' : /SNAKE|SANSEVIERIA/.test(up) ? 'SNAKEPLANT' : 'CROTON');
+    var ft = m ? +m[2] + 1 : +((/(\d+(\.\d+)?)\s*(ft|feet)/i.exec(n || '') || [])[1]) || 4; return { plant: k, h: Math.max(2, Math.min(12, ft)) }; }
+  function lookPrice(x) { try { if (typeof soon === 'function' && soon(x)) return 'Coming soon'; } catch (e) {} return x.cz ? (mtoOk() ? 'From ' + rs(x.p) : 'Check price') : rs(x.p); }
+  function lookImg(id) { try { return typeof frontImg === 'function' ? frontImg(id) : IMGS[PRODS[id].img]; } catch (e) { return ''; } }
+  function lookItems(q) {   // where each picked piece stands round the pergola (studio floor, pergola from (0, 0) to (L, W)); in: under the pergola (on its deck)
+    var L = +q.l || 12, W = +q.w || 10, wl = /wall/i.test(String(q.layout || '')), out = [], pend = 0, P = {};
+    arr(S.look).forEach(function (s) { var x = PRODS[s.id], c = lookC(s.k); if (x && c) P[s.k] = { id: s.id, x: x, cat: c.cat || lookFurn(x.n) }; });
+    var mk = function (p, x, z, w, d, h, rot, ins) { var it = { cat: p.cat, sku: p.id, label: '', x: x, z: z, w: w, d: d, h: h, rot: rot || 0, in: !!ins }; if (/^MTO-/.test(p.id)) it.pick = p.id; if (p.plant) it.plant = p.plant; out.push(it); return it; };
+    var fu = P.furniture, sw = P.swing, seatX = sw ? L * 0.34 : L / 2;
+    if (fu) { var z0 = LK_SZ[fu.cat] || LK_SZ.sofa, fw = Math.min(z0[0], (sw ? L * 0.6 : L) - 1.5), fd = Math.min(z0[1], W - 1.5);
+      if (fu.cat === 'chair') { mk(fu, seatX - 2.9, W / 2 - 1.25, 2.5, 2.5, 3); mk(fu, seatX + 0.4, W / 2 - 1.25, 2.5, 2.5, 3); }
+      else mk(fu, seatX - fw / 2, W / 2 - fd / 2, fw, fd, z0[2], 0, true); }
+    if (sw) { var sww = Math.min(6, (fu ? L * 0.4 : L) - 1), swd = Math.min(4.5, W - 1.5); mk(sw, (fu ? L * 0.78 : L / 2) - sww / 2, W / 2 - swd / 2, sww, swd, Math.min(7, (parseFloat(q.height) || 8) - 0.5), 0, true); }
+    if (P.planters) { var pp = P.planters, pc = pp.x.cz || {}, pw = /^MTO-PL-[A-Z]{2}$/.test(pp.id) ? 3 : 2, pd = /^MTO-PL-[A-Z]{2}$/.test(pp.id) ? (pc.round ? 3 : 1.6) : 2, ph = +pc.ht || 3.5;
+      mk(pp, -pw - 1.2, W - pd, pw, pd, ph); mk(pp, L + 1.2, W - pd, pw, pd, ph); }
+    if (P.plants) { var pl = P.plants, ps = lookPlant(pl.id, pl.x.n); pl.plant = ps.plant; var bk = wl ? 0.4 : -1.8; mk(pl, -3, bk, 2, 2, ps.h); if (P.bar || P.food) mk(pl, L + 1, W + 1, 2, 2, ps.h); else mk(pl, L + 1, bk, 2, 2, ps.h); }
+    if (P.lights) { if (/pendant|hanging|cane|rattan|wicker|lantern|chandelier/i.test(P.lights.x.n)) pend = 2; else { mk(P.lights, -1.2, W + 0.6, 0.8, 0.8, 3); mk(P.lights, L + 0.4, W + 0.6, 0.8, 0.8, 3); } }
+    if (P.feature) { var ft = Math.min(10, wl ? 8 : L + 2); if (wl) mk(P.feature, -ft - 1.5, -0.05, ft, 0.6, 8); else mk(P.feature, L / 2 - ft / 2, -2.6, ft, 0.6, Math.min(10, (parseFloat(q.height) || 8) + 1)); }
+    if (P.partition) mk(P.partition, -4.6, W / 2 - 4, 8, 0.5, 6, 90);
+    var bx = L + 3.4; if (P.bar) { mk(P.bar, bx, W / 2 - 4, 8, 2.5, 3.6, 270); bx += 4; } if (P.food) mk(P.food, bx, W / 2 - 4, 8, 2.5, 3, 270);
+    return { items: out, pend: pend };
+  }
+  function lookPanel() {   // the right panel: categories + what is in the design, each with Change / Remove
+    var have = {}; arr(S.look).forEach(function (s) { have[s.k] = s.id; });
+    var h = '<div class="lk-cats">' + LOOKC.map(function (c) { var n = lookList(c).length, id = have[c.k];
+      return '<button type="button" class="' + (id ? 'on' : '') + '" data-lko="' + c.k + '"><b>' + esc(c.t) + '</b><small>' + (id ? '✓ ' + esc(short(PRODS[id].n)) : n ? n + ' on outrr' : 'None yet') + '</small></button>'; }).join('') + '</div>';
+    var L = arr(S.look).filter(function (s) { return PRODS[s.id]; });
+    h += '<p class="pq-sub" style="margin-top:12px">In your design' + (L.length ? ' (' + L.length + ')' : '') + '</p>';
+    h += L.length ? '<div class="lk-sel">' + L.map(function (s) { var x = PRODS[s.id], c = lookC(s.k) || {};
+      return '<div class="lk-row"><img src="' + esc(lookImg(s.id)) + '" alt=""><div><small>' + esc(c.t || '') + '</small><b>' + esc(short(x.n)) + '</b></div><button type="button" data-lko="' + s.k + '">Change</button><button type="button" class="lk-x" data-lkr="' + s.k + '" aria-label="Remove">✕</button></div>'; }).join('') + '</div>'
+      : '<p class="pg3-note" style="margin:4px 0 0">Nothing yet — pick a category above.</p>';
+    return h;
+  }
+  function lookCss() {
+    if (document.getElementById('lookCss')) return; var st = document.createElement('style'); st.id = 'lookCss';
+    st.textContent = '.lk-cats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.lk-cats button{text-align:left;border:1px solid #ddd;background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer;min-height:52px;font:inherit}.lk-cats button.on{border-color:#2E2E2E;box-shadow:inset 0 0 0 1px #2E2E2E}.lk-cats b{display:block;font-size:14px}.lk-cats small{display:block;color:#6B6660;font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '.lk-sel{display:flex;flex-direction:column;gap:8px}.lk-row{display:flex;align-items:center;gap:10px;border:1px solid #eee;border-radius:12px;padding:6px 8px}.lk-row img{width:48px;height:48px;border-radius:8px;object-fit:cover;background:#F4F1EC;flex:none}.lk-row div{flex:1;min-width:0}.lk-row small{display:block;color:#6B6660;font-size:11px}.lk-row b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lk-row button{border:1px solid #ddd;background:#fff;border-radius:999px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;min-height:34px}.lk-row .lk-x{width:34px;padding:0}' +
+      '.lk-ov{position:fixed;inset:0;z-index:400;background:rgba(20,18,16,.55);display:flex;align-items:stretch;justify-content:center;padding:24px}.lk-box{background:#fff;border-radius:18px;width:100%;max-width:1320px;display:flex;flex-direction:column;overflow:hidden}.lk-hd{display:flex;align-items:center;gap:12px;padding:16px 20px 10px}.lk-hd h3{margin:0;font-size:20px;flex:1}.lk-hd button{width:40px;height:40px;border-radius:50%;border:1px solid #ddd;background:#fff;font-size:18px;cursor:pointer}' +
+      '.lk-tabs{display:flex;gap:8px;padding:0 20px 12px;overflow-x:auto;border-bottom:1px solid #eee}.lk-tabs button{flex:none;border:1px solid #ddd;background:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}.lk-tabs button.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}' +
+      '.lk-grid{flex:1;min-height:0;overflow:auto;padding:20px;display:grid;grid-auto-rows:max-content;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px;align-content:start}.lk-card{border:1px solid #eee;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;background:#fff}.lk-card.on{border-color:#C26445;box-shadow:0 0 0 2px #C26445}.lk-card .im{flex:none;aspect-ratio:4/5;background:#F4F1EC}.lk-card .im img{width:100%;height:100%;object-fit:cover;display:block}.lk-card .bd{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}.lk-card .nm{font-size:15px;font-weight:600;line-height:1.3}.lk-card .pr{font-size:14px;color:#4A4641}.lk-card .use{margin-top:auto;min-height:44px;border:0;border-radius:10px;background:#C26445;color:#fff;font:inherit;font-weight:600;font-size:14px;cursor:pointer}.lk-card.on .use{background:#2E2E2E}.lk-empty{grid-column:1/-1;text-align:center;color:#6B6660;padding:60px 10px}' +
+      '@media(max-width:700px){.lk-ov{padding:0}.lk-box{border-radius:0}.lk-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}.lk-card .nm{font-size:13px}}';
+    document.head.appendChild(st);
+  }
+  function lookOpen(k) {   // the big product grid of one category, each card with "Use in design"
+    lookCss(); var ov = document.getElementById('lookOv'); if (!ov) { ov = document.createElement('div'); ov.id = 'lookOv'; ov.className = 'lk-ov'; document.body.appendChild(ov);
+      ov.addEventListener('click', function (e) { var t = e.target.closest('button'); if (e.target === ov) return lookClose(); if (!t) return;
+        if (t.hasAttribute('data-lkc')) return lookClose(); var tb = t.getAttribute('data-lkt'); if (tb) return lookOpen(tb);
+        var u = t.getAttribute('data-lku'); if (u) { var kk = ov.getAttribute('data-k'); S.look = arr(S.look).filter(function (s) { return s.k !== kk; }); if (t.getAttribute('data-on') !== '1') S.look.push({ k: kk, id: u }); lookClose(); p3Draw(); } }); }
+    var c = lookC(k) || LOOKC[0], have = (arr(S.look).filter(function (s) { return s.k === c.k; })[0] || {}).id, L = lookList(c); ov.setAttribute('data-k', c.k);
+    ov.innerHTML = '<div class="lk-box" role="dialog" aria-label="Complete the look"><div class="lk-hd"><h3>Complete the look</h3><button type="button" data-lkc aria-label="Close">✕</button></div>' +
+      '<div class="lk-tabs">' + LOOKC.map(function (z) { return '<button type="button" class="' + (z.k === c.k ? 'on' : '') + '" data-lkt="' + z.k + '">' + esc(z.t) + '</button>'; }).join('') + '</div>' +
+      '<div class="lk-grid">' + (L.length ? L.map(function (id) { var x = PRODS[id], on = id === have;
+        return '<div class="lk-card' + (on ? ' on' : '') + '"><div class="im"><img loading="lazy" src="' + esc(lookImg(id)) + '" alt=""></div><div class="bd"><div class="nm">' + esc(x.n) + '</div><div class="pr">' + esc(lookPrice(x)) + '</div>' +
+          '<button type="button" class="use" data-lku="' + esc(id) + '"' + (on ? ' data-on="1"' : '') + '>' + (on ? '✓ In your design · remove' : 'Use in design') + '</button></div></div>'; }).join('')
+        : '<div class="lk-empty">No ' + esc(c.t.toLowerCase()) + ' on outrr yet.</div>') + '</div></div>';
+    ov.style.display = 'flex'; document.addEventListener('keydown', lookEsc);
+  }
+  function lookEsc(e) { if (e.key === 'Escape') lookClose(); }
+  function lookClose() { var ov = document.getElementById('lookOv'); if (ov) ov.style.display = 'none'; document.removeEventListener('keydown', lookEsc); }
   function p3Qs(k) {
     var x = PRODS[S.id], m = x.cz, o = S.o, q = pgOpts(), L = [], ok = mtoOk(), on = S.site && S.site.kind === 'terrace';
     var cards = function (g, cur) { return '<div class="pq-cards">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { var nm = String(y.name), sub = (nm.match(/\(([^)]*)\)/) || [])[1] || '';
@@ -2402,6 +2483,7 @@
       L.push(['Deck floor under it?', 'A raised wooden deck — fits the pergola by itself, with a nosing and cove light on the open sides', '<div class="pq-cards"><button type="button" class="' + (!S.o.deck ? 'on' : '') + '" data-p3x="deck"' + (S.o.deck ? '' : ' disabled') + '><b>No deck</b></button><button type="button" class="' + (S.o.deck ? 'on' : '') + '" data-p3x="deck"' + (S.o.deck ? ' disabled' : '') + '><b>+ Deck floor</b><small>' + ds.l + ' × ' + ds.w + ' ft</small></button></div>' +
         (S.o.deck ? '<div class="pq-sz">' + ['l', 'w'].map(function (kk) { return '<div><span>Deck ' + (kk === 'l' ? 'length' : 'width') + '</span><button type="button" data-p3dk="' + kk + ',-0.5" aria-label="Less">−</button><input type="number" inputmode="decimal" step="0.5" data-p3n="dk' + kk + '" value="' + ds[kk] + '"><i>ft</i><button type="button" data-p3dk="' + kk + ',0.5" aria-label="More">+</button></div>'; }).join('') + '</div>' + (S.o.dk ? '<button type="button" class="pg3-bk" data-p3dk="fit">↺ Fit it to the pergola again</button>' : '') : '') +
         (S.o.deck && ok ? '<p class="pg3-note">' + (dl ? 'Goes in your cart as <b>' + esc(short(PRODS[dl.id].n)) + '</b> — ' + rs(dl.price) : 'Our team will price the deck') + '</p>' : '')]);
+      if (DS_SOLO && !S.site) { lookCss(); L.push(['Complete the look', 'Real outrr pieces around it — pick a category, then “Use in design”. Only to see it: it doesn\'t change the price.', lookPanel()]); }   // 296
     }
     return L;
   }
@@ -2421,7 +2503,7 @@
     h += (k === 'size' && c.i === 0 ? '' : '<button type="button" class="pg3-bk" data-p3="back">← Back</button>');
     if (!DS_SOLO) return h;
     var q0 = pgOpts(), ad = arr(o.addons).length, SUM = { size: q0.l + ' × ' + q0.w + ' ft · ' + q0.height + (q0.layout ? ' · ' + String(q0.layout).split(' (')[0] : ''),
-      look: [q0.material, q0.colour, q0.cover ? String(q0.cover).split(' (')[0] : ''].filter(Boolean).join(' · '), extras: (ad ? ad + ' extra' + (ad > 1 ? 's' : '') : 'No extras') + (o.deck ? ' · deck' : '') };
+      look: [q0.material, q0.colour, q0.cover ? String(q0.cover).split(' (')[0] : ''].filter(Boolean).join(' · '), extras: (ad ? ad + ' extra' + (ad > 1 ? 's' : '') : 'No extras') + (o.deck ? ' · deck' : '') + (arr(S.look).length ? ' · ' + arr(S.look).length + ' in the look' : '') };
     return dsStages([{ k: 'size', t: 'Size & layout', sum: SUM.size }, { k: 'look', t: 'Look — finish, colour, roof', sum: SUM.look }, { k: 'extras', t: 'Extras', sum: SUM.extras }, { k: 'prop', t: 'Your proposal' }], PG_ORD.indexOf(k), h, 'p3s');
   }
   function p3Draw() {
@@ -2432,10 +2514,10 @@
     var cap = document.getElementById('pg3Cap'); if (cap) cap.textContent = q.l + ' × ' + q.w + ' ft · ' + q.height + ' clear · ' + (q.colour || '') + (q.cover && !/^open/i.test(q.cover) ? ' · ' + String(q.cover).split(' (')[0] : '') + (q.layout && !/free/i.test(q.layout) ? ' · ' + String(q.layout).split(' (')[0] : '');
     var nb = document.getElementById('pg3Night'); if (nb) nb.textContent = P3.night ? '☀ Day' : '☾ Night';
     if (P3.st === 2) { try { if (!P3.ev && window.Pergola3D.onEvent) { P3.ev = 1; window.Pergola3D.onEvent(pgEv); }
-      window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
+      window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, look: DS_SOLO && !S.site && arr(S.look).length ? lookItems(q) : null, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=49').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=50').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -2474,6 +2556,8 @@
     var sg = t.getAttribute('data-p3s'); if (sg != null) { if (sg === 'site') { S.pgW = true; S.tsq = 0; } else { if (S.pgW) { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); } S.pgS = PG_ORD.indexOf(sg) >= 0 ? sg : 'size'; S.pq = 0; } p3Draw(); var pn2 = document.getElementById('pg3Pn'); if (pn2) pn2.scrollTop = 0; return; }
     if (a === 'wdone') { S.pgW = false; if (S.site && S.site.kind === 'terrace' && (S.site.cx == null || tsClash(S.site, pgLay()))) tsCentre(S.site, pgLay()); pgAutoWall(); keepSite(); return p3Draw(); }
     if (t.hasAttribute('data-p3x')) { o.deck = !o.deck; draw(); return p3Draw(); }
+    var lko = t.getAttribute('data-lko'); if (lko) return lookOpen(lko);   // 296
+    var lkr = t.getAttribute('data-lkr'); if (lkr) { S.look = arr(S.look).filter(function (z) { return z.k !== lkr; }); return p3Draw(); }
     var dk = t.getAttribute('data-p3dk'); if (dk) { if (dk === 'fit') delete o.dk; else { var ds = deckSize(), kk = dk.split(',')[0]; o.dk = { l: ds.l, w: ds.w }; o.dk[kk] = Math.max(4, Math.min(40, ds[kk] + (+dk.split(',')[1]))); } draw(); return p3Draw(); }
     var sd = t.getAttribute('data-p3sd'); if (sd) { var an = sd.split('|')[0], side = sd.split('|')[1], ad0 = arr(PRODS[S.id].cz.addons).filter(function (z) { return z.name === an; })[0], n = +(ad0 && ad0.sides) || 1, cur = pgSides(ad0 || {}).slice();
       var at = cur.indexOf(side); if (at >= 0) { if (cur.length > 1) cur.splice(at, 1); } else { cur.push(side); while (cur.length > n) cur.shift(); } o.aside = Object.assign({}, o.aside); o.aside[an] = cur; draw(); return p3Draw(); }
@@ -2869,7 +2953,7 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=72').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=73').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     if (isBar(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups, min_size: m.min_size }, o: { l: o.l, material: o.material, groups: o.groups, addons: o.addons }, view: CU.side }], { studio: 'bar', view: CU.side }); } catch (e) { if (window.console) console.warn(e); } return; }   // 295
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
@@ -3112,7 +3196,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=72').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=73').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
