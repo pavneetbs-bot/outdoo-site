@@ -824,6 +824,7 @@ function suSkip(q) { const B = S.bsel || {}; if (q === 'remove') return !suRemLi
   if (q === 'sofa' && !B.sofa) return true;
   if (q === 'roofx' && !((S.su.wantX || {}).mst || (S.su.wantX || {}).shaft)) return true;
   if (q === 'ftr') return true;   // 284 (owner): the feature wall's design comes with the theme
+  if (q === 'green' || q === 'lights') { const su = S.su || {}; if (!su.green) su.green = 'balanced'; if (!su.light) su.light = 'soft'; return true; }   // 291 (owner): plants and lights are set by the theme (themeApply), not asked
   if ((q === 'fbs' && !B.fbench) || (q === 'wtr' && !B.water) || (q === 'gfw' && !B.graffiti)) return true;
   return (q === 'cabin' && !B.cabin) || (q === 'bar' && !B.bar) || (q === 'seats' && !B.cabin && !B.pergola); }
 function suStep(d) { const su = S.su; let q = su.q + d; while (q > 0 && q < SUQ.length - 1 && suSkip(SUQ[q])) q += d; su.q = Math.max(0, Math.min(SUQ.length - 1, q)); }
@@ -1184,7 +1185,9 @@ const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-sh
 const TH_FD = { tropical: 'green', turkish: 'stone', santorini: 'stone', modern: 'fluted', contemporary: 'fluted', minimal: 'slats', boho: 'slats' };   // 284 (owner): the feature wall follows the theme; changeable on the theme step
 function fdTheme() { const su = S.su; if (!su) return; const v = TH_FD[su.thm] || 'fluted', U = su.fdU || {}; su.fd = su.fd || [];
   S.items.filter(o => o.cat === 'feature' && !o.old).forEach((o, i) => { const d = U[i] || v; su.fd[i] = d; o.fdesign = d; o.label = (FDES.find(z => z[0] === d) || [0, 'Feature wall'])[1]; }); }
+const TH_GREEN = { tropical: 'lush', boho: 'lush', minimal: 'light' }, TH_LIGHT = { minimal: 'soft', santorini: 'soft' };   // 291 (owner): the theme decides greenery + lighting
 function themeApply(k, quiet) { const su = S.su; if (!su) return; su.thm = k; su.theme = k; try { fdTheme(); } catch (e) {}
+  su.green = TH_GREEN[k] || 'balanced'; su.light = TH_LIGHT[k] || 'full'; if (S.site) S.site.light = su.light;
   S.items = S.items.filter(o => o.old || !(o.cat === 'plant' || (o.cat === 'planter' && !o.pick && !o.cfgId)));   // plants to suit the theme (every planted plant is re-picked)
   themeFloor(k);   // the floor first (lawn, path, inlay laid on the open floor), then the plants — they may stand in the lawn
   try { compose({ B: {}, phase: 'decor' }); } catch (e) {}
@@ -1632,7 +1635,7 @@ function itSpec(it) { const f = foot(it), sz = `${fiTxt(f[0])} × ${fiTxt(f[1])}
   if (it.cat === 'fbench') return (it.shape === 'curve' ? 'Curved' : it.grp ? 'L-shape' : 'Straight') + (it.plant && it.plant !== 'none' ? ' · with planters' : '');
   if (it.cat === 'sofa' && it.sconf) { const L = P2.sofaLayout(it.sconf); return L.seats + ' seats · ' + sz; }
   return sz; }
-const SELQ = [['mood', 'What it is for', () => (SETUPS.find(x => x.k === S.bth) || {}).t || 'My own picks'], ['floor', 'Floor look', () => (S.su || {}).flr || ''], ['green', 'Greenery', () => (S.su || {}).green || ''], ['lights', 'Lighting', () => (S.su || {}).light || ''], ['north', 'North', () => (S.su || {}).north ? 'towards the ' + S.su.north.replace('-', ' ') : 'Not sure']];
+const SELQ = [['mood', 'What it is for', () => (SETUPS.find(x => x.k === S.bth) || {}).t || 'My own picks'], ['floor', 'Floor look', () => (S.su || {}).flr || ''], ['north', 'North', () => (S.su || {}).north ? 'towards the ' + S.su.north.replace('-', ' ') : 'Not sure']];
 const nm0 = (L, k, d) => ((L.find(z => z[0] === k) || [0, d || ''])[1]);
 function roofRows() {   // 278 (owner): what stands on the roof now — the answers, each with ✎
   const su = S.su || {}, t = S.site, bl = t.blocks || [], R = [], hv = su.have || {}, m = su.mst || {}, X = su.wantX || {};
@@ -1680,7 +1683,7 @@ function stBody(k, A) { const su = S.su || {}, row = ([t, v, ed]) => `<div class
   if (k === 'base') { const L = suRemList(); return (L.length ? L.map(z => row([z.t, (su.rm || {})[z.k] ? 'Take down' : 'Keep', 'remove'])).join('') : row(['Take down', 'Nothing', ''])); }
   const items = f => { const by = {}; S.items.forEach(o => { if (o.old || !f(o) || att(o) || o.mode === 'tank') return; const n = o.label || (CAT[o.cat] || {}).t || o.cat; (by[n] = by[n] || []).push(o); }); return Object.keys(by).map(n => [n + (by[n].length > 1 ? ' × ' + by[n].length : ''), itSpec(by[n][0])]); };
   if (k === 'el') { const L = items(o => !isDecor(o)), SI = A === 'su' ? stItems('el') : ''; return (SI || (L.length ? L.map(r => row(r)).join('') : wantRows().map(row).join(''))) + [['mood', 'What it is for', (SETUPS.find(x => x.k === S.bth) || {}).t || 'My own picks'], ['north', 'North', su.north ? 'towards the ' + su.north.replace('-', ' ') : 'Not sure']].map(z => row([z[1], z[2], z[0]])).join('') + `<button type="button" class="pl-sela" data-${A}="${A === 'pl' ? 'stq:want' : 'sedq:want'}">✎ Change what you want</button>`; }
-  if (k === 'dec') { const L = items(o => isDecor(o) && o.cat !== 'plant' && o.cat !== 'planter'); return (A === 'su' ? stItems('dec') : L.map(r => row(r)).join('')) + row(['Greenery', ({ none: 'No plants', light: 'A little', balanced: 'Balanced', lush: 'Lush' })[su.green] || '—', 'green']) + row(['Lighting', ({ none: 'No lights', soft: 'Soft & warm', full: 'All lit up' })[su.light] || '—', 'lights']) + `<button type="button" class="pl-sela" data-${A}="${A === 'pl' ? 'stq:decor' : 'sedq:decor'}">✎ Change furniture</button>`; }
+  if (k === 'dec') { const L = items(o => isDecor(o) && o.cat !== 'plant' && o.cat !== 'planter'); return (A === 'su' ? stItems('dec') : L.map(r => row(r)).join('')) + row(['Greenery', (({ none: 'No plants', light: 'A little', balanced: 'Balanced', lush: 'Lush' })[su.green] || '—') + ' · set by the theme', '']) + row(['Lighting', (({ none: 'No lights', soft: 'Soft & warm', full: 'All lit up' })[su.light] || '—') + ' · set by the theme', '']) + `<button type="button" class="pl-sela" data-${A}="${A === 'pl' ? 'stq:decor' : 'sedq:decor'}">✎ Change furniture</button>`; }
   if (k === 'thm') return row(['Theme', stSum('thm'), 'theme']);
   if (k === 'fl') return row(['Floor layout', stSum('fl'), 'flay']);
   return ''; }
@@ -1748,7 +1751,7 @@ function selPanel(q) { const su = S.su, qi = SUQ.indexOf(q), P2Q = ['asbuilt', '
     cats.forEach(k => { const gs = grpsOf(k); n += gs.length; b += `<div class="pl-selg"><span>${esc((CAT[k] || {}).t || k)}${gs.length > 1 ? ' × ' + gs.length : ''}</span>${q === 'plan' && !NOADD.has(k) ? `<button type="button" data-su="sadd:${k}">+ Add</button>` : ''}</div>` + gs.map((g, m) => row(g.ix[0], S.items[g.ix[0]], k === 'sofa' ? 'sofa:' + m : '')).join(''); });
     if (!n) { const B = S.bsel || {}, D = Object.keys(B).filter(k => B[k] && DECOR.has(k) && CAT[k]); n = D.length; b = D.map(k => arow([(k === 'lights' ? 'Garden lamps' : CAT[k].t) + (B[k] > 1 ? ' × ' + B[k] : ''), '', 'decor'])).join(''); }
     h += sec('dec', 'Furniture, plants & decor', n || '', b, at('decor') && !at('theme')); }
-  const CH = [['mood', 'What it is for', () => (SETUPS.find(x => x.k === S.bth) || {}).t || 'My own picks', 'mood'], ['north', 'North', () => su.north ? 'towards the ' + su.north.replace('-', ' ') : 'Not sure', 'north'], ['green', 'Greenery', () => ({ none: 'No plants', light: 'A little', balanced: 'Balanced', lush: 'Lush' })[su.green] || '', 'green'], ['lights', 'Lighting', () => ({ none: 'No lights', soft: 'Soft & warm', full: 'All lit up' })[su.light] || '', 'lights'],
+  const CH = [['mood', 'What it is for', () => (SETUPS.find(x => x.k === S.bth) || {}).t || 'My own picks', 'mood'], ['north', 'North', () => su.north ? 'towards the ' + su.north.replace('-', ' ') : 'Not sure', 'north'],
     ['theme', 'Theme', () => nm0(THEMES6, su.thm, ''), 'theme'], ['flay', 'Floor layout', () => { const f = S.site.floor || {}; return f.layout ? nm0(FLAYS, f.layout) + (f.grass ? ' · with a lawn' : '') : ''; }, 'flay']].filter(z => at(z[0]) || (z[0] === 'theme' && su.thm) || (z[0] === 'flay' && (S.site.floor || {}).layout));
   if (CH.length) h += sec('ch', 'Your choices', '', CH.map(([k, t, v, e]) => arow([t, v(), e])).join(''), ['theme', 'flay', 'prop', 'north', 'green', 'lights', 'mood'].includes(q));
   return h + '</aside>'; }
