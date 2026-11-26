@@ -76,6 +76,28 @@ try{['cart','addr','session','ref','vid','tags','attr'].forEach(function(k){var 
   .mmenu .x{border:0;background:none;font-size:28px;line-height:1;padding:4px 8px;cursor:pointer;color:var(--char)}
 }
 .cod-test{border:1.5px dashed #C26445;border-radius:12px;padding:10px 12px;margin:12px 0 0;background:#FFF8F2;font-size:13.5px}.cod-test b{display:block;margin-bottom:6px}.cod-test label{display:flex;gap:8px;align-items:flex-start;margin:6px 0;cursor:pointer}.cod-test small{display:block;color:#7A7268;font-size:11.5px}
+#catsPage{position:fixed;inset:0;z-index:240;background:#FBF8F3;overflow-y:auto;display:none;padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+#catsPage.open{display:block}
+body.cats-open .bottomnav{z-index:250}
+#catsPage .cp-hd{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border-bottom:1px solid #eee5d8}
+#catsPage .cp-hd h2{font-size:18px;margin:0}
+#catsPage .cp-x{width:36px;height:36px;border-radius:50%;border:1px solid #e2dbd0;background:#fff;font-size:18px;cursor:pointer}
+#catsPage .cp-list{padding:10px 12px;display:grid;gap:8px;max-width:760px;margin:0 auto}
+#catsPage .cpc{background:#fff;border:1px solid #eee5d8;border-radius:14px;overflow:hidden}
+#catsPage .cp-row{display:flex;align-items:center}
+#catsPage .cp-main{flex:1;display:flex;align-items:center;gap:12px;padding:10px;cursor:pointer;min-width:0;color:inherit;text-decoration:none}
+#catsPage .cp-im{width:58px;height:58px;border-radius:10px;overflow:hidden;background:#F3EDE3;flex:none}
+#catsPage .cp-im img{width:100%;height:100%;object-fit:cover}
+#catsPage .cp-tx{display:flex;flex-direction:column;min-width:0}
+#catsPage .cp-tx b{font-size:15px}
+#catsPage .cp-tx small{color:#7a7368;font-size:12px;margin-top:2px}
+#catsPage .cp-tg{width:44px;height:58px;border:0;background:none;font-size:20px;color:#7a7368;cursor:pointer;transition:transform .2s}
+#catsPage .cpc.open .cp-tg{transform:rotate(180deg)}
+#catsPage .cp-subs{display:none;flex-wrap:wrap;gap:6px;padding:0 10px 12px 80px}
+#catsPage .cpc.open .cp-subs{display:flex}
+#catsPage .cp-subs a{padding:6px 11px;border:1px solid #e2dbd0;border-radius:999px;font-size:13px;cursor:pointer;background:#fff}
+#catsPage .cp-subs a small{color:#9a9184}
+#catsPage .cp-subs .cp-all{background:#2E2E2E;color:#fff;border-color:#2E2E2E}
 </style>
 <title>outrr — Every Outdoor Possibility | Outdoor Furniture, Lighting & Decor Online</title>
 <meta name="description" content="India's destination for outdoor living — furniture, shade, planters, lighting & soft furnishings. Curated by the team behind 300+ luxury outdoor projects. A LifeWall Group company.">
@@ -3270,7 +3292,23 @@ const COLDET = {
  plants:     {mat:'Live plant',                                   asm:'No assembly required', dim:'See options',          warr:'As per seller'},
  _any:       {mat:'See description',                              asm:'See description',      dim:'See pack details',     warr:'As per maker'}
 };
-function goCats(){ showHome(); setTimeout(()=>document.querySelector('.catgrid').scrollIntoView({behavior:'smooth'}),60); }
+// 288 (owner): bottom nav "Categories" opens a page with every category + its sub-categories (it scrolled to a grid that is gone on phones)
+function goCats(){ let pg=document.getElementById('catsPage');
+  if(!pg){ pg=document.createElement('div'); pg.id='catsPage'; pg.setAttribute('role','dialog'); pg.setAttribute('aria-label','All categories'); document.body.appendChild(pg);
+    pg.addEventListener('click',e=>{ if(e.target.closest('[data-cx]')) return catsClose(); const t=e.target.closest('[data-col]'); if(!t) return;
+      if(t.dataset.tog){ t.closest('.cpc').classList.toggle('open'); return; } catsClose(); const k=t.dataset.col,sb=t.dataset.sub; sb?openSub(k,sb):openCol(k); }); }
+  let L=[]; try{ L=catList(); }catch(e){}
+  pg.innerHTML=`<div class="cp-hd"><button type="button" class="cp-x" data-cx aria-label="Back">←</button><h2>All categories</h2></div>
+    <div class="cp-list">${L.map(c=>`<div class="cpc"><div class="cp-row"><a class="cp-main" data-col="${c.k}"><span class="cp-im">${c.img?`<img loading="lazy" src="${c.img}" alt="">`:''}</span><span class="cp-tx"><b>${_esc(c.t)}</b><small>${c.n} products${c.from?' · from '+inr(c.from):''}</small></span></a>${c.subs.length?`<button type="button" class="cp-tg" data-col="${c.k}" data-tog="1" aria-label="Show ${_esc(c.t)} sub-categories">⌄</button>`:''}</div>
+      ${c.subs.length?`<div class="cp-subs"><a data-col="${c.k}" class="cp-all">All ${_esc(c.t)}</a>${c.subs.map(x=>`<a data-col="${c.k}" data-sub="${_esc(x.t)}">${_esc(x.t)} <small>${x.n}</small></a>`).join('')}</div>`:''}</div>`).join('')}</div>`;
+  pg.classList.add('open'); document.body.classList.add('cats-open'); document.body.style.overflow='hidden'; pg.scrollTop=0;
+  document.querySelectorAll('nav.bottomnav .bn').forEach(b=>b.classList.toggle('on',(b.getAttribute('onclick')||'')==='goCats()'));
+  try{ history.pushState({cats:1},'',location.href); }catch(e){}
+}
+function catsClose(){ const pg=document.getElementById('catsPage'); if(!pg||!pg.classList.contains('open')) return; pg.classList.remove('open'); document.body.classList.remove('cats-open'); document.body.style.overflow='';
+  document.querySelectorAll('nav.bottomnav .bn').forEach((b,i)=>b.classList.toggle('on',i===0)); }
+document.addEventListener('DOMContentLoaded',()=>{ const n=document.querySelector('nav.bottomnav'); if(n) n.addEventListener('click',e=>{ const b=e.target.closest('.bn'); if(b&&(b.getAttribute('onclick')||'')!=='goCats()') catsClose(); },true); });
+addEventListener('popstate',()=>catsClose());
 function showPDP(){ openProduct('lounge'); }
 function _oldAddCart(){ }
 // ---- search + ranking (Supabase search_products; ranking set in admin → Settings → Search & ranking)
