@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=67';
+import * as S3 from './space3d.js?v=68';
 import * as P2 from './plan2d.js?v=31';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=3';
-import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=57';
+import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=58';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -1179,6 +1179,7 @@ const TH_FLOOR = { tropical: { tile: 'stone', lay: 'trop_field', border: { w: 1,
 const TH_PAINT = { boho: 0xEADBC4, tropical: 0xB9B6AF, turkish: 0xF3ECE0, santorini: 0xFAFAF7, modern: 0xB9B8B4, contemporary: 0xEFE8DC, minimal: 0xF4F2EE };   // the walls' paint per theme
 const V3T = () => '<div class="pl-ab3t"><button type="button" data-su="v3:zin" aria-label="Zoom in">+</button><button type="button" data-su="v3:zout" aria-label="Zoom out">−</button><button type="button" data-su="v3:pan" aria-label="Move the view" title="Move the view">✋</button><button type="button" data-su="v3:top" aria-label="Top view" title="Top view">▦</button><button type="button" data-su="v3:night" aria-label="Night view" title="Night view">🌙</button><button type="button" data-su="v3:home" aria-label="Whole space" title="Whole space">⌖</button></div>';
 const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-shade)
+  tropical: { corner: { S: ['BANANA', 'TRAVELLER', 'FISHTAIL', 'FOXTAIL'], SS: ['ARECA', 'FISHTAIL', 'RHAPIS'] }, wall: { S: ['BIRDPARADISE', 'CROTON', 'HIBISCUS', 'IXORA', 'BANANA'], SS: ['SONGOFINDIA', 'CORDYLINE', 'SCHEFFLERA', 'CROTON'] }, accent: { S: ['BIRDPARADISE', 'BANANA', 'CROTON', 'TRAVELLER'], SS: ['SCHEFFLERA', 'BIRDPARADISE', 'CORDYLINE', 'SONGOFINDIA'] } },   // 293 (owner): loaded tropical
   turkish: { corner: { S: ['MORPANKHI', 'PHOENIX', 'CYCAS'], SS: ['RHAPIS', 'MORPANKHI'] }, wall: { S: ['BOUGAINVILLEA', 'KANER', 'MOGRA', 'MADHUMALTI'], SS: ['MOGRA', 'CHANDNI', 'SNAKEPLANT'] }, accent: { S: ['CHAMPA', 'AGAVE', 'ADENIUM'], SS: ['SNAKEPLANT', 'CHANDNI'] } },
   santorini: { corner: { S: ['MORPANKHI', 'CYCAS', 'PHOENIX'], SS: ['MORPANKHI', 'RHAPIS'] }, wall: { S: ['BOUGAINVILLEA', 'KANER', 'FOUNTAINGRASS', 'BOUGAINVILLEA'], SS: ['SNAKEPLANT', 'CHANDNI'] }, accent: { S: ['AGAVE', 'ADENIUM', 'BOUGAINVILLEA'], SS: ['SNAKEPLANT'] } },
   modern: { corner: { S: ['BAMBOO', 'MORPANKHI', 'FOXTAIL'], SS: ['BAMBOO', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'SNAKEPLANT', 'AGAVE'], SS: ['SNAKEPLANT', 'CORDYLINE'] }, accent: { S: ['AGAVE', 'BLACKFICUS'], SS: ['SNAKEPLANT', 'BLACKFICUS'] } },
@@ -2020,26 +2021,28 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   const shadeAt = (x, z) => (t.blocks || []).some(b => x > b.x - 3 && x < b.x + b.w + 3 && z > b.z - 3 && z < b.z + b.d + 3) || S.items.some(o => (o.cat === 'pergola' || o.cat === 'cabin') && (f => x > o.x - 3 && x < o.x + f[0] + 3 && z > o.z - 3 && z < o.z + f[1] + 3)(foot(o)));
   const species = (role, tg) => { const lt = shadeAt(tg[0], tg[1]) ? 'SS' : 'S', ok = k => PG[k] && (PLANT_LIGHT[k] === lt || PLANT_LIGHT[k] === 'B'), pool = POOL[role][lt].filter(ok); if (!pool.length) return Object.keys(PG)[0];
     if (role === 'corner') return pool[seed % pool.length]; const n = rN[role + lt] = (rN[role + lt] || 0) + 1; return pool[(seed + (n % 3)) % pool.length]; };
-  const plants = (lv, n0) => { const C1 = P + 1.2, gap = lv === 'lush' ? 3.5 : 4.5;
+  const plants = (lv, n0) => { const LOAD = lv === 'lush' && (S.su || {}).thm === 'tropical', C1 = P + 1.2, gap = LOAD ? 2.4 : lv === 'lush' ? 3.5 : 4.5;   // 293 (owner): tropical = loaded — corner clusters, plants by every main piece, troughs closer
     const NOFZ = new Set(['planter', 'deck', 'turf', 'pathway', 'privacy', 'accover', 'shaftcover', 'railing', 'gate', 'lights', 'plant']);
     const inFront = (r, i) => S.items.some((o, j) => { if (j === i || att(o) || NOFZ.has(o.cat) || !CAT[o.cat] || CAT[o.cat].kind === 'floor') return false; const q = rectI(o), F = FACE[((+o.rot || 0) % 360 + 360) % 360] || [0, 1], m = 4;   // 259 / 273 (owner): a planter never stands in front of any thing (feature walls, water, bar… too) — 4 ft clear in front, 1.5 ft all round
       if (hit(r, { x: q.x - 1.5, z: q.z - 1.5, w: q.w + 3, d: q.d + 3 }) && !['cabin', 'pergola'].includes(o.cat)) return true;
       const z = F[1] > 0 ? { x: q.x, z: q.z + q.d, w: q.w, d: m } : F[1] < 0 ? { x: q.x, z: q.z - m, w: q.w, d: m } : F[0] < 0 ? { x: q.x - m, z: q.z, w: m, d: q.d } : { x: q.x + q.w, z: q.z, w: m, d: q.d }; return hit(r, z); });
     const quiet = (tg, far, frp, role) => { const pl = real && !frp, it = newItem(pl ? 'plant' : 'planter'); if (!it) return; if (frp) Object.assign(it, { w: 5, d: 1.6, frp: true, label: 'FRP planter' }); if (pl) { it.h = HT[role || 'accent']; plantSet(it, species(role || 'accent', tg)); } const i = S.items.length; S.items.push(it); /* 258 (owner): rectangular FRP planters along the parapets */ const ctrI = o => { const r = rectI(o); return [r.x + r.w / 2, r.z + r.d / 2]; }, near = (x, z) => S.items.some((o, j) => j !== i && (o.cat === 'planter' || o.cat === 'plant') && d2(x, z, ...ctrI(o)) < gap);
       const ok = spotBest(it, i, (cx, cz) => -d2(cx, cz, tg[0], tg[1]) - (near(cx, cz) ? 50 : 0), frp ? [frp === 'v' ? 90 : 0] : [0], g.dz && Object.assign({ fr: g.fr }, g.dz));
-      if (!ok || near(...ctrI(it)) || d2(...ctrI(it), tg[0], tg[1]) > (far || 4) || all('pergola').some(o => hit(rectI(it), rectI(o))) || inFront(rectI(it), i)) { S.items.pop(); return; } flush(it, i); };   // never under the pergola
-    (olOn() ? olCorners().map(([k, X, Z]) => [X + (k[1] === 'l' ? 1.2 : -1.2), Z + (k[0] === 'b' ? 1.2 : -1.2)]) : [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]]).forEach(tg => quiet(tg, null, null, 'corner'));
+      if (!ok || near(...ctrI(it)) || d2(...ctrI(it), tg[0], tg[1]) > (LOAD ? Math.max(far || 4, 6.5) : far || 4) || all('pergola').some(o => hit(rectI(it), rectI(o))) || inFront(rectI(it), i)) { S.items.pop(); return; } flush(it, i); };   // never under the pergola
+    const CRN = olOn() ? olCorners().map(([k, X, Z]) => [X + (k[1] === 'l' ? 1.2 : -1.2), Z + (k[0] === 'b' ? 1.2 : -1.2)]) : [[C1, C1], [t.pw - C1, C1], [C1, t.pd - C1], [t.pw - C1, t.pd - C1]]; CRN.forEach(tg => quiet(tg, null, null, 'corner'));
+    if (LOAD && n0 == null) CRN.forEach(tg => { const sx = tg[0] < t.pw / 2 ? 1 : -1, sz = tg[1] < t.pd / 2 ? 1 : -1; quiet([tg[0] + sx * 3, tg[1]], 2.5, null, 'wall'); quiet([tg[0], tg[1] + sz * 3], 2.5, null, 'wall'); quiet([tg[0] + sx * 2.6, tg[1] + sz * 2.6], 2.5, null, 'accent'); });
     if (n0 != null) { for (let k = 0, u = 0; k < n0; k++, u++) { const s2 = [P + 1, P + 1 + (t.pd - 2 * P - 2) * (u + 0.5) / n0]; quiet(g.far === 'right' ? [t.pw - P - 1, s2[1]] : s2, 5); } return; }
     if (lv === 'light') return;
     { const pts = []; LAY.slice(0, lv === 'lush' ? 3 : 2).forEach(L => L.els.forEach(e => { if (e[0] === 'planter') pts.push([e[1], e[2]]); })); pts.slice(0, lv === 'lush' ? 10 : 5).forEach(tg => quiet(tg, 5)); }
-    const step = lv === 'lush' ? 6.5 : 7.5, fx = g.far === 'right' ? t.pw - C1 : C1, nx = g.far === 'right' ? C1 : t.pw - C1;   // 241: along the parapets; 258: FRP troughs, a few more
+    const step = LOAD ? 5 : lv === 'lush' ? 6.5 : 7.5, fx = g.far === 'right' ? t.pw - C1 : C1, nx = g.far === 'right' ? C1 : t.pw - C1;   // 241: along the parapets; 258: FRP troughs, a few more
     if (olOn()) olWalls().forEach(w => { if (w.hi - w.lo < 6) return; const sd = w.vert ? (w.dir > 0 ? 'left' : 'right') : (w.dir > 0 ? 'back' : 'front'); if (g.road.includes(sd) && !(w.vert ? false : w.dir < 0 && w.at < t.pd - P - 2)) return;   // 244: along every wall of the shape (not the road side)
       for (let u = w.lo + P + 4; u < w.hi - P - 3; u += step) quiet(w.vert ? [w.at + w.dir * 1.2, u] : [u, w.at + w.dir * 1.2], 3, w.vert ? 'v' : 'h'); });
     else { for (let z = P + 5; z < t.pd - 5; z += step) { quiet([fx, z], 3, 'v'); quiet([nx, z + step / 2], 3, 'v'); }
     for (let x = P + 5; x < t.pw - 5; x += step) { if (!g.road.includes('back')) quiet([x, C1], 3, 'h'); } }
-    if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; for (let z = P + 8; z < t.pd - 6; z += 9) quiet([nx, z], 3, null, 'wall'); for (let x = P + 8; x < t.pw - 6; x += 9) { quiet([x, C1], 3, null, 'wall'); quiet([x, t.pd - C1], 3, null, 'wall'); } }
+    if (lv === 'lush') { const nx = g.far === 'right' ? C1 : t.pw - C1; const sp = LOAD ? 6 : 9; for (let z = P + 8; z < t.pd - 6; z += sp) quiet([nx, z], 3, null, 'wall'); for (let x = P + 8; x < t.pw - 6; x += sp) { quiet([x, C1], 3, null, 'wall'); quiet([x, t.pd - C1], 3, null, 'wall'); } }
     if (pr) { const r = pr; [[r.x - 1, r.z - 1], [r.x + r.w + 1, r.z - 1], [r.x - 1, r.z + r.d + 1], [r.x + r.w + 1, r.z + r.d + 1]].forEach(tg => quiet(tg, 2.5)); }
-    const cbs = all('cabin'); cbs.forEach(c => { const r = rectI(c); quiet([r.x - 1.2, r.z + r.d + 1], 2.5); quiet([r.x + r.w + 1.2, r.z + r.d + 1], 2.5); }); };
+    const cbs = all('cabin'); cbs.forEach(c => { const r = rectI(c); quiet([r.x - 1.2, r.z + r.d + 1], 2.5); quiet([r.x + r.w + 1.2, r.z + r.d + 1], 2.5); });
+    if (LOAD) S.items.filter(o => !o.old && ['feature', 'water', 'bar', 'fbench', 'counter', 'sofa', 'vgarden', 'graffiti', 'swing'].includes(o.cat)).forEach(o => { const r = rectI(o); quiet([r.x - 1.4, r.z + r.d / 2], 2.5, null, 'accent'); quiet([r.x + r.w + 1.4, r.z + r.d / 2], 2.5, null, 'accent'); quiet([r.x + r.w / 2, r.z - 1.4], 2.5, null, 'wall'); }); };
   if (B.turf && false && PH !== 'decor') grassFill(g, B.pathway, notes, mumtyFace());   // 245: the grass fills the open space left once the big pieces stand
   if (PH === 'old') { if (B.planter) plants('light', B.planter); } else if (PH !== 'el' && !(opt && opt.noPlants)) { if (S.su && S.su.green) { plants(S.su.thm === 'minimal' ? 'light' : S.su.green); notes.push('Plants in the corners and along the walls, spaced out'); } else if (B.planter) plants('light', B.planter); }
   if (B.stool) all('bar').forEach(b => barStools(b));

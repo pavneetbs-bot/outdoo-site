@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=57';
-import { pergolaModel } from './pergola3d.js?v=44';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=58';
+import { pergolaModel } from './pergola3d.js?v=45';
 import { outline, sofaLayout } from './plan2d.js?v=31';
 import { plantModel } from './plants3d.js?v=3';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=5';
@@ -382,8 +382,13 @@ let GC = null; function groundCover(g, w, d, x, z, y, seed) {   // 268 (owner): 
   if (!LITE) { const nf = Math.round(n / 8), fl = new THREE.InstancedMesh(GC.geo, GC.f, Math.max(1, nf)); for (let i = 0; i < Math.max(1, nf); i++) { Sc.set(0.25, 0.25, 0.25); Q.identity(); V.set(x + (rnd() - 0.5) * w, y + 0.14, z + (rnd() - 0.5) * d); M.compose(V, Q, Sc); fl.setMatrixAt(i, M); } g.add(fl); } }
 function pbox(g, bw, bd, x, z, ht, pm) { box(g, bw, ht, bd, x, ht / 2, z, pm || C().stone); box(g, bw - 0.2, 0.08, bd - 0.2, x, ht + 0.02, z, mat('pb_soil', 0x4A3A2A)); groundCover(g, bw - 0.25, bd - 0.25, x, z, ht + 0.06);
   let sd = Math.abs(Math.round(x * 7 + z * 13 + bw * 3)) + 1; const rnd = () => (sd = (sd * 9301 + 49297) % 233280) / 233280, lng = Math.max(bw, bd), along = bw >= bd, n = Math.max(1, Math.round(lng / (LITE ? 2.6 : 2)));   // 262 (owner): our real plant models, a tropical mix (few kinds, cached)
+  if (themeKey() === 'tropical') { const nb = Math.max(1, Math.round(lng / (LITE ? 2.2 : 1.6))), off = (along ? bd : bw) * 0.22;   // 293 (owner): tropical troughs loaded — tall leaves at the back, colour in front
+    for (let i = 0; i < nb; i++) { const u = -lng / 2 + lng * (i + 0.5) / nb, kb = TROP_LB[(i + Math.floor(rnd() * 7)) % TROP_LB.length], kf = TROP_LF[(i * 3 + Math.floor(rnd() * 5)) % TROP_LF.length];
+      const mb = noSh(plantModel(THREE, kb, 3.2 + (i % 3) * 0.8, { pot: 'none', seed: 1 })); mb.position.set(x + (along ? u : -off), ht, z + (along ? -off : u)); mb.rotation.y = rnd() * 6.28; g.add(mb);
+      const mf = noSh(plantModel(THREE, kf, 1.6 + (i % 2) * 0.5, { pot: 'none', seed: 2 })); mf.position.set(x + (along ? u + lng / nb / 2 : off), ht, z + (along ? off : u + lng / nb / 2)); mf.rotation.y = rnd() * 6.28; g.add(mf); } return; }
   for (let i = 0; i < n; i++) { const k = TROP_S[(Math.floor(rnd() * 97) + i) % TROP_S.length], u = -lng / 2 + lng * (i + 0.5) / n, m = noSh(plantModel(THREE, k, 1.8 + (i % 2) * 1, { pot: 'none', seed: 1 })); m.position.set(x + (along ? u : 0), ht, z + (along ? 0 : u)); m.rotation.y = rnd() * 6.28; g.add(m); } }
 const GCK = ['CHLOROPHYTUM', 'SYNGONIUM', 'MONEYPLANT', 'ZZ', 'DRACAENA'];   // 284 (owner): ground cover + living walls
+const TROP_LB = ['BIRDPARADISE', 'ARECA', 'BANANA', 'FISHTAIL', 'CORDYLINE'], TROP_LF = ['CROTON', 'SONGOFINDIA', 'SCHEFFLERA', 'IXORA'];   // 293
 const TROP_S = ['SNAKEPLANT', 'CROTON', 'RHAPIS', 'FOUNTAINGRASS'], TROP_B = ['ARECA', 'BIRDPARADISE', 'RHAPIS', 'FISHTAIL'];   // 263: few kinds → shared, light
 const noSh = m => { if (LITE) m.traverse(o => { o.castShadow = false; }); return m; };
 let COVT = null; function coveStrip(g, bw, bd, x, z, y) { if (!R) return;   // 268 (owner): a soft warm line of light on the floor just outside each edge (was a lit square under the whole thing)
@@ -475,6 +480,9 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'plant') {   // 218b: a real Landscape Plant (its own model at the picked size), in a plain pot on the plan
     const m = plantModel(THREE, (it && it.plant) || 'ARECA', h || 4, { pot: 'pot', seed: 5 }), pq = Math.abs(Math.round((+(it && it.x) || 1) * 7 + (+(it && it.z) || 1) * 13)), tp = themeKey() === 'tropical' && pq % 4 === 0 ? mat('c_pott', 0xB06A47, { roughness: 0.9 }) : K.tpot; if (tp) m.traverse(o => { if (o.isMesh && o.material && o.material.color && o.material.color.getHex() === 0x6A6A66) o.material = tp; });   // 274: the pot in the theme's colour
     m.rotation.y = (Math.abs(Math.round((+(it && it.x) || 1) * 7 + (+(it && it.z) || 1) * 13)) % 12) * 0.52; g.add(m);
+    if (themeKey() === 'tropical' && pq % 3 !== 1) { const sg = mat('c_tsph', 0x7E7C77, { roughness: 0.95 }), a0 = (pq % 8) * 0.785;   // 293 (owner): grey stone spheres + a low leafy pot beside the plants
+      [[1.15, 0.32], [1.5, 0.22]].forEach(([rr, sr], k) => { const sp = new THREE.Mesh(new THREE.SphereGeometry(sr, 14, 10), sg); sp.position.set(Math.cos(a0 + k * 0.7) * rr, sr * 0.9, Math.sin(a0 + k * 0.7) * rr); sp.castShadow = !LITE; g.add(sp); });
+      if (pq % 3 === 0) { const lo = noSh(plantModel(THREE, TROP_LF[pq % TROP_LF.length], 1.6, { pot: 'pot', seed: 3 })); lo.position.set(Math.cos(a0 + 2.6) * 1.3, 0, Math.sin(a0 + 2.6) * 1.3); g.add(lo); } }
   } else if (cat === 'planter' && it && it.frp) {   // 258 (owner): a rectangular FRP trough along the parapet, planted
     pbox(g, w, d, 0, 0, 2, K.frp);   // 274: trough in the theme's colour
   } else if (cat === 'planter') {   // 262 (owner): one of our real plant models in a pot — a tropical mix, sizes vary
@@ -863,6 +871,17 @@ function floorFin(g, t, items) {
     if (k === 'rug' && zn.s === 'jute') { const r = Math.min(w, d) / 2, m = new THREE.Mesh(new THREE.CircleGeometry(r, 48), new THREE.MeshStandardMaterial({ map: finTex('jute'), roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.05 + (zn.y || 0), z + d / 2); m.receiveShadow = true; g.add(m); return; }   // 276: layered rugs (boho) — a round jute rug over a patterned one
     if (k === 'rug') { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tex({ sand: 'sandrug', boho: 'bohorug', berber: 'berber' }[zn.s] || 'kilim', 1, 1), roughness: 0.95 })); if (zn.rot) m.rotation.z = zn.rot; m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04 + (zn.y || 0), z + d / 2); m.receiveShadow = true; g.add(m); return; }
     if (k === 'pebble') { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tex(zn.s === 'white' ? 'cobble' : 'pebble', w / 2, d / 2), roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.045, z + d / 2); m.receiveShadow = true; g.add(m); } });
+  if (themeKey() === 'tropical') { const ZS = f.zones || [], lawns = [];   // 293 (owner): tropical landscaping — the lawn edged with clumps of big leaves, grasses and colour
+    ZS.forEach(zn => { if (zn.k === 'poly' && zn.s === 'turf' && zn.pts && zn.pts.length > 2) lawns.push(zn.pts); else if (zn.k === 'turf' && zn.w > 3 && zn.d > 3) lawns.push([[zn.x, zn.z], [zn.x + zn.w, zn.z], [zn.x + zn.w, zn.z + zn.d], [zn.x, zn.z + zn.d]]); });
+    const SK = new Set(['turf', 'pathway', 'privacy', 'lights', 'accover', 'shaftcover', 'mstair', 'works']), stones = ZS.filter(zn => zn.k === 'stone' || (zn.k === 'path')).map(zn => zn.k === 'stone' ? [zn.cx, zn.cz] : [zn.x + zn.w / 2, zn.z + zn.d / 2]);
+    const busy = (x, z) => (items || []).some(o => { if (SK.has(o.cat) || o.segs || o.box) return false; const fo = foot(o); return x > +o.x - 1 && x < +o.x + fo[0] + 1 && z > +o.z - 1 && z < +o.z + fo[1] + 1; }) || (t.blocks || []).some(b2 => x > b2.x - 1 && x < b2.x + b2.w + 1 && z > b2.z - 1 && z < b2.z + b2.d + 1) || stones.some(([a, c]) => Math.hypot(a - x, c - z) < 1.8);
+    const TALL = ['BANANA', 'BIRDPARADISE', 'TRAVELLER', 'FISHTAIL'], LOW = ['FOUNTAINGRASS', 'CROTON', 'SONGOFINDIA', 'CORDYLINE', 'IXORA']; let q = 0;
+    lawns.forEach(pts => { const cx = pts.reduce((s1, p) => s1 + p[0], 0) / pts.length, cz = pts.reduce((s1, p) => s1 + p[1], 0) / pts.length; let carry = 0;
+      for (let i = 0; i < pts.length; i++) { const [x0, z0] = pts[i], [x1, z1] = pts[(i + 1) % pts.length], L = Math.hypot(x1 - x0, z1 - z0); if (L < 0.01) continue;
+        for (let u = carry; u < L; u += 4.2) { const px = x0 + (x1 - x0) * u / L, pz = z0 + (z1 - z0) * u / L, dl = Math.hypot(cx - px, cz - pz) || 1, ix = px + (cx - px) / dl * 1.2, iz = pz + (cz - pz) / dl * 1.2; if (busy(ix, iz)) continue;
+          const tall = q % 3 === 0, k = tall ? TALL[(q / 3 | 0) % TALL.length] : LOW[q % LOW.length], m = noSh(plantModel(THREE, k, tall ? 4.5 + (q % 2) : 1.8 + (q % 3) * 0.4, { pot: 'none', seed: 4 + q % 3 })); m.position.set(ix, 0.1, iz); m.rotation.y = q * 1.7; g.add(m);
+          if (!LITE && q % 2 === 0) { const sp = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 8), mat('c_tsph', 0x7E7C77, { roughness: 0.95 })); sp.position.set(ix + 0.9, 0.3, iz + 0.5); sp.castShadow = true; g.add(sp); } q++; }
+        carry = 0; } }); }
   if (f.pebble) { const b = 0.6, pm = new THREE.MeshStandardMaterial({ map: finTex('pebble'), roughness: 1 });
     (f.pebble === 'near' ? pebNear(t, items) : [[E, E, pw - 2 * E, b], [E, pd - E - b, pw - 2 * E, b], [E, E + b, b, pd - 2 * E - 2 * b], [pw - E - b, E + b, b, pd - 2 * E - 2 * b]]).forEach(([x, z, w, d]) => { const tx = pm.map.clone(); tx.needsUpdate = true; tx.repeat.set(w / 2, d / 2);
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04, z + d / 2); m.receiveShadow = true; g.add(m); }); }
@@ -880,6 +899,10 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
       const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); H[i] = hd;
       it.segs.forEach((sg, k) => { const L = Math.hypot(sg.x1 - sg.x0, sg.z1 - sg.z0); if (L < 0.3) return; const p = new THREE.Group(); p.position.set((sg.x0 + sg.x1) / 2, sg.y, (sg.z0 + sg.z1) / 2); p.rotation.y = -Math.atan2(sg.z1 - sg.z0, sg.x1 - sg.x0); hd.add(p);
         p.add(generic('privacy', L, 0.3, +it.h || 3, it));
+        if (themeKey() === 'tropical' && it.mode === 'par' && !it.pipe && (P.site || {}).kind !== 'lawn') { const th = p.rotation.y, c0 = Math.cos(th), s0 = Math.sin(th), st = P.site || {}, tw = s0 * ((+st.pw || 30) / 2 - p.position.x) + c0 * ((+st.pd || 60) / 2 - p.position.z) >= 0, sv = tw ? 1 : -1, BD = 1.3, v0 = sv * (0.25 + BD / 2);   // 293 (owner): tropical = a planted bed along every free stretch of screen, tall leaves at the back, colour in front
+          const SKIP = new Set(['privacy', 'lights', 'turf', 'pathway', 'accover', 'shaftcover', 'mstair', 'works']), busy = (u) => { const wx = p.position.x + u * c0 + v0 * s0, wz = p.position.z - u * s0 + v0 * c0; return (P.items || []).some(o => { if (SKIP.has(o.cat) || o.segs || o.box) return false; const f = foot(o); return wx > +o.x - 0.8 && wx < +o.x + f[0] + 0.8 && wz > +o.z - 0.8 && wz < +o.z + f[1] + 0.8; }) || (st.blocks || []).some(b2 => wx > b2.x - 0.3 && wx < b2.x + b2.w + 0.3 && wz > b2.z - 0.3 && wz < b2.z + b2.d + 0.3); };
+          const runs = []; let r0 = null; for (let u = -L / 2 + 0.5; u <= L / 2 - 0.5 + 1e-6; u += 1) { const f = !busy(u); if (f && r0 == null) r0 = u; if ((!f || u + 1 > L / 2 - 0.5) && r0 != null) { const r1 = f ? u : u - 1; if (r1 - r0 >= 2) runs.push([r0 - 0.4, r1 + 0.4]); r0 = null; } }
+          runs.forEach(([a0, a1]) => { const bg = new THREE.Group(); bg.position.set((a0 + a1) / 2, -(+sg.y || 0), v0); p.add(bg); pbox(bg, a1 - a0, BD, 0, 0, 1.4, C().wood2); }); }
         const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
         if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.2, (+it.h || 3) + 0.2, 0.6)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = (+it.h || 3) / 2; p.add(ln); }
         if (!k && P.labels !== false) { const tg = tag(it.label || 'Privacy screen'); tg.position.y = (+it.h || 3) + 1.4; p.add(tg); }
