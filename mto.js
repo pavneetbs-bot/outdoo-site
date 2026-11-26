@@ -1126,6 +1126,7 @@
      
       groups: arr(m.groups).reduce(function (g, x) { var f = arr(x.options).filter(function (y) { return String(y.name || '').trim(); })[0]; if (f) g[x.name] = f.name; return g; }, {}),
       drawing: m.drawing !== 'no', size_ok: false, note: '' } };
+    czLoad();   // 298: the customer's last choices for this design come back (a re-opened page / reload used to reset them)
     if (!window.__ad3d && /[?&]3d(=|&|$)/.test(location.search)) {   // ad links: /p/<design>/?3d opens the 3D designer / cabin studio straight away
       window.__ad3d = true; try { if (window.otrack) otrack('customise_start', { sku: id, ref: 'ad3d' }); } catch (e) {}
       if (m.unit === 'cabin') window.__cbsOpen = id; else if (/^MTO-PG-/.test(id)) window.__mtoPre = Object.assign({}, window.__mtoPre && window.__mtoPre.id === id ? window.__mtoPre : { id: id }, { open3d: true });
@@ -2381,11 +2382,19 @@
     document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-dsall]'); if (!b) return; e.stopPropagation(); DS_ALL = !DS_ALL; var g = b.closest('.ds-g'); if (g) g.classList.toggle('all', DS_ALL); b.textContent = 'All steps ' + (DS_ALL ? '▴' : '▾'); b.setAttribute('aria-expanded', DS_ALL); }, true);
     document.addEventListener('pointerdown', function (e) { var hd = e.target.closest && e.target.closest('.ds-hdl'); if (!hd) return; var ov = hd.closest('.pg3-ov'); if (!ov) return; e.preventDefault();
       var y0 = e.clientY, H = innerHeight / 100, h0 = DS_ULH, moved = false, fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
-      var set = function (v) { DS_ULH = Math.max(26, Math.min(84, v)); ov.style.setProperty('--ulh', DS_ULH + 'dvh'); };
-      var mv = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) set(h0 + d); }, up = function () { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); if (!moved) set(DS_ULH >= 70 ? 40 : 82); fit(); setTimeout(fit, 150); };
+      var set = function (v) { DS_ULH = Math.max(26, Math.min(dsMax(ov), v)); ov.style.setProperty('--ulh', DS_ULH + 'dvh'); };
+      var mv = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) set(h0 + d); }, up = function () { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); if (!moved) set(DS_ULH >= dsMax(ov) - 4 ? 36 : 99); fit(); setTimeout(fit, 150); };
       document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up); }, true);
   }
   var DS_ULH = 58;
+  // 298 (owner: "bottom sheet gayab, changes unsave"): the sheet can't be pushed off the screen (the 3D at most what leaves the question visible above the footer),
+  // and every designer's choices are kept per design (localStorage outrr_cz_<sku>, 14 days) so a re-opened page or a reload never loses them
+  function dsMax(ov) { var hd = ov.querySelector('.pg3-hd'), ft = ov.querySelector('.pg3-ft'), H = innerHeight || 700, px = H - (hd ? hd.offsetHeight : 50) - (ft ? ft.offsetHeight : 120) - 150; return Math.max(30, Math.min(66, px / H * 100)); }
+  function dsFit(ov) { if (!ov || innerWidth > 900) return; var mx = dsMax(ov); if (DS_ULH > mx) DS_ULH = mx; ov.style.setProperty('--ulh', DS_ULH + 'dvh'); }
+  function czKey() { return 'outrr_cz_' + (S && S.id); }
+  function czSave() { if (!S || !S.id) return; try { localStorage.setItem(czKey(), JSON.stringify({ t: Date.now(), o: S.o, pgS: S.pgS, pq: S.pq, look: S.look, stg: CU && CU.open ? CU.stg : undefined })); } catch (e) {} }
+  function czLoad() { try { var v = JSON.parse(localStorage.getItem(czKey()) || 'null'); if (!v || !v.o || Date.now() - v.t > 14 * 864e5) return;
+    Object.keys(v.o).forEach(function (k) { if (v.o[k] != null && v.o[k] !== '') S.o[k] = v.o[k]; }); if (v.pgS) S.pgS = v.pgS; if (v.pq != null) S.pq = v.pq; if (v.look) S.look = v.look; if (v.stg != null) S.czStg = v.stg; } catch (e) {} }
   // stages: [{k, t, sum}] · cur: index of the open one · body: its question (html) · go: the data attribute that opens a stage (data-<go>="k")
   function dsStages(stages, cur, body, go) {
     dsCss(); var n = stages.length, g = stages[cur] || { t: '' };
@@ -2550,7 +2559,7 @@
     var ov = document.getElementById('pg3'); if (!ov || !P3.open || !S || !isPg(S.id)) return; var q = pgOpts();
     var pn = document.getElementById('pg3Pn'); if (pn) pn.innerHTML = p3Panel();
     var vw = document.getElementById('pg3Vw'); if (vw) { var ter = S.site && S.site.kind === 'terrace' && !S.pgW; vw.innerHTML = ter ? '<button type="button" data-p3v="turn" title="Turn it">↻ Turn</button><button type="button" data-p3v="' + (P3.top ? '3d' : 'top') + '">' + (P3.top ? '◱ 3D view' : '⬒ From the top') + '</button>' : ''; }   // 203: turn it / look from the top, on the 3D
-    var ft = document.getElementById('pg3Ft'); if (ft) { ft.innerHTML = p3Ft(); ft.style.display = ''; }
+    var ft = document.getElementById('pg3Ft'); if (ft) { ft.innerHTML = p3Ft(); ft.style.display = ''; } dsFit(ov); czSave();
     var cap = document.getElementById('pg3Cap'); if (cap) cap.textContent = q.l + ' × ' + q.w + ' ft · ' + q.height + ' clear · ' + (q.colour || '') + (q.cover && !/^open/i.test(q.cover) ? ' · ' + String(q.cover).split(' (')[0] : '') + (q.layout && !/free/i.test(q.layout) ? ' · ' + String(q.layout).split(' (')[0] : '');
     var nb = document.getElementById('pg3Night'); if (nb) nb.textContent = P3.night ? '☀ Day' : '☾ Night';
     if (P3.st === 2) { try { if (!P3.ev && window.Pergola3D.onEvent) { P3.ev = 1; window.Pergola3D.onEvent(pgEv); }
@@ -2917,7 +2926,7 @@
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(short(x.n)) + ' · Customise</b><button type="button" data-cu="close" aria-label="Close">✕ Close</button></div>' +
       '<div class="pg3-bd"><div class="pg3-st cu-st"><img id="cuImg" alt="">' + (cuHas3d(x, S.id) ? '<div id="cu3d" class="cu3d"></div><div class="cu-vw"><button type="button" data-cuv="3d" class="on">3D</button>' + (isBar(S.id) ? '<button type="button" data-cuside="back">Back side</button>' : '') + '<button type="button" data-cuv="photo">Photo</button></div>' : '') + '<div class="pg3-cap" id="cuCap"></div></div><div class="pg3-pn" id="cuPn"></div></div>' +
       '<div class="pg3-ft">' + (PCAT[x.col] && !DS_SOLO ? '<button type="button" data-cu="space" class="cu-sp">📐 See it in my space</button>' : '') + '<button type="button" data-cu="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button></div>';
-    CU.stg = 0; CU.side = 'front'; ov.classList.add('open'); document.body.classList.add('pg3-on'); CU.open = true; cuDraw();
+    CU.stg = S.czStg || 0; S.czStg = 0; CU.side = 'front'; ov.classList.add('open'); document.body.classList.add('pg3-on'); CU.open = true; cuDraw();
     try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: 'form' }); } catch (e) {}
   };
   // 294: the general customiser on the studio base — Size → Look → Extras (a stage with nothing to ask is left out) → Your proposal
@@ -2976,7 +2985,7 @@
     if (DS_SOLO) { var L = cuStages(x, m, o), ci = Math.max(0, Math.min(CU.stg || 0, L.length - 1)); CU.stg = ci; var k = L[ci].k;
       var hint = k === 'size' ? '<p class="mto-hint" style="margin:0 0 6px">' + (m.unit === 'area' ? (m.round ? 'Size across, in feet' : 'Length × width of the planter, in feet') + (m.hr ? ' — and how tall.' : '.') : m.unit === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : m.unit === 'face' ? 'Width × height of the wall or opening, in feet.' : m.unit === 'length' ? 'Total running length, in feet.' : 'Pick the size.') + (num(m.min_size) && m.unit !== 'seat' && m.unit !== 'fixed' ? ' Any size — the smallest we bill is ' + num(m.min_size) + ' ' + UW(m.unit) + '.' : '') + '</p>' : '';
       pn.innerHTML = dsStages(L, ci, hint + (k === 'ctl' ? ctlHtml() : optForm(x, m, o, k)), 'custg') + (m.photo_note ? '<p class="mto-hint" style="margin-top:10px">Photo shows: ' + esc(m.photo_note) + '</p>' : '');
-      cuFt();
+      cuFt(); dsFit(document.getElementById('cuOv')); czSave();
     } else
     pn.innerHTML = '<p class="mto-hint" style="margin:0 0 6px">' + (m.unit === 'area' ? 'Length × width of the floor it covers, in feet.' : m.unit === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : m.unit === 'face' ? 'Width × height of the wall or opening, in feet.' : m.unit === 'length' ? 'Total running length, in feet.' : 'Pick the size and finish.') + '</p>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + optForm(x, m, o);
     pn.scrollTop = st; var im = document.getElementById('cuImg'); if (im) { var u = refPhoto(x); if (im.getAttribute('src') !== u) im.src = u; }
