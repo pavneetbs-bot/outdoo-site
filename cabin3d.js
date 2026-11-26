@@ -394,7 +394,7 @@ function drawPlot(tg, t) {
       else { box(bg, 0.06, 7, 3, dz2 === 'left' ? x0 - 0.04 : x0 + bk.w + 0.04, Y + 3.5, z, ms, false); box(bg, 0.07, 6.7, 2.7, dz2 === 'left' ? x0 - 0.05 : x0 + bk.w + 0.05, Y + 3.45, z, dm, false); }
       return; }
     box(bg, bk.w, h, bk.d, x, Y + h / 2, z, wallm);
-    if (bk.type === 'mumty') { const e = mumtyProj(t, bk), G = mstGap(t, bk), yS = Y + h + 0.17;   // 266 (owner): the stairs up come through a proper opening in the chajja
+    if (bk.type === 'mumty' || bk.type === 'room') { const e = mumtyProj(t, bk), G = bk.type === 'mumty' ? mstGap(t, bk) : null, yS = Y + h + 0.17;   // 285 (owner): a built room has the same chajja (none where it joins the stairs room); a temp room none   // 266 (owner): the stairs up come through a proper opening in the chajja
       if (!G) box(bg, bk.w + e.l + e.r, 0.35, bk.d + e.b + e.f, x + (e.r - e.l) / 2, yS, z + (e.f - e.b) / 2, side2);
       else { const k = { left: 'l', right: 'r', back: 'b', front: 'f' }[G.sd], e2 = Object.assign({}, e, { [k]: 0 }), X0 = +bk.x - e.l, X1 = +bk.x + +bk.w + e.r, Z0 = +bk.z - e.b, Z1 = +bk.z + +bk.d + e.f, xs = G.sd === 'left' || G.sd === 'right';
         box(bg, bk.w + e2.l + e2.r, 0.35, bk.d + e2.b + e2.f, x + (e2.r - e2.l) / 2, yS, z + (e2.f - e2.b) / 2, side2);
