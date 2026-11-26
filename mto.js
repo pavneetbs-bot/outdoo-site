@@ -259,7 +259,7 @@
   // delivery zone from the maker's pincode (the order is priced again by the database, nearby cities included)
   function zoneOf(from, to) {
     if (!/^[1-9][0-9]{5}$/.test(to || '') || !window.locFromPin) return null;
-    var a = locFromPin(from), b = locFromPin(to); if (!a || !b) return null;
+    var a = locFromPin(from), b = locFromPin(to); if (!a || !b) return 'india';   // T-013: a pincode our list doesn't know (or no ships-from) = the all-India rate, like the server — it used to leave the order button on 'Enter your pincode'
     if (a.city && b.city && a.city === b.city) return 'local';
     if (a.state && b.state && a.state === b.state) return 'state';
     return 'india';
@@ -1591,7 +1591,7 @@
       document.querySelectorAll('button[onclick="addCart()"]').forEach(function (b) { b.style.display = 'none'; }); return; }
     document.querySelectorAll('button[onclick="buyNow()"]').forEach(function (b) { b.style.display = ''; var o = S.o, needPin = q && q.ok && q.delivery && q.delivery.fee == null, noInst = q && q.ok && o.install && q.install && !q.install.available, needOk = !o.drawing && !o.size_ok;
       if (!mtoOk() && x.cz.unit !== 'cabin') { b.disabled = false; b.textContent = 'Check price'; return; }   // 172
-      b.disabled = closed; b.textContent = closed ? 'Coming soon' : !(q && q.ok) ? 'Choose your size' : needPin || noInst ? 'Enter your pincode' : needOk ? 'Confirm your size' : 'Order now · pay ' + rs(q.pay_now); });
+      b.disabled = closed; b.textContent = closed ? 'Coming soon' : !(q && q.ok) ? 'Choose your size' : needPin ? 'Enter your pincode' : noInst ? 'No installation at this pincode — pick Install it yourself' : needOk ? 'Confirm your size' : 'Order now · pay ' + rs(q.pay_now); });
     document.querySelectorAll('button[onclick="addCart()"]').forEach(function (b) { b.style.display = closed ? 'none' : ''; b.disabled = closed; b.textContent = S.editK ? 'Update cart' : 'Add to cart'; });   // 190
   }
 

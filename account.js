@@ -181,6 +181,7 @@
           <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="padding:8px 14px" onclick="acPropOpen('${p.id}')">Open</button><button class="btn ghost" style="padding:8px 12px" onclick="acShare('proposal','${p.id}')">Share</button><button class="btn ghost" style="padding:8px 12px" onclick="acPropDel('${p.id}')">Delete</button></div>
         </div></div>` }).join('') : '<div class="ac-empty"><p>No proposals yet.</p><p class="mut sm">Customise a pergola in 3D — your proposal with price, drawings and specifications is saved here.</p></div>')
     drawProposals.list = list
+    if (window._acPropWant) { const w = window._acPropWant; window._acPropWant = null; if (list.some(x => x.id === w)) acPropOpen(w) }
   }
   window.acPropOpen = id => { const p = (drawProposals.list || []).find(x => x.id === id); if (p && window.mtoOpenProposal) mtoOpenProposal(p.sku, p.cfg, p.pincode) }
   window.acPropDel = async id => { if (!confirm('Delete this proposal?')) return; try { await rpc('proposal_delete', { p_id: id }); drawProposals() } catch (e) { say(e.message) } }
@@ -525,11 +526,13 @@
   }
   document.addEventListener('DOMContentLoaded', paintHeader); if (document.readyState !== 'loading') paintHeader()
   const qs = new URLSearchParams(location.search)
-  if (qs.has('account') || location.hash === '#account') setTimeout(() => acOpen(qs.get('account') === 'proposals' ? 'proposals' : undefined), 300)
-  if (location.hash === '#proposals') setTimeout(() => acOpen('proposals'), 300)
-  if (location.hash === '#shared') setTimeout(() => acOpen('shared'), 300)   // 224: the share email's link
+  const IH = window.__initHash || location.hash   // index.html clears the address hash on load (keeps it in __initHash) — the email links were lost
+  if (qs.has('account') || IH === '#account') setTimeout(() => acOpen(qs.get('account') === 'proposals' ? 'proposals' : undefined), 300)
+  if (IH === '#proposals') setTimeout(() => acOpen('proposals'), 300)
+  { const m = /^#proposal=([0-9a-f-]{36})$/.exec(IH); if (m) { window._acPropWant = m[1]; setTimeout(() => acOpen('proposals'), 300) } }   // the proposal email: open that proposal
+  if (IH === '#shared') setTimeout(() => acOpen('shared'), 300)   // 224: the share email's link
   if (qs.has('wishlist')) setTimeout(() => acWishlist(), 400)
-  if (qs.has('track') || location.hash === '#track') setTimeout(() => acTrack(qs.get('track') || ''), 300)
+  if (qs.has('track') || IH === '#track') setTimeout(() => acTrack(qs.get('track') || ''), 300)
 
   // ---------------------------------------------------------------- reviews (035): one per delivered product, from the email link or My account
   window.acEmail = () => sess?.email || ''
