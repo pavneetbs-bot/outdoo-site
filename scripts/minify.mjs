@@ -3,7 +3,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const FILES = [['mto.js', 'script'], ['planner.js', 'esm'], ['space3d.js', 'esm'], ['cabin3d.js', 'esm'], ['pergola3d.js', 'esm'], ['terrace-match.js', 'esm'], ['plan2d.js', 'esm'], ['plants3d.js', 'esm'], ['floorlay.js', 'esm'], ['proposal.js', 'esm']]
+const FILES = [['mto.js', 'script'], ['planner.js', 'esm'], ['space3d.js', 'esm'], ['cabin3d.js', 'esm'], ['pergola3d.js', 'esm'], ['terrace-match.js', 'esm'], ['plan2d.js', 'esm'], ['plants3d.js', 'esm'], ['floorlay.js', 'esm'], ['proposal.js', 'esm'], ['cadread.js', 'esm']]
 if (!process.env.CF_PAGES && !process.env.FORCE_MINIFY) { console.log('minify: skipped (not a Cloudflare Pages build)'); process.exit(0) }
 let esbuild
 try { esbuild = await import('esbuild') } catch (e) { console.log('minify: esbuild not installed — skipped'); process.exit(0) }

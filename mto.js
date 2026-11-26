@@ -3368,8 +3368,10 @@
       if (f.size > 15 * 1024 * 1024) { st.lmsg = 'The PDF must be under 15 MB.'; return paint(); }
       st.lbusy = true; paint();
       try { var buf = await f.arrayBuffer(), u8 = new Uint8Array(buf), bin = ''; for (var i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
-        var A = window.OUTRR_SUPA || {}, tk = (window.acToken && await window.acToken()) || A.anon;
-        var r = await fetch(A.url + '/functions/v1/layouts', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read', name: f.name, pdf: btoa(bin), token: window.ASSIST && window.ASSIST.token || null }) });
+        var A = window.OUTRR_SUPA || {}, tk = (window.acToken && await window.acToken()) || A.anon, CR = null, PP = null;
+        try { var PB = window.PDFJS_BASE || 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/', imp = new Function('u', 'return import(u)'), pj = await imp(PB + 'pdf.min.mjs'); pj.GlobalWorkerOptions.workerSrc = PB + 'pdf.worker.min.mjs';   // 287: read the drawing's own lines + dimensions here (exact scale), send a gridded picture
+          CR = await imp(location.origin + '/cadread.js?v=1'); PP = await CR.prep(u8, pj, 1); if (!PP || !PP.mmPx) PP = null; } catch (e0) { PP = null; }
+        var r = await fetch(A.url + '/functions/v1/layouts', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read', name: f.name, pdf: btoa(bin), img: PP ? PP.img : undefined, labels: PP ? PP.labels : undefined, token: window.ASSIST && window.ASSIST.token || null }) });
         var j = await r.json().catch(function () { return {}; });
         if (r.ok && j.reading && j.id) {   // 248: the drawing is read in the background — ask every 3 s (up to 4 min)
           for (var k = 0; k < 80; k++) { await new Promise(function (ok) { setTimeout(ok, 3000); }); var r2 = null; try { r2 = await (await fetch(A.url + '/functions/v1/layouts', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', id: j.id }) })).json(); } catch (e2) { continue; }
@@ -3378,6 +3380,7 @@
         st.lbusy = false;
         if (j.left != null) st.lq = Object.assign({}, st.lq, { left: j.left, signed_in: true });
         if (!r.ok || !j.layout) { st.lmsg = (j.error || j.reason || 'We could not read this drawing.') + (j.left != null ? ' · ' + j.left + ' of 2 uploads left' : ''); return paint(); }
+        if (j.layout.units === 'pct') { if (!PP || !CR) { st.lmsg = 'We could not read this drawing.'; return paint(); } j.layout = CR.toFeet(j.layout, PP); }
         try { if (window.otrack) window.otrack('plan_start', { ref: 'pdf' }); } catch (e) {}
         var site = layoutSite(j.layout, j.id); st.fromPdf = { left: j.left, team: !!j.team, proposed: j.layout.proposed || [] }; st.bg = null; lBg(u8, j.layout); openRoof(site);
       } catch (e) { st.lbusy = false; st.lmsg = 'Upload failed — check the connection and try again.'; paint(); } };
@@ -3395,8 +3398,8 @@
       var r2nd = dir(L.plot.road2), N = dir({ up: 'top', down: 'bottom', left: 'left', right: 'right' }[L.plot.north]);
       return { kind: 'terrace', plot: '', pw: r2(pw), pd: r2(pd), par: +L.plot.parapet_ft >= 4 ? 4 : 3, rail: false, corner: r2nd === 'left' ? 'left' : r2nd === 'right' ? 'right' : '', road_front: true, road_back: r2nd === 'back', high: {}, tanks: !!L.tanks, blocks: B, cuts: cuts, outline: OL || undefined, start: 'pdf', layout: { id: id, proposed: L.proposed || [], north: N || '' } }; };
     var lBg = function (u8, L) {   // the drawing behind the plan (pdf.js in the browser): the roof cut out and turned like the plan
-      if (!L.plot.box) return; new Function('u', 'return import(u)')('https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs').then(async function (pj) {
-        pj.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+      if (!L.plot.box) return; var PB = window.PDFJS_BASE || 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/'; new Function('u', 'return import(u)')(PB + 'pdf.min.mjs').then(async function (pj) {
+        pj.GlobalWorkerOptions.workerSrc = PB + 'pdf.worker.min.mjs';
         var doc = await pj.getDocument({ data: u8.slice() }).promise, pg = await doc.getPage(Math.min(doc.numPages, L.page || 1)), v0 = pg.getViewport({ scale: 1 }), sc = Math.min(4, 2600 / Math.max(v0.width, v0.height)), vp = pg.getViewport({ scale: sc });
         var c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height); var cx = c.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, c.width, c.height); await pg.render({ canvasContext: cx, viewport: vp }).promise;
         var b = L.plot.box, sx = b[0] * c.width, sy = b[1] * c.height, sw = (b[2] - b[0]) * c.width, sh = (b[3] - b[1]) * c.height, R = L.plot.road || 'bottom', r90 = R === 'left' || R === 'right';
