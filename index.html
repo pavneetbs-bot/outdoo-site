@@ -1,6 +1,12 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>/* 277: home waits for the live catalogue — the built-in sample rows used to show first and then be replaced (flicker). Shown by odReveal() once the live rows + homepage picks are painted, or after 7 s */
+document.documentElement.classList.add('odl');window.odReveal=function(){document.documentElement.classList.remove('odl');};setTimeout(window.odReveal,7000);</script>
+<style>html.odl #home .wrap>.sec2:not(.cgrid-sec),html.odl #home .wrap>.obn-sec,html.odl #mchips,html.odl #mcircles>*>*,html.odl .sn2,html.odl #cgrid>*>*{visibility:hidden}
+html.odl #cgrid>*,html.odl #mcircles>*{background:linear-gradient(90deg,#F3EDE3 0%,#FBF8F3 50%,#F3EDE3 100%) 0 0/200% 100%;animation:odsk 1.2s linear infinite;border-radius:12px}
+@keyframes odsk{to{background-position:-200% 0}}
+#home .wrap>.sec2,#home .wrap>.obn-sec,#cgrid>*>*,#mchips,#mcircles>*,.sn2{transition:opacity .25s}</style>
 <!-- Meta Pixel -->
 <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');window.__outrrPixel='2307680780051131';fbq('init','2307680780051131');fbq('track','PageView');</script>
 <!-- End Meta Pixel -->
@@ -3864,8 +3870,8 @@ function dzPerGo(){ const st=DZ.p, id=DZ.per[st.d], cv=dzCovers(id), col=dzCols(
   window.__mtoPre={id, l:st.l, w:st.w, material:col?col.m:'', colour:col?col.n:'', groups:g, open3d:true}; try{ window.otrack&&otrack('customise_start',{sku:id,ref:'home'}) }catch(e){} openProduct(id); }
 // ---- 182: AI homepage picks (admin Settings → Homepage). A section keeps its default when nothing is picked ----
 var ROOMS = [];
-function homeLoad(){ const S=window.OUTRR_SUPA||{}; if(!S.url||!S.anon) return;
-  _supaRpc('home_public',{}).then(h=>{ if(h&&typeof h==='object') try{ homePaint(h); }catch(e){ console.warn('[outrr] home',e); } }).catch(()=>{}); }
+function homeLoad(){ const S=window.OUTRR_SUPA||{}, rv=()=>{ try{ window.odReveal&&odReveal(); }catch(e){} }; if(!S.url||!S.anon) return rv();
+  _supaRpc('home_public',{}).then(h=>{ if(h&&typeof h==='object') try{ homePaint(h); }catch(e){ console.warn('[outrr] home',e); } }).catch(()=>{}).finally(rv); }   // 277
 function _hesc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function homePaint(h){
   const one=l=>(window.vOnePerGroup?vOnePerGroup(l):l);
@@ -4530,7 +4536,7 @@ window.FLOW_LEADS = { url: "https://sxwumzkdyclhjqnfnxfk.supabase.co", anon: "ey
 window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3Z3B2Y2xxYm5hZXVjdmpudWNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjA3MzcsImV4cCI6MjEwNjE5NjczN30.aE5Wdsbyd6LQqh7-JhokrxSXGauFknfjFedTEj0vwnM" };
 (async function(){
   const S = window.OUTRR_SUPA;
-  if(!S.url || !S.anon) return;                    // static fallback — site works as before
+  if(!S.url || !S.anon){ try{ window.odReveal&&odReveal(); }catch(e){} return; }   // static fallback — site works as before
   const H = { apikey: S.anon, Authorization: 'Bearer ' + S.anon };
   const pages = async q => { let out = []; for(let o = 0; ; o += 1000){ const r = await fetch(q + (/[?&]order=/.test(q) ? '' : (q.includes('/products?') ? '&order=sku' : '&order=product_id,sort')) + '&limit=1000&offset=' + o, {headers:H}); if(!r.ok) return r; const d = await r.json(); out = out.concat(d); if(d.length < 1000) return { ok:true, json: async () => out }; } }; // past the 1,000-row API cap
   try{
@@ -4553,7 +4559,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       if(typeof MENU !== 'undefined') MENU.subs[x.category_slug + '|' + x.title] = { img: x.image_url || '', sort: x.sort ?? 100 }; });
     if(!pr.ok) throw new Error('products ' + pr.status);
     const prods = await pr.json();
-    if(!prods.length) return;                      // empty DB — keep embedded
+    if(!prods.length){ try{ window.odReveal&&odReveal(); }catch(e){} return; }   // empty DB — keep embedded
     const colsDB = cr.ok ? await cr.json() : [];
 
     Object.keys(PRODS).forEach(k => delete PRODS[k]);
@@ -4607,7 +4613,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
       try{ liveHome(); }catch(e){ console.warn(e) }
       try{ catsRefresh(); }catch(e){}
       try{ fillCatGrid(); _menuRank(); }catch(e){}
-      if(typeof homeLoad === 'function') homeLoad();   // 182: today's AI homepage picks
+      if(typeof homeLoad === 'function') homeLoad(); else if(window.odReveal) odReveal();   // 182: today's AI homepage picks (277: it reveals the home)
       try{ dzInit(); }catch(e){ console.warn('[outrr] design banners', e) }
     }
     if(typeof lastCol !== 'undefined' && lastCol && document.getElementById('plp') && document.getElementById('plp').style.display !== 'none'){
@@ -4649,7 +4655,7 @@ window.OUTRR_SUPA = { url: "https://ewgpvclqbnaeucvjnuch.supabase.co", anon: "ey
     }catch(e){}
     try{ window.dispatchEvent(new Event('outrr-catalog')); }catch(e){}
     console.log('[outrr] live catalog loaded:', prods.length, 'products');
-  }catch(e){ console.warn('[outrr] Supabase load failed, using embedded catalog', e); }
+  }catch(e){ console.warn('[outrr] Supabase load failed, using embedded catalog', e); try{ window.odReveal&&odReveal(); }catch(_){} }
   finally{ window.__odLoaded = true; }
 })();
 /* ===== end dynamic loader ===== */
