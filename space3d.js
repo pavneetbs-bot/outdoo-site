@@ -7,7 +7,7 @@ import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
 import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=54';
 import { pergolaModel } from './pergola3d.js?v=42';
-import { outline, sofaLayout } from './plan2d.js?v=27';
+import { outline, sofaLayout } from './plan2d.js?v=28';
 import { plantModel } from './plants3d.js?v=2';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=3';
 const LAYK = k => !!LSPEC[k];
@@ -875,7 +875,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
       const top = (+it.h || 8) + (it.deck ? 0.6 : 0), fm = mat('c_ledger', 0x2E2E2E, { metalness: 0.4, roughness: 0.5 });
       if (it.cfgId || it.pick || P.fullPergola) it.att.forEach(z => { const lx = z.w >= z.d, b = box(items, lx ? z.w : 0.18, 0.35, lx ? 0.18 : z.d, z.x + z.w / 2, top - 0.18, z.z + z.d / 2, fm); b.userData.it = i; });   /* 265 (owner): no heavy ledger — the simple pergola's own frame meets the wall; a designed one gets a frame-sized beam */
     }
-    if (it.cat === 'pergola') try { creepers(hd, it); } catch (e) {}
+    if (it.cat === 'pergola' && P.creepers && !it.old) try { creepers(hd, it); } catch (e) {}   // 278 (owner): only once plants are added, never on an existing pergola
     H[i] = hd;
   });
 }
@@ -894,7 +894,7 @@ function camHome(t, view) {
 }
 export function show(el, P, opts) {
   opts = opts || {}; ensure(el); R.dirty = true; R.P = P; R.place = !!opts.place; R.on = opts.on || null; THEME = P.theme || 'natural'; night(!!P.night);   // 223: a screen may take the 3D's events for itself (the terrace wizard)
-  const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels, P.measure, P.theme, P.ptags]), dims = [t.kind, t.pw, t.pd].join('x');
+  const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels, P.measure, P.theme, P.ptags, !!P.creepers]), dims = [t.kind, t.pw, t.pd].join('x');
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     R.group = build(P); R.scene.add(R.group); R.key = key;
@@ -913,6 +913,7 @@ export function busy(fn, msgs) {   // 268 (owner): switching the lights takes a 
 export function topView(on) { if (!R || !R.P) return; R.view = on ? 'top' : '3d'; camHome(R.P.site || {}, R.view); R.dirty = true; }
 export function home() { if (R) R.dirty = true; if (R && R.P) camHome(R.P.site || {}, R.view); }
 export function resize() { size(); }
+export function azimuth() { try { return R && R.controls ? R.controls.getAzimuthalAngle() : 0; } catch (e) { return 0; } }   // 278: for the planner's compass
 export function snapshot() { if (R) R.renderer.render(R.scene, R.cam); return R ? R.renderer.domElement.toDataURL('image/jpeg', 0.85) : null; }
 
 // ---- picking and dragging: items (step 2) or the blocks already on the roof (step 1)

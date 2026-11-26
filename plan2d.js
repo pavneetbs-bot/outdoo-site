@@ -9,6 +9,7 @@ const f1 = v => (Math.round(v * 2) / 2).toString();
 export const ICON = { plant: '🌴', mumty: '🪜', lift: '🛗', room: '🚪', shaft: '⬛', ac: '❄️', cabin: '🏠', pergola: '⛱️', sofa: '🛋️', swing: '🪢', dining: '🍽️', chair: '🪑', bench: '🪵', table: '🟫', bar: '🍸', planter: '🪴',
   water: '⛲', sculpture: '🗿', deck: '🟧', railing: '🚧', privacy: '🎋', feature: '🧱', vgarden: '🌿', graffiti: '🎨', accover: '❄️', gate: '🚪', pathway: '🪨', turf: '🟩', firepit: '🔥', jacuzzi: '🛁', lights: '💡', umbrella: '☂️', fbench: '💺', counter: '🍳', shaftcover: '⬜' };
 // 245: line icons (24 × 24, stroke) everywhere instead of emojis — owner: "sare icons line icons banao"
+export const NORTHV = { back: [0, -1], front: [0, 1], left: [-1, 0], right: [1, 0], 'back-left': [-0.7071, -0.7071], 'back-right': [0.7071, -0.7071], 'front-left': [-0.7071, 0.7071], 'front-right': [0.7071, 0.7071] };   // 278: 4 sides + 4 corners
 export const ICO = {
   stairs: 'M3 20h4v-4h4v-4h4V8h4V4h2 M3 20h18',
   plant: 'M12 21v-9 M12 12c-1-4-5-6-9-5 3 1 6 3 9 5 M12 12c1-4 5-6 9-5-3 1-6 3-9 5 M12 10c-2-3-2-6 0-8 2 2 2 5 0 8 M9 21h6',
@@ -191,7 +192,7 @@ export function svg(t, opts) { const U = 'u' + (++SVGN);   // 276c: own pattern 
   // road + north
   const rd = opts.road || ['front'], lt = (x, y, tx, r) => `<text x="${x}" y="${y}" font-size="${s * 1.2}" class="p2lb" style="fill:#8a3a1f"${r ? ` transform="rotate(${r} ${x} ${y})"` : ''}>${tx}</text>`;
   rd.forEach(sd => { h += sd === 'front' ? lt(pw / 2, pd + M - s * 1.1, '▼ ROAD') : sd === 'back' ? lt(pw / 2, -M + s * 1.1, '▲ ROAD') : sd === 'left' ? lt(-M + s * 1.1, pd / 2, '◀ ROAD', -90) : lt(pw + M - s * 1.1, pd / 2, 'ROAD ▶', 90); });
-  if (opts.north) { const v = { back: [0, -1], front: [0, 1], left: [-1, 0], right: [1, 0] }[opts.north], cx = pw + M - s * 2.2, cy = -M + s * 2.2, r = s * 1.6;
+  if (opts.north && NORTHV[opts.north]) { const v = NORTHV[opts.north], cx = pw + M - s * 2.2, cy = -M + s * 2.2, r = s * 1.6;
     h += `<g><circle cx="${cx}" cy="${cy}" r="${r * 1.15}" fill="#fff" stroke="#3A3530" stroke-width="${s * 0.08}"/><path d="M${cx + v[0] * r} ${cy + v[1] * r}L${cx - v[1] * r * 0.45 - v[0] * r * 0.5} ${cy + v[0] * r * 0.45 - v[1] * r * 0.5}L${cx + v[1] * r * 0.45 - v[0] * r * 0.5} ${cy - v[0] * r * 0.45 - v[1] * r * 0.5}Z" fill="#C26445"/>` +
       `<text x="${cx + v[0] * r * 1.75}" y="${cy + v[1] * r * 1.75}" font-size="${s * 1.1}" class="p2lb">N</text></g>`; }
   if (opts.measure) h += dims(t, items, s);
