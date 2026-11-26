@@ -19,8 +19,8 @@ export const SPECS = {
   turk_border: { pat: 'hex', u: 0.38, g: 0.04, pal: ['#C9AE86', '#D6BE97', '#BFA27A', '#CDB48E'], v: 0.08, j: '#EFE7D8', m: 'clay' },
   turk_path: { pat: 'zellige', u: 0.33, g: 0.025, pal: ['#E3CFAE', '#D9C39E', '#C9AE86', '#E8D8BC', '#2F6E73'], v: 0.1, j: '#F1E9DA', m: 'glaze' },
   // Santorini — lime-washed stone, grey pebble mosaic paths
-  sant_field: { pat: 'french', u: 0.9, g: 0.06, pal: ['#F6F4EF', '#F1EEE7', '#F8F7F3', '#ECE8DF'], v: 0.03, j: '#D9D3C7', m: 'lime' },
-  sant_path: { pat: 'pebmosaic', P: 3, pal: ['#8E949A', '#9EA3A8', '#7D838A', '#B4B7B9'], v: 0.1, j: '#EDEAE3', m: 'stone' },
+  sant_field: { pat: 'flag', n: 18, P: 7, g: 0.2, pal: ['#8E9AA3', '#9AA4AB', '#7F8A93', '#A6AEB3', '#8A9098'], v: 0.07, j: '#F4F2EC', m: 'stone' },   // 296: grey flagstone with thick white joints
+  sant_path: { pat: 'pebmosaic', P: 3, pal: ['#1F4FA8', '#2A5CB6', '#1A4592', '#3368C0'], v: 0.08, j: '#F6F5F1', m: 'stone' },   // 296: white floor, painted blue pebbles
   sant_border: { pat: 'stack', w: 0.33, d: 0.33, g: 0.02, pal: ['#2B5DA8', '#2F65B3', '#26549A', '#3470BE'], v: 0.1, j: '#F4F2EC', m: 'glaze' },
   // Modern — 2 × 4 concrete pavers, stack bond, grass strips between the rows
   mod_field: { pat: 'stack', w: 2, d: 4, g: 0.03, gz: 0.35, jz: 'grass', pal: ['#B7B6B1', '#AEADA8', '#BFBEB9', '#A6A5A0'], v: 0.04, j: '#8E8C87', m: 'cement' },

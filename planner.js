@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=73';
-import * as P2 from './plan2d.js?v=32';
+import * as S3 from './space3d.js?v=74';
+import * as P2 from './plan2d.js?v=33';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=4';
-import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=63';
+import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=64';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -1162,7 +1162,7 @@ const EXQ = [['floor', 'The floor'], ['seep', 'Seepage'], ['heat', 'Heatproofing
 // ---------------------------------------------------------------- 274 (owner): "Pick a theme" — the same layout in 6 looks: finishes / fabrics (space3d THEMES), plants, floor + the open floor landscaped
 const THEMES6 = [['tropical', 'Tropical', 'dark wood, grey stone, loaded with plants', ['#4A3020', '#3E6B3A', '#8C8A84', '#EFE8DA']],
   ['turkish', 'Turkish', 'keyhole arches, beige zellige, brass lanterns', ['#E3CFAE', '#B08D57', '#2F6E73', '#C2187A']],
-  ['santorini', 'Santorini', 'white-washed, Aegean blue, bougainvillea', ['#F4F4F0', '#2B5DA8', '#C2187A', '#D8C6A5']],
+  ['santorini', 'Santorini', 'white lime, Aegean blue, bougainvillea, flagstone', ['#F6F5F1', '#1F4FA8', '#C2187A', '#8E9AA3']],
   ['modern', 'Modern', 'clean lines, charcoal, concrete', ['#2E2E2E', '#B9B8B4', '#6B4A33', '#55634A']],
   ['contemporary', 'Contemporary', 'warm neutrals, travertine, curves', ['#D9CDB8', '#8C6A43', '#8FA38A', '#EDE6DA']],
   ['minimal', 'Minimal', 'few things, white, light oak', ['#F5F3EF', '#C8A97E', '#D9D6D0', '#1E1E1E']],
@@ -1182,7 +1182,7 @@ const V3T = () => '<div class="pl-ab3t"><button type="button" data-su="v3:zin" a
 const THPOOL = {   // plants per theme (what the 3D catalogue has; sun / semi-shade)
   tropical: { corner: { S: ['BANANA', 'TRAVELLER', 'FISHTAIL', 'FOXTAIL'], SS: ['ARECA', 'FISHTAIL', 'RHAPIS'] }, wall: { S: ['BIRDPARADISE', 'CROTON', 'HIBISCUS', 'IXORA', 'BANANA'], SS: ['SONGOFINDIA', 'CORDYLINE', 'SCHEFFLERA', 'CROTON'] }, accent: { S: ['BIRDPARADISE', 'BANANA', 'CROTON', 'TRAVELLER'], SS: ['SCHEFFLERA', 'BIRDPARADISE', 'CORDYLINE', 'SONGOFINDIA'] } },   // 293 (owner): loaded tropical
   turkish: { corner: { S: ['OLIVE', 'PHOENIX', 'ARECA'], SS: ['ARECA', 'RHAPIS'] }, wall: { S: ['BOUGAINVILLEA', 'MADHUMALTI', 'MOGRA', 'KANER'], SS: ['MOGRA', 'CHANDNI'] }, accent: { S: ['OLIVE', 'ADENIUM', 'CYCAS', 'KANER'], SS: ['CHANDNI', 'MOGRA'] }, olive: { S: ['OLIVE'], SS: ['OLIVE'] } },   // 294 (owner): Turkish — olives in pairs, bougainvillea, palms, jasmine
-  santorini: { corner: { S: ['MORPANKHI', 'CYCAS', 'PHOENIX'], SS: ['MORPANKHI', 'RHAPIS'] }, wall: { S: ['BOUGAINVILLEA', 'KANER', 'FOUNTAINGRASS', 'BOUGAINVILLEA'], SS: ['SNAKEPLANT', 'CHANDNI'] }, accent: { S: ['AGAVE', 'ADENIUM', 'BOUGAINVILLEA'], SS: ['SNAKEPLANT'] } },
+  santorini: { corner: { S: ['OLIVE', 'PHOENIX', 'BOUGAINVILLEA'], SS: ['OLIVE', 'RHAPIS'] }, wall: { S: ['BOUGAINVILLEA', 'BOUGAINVILLEA', 'KANER', 'AGAVE'], SS: ['CHANDNI', 'MOGRA'] }, accent: { S: ['OLIVE', 'AGAVE', 'BOUGAINVILLEA', 'CYCAS'], SS: ['CHANDNI'] }, olive: { S: ['OLIVE'], SS: ['OLIVE'] } },   // 296: bougainvillea everywhere, olives in pairs
   modern: { corner: { S: ['BAMBOO', 'MORPANKHI', 'FOXTAIL'], SS: ['BAMBOO', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'SNAKEPLANT', 'AGAVE'], SS: ['SNAKEPLANT', 'CORDYLINE'] }, accent: { S: ['AGAVE', 'BLACKFICUS'], SS: ['SNAKEPLANT', 'BLACKFICUS'] } },
   contemporary: { corner: { S: ['FICUSPANDA', 'BLACKFICUS', 'FOXTAIL'], SS: ['PACHIRA', 'RHAPIS', 'SCHEFFLERA'] }, wall: { S: ['FOUNTAINGRASS', 'DURANTA', 'KAMINI'], SS: ['SCHEFFLERA', 'SNAKEPLANT'] }, accent: { S: ['BIRDPARADISE', 'FICUSPANDA'], SS: ['PACHIRA', 'BIRDPARADISE'] } },
   boho: { corner: { S: ['PHOENIX', 'FICUSPANDA', 'BANANA'], SS: ['ARECA', 'RHAPIS'] }, wall: { S: ['FOUNTAINGRASS', 'BOUGAINVILLEA', 'MOGRA', 'AGAVE'], SS: ['SNAKEPLANT', 'CHANDNI'] }, accent: { S: ['BIRDPARADISE', 'AGAVE', 'FOUNTAINGRASS'], SS: ['PACHIRA', 'SNAKEPLANT'] } },
@@ -1203,7 +1203,7 @@ function flPlantsOff() { const Zs = ((S.site.floor || {}).zones || []).filter(z 
 // roles: base (calm field), path (runner / spokes), rug (under seating), hub (hub / medallion), band, deck (WPC), hard (fire pit), chk (checker), stone (stepping stones), edge (trim colour), lawn
 const TH_ROLE = { tropical: { base: 'trop_field', path: 'trop_rug', rug: 'trop_rug', hub: 'turk_border', band: 'trop_rug', deck: 'trop_rug', hard: 'turk_border', chk: 'trop_chk', stone: ['#8A8882', '#9A9892', '#7E7C77'], lawn: 1 },
   turkish: { base: 'turk_base', path: 'turk_field', rug: 'turk_field', hub: 'turk_field', inlay: 'star', band: 'turk_field', deck: 'wpc_walnut', hard: 'turk_border', chk: 'turk_chk', stone: ['#D6C6A8', '#C9B79A'], edge: '#B08D57' },
-  santorini: { base: 'sant_field', path: 'sant_path', rug: 'sant_enc', hub: 'sant_enc', inlay: 'mosaic', band: 'sant_border', deck: 'min_rug', hard: 'sant_path', chk: 'sant_chk', stone: ['#8E949A', '#A7ABAE', '#9C8E78'], edge: '#2B5DA8' },
+  santorini: { base: 'sant_field', path: 'sant_path', rug: 'sant_enc', hub: 'sant_path', inlay: 'mosaic', band: 'sant_border', deck: 'min_rug', hard: 'sant_field', chk: 'sant_chk', stone: ['#8E9AA3', '#A6AEB3', '#7F8A93'], edge: '#1F4FA8' },
   modern: { base: 'mod_plain', path: 'mod_rug', rug: 'mod_rug', hub: 'mod_rug', band: 'mod_border', deck: 'wpc_grey', hard: 'mod_border', chk: 'mod_chk', stone: ['#5A5A58', '#6A6A67'], lawn: 1 },
   contemporary: { base: 'cont_field', path: 'cont_enc', rug: 'cont_enc', hub: 'cont_enc', band: 'cont_enc', deck: 'cont_rug', hard: 'mod_border', chk: 'cont_chk', stone: ['#CDBFA6', '#BFAE91'], edge: '#A8987C', lawn: 1 },
   minimal: { base: 'min_field', path: 'min_path', rug: 'min_rug', hub: 'mod_rug', band: 'mod_border', deck: 'min_rug', hard: 'mod_border', chk: 'min_chk', stone: ['#D9D6D0', '#CFCBC4'] },
@@ -2022,7 +2022,7 @@ function compose(opt) {   // 240: opt.lay = one of LifeWall's real layouts (thin
   const shadeAt = (x, z) => (t.blocks || []).some(b => x > b.x - 3 && x < b.x + b.w + 3 && z > b.z - 3 && z < b.z + b.d + 3) || S.items.some(o => (o.cat === 'pergola' || o.cat === 'cabin') && (f => x > o.x - 3 && x < o.x + f[0] + 3 && z > o.z - 3 && z < o.z + f[1] + 3)(foot(o)));
   const species = (role, tg) => { const lt = shadeAt(tg[0], tg[1]) ? 'SS' : 'S', ok = k => (PG[k] || NOCAT.has(k)) && (PLANT_LIGHT[k] === lt || PLANT_LIGHT[k] === 'B'), pool = POOL[role][lt].filter(ok); if (!pool.length) return Object.keys(PG)[0];
     if (role === 'corner') return pool[seed % pool.length]; const n = rN[role + lt] = (rN[role + lt] || 0) + 1; return pool[(seed + (n % 3)) % pool.length]; };
-  const TKM = (S.su || {}).thm === 'turkish';   // 294 (owner): Turkish = fewer plants, in pairs — urns along the walls (no FRP troughs), an olive each side of the fountain / feature wall
+  const TKM = ['turkish', 'santorini'].includes((S.su || {}).thm);   // 296: Santorini plants like Turkish — urns, olive pairs   // 294 (owner): Turkish = fewer plants, in pairs — urns along the walls (no FRP troughs), an olive each side of the fountain / feature wall
   const plants = (lv, n0) => { const LOAD = lv === 'lush' && (S.su || {}).thm === 'tropical', C1 = P + 1.2, gap = LOAD ? 2.4 : lv === 'lush' ? 3.5 : 4.5;   // 293 (owner): tropical = loaded — corner clusters, plants by every main piece, troughs closer
     const NOFZ = new Set(['planter', 'deck', 'turf', 'pathway', 'privacy', 'accover', 'shaftcover', 'railing', 'gate', 'lights', 'plant']);
     const inFront = (r, i) => S.items.some((o, j) => { if (j === i || att(o) || NOFZ.has(o.cat) || !CAT[o.cat] || CAT[o.cat].kind === 'floor') return false; const q = rectI(o), F = FACE[((+o.rot || 0) % 360 + 360) % 360] || [0, 1], m = 4;   // 259 / 273 (owner): a planter never stands in front of any thing (feature walls, water, bar… too) — 4 ft clear in front, 1.5 ft all round
