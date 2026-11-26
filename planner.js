@@ -79,7 +79,7 @@ let S = null, EL = null, QUIET = false;
 function fresh() { const t = { kind: 'terrace', plot: '200', pw: 30, pd: 60, par: 3, corner: '', high: {}, tanks: true, blocks: [] }; defBlocks(t); return { v: 1, step: 0, site: t, items: [], sel: null, view: '3d' }; }
 function defBlocks(t) { t.blocks = []; const sm = t.pw <= 25; addBlock(t, 'mumty', sm ? 8 : 10, sm ? 16 : 18, 'left'); const m = t.blocks[0]; if (m) addBlock(t, 'lift', 6, 6, 'left', [PAR, Math.max(PAR, m.z - 6)]); addBlock(t, 'shaft', 3, 4, 'right'); }
 function load() { try { const v = JSON.parse(localStorage.getItem(KEY) || 'null'); if (v && v.v === 1 && v.site) return Object.assign({ sel: null, view: '3d', step: 0 }, v); } catch (e) {} return fresh(); }
-function save() { if (QUIET) return; try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, su: S.su || null, bsel: S.bsel || null, pid: S.pid || null, pname: S.pname || '', source: S.source || '', ctabs: S.ctabs || [], sh: S.sh || null })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
+function save() { if (QUIET) return; try { localStorage.setItem(KEY, JSON.stringify({ v: 1, step: S.step, site: S.site, items: S.items, su: S.su || null, bsel: S.bsel || null, pid: S.pid || null, pname: S.pname || '', source: S.source || '', ctabs: S.ctabs || [], sh: S.sh || null, link: S.link || null })); } catch (e) {} if (S.dirty !== false) cloudSoon(); }
 // ---------------------------------------------------------------- 195: plans saved to the customer's account; sign-in asked 1 minute in
 const ev = (k, d) => { try { if (window.otrack) window.otrack(k, d || {}); } catch (e) {} };
 async function rpc(fn, args) {
@@ -102,7 +102,7 @@ async function cloudSave(extra) {
   try {
     const est = S.step === 2 ? exact().t : total().t, first = !S.pid;
     const pl = Object.assign({ id: S.pid || null, name: S.pid ? undefined : S.pname || undefined, kind: S.site.kind === 'terrace' ? 'terrace' : 'lawn', site: S.site, items: S.items, step: S.step,
-      est: Math.round(est || 0), pincode: pinNow(), device: innerWidth < 760 ? 'mobile' : 'desktop', source: S.source || 'planner' }, extra || {});
+      setup: { su: S.su || null, bsel: S.bsel || null, ctabs: S.ctabs || [] }, est: Math.round(est || 0), pincode: pinNow(), device: innerWidth < 760 ? 'mobile' : 'desktop', source: S.source || 'planner' }, extra || {});
     if (S.ro || (S.sh && S.sh.role !== 'edit')) return;   // 224: view only / someone else is editing
     if (S.sh) { pl.id = S.sh.id; delete pl.name; }
     const r = assistTok() ? await anonRpc('sales_plan_save', { p_token: assistTok(), p: pl }) : S.sh ? await rpc('shared_plan_save', { p: pl }) : await rpc('plan_save', { p: pl });
@@ -2174,16 +2174,34 @@ function unlock() {
 // ---------------------------------------------------------------- phase 3: share link, PDF, LifeWall for big projects
 const b64 = t => btoa(unescape(encodeURIComponent(t))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64 = t => decodeURIComponent(escape(atob(String(t).replace(/-/g, '+').replace(/_/g, '/'))));
-function shareUrl() { return location.origin + '/?plan=' + b64(JSON.stringify({ v: 1, site: S.site, items: S.items })); }
+function shareUrl() { return S && S.link && S.link.pid === S.pid ? location.origin + '/?p=' + S.link.t : location.origin + '/?plan=' + b64(JSON.stringify({ v: 1, site: S.site, items: S.items })); }
+async function linkGet() {   // 231: outrr.in/?p=<token> — the plan is saved first (setup, theme, floor… go with it); the old ?plan=<whole plan> links got too long and lost the setup
+  if (S.link && S.link.pid === S.pid && S.pid) return location.origin + '/?p=' + S.link.t;
+  if (!assistTok() && !signedIn()) { await new Promise((ok, no) => { if (!window.acRequire) return no(new Error('Please sign in to share')); window.acRequire(ok, 'Sign in to share your plan'); }); }
+  clearTimeout(cloudT); S.dirty = true; for (let k = 0; k < 20 && cloudBusy; k++) await new Promise(r => setTimeout(r, 250));
+  await cloudSave(); if (!S.pid) throw new Error(S.saveErr || 'Could not save the plan — try again');
+  const t = assistTok() ? await anonRpc('sales_plan_link', { p_token: assistTok(), p_id: S.pid }) : await rpc('plan_link', { p_id: S.pid });
+  if (!t) throw new Error('Could not make the link'); S.link = { pid: S.pid, t: String(t) }; save(); return location.origin + '/?p=' + S.link.t;
+}
 async function share() {
-  const u = shareUrl(); try { if (window.otrack) otrack('plan_share', { n: S.items.length }); } catch (e) {}
-  if (navigator.share) { try { await navigator.share({ title: 'My outdoor plan — outrr', url: u }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  let u; try { u = await linkGet(); } catch (e) { if (window.toast) window.toast(e.message || 'Could not share'); else alert(e.message || 'Could not share'); return; }
+  try { if (window.otrack) otrack('plan_share', { n: S.items.length }); } catch (e) {}
+  if (navigator.share) { try { await navigator.share({ title: 'My outdoor plan — outrr', text: (S.pname || 'My outdoor plan') + ' — see it in 3D on outrr', url: u }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(u); S.msg = ''; if (window.toast) window.toast('Link copied ✓'); else alert('Link copied'); } catch (e) { prompt('Copy this link', u); }
+}
+async function openLink(t) {   // someone opened outrr.in/?p=<token>: a copy of that plan on this device (saving it makes their own plan)
+  let v = null; try { v = await anonRpc('plan_link_get', { p_token: t }); } catch (e) {}
+  try { const u = new URL(location.href); u.searchParams.delete('p'); history.replaceState(history.state, '', u.pathname + (u.search || '') + u.hash); } catch (e) {}
+  if (!v || !v.site) { alert('This plan link is not valid any more'); return open(null); }
+  const cur = load(); if (cur && cur.items && cur.items.length && JSON.stringify([cur.site, cur.items]) !== JSON.stringify([v.site, v.items]) && !confirm('Open the shared plan? It replaces the plan open on this device (your saved plans stay in your account).')) return open(null);
+  const su = v.setup && v.setup.su ? Object.assign({}, v.setup.su, { on: false }) : null;
+  localStorage.setItem(KEY, JSON.stringify({ v: 1, step: su && su.done ? 1 : Math.min(v.step || 1, 1), site: v.site, items: v.items || [], su, bsel: (v.setup && v.setup.bsel) || null, ctabs: [], pid: null, pname: (v.name || 'Shared plan') + ' (shared)', source: 'planner' }));
+  ev('plan_link_open', {}); open({ reload: true });
 }
 function fromLink(q) {   // ?plan=<link>: someone shared a plan
   try { const v = JSON.parse(unb64(q)); if (!v || !v.site || !Array.isArray(v.items)) return false;
     if (S.items.length && snap() !== JSON.stringify([v.site, v.items]) && !confirm('Open the shared plan? It replaces the plan saved on this device.')) return false;
-    S.site = v.site; S.items = v.items.filter(it => CAT[it.cat]).slice(0, 40); S.step = S.items.length ? 2 : 0; S.sel = null; return true; } catch (e) { return false; }
+    S.site = v.site; S.items = v.items.filter(it => CAT[it.cat]).slice(0, 40); S.step = S.items.length ? 1 : 0; S.sel = null; return true; } catch (e) { return false; }
 }
 function rowsNow() { return S.items.map(it => { const c = CAT[it.cat], pk = S.step === 2 || it.pick ? picked(it) : null, fp = fromPrice(it);
   return { e: c.e, t: it.label || c.t, size: c.size === 'fixed' || it.cat === 'cabin' ? '' : sizeTxt(it, c), design: pk ? String(PR()[pk.id].n).replace(/ — .*$/, '') : '', price: pk ? pk.q.price : fp && fp.price, from: !pk }; }); }
@@ -2234,6 +2252,7 @@ export function open(seed) {
   if (seed && seed.load) return openSaved(seed.load);
   if (seed && seed.sload) return openSaved(seed.sload, true);
   if (seed && seed.shared) return openShared(seed.shared);
+  if (seed && seed.link) return openLink(seed.link);   // 231
   for (const k in PC) delete PC[k]; shell(); TM.load().then(() => { try { if (EL && EL.style.display !== 'none' && S && S.step === 0) draw(); } catch (e) {} }); if (!S || (seed && seed.reload)) { const v = S && S.view; S = load(); S.hist = []; S.hi = -1; if (v) S.view = v; }
   S.items.forEach(it => { if (it.cat === 'cabin' && it.bcx != null && cabinCfg(it)) { cabinFoot(it); it.x = r2(it.bcx - foot(it)[0] / 2); it.z = r2(it.bcz - foot(it)[1] / 2); delete it.bcx; delete it.bcz; } });   // 193g: back from the studio
   S.items.forEach(it => { if (it.cat === 'cabin' && !it.ex && cabinCfg(it)) { const f0 = foot(it), cx = it.x + f0[0] / 2, cz = it.z + f0[1] / 2; cabinFoot(it); const f1 = foot(it); it.x = r2(cx - f1[0] / 2); it.z = r2(cz - f1[1] / 2); } });   // plans saved before 193b
@@ -2261,7 +2280,7 @@ export function open(seed) {
 }
 async function openSaved(id, sales) {   // My account → Saved plans → Open; CRM → lead → Plans (Sales mode)
   try { const v = sales ? await anonRpc('sales_plan_get', { p_token: assistTok(), p_id: id }) : await rpc('plan_get', { p_id: id }); if (!v) throw new Error('Plan not found');
-    localStorage.setItem(KEY, JSON.stringify({ v: 1, step: v.step || 1, site: v.site, items: v.items || [], pid: v.id, pname: v.name, source: v.source }));
+    localStorage.setItem(KEY, JSON.stringify({ v: 1, step: v.step || 1, site: v.site, items: v.items || [], su: (v.setup && v.setup.su) || null, bsel: (v.setup && v.setup.bsel) || null, ctabs: (v.setup && v.setup.ctabs) || [], pid: v.id, pname: v.name, source: v.source }));
     open({ reload: true }); if (!sales) lockGo(true);
   } catch (e) { alert(e.message || 'Could not open the plan'); }
 }
@@ -2269,7 +2288,7 @@ async function openSaved(id, sales) {   // My account → Saved plans → Open; 
 async function openShared(id) {
   try { const v = await rpc('shared_plan_get', { p_id: id }); if (!v) throw new Error('Plan not found');
     if (v.role === 'owner') return openSaved(id);
-    localStorage.setItem(KEY, JSON.stringify({ v: 1, step: v.step || 1, site: v.site, items: v.items || [], pid: v.id, pname: v.name, source: v.source, sh: { id: v.id, role: v.role, owner: v.owner } }));
+    localStorage.setItem(KEY, JSON.stringify({ v: 1, step: v.step || 1, site: v.site, items: v.items || [], su: (v.setup && v.setup.su) || null, bsel: (v.setup && v.setup.bsel) || null, ctabs: (v.setup && v.setup.ctabs) || [], pid: v.id, pname: v.name, source: v.source, sh: { id: v.id, role: v.role, owner: v.owner } }));
     open({ reload: true }); S.ro = v.role === 'edit' && v.editing ? v.editing : null; paintSaved(); if (v.role === 'edit') lockGo(true);
   } catch (e) { alert(e.message || 'Could not open the plan'); }
 }
