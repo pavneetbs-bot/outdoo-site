@@ -434,14 +434,15 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     box(g, w, 0.7, d, 0, 0.35, 0, K.stone); cush(g, w - 0.1, 0.55, d - 0.4, 0, 0.95, 0.15, K.acc1);
     const n = Math.max(2, Math.round(w / 2.2)); for (let k = 0; k < n; k++) { const x = -w / 2 + w * (k + 0.5) / n, c = cush(g, Math.min(2, w / n - 0.15), 1.5, 0.45, x, 1.85, -d / 2 + 0.4, k % 2 ? K.acc2 : K.cush2); c.rotation.x = -0.18; }
     [-1, 1].forEach(a => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, d - 0.6, 14), K.acc2); b.rotation.x = Math.PI / 2; b.position.set(a * (w / 2 - 0.45), 1.6, 0.1); b.castShadow = true; g.add(b); });
-  } else if (cat === 'fbench') {   // 239: built-in seating — a masonry seat with a cushion and a backrest against the wall (back = −z); 258: + built-in planters behind / at the open ends
+  } else if (cat === 'fbench' && !(it && it.shape === 'curve')) {   // 285 (owner): the curved one has its own arc model below (it was caught here and drawn as a box)   // 239: built-in seating — a masonry seat with a cushion and a backrest against the wall (back = −z); 258: + built-in planters behind / at the open ends
     const pl = (it && it.plant) || '', bk = pl === 'back' || pl === 'both', sd = pl === 'sides' || pl === 'both', pe = (it && it.pend) || { l: true, r: true }, PB = 1.5, zb = bk ? -d / 2 + PB : -d / 2;
     let x0 = -w / 2, x1 = w / 2; if (bk) pbox(g, w, PB, 0, -d / 2 + PB / 2, 2.6);
     if (sd && w > 4) { if (pe.l) { pbox(g, PB, d / 2 - zb, x0 + PB / 2, (zb + d / 2) / 2, 2.2); x0 += PB; } if (pe.r) { pbox(g, PB, d / 2 - zb, x1 - PB / 2, (zb + d / 2) / 2, 2.2); x1 -= PB; } }
     const sw = x1 - x0, sx = (x0 + x1) / 2, sdp = d / 2 - zb - 0.3, sz = zb + 0.3 + sdp / 2;
     box(g, sw, 1.4, sdp, sx, 0.7, sz, K.stone); cush(g, sw - 0.1, 0.28, sdp - 0.2, sx, 1.54, sz + 0.05, K.cush); box(g, sw, 1.5, 0.3, sx, 2.15, zb + 0.15, K.stone); cush(g, sw - 0.2, 1.0, 0.3, sx, 2.15, zb + 0.47, K.cush2);
   } else if (cat === 'counter') {   // 239: food / buffet counter — base, stone top, a cooktop and a sink on it (back = −z, against the wall)
-    box(g, w, 2.9, d * 0.9, 0, 1.45, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, mat('c_granite', 0x2F2E2D, { roughness: 0.25, metalness: 0.1 }));   // 258 (owner): no wall behind it, a plain granite top
+    box(g, w - 0.1, 0.35, d * 0.9 - 0.25, 0, 0.175, -d * 0.05 - 0.12, K.frame); box(g, w, 2.55, d * 0.9, 0, 1.625, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, mat('c_granite', 0x2F2E2D, { roughness: 0.25, metalness: 0.1 }));   // 285: cabinets — plinth, door lines, handles
+    { const nd = Math.max(2, Math.round(w / 2)), fz = -d * 0.05 + d * 0.45 + 0.02, hm = mat('c_steel', 0xA8A8A6, { metalness: 0.8, roughness: 0.3 }); for (let i = 1; i < nd; i++) box(g, 0.03, 2.4, 0.03, -w / 2 + i * w / nd, 1.6, fz, K.frame); for (let i = 0; i < nd; i++) box(g, 0.5, 0.05, 0.06, -w / 2 + (i + 0.5) * w / nd, 2.6, fz + 0.02, hm); }   // 258 (owner): no wall behind it, a plain granite top
   } else if (cat === 'bench') {
     box(g, w, 0.2, d * 0.8, 0, 1.5, 0, K.wood); [-w / 2 + 0.4, w / 2 - 0.4].forEach(x => box(g, 0.25, 1.4, d * 0.7, x, 0.7, 0, K.frame));
   } else if (cat === 'table') {
@@ -457,7 +458,10 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     for (let k = 0; k < n; k++) { const a = (Math.PI / 2) * (k + 0.5) / n, sl = new THREE.Group(); sl.position.set(cx - R * Math.cos(a), 0, cz - R * Math.sin(a)); g.add(sl); sl.lookAt(cx, 0, cz);
       box(sl, seg, 1.4, 1.7, 0, 0.7, 0, K.stone); cush(sl, seg - 0.03, 0.28, 1.5, 0, 1.54, 0.05, K.cush); box(sl, seg, 1.5, 0.3, 0, 2.15, -0.75, K.stone); }
   } else if (cat === 'bar') {   // 241: island bar — free on both sides, stools at the front; L = a return arm on the right
-    const L = it && it.shape === 'L', D = L ? 2.2 : d * 0.7, arm = (bw, bd, x, z, st) => { box(g, bw, 3.4, bd, x, 1.7, z, K.stone); box(g, bw + 0.3, 0.15, bd + 0.5, x, 3.5, z + 0.1, K.wood2); };
+    const L = it && it.shape === 'L', D = L ? 2.2 : d * 0.7, stl = mat('c_steel', 0xA8A8A6, { metalness: 0.8, roughness: 0.3 }), arm = (bw, bd, x, z) => {   // 285 (owner): a real bar, not a box — toe kick, slatted front, top with a front overhang, foot rail
+      box(g, bw - 0.1, 0.35, bd - 0.35, x, 0.175, z - 0.1, K.frame); box(g, bw, 3.0, bd, x, 1.85, z, K.stone);
+      const n = Math.max(3, Math.round(bw / 0.4)); for (let i = 0; i < n; i++) box(g, bw / n - 0.08, 2.8, 0.07, x - bw / 2 + (i + 0.5) * bw / n, 1.85, z + bd / 2 + 0.035, K.wood);
+      box(g, bw + 0.3, 0.16, bd + 0.9, x, 3.43, z + 0.4, K.wood2); box(g, bw - 0.4, 0.07, 0.07, x, 0.8, z + bd / 2 + 0.45, stl); [-1, 1].forEach(sg => box(g, 0.06, 0.06, 0.45, x + sg * (bw / 2 - 0.4), 0.8, z + bd / 2 + 0.23, stl)); };
     const fl = it && it.flip ? -1 : 1;   // 258 (owner): main counter at the front, return arm on the right (left when flipped); the bar chairs are their own items, outside
     if (L) { arm(w, D, 0, d / 2 - D / 2); arm(D, d - D, fl * (w / 2 - D / 2), -D / 2); } else arm(w, D, 0, -d * 0.15);
   } else if (cat === 'planter' && it && /^MTO-PL-[A-Z]{2}$/.test(it.cfgId || it.pick || '')) {   // 199: an outrr planter — its own size, finish colour, plinth, plants, LED glow underneath

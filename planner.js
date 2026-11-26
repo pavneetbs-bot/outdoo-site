@@ -4,7 +4,7 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=64';
+import * as S3 from './space3d.js?v=65';
 import * as P2 from './plan2d.js?v=29';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=3';
 import { cutHit, mumtyProj, mstGap } from './cabin3d.js?v=55';
@@ -231,7 +231,7 @@ function parResplit() {   // 266 (owner): after the setup, the parapet screens r
   S.items = S.items.filter(o => !ps.includes(o)); const it = { cat: 'privacy', mode: 'par', label: 'Screen on the parapet', sides, h, w: 0, d: 0.3, x: 0, z: 0, rot: 0 }; S.items.push(it); splitPar(); }
 function zoneLen(sd) { const t = S.site; return SIDE_AX[sd] === 'x' ? +t.pw : +t.pd; }
 function attach(it, i) {   // lay a parapet / tank screen out again (things around it may have moved)
-  if (it.mode === 'par') { const segs = [], zn = it.zone; (it.sides || []).forEach(sd => parRuns(sd, i, SCREEN_STOP).map(([u0, u1]) => zn ? [Math.max(u0, zn[0]), Math.min(u1, zn[1])] : [u0, u1]).filter(([u0, u1]) => u1 - u0 > 0.5).forEach(([u0, u1]) => {   /* 261: a zone = one stretch of one wall */ const a = parLine(sd, u0), b = parLine(sd, u1); segs.push({ x0: a[0], z0: a[1], x1: b[0], z1: b[1], y: parTop(), side: sd }); })); it.segs = segs; }
+  if (it.mode === 'par') { const segs = [], zn = it.zone; (it.sides || []).forEach(sd => parRuns(sd, i, SCREEN_STOP).map(([u0, u1]) => zn ? [Math.max(u0, zn[0]), Math.min(u1, zn[1])] : [u0, u1]).filter(([u0, u1]) => u1 - u0 > 0.5).forEach(([u0, u1]) => {   /* 261: a zone = one stretch of one wall */ const F = parRuns(sd, i, { blocks: [], items: () => false }), ex = Math.max(0, P0() - (S.site.kind === 'terrace' ? PAR / 2 : 0)); { const f0 = F.find(f => Math.abs(f[0] - u0) < 0.6), f1 = F.find(f => Math.abs(f[1] - u1) < 0.6); if (f0) u0 = f0[0] - ex; if (f1) u1 = f1[1] + ex; }   /* 285 (owner): at a corner the screen runs to the corner point, so two screens meet */ const a = parLine(sd, u0), b = parLine(sd, u1); segs.push({ x0: a[0], z0: a[1], x1: b[0], z1: b[1], y: parTop(), side: sd }); })); it.segs = segs; }
   else if (it.mode === 'tank') it.segs = roofScreen();   // 241: along the stairs room's roof edge (projection), over same-height rooms next to it
   else if (it.mode === 'ac') { const b = (S.site.kind === 'terrace' ? S.site.blocks : []).find(x => x.id === it.bid); delete it.segs;
     it.box = b ? { x: b.x - 0.3, z: b.z - 0.3, w: b.w + 0.6, d: b.d + 0.6, h: 2.9 } : null; if (b) { it.x = it.box.x; it.z = it.box.z; it.w = it.box.w; it.d = it.box.d; it.h = 2.9; } return; }
