@@ -3375,11 +3375,11 @@
         var j = await r.json().catch(function () { return {}; });
         if (r.ok && j.reading && j.id) {   // 248: the drawing is read in the background — ask every 3 s (up to 4 min)
           for (var k = 0; k < 80; k++) { await new Promise(function (ok) { setTimeout(ok, 3000); }); var r2 = null; try { r2 = await (await fetch(A.url + '/functions/v1/layouts', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', id: j.id }) })).json(); } catch (e2) { continue; }
-            if (r2 && r2.status === 'read') { j.layout = r2.layout; break; } if (r2 && r2.status === 'failed') { j.reason = r2.reason; if (!j.team && j.left != null) j.left = Math.min(2, j.left + 1); break; } }
+            if (r2 && r2.status === 'read') { j.layout = r2.layout; break; } if (r2 && r2.status === 'failed') { j.reason = r2.reason; j.failed = true; break; } }
           if (!j.layout && !j.reason) j.reason = 'Still reading — it is taking long. Try again in a few minutes.'; }
         st.lbusy = false;
+        if (!r.ok || !j.layout) { st.lmsg = j.error || j.reason || 'We could not read this drawing. This try did not use up an upload.'; lqLoad(); return paint(); }   // 288: a failed try never uses an upload — ask the server again for the count
         if (j.left != null) st.lq = Object.assign({}, st.lq, { left: j.left, signed_in: true });
-        if (!r.ok || !j.layout) { st.lmsg = (j.error || j.reason || 'We could not read this drawing.') + (j.left != null ? ' · ' + j.left + ' of 2 uploads left' : ''); return paint(); }
         if (j.layout.units === 'pct') { if (!PP || !CR) { st.lmsg = 'We could not read this drawing.'; return paint(); } j.layout = CR.toFeet(j.layout, PP); }
         try { if (window.otrack) window.otrack('plan_start', { ref: 'pdf' }); } catch (e) {}
         var site = layoutSite(j.layout, j.id); st.fromPdf = { left: j.left, team: !!j.team, proposed: j.layout.proposed || [] }; st.bg = null; lBg(u8, j.layout); openRoof(site);
