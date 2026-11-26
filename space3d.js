@@ -5,13 +5,14 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=64';
-import { pergolaModel } from './pergola3d.js?v=51';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=65';
+import { pergolaModel } from './pergola3d.js?v=52';
 import { outline, sofaLayout } from './plan2d.js?v=33';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=7';
 import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=3';   // 294: the design studio setting (planters)
 import { barStudio, barSpec } from './bar3d.js?v=2';   // 295: the bar studio
+import { fwStudio } from './fw3d.js?v=1';   // 296: the feature wall studio   // 295: the bar studio
 const LAYK = k => !!LSPEC[k];
 
 let R = null, HANDLER = null;
@@ -1132,6 +1133,12 @@ export function preview(el, items, opts) {
   if (PV.group) PV.scene.remove(PV.group);
   const corner = opts && opts.studio === 'corner'; PV.fl.visible = PV.wall.visible = !corner; PV.scene.background = new THREE.Color(corner ? 0xF4F2EE : 0xF1ECE3);
   if (corner) return cornerStudio(items, first);
+  if (opts && opts.studio === 'fw') {   // 296: a feature wall built from its parts, in its place (entrance / terrace / garden / café / cabin)
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
+    const B = fwStudio(items[0] || {}); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const vk = 'fw' + Math.round(B.span); if (first || PV.vk !== vk) { PV.vk = vk; const sp = B.span; PV.controls.target.set(0, Math.min(B.H * .48, 5), 1); PV.cam.position.set(-sp * 0.22, B.H * .5 + sp * .14, sp * 1.25); PV.controls.update(); }
+    return;
+  }
   if (opts && opts.studio === 'bar') {   // 295: one bar frame with the design's look + the customer's picks, a 9 ft wall 3 ft behind it
     PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
     const it0 = items[0] || {}, B = barStudio(Object.assign(it0.m ? barSpec(it0.sku, it0.m, it0.o || {}) : it0, { view: opts.view })); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);

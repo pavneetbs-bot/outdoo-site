@@ -626,8 +626,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=64').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=64'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=65').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=65'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1947,7 +1947,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=120').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=121').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2517,7 +2517,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, look: DS_SOLO && !S.site && arr(S.look).length ? lookItems(q) : null, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=51').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=52').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -2758,7 +2758,7 @@
     h += '<section class="pp-s" id="ppSite"><h2>Delivery &amp; installation</h2><p class="sub">Your pincode prices the delivery and the installation</p>' + pdpTail(x, m, o, true) +
       '<div class="pp-inst"><button type="button" data-pinst="1" class="' + (o.install ? 'on' : '') + '"><b>' + (o.install ? '● ' : '○ ') + 'Installed by outrr</b><small>By your nearest verified outrr installer, in about 2 days · <span id="mtoInstTxt"></span></small></button>' +
       '<button type="button" data-pinst="0" class="' + (!o.install ? 'on' : '') + '"><b>' + (!o.install ? '● ' : '○ ') + 'Install it yourself</b><small>Assembly guide + all hardware (bolts, base plates, anchors) in the package. Every part pre-drilled and numbered.</small></button></div>' +
-      '<div class="pp-cta" id="ppCta"></div></section>';
+      '<div class="pp-cta" id="ppCta"></div></section>' + ctlProp();
     return h + '</div></div>';
   }
   function propCta(q, noSave) {
@@ -2779,7 +2779,7 @@
     if (a === 'plan') { window.mtoProposal(false); return window.mtoPlanFrom(); }
     if (a === 'site') { var st = document.getElementById('ppSite'); if (st) st.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (a === 'cart') { if (S.propAdded) { window.mtoProposal(false); try { openCart(); } catch (er) {} return; }
-      var before = MC.length, k0 = S.editK; addM(false); if (MC.length > before || (k0 && !S.editK)) { S.propAdded = true; propSave({ carted: true }); } return paint(); }
+      var before = MC.length, k0 = S.editK; addM(false); if (MC.length > before || (k0 && !S.editK)) { S.propAdded = true; propSave({ carted: true }); ctlCart(); } return paint(); }
   }
   // saved to the account + emailed (197): one proposal per configuration; the same choices again update it
   async function authRpc(fn, args) {
@@ -2852,8 +2852,8 @@
     var h = f.length ? '<div class="mto-pks">' + f.join('') + '</div>' : '';
     if (cols.length) h += '<div class="lb">' + esc((m.labels && m.labels.colour) || 'Colour') + ' · ' + esc(o.colour || '') + '</div><div class="pg3-ch">' + cols.map(function (c) { var bg = c.hex2 ? 'linear-gradient(135deg,' + c.hex + ' 50%,' + c.hex2 + ' 50%)' : c.hex || (c.img ? 'url(' + c.img + ') center/cover' : '');
       return bg ? '<button type="button" class="pg3-sw' + (c.name === o.colour ? ' on' : '') + '" title="' + esc(c.name) + '" aria-label="' + esc(c.name) + '" data-cuc="' + esc(c.name) + '" style="background:' + bg + '"></button>' : '<button type="button" class="' + (c.name === o.colour ? 'on' : '') + '" data-cuc="' + esc(c.name) + '">' + esc(c.name) + '</button>'; }).join('') + '</div>';
-    if (P('extras')) arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }).forEach(function (g) {
-      h += '<div class="lb">' + esc(g.name) + '</div><div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { var pr = [+y.fixed ? (+y.fixed > 0 ? '+' : '−') + rs(Math.abs(y.fixed)) : '', +y.rate ? '+' + rs(y.rate) + '/' + uw : '', +y.rate_p ? '+' + rs(y.rate_p) + '/ft all round' : ''].filter(Boolean).join(' ');
+    arr(m.groups).filter(function (g) { return g.name && arr(g.options).length && (part ? gStage(g) === part : true); }).forEach(function (g) {
+      h += '<div class="lb">' + esc(gLabel(g.name)) + '</div><div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { var pr = [+y.fixed ? (+y.fixed > 0 ? '+' : '−') + rs(Math.abs(y.fixed)) : '', +y.rate ? '+' + rs(y.rate) + '/' + uw : '', +y.rate_p ? '+' + rs(y.rate_p) + '/ft all round' : '', +y.rate_w ? '+' + rs(y.rate_w) + '/ft width' : ''].filter(Boolean).join(' ');
         return '<button type="button" class="' + (y.name === (o.groups || {})[g.name] ? 'on' : '') + '" data-cug="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + (pr && !np ? ' · ' + pr : '') + '</button>'; }).join('') + '</div>'; });
     var adds = P('extras') ? arr(m.addons).filter(function (a) { return a.name; }) : [];
     if (adds.length) h += '<div class="lb">Add-ons</div><div class="pg3-ch">' + adds.map(function (a) { var on = arr(o.addons).indexOf(a.name) >= 0; return '<button type="button" class="' + (on ? 'on' : '') + '" data-cua="' + esc(a.name) + '">' + (on ? '✓ ' : '+ ') + esc(a.name) + (!np && +a.price ? ' · ' + rs(a.price) + (a.charge === 'unit' ? '/' + uw : '') : '') + '</button>'; }).join('') + '</div>';
@@ -2870,6 +2870,7 @@
     var x = PRODS[S.id], m0 = x.cz, o0 = S.o; ov.setAttribute('aria-label', 'Customise ' + x.n);
     ['l', 'w', 'h'].forEach(function (k) { if (!num(o0[k]) && m0[k] && num(m0[k].min) && !(k === 'h' && arr(m0.h.options).length)) o0[k] = num(m0[k].min); });
     var sq0 = Math.ceil(Math.sqrt(num(m0.min_size) || 0)); if (sq0 > 0) { if (m0.unit === 'length' && !num(o0.l)) o0.l = num(m0.min_size); if ((m0.unit === 'area' || m0.unit === 'face') && !num(o0.w)) o0.w = sq0; if (m0.unit === 'area' && !num(o0.l)) o0.l = sq0; if (m0.unit === 'face' && !num(o0.h)) o0.h = sq0; }   /* 238: else about the minimum size */   // a size to start from: the price shows at once
+    if (isFw(S.id) && !o0._fw) { o0._fw = 1; if (num(o0.w) < 8) o0.w = 8; if (num(o0.h) < 9) o0.h = 9; }   // 296: a feature wall starts at 8 × 9 ft (the smallest billed size is too small to judge)
     if (m0.unit === 'fixed' && !o0.size && arr(m0.sizes).length) o0.size = m0.sizes[0].label;
     if (m0.hr && num(o0.h) == null && num(m0.ht)) o0.h = Math.round(num(m0.ht) * 4) / 4;   // 204: the design's own height to start
     arr(m0.groups).forEach(function (g) { if (g.name && !(o0.groups || {})[g.name] && arr(g.options)[0]) { o0.groups = Object.assign({}, o0.groups); o0.groups[g.name] = g.options[0].name; } });   // 199: first choice of each option group (e.g. No light)
@@ -2880,14 +2881,52 @@
     try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: 'form' }); } catch (e) {}
   };
   // 294: the general customiser on the studio base — Size → Look → Extras (a stage with nothing to ask is left out) → Your proposal
+  // 296: option groups by stage — "Finish · …" = the look, "Lights" = lights, the rest (incl. "Extra · …") = extras
+  function gStage(g) { var n = String((g && g.name) || ''); return /^Finish · /.test(n) ? 'look' : /^lights?$/i.test(n) ? 'light' : 'extras'; }
+  function gLabel(n) { return String(n || '').replace(/^(Finish|Extra) · /, ''); }
+  function isFw(sku) { return /^MTO-FW-/.test(sku || ''); }
   function cuStages(x, m, o) {
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     var L = [{ k: 'size', t: m.unit === 'fixed' ? 'Size' : m.pcs && num(m.pcs.max) > 1 ? 'Size & pieces' : 'Size', sum: sizeTxt(m, o) }];
     if (mats.length > 1 || arr(mat && mat.colours).length) L.push({ k: 'look', t: (m.labels && m.labels.material) || 'Finish & colour', sum: [mats.length > 1 ? o.material : '', o.colour].filter(Boolean).join(' · ') });
-    var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; });
-    if (gs.length || arr(m.addons).filter(function (a) { return a.name; }).length) L.push({ k: 'extras', t: gs.length === 1 && !arr(m.addons).length ? gs[0].name : 'Options & extras', sum: gs.map(function (g) { return String((o.groups || {})[g.name] || '').split(' (')[0]; }).concat(arr(o.addons)).filter(Boolean).join(' · ') });
+    var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }), gsum = function (L2) { return L2.map(function (g) { return String((o.groups || {})[g.name] || '').split(' (')[0]; }).filter(function (v) { return v && !/^(No |None$|As designed|Artificial vertical garden)/.test(v); }).join(' · '); };
+    var gl = gs.filter(function (g) { return gStage(g) === 'look'; }), gL = gs.filter(function (g) { return gStage(g) === 'light'; }), gx = gs.filter(function (g) { return gStage(g) === 'extras'; });
+    if (gl.length) { if (L[1] && L[1].k === 'look') L[1].sum = [L[1].sum, gsum(gl)].filter(Boolean).join(' · '); else L.push({ k: 'look', t: 'Finish', sum: gsum(gl) }); }
+    if (gL.length) L.push({ k: 'light', t: gL.length === 1 ? gLabel(gL[0].name) : 'Lights', sum: gsum(gL) });
+    if (gx.length || arr(m.addons).filter(function (a) { return a.name; }).length) L.push({ k: 'extras', t: gx.length === 1 && !arr(m.addons).length ? gLabel(gx[0].name) : isFw(S && S.id) ? 'Extras' : 'Options & extras', sum: [gsum(gx)].concat(arr(o.addons)).filter(Boolean).join(' · ') });
+    if (isFw(S && S.id)) L.push({ k: 'ctl', t: 'Complete the look', sum: ctlSum() });
     return L;
   }
+  // 296 (owner): "Complete the look" — ready-made plants, planters and sculptures to go with the design; ticked ones are shown in the 3D,
+  // listed on the proposal and go into the cart with the design (orderable ones; Coming soon ones are only shown)
+  var CTL_ROWS = [['plants', 'Plants'], ['planters', 'Planters'], ['sculptures', 'Sculptures']];
+  function ctlKey() { return 'outrr_ctl_' + (S && S.id); }
+  function ctlGet() { if (!S) return {}; if (S.ctlFor !== S.id) { S.ctl = null; S.ctlFor = S.id; } if (!S.ctl) { try { S.ctl = JSON.parse(localStorage.getItem(ctlKey()) || '{}') || {}; } catch (e) { S.ctl = {}; } } Object.keys(S.ctl).forEach(function (k) { if (!PRODS[k]) delete S.ctl[k]; }); return S.ctl; }
+  function ctlSet(k, on) { var c = ctlGet(); if (on) c[k] = 1; else delete c[k]; try { localStorage.setItem(ctlKey(), JSON.stringify(c)); } catch (e) {} }
+  function ctlSum() { var n = Object.keys(ctlGet()).length; return n ? n + ' piece' + (n > 1 ? 's' : '') + ' added' : ''; }
+  function ctlOpen(k) { var x = PRODS[k]; return !!x && !x.cz && x.oo !== false && num(x.p) > 0; }   // ready-made + orderable = goes into the cart with the design
+  function ctlPrice(k) { var x = PRODS[k]; return x.oo === false ? 'Coming soon' : x.cz ? (num(x.p) > 0 ? 'From ' + rs(x.p) : 'Made to order') : rs(x.p); }
+  function ctlPicks(col) {
+    var BAD = /fruit|berry|spic|seed|herb|vegetable|tulsi|medicin|mango|lemon|guava|chilli|tomato|grow ?bag|fabric|soil|fertili|compost|combo|tool/i, GOOD = { plants: /foliage|palm|flower|shrub|grass|bamboo|tree|climb|succulent|hedge/i, planters: /pot|planter|urn|trough|box/i, sculptures: /./ }[col] || /./;
+    var L = Object.keys(PRODS).filter(function (k) { var x = PRODS[k]; return x && x.col === col && (col !== 'plants' || !x.cz) && !x.bundle && x.n && !/^MTO-PL-\d/.test(k) && (window.IMGS ? IMGS[x.img] : true) && !BAD.test(x.n + ' ' + (x.sb || '')) && GOOD.test(x.n + ' ' + (x.sb || '')); });
+    L.sort(function (a, b) { return (ctlOpen(b) - ctlOpen(a)) || (num(PRODS[b].c) - num(PRODS[a].c)) || String(PRODS[a].n).localeCompare(PRODS[b].n); });
+    var seen = {}; return L.filter(function (k) { var g = PRODS[k].vg || PRODS[k].n.split(' - ')[0]; if (seen[g]) return false; seen[g] = 1; return true; }).slice(0, 8);
+  }
+  function ctlImg(k) { var u = ''; try { u = window.frontImg ? frontImg(k) : (IMGS[PRODS[k].img] || ''); } catch (e) {} return window.slimImg ? slimImg(u, 360) : u; }
+  function ctlHtml() {
+    var c = ctlGet(), h = '<p class="mto-hint" style="margin:0 0 8px">Pieces that go with this wall — tick to see them beside it. Ready-made ones go into your cart with the wall; made-to-order ones are customised after.</p><style>.ctl-r{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;scroll-snap-type:x mandatory}.ctl-c{flex:0 0 118px;scroll-snap-align:start;border:1.5px solid #E8DFD2;border-radius:12px;background:#fff;padding:0;text-align:left;font:inherit;cursor:pointer;overflow:hidden;position:relative}.ctl-c.on{border-color:#C26445;box-shadow:0 0 0 1px #C26445}.ctl-c img{width:100%;height:96px;object-fit:cover;display:block;background:#F3EFE8}.ctl-c span{display:block;padding:6px 8px 8px;font-size:11.5px;line-height:1.3;color:#2E2E2E}.ctl-c small{display:block;color:#7A7268;margin-top:2px}.ctl-c i{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:#fff;border:1.5px solid #D9CFC0;font-style:normal;font-size:13px;display:flex;align-items:center;justify-content:center;color:#fff}.ctl-c.on i{background:#C26445;border-color:#C26445}</style>';
+    CTL_ROWS.forEach(function (r) { var L = ctlPicks(r[0]); if (!L.length) return;
+      h += '<div class="lb">' + r[1] + '</div><div class="ctl-r">' + L.map(function (k) { var x = PRODS[k], on = !!c[k];
+        return '<button type="button" class="ctl-c' + (on ? ' on' : '') + '" data-ctl="' + esc(k) + '" aria-pressed="' + on + '"><i>' + (on ? '✓' : '') + '</i><img loading="lazy" alt="" src="' + esc(ctlImg(k)) + '"><span>' + esc(short(x.n)) + '<small>' + ctlPrice(k) + '</small></span></button>'; }).join('') + '</div>'; });
+    return h;
+  }
+  function ctlList() { var c = ctlGet(); return Object.keys(c).filter(function (k) { return PRODS[k]; }); }
+  function ctl3d() { return ctlList().map(function (k) { var x = PRODS[k]; return { col: x.col, sku: k, n: x.n }; }); }
+  function ctlProp() {   // the proposal's "Complete the look" block
+    var L = ctlList(); if (!L.length) return '';
+    return '<section class="pp-sec"><h3>Complete the look</h3><div class="pp-ctl">' + L.map(function (k) { var x = PRODS[k]; return '<div style="display:flex;gap:10px;align-items:center;margin:6px 0"><img alt="" src="' + esc(ctlImg(k)) + '" style="width:54px;height:54px;object-fit:cover;border-radius:8px;background:#F3EFE8"><div style="flex:1"><b style="font-size:13.5px">' + esc(short(x.n)) + '</b><br><small style="color:#7A7268">' + (ctlOpen(k) ? rs(x.p) + ' · goes into your cart with the design' : x.oo === false ? 'Coming soon — not added to the cart' : ctlPrice(k) + ' · made to your size') + '</small></div>' + (x.cz && x.oo !== false ? '<button type="button" class="pp-more" style="margin:0;padding:6px 10px" onclick="openProduct(\'' + esc(k) + '\')">Customise →</button>' : '') + '</div>'; }).join('') + '</div></section>';
+  }
+  function ctlCart() { ctlList().forEach(function (k) { if (ctlOpen(k)) { try { addCart(k); } catch (e) {} } }); }
   function cuFt() {
     var ft = document.querySelector('#cuOv .pg3-ft'); if (!ft || !S) return; var x = PRODS[S.id], L = cuStages(x, x.cz, S.o), i = Math.min(CU.stg || 0, L.length - 1), lab = mtoOk() ? 'See my proposal →' : 'See my price →';
     ft.innerHTML = (i > 0 ? '<button type="button" data-cu="back" class="cu-sp">← Back</button>' : '') + (i < L.length - 1 ? '<button type="button" data-cu="next">Next — ' + esc(L[i + 1].t.toLowerCase()) + ' →</button>' : '<button type="button" data-cu="done">' + lab + '</button>');
@@ -2896,7 +2935,7 @@
     var pn = document.getElementById('cuPn'); if (!pn || !CU.open || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, st = pn.scrollTop;
     if (DS_SOLO) { var L = cuStages(x, m, o), ci = Math.max(0, Math.min(CU.stg || 0, L.length - 1)); CU.stg = ci; var k = L[ci].k;
       var hint = k === 'size' ? '<p class="mto-hint" style="margin:0 0 6px">' + (m.unit === 'area' ? (m.round ? 'Size across, in feet' : 'Length × width of the planter, in feet') + (m.hr ? ' — and how tall.' : '.') : m.unit === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : m.unit === 'face' ? 'Width × height of the wall or opening, in feet.' : m.unit === 'length' ? 'Total running length, in feet.' : 'Pick the size.') + (num(m.min_size) && m.unit !== 'seat' && m.unit !== 'fixed' ? ' Any size — the smallest we bill is ' + num(m.min_size) + ' ' + UW(m.unit) + '.' : '') + '</p>' : '';
-      pn.innerHTML = dsStages(L, ci, hint + optForm(x, m, o, k), 'custg') + (m.photo_note ? '<p class="mto-hint" style="margin-top:10px">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + '<div id="cuPr"></div>';
+      pn.innerHTML = dsStages(L, ci, hint + (k === 'ctl' ? ctlHtml() : optForm(x, m, o, k)), 'custg') + (m.photo_note ? '<p class="mto-hint" style="margin-top:10px">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + '<div id="cuPr"></div>';
       cuFt();
     } else
     pn.innerHTML = '<p class="mto-hint" style="margin:0 0 6px">' + (m.unit === 'area' ? 'Length × width of the floor it covers, in feet.' : m.unit === 'face' && m.panels ? 'Total length to cover — made in ' + panelSizes(m).join(' / ') + ' ft panels.' : m.unit === 'face' ? 'Width × height of the wall or opening, in feet.' : m.unit === 'length' ? 'Total running length, in feet.' : 'Pick the size and finish.') + '</p>' + (m.photo_note ? '<p class="mto-hint">Photo shows: ' + esc(m.photo_note) + '</p>' : '') + optForm(x, m, o);
@@ -2911,6 +2950,7 @@
     var sg = t.getAttribute('data-custg'); if (sg) { var L0 = cuStages(PRODS[S.id], m, o); CU.stg = Math.max(0, L0.map(function (z) { return z.k; }).indexOf(sg)); return cuDraw(); }   // 294
     if (a === 'next' || a === 'back') { var L1 = cuStages(PRODS[S.id], m, o), i1 = (CU.stg || 0) + (a === 'next' ? 1 : -1); if (a === 'next' && (CU.stg || 0) === 0) { var q1 = priceR(S.id, m, o, PCT); if (!q1.ok && q1.error && !/sign|price/i.test(q1.error)) return toast(q1.error); } CU.stg = Math.max(0, Math.min(L1.length - 1, i1)); var pn1 = document.getElementById('cuPn'); if (pn1) pn1.scrollTop = 0; return cuDraw(); }
     if (a === 'done') { var q = priceR(S.id, m, o, PCT); if (!q.ok && mtoOk()) return toast(q.error || 'Choose your size'); window.cuOpen(false); return propGo(); }
+    var ck = t.getAttribute('data-ctl'); if (ck) { ctlSet(ck, !ctlGet()[ck]); cuDraw(); return; }   // 296
     var sd = t.getAttribute('data-cuside'); if (sd) { CU.side = CU.side === 'back' ? 'front' : 'back'; t.textContent = CU.side === 'back' ? 'Front side' : 'Back side'; t.classList.toggle('on', CU.side === 'back'); var st4 = document.querySelector('#cuOv .cu-st'); if (st4) st4.classList.remove('photo'); return cu3dDraw(); }   // 295
     var vw = t.getAttribute('data-cuv'); if (vw) { var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.toggle('photo', vw === 'photo'); document.querySelectorAll('#cuOv [data-cuv]').forEach(function (b) { b.classList.toggle('on', b === t); }); if (vw === '3d') cu3dDraw(); return; }
     var pp = t.getAttribute('data-cupcs'); if (pp) { o.pcs = Math.max(1, Math.min(num(m.pcs && m.pcs.max) || 1, (num(o.pcs) || 1) + (+pp))); return draw(); }   // 199
@@ -2928,7 +2968,8 @@
   // 199: designs that sit in the planner as one of its things (planters…): "See it in my space" puts the pieces on a plan — the one on this device, a saved one, or a new space
   var PCAT = { planters: 'planter', 'privacy-screens': 'privacy' };
   function isBar(sku) { return /^MTO-BR-/.test(sku || ''); }   // 295: bars get the bar studio
-  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku); }
+  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku) || /^MTO-FW-/.test(sku || ''); }
+  function fwPlace(sku, x) { var t = String((x && x.sb) || ''); return /-FS$/.test(sku) || /garden|lawn/i.test(t) ? 'garden' : /entrance/i.test(t) ? 'entrance' : /caf|commercial/i.test(t) ? 'commercial' : /cabin|mumty/i.test(t) ? 'cabin' : 'terrace'; }
   function cuSpace() {
     var x = PRODS[S.id], m = x.cz, o = S.o, cat = PCAT[x.col]; if (!cat || !window.outrrPlan || !window.mtoSpaceAsk) return;
     var q = price(m, o, PCT); if (!q.ok) return toast(q.error || 'Choose your size');
@@ -2953,7 +2994,8 @@
   function cu3dDraw() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=74').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=75').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (isFw(S.id)) { try { CU3.m.preview(el, [{ code: S.id.replace(/^MTO-/, ''), W: num(o.w) || 8, H: num(o.h) || 9, groups: o.groups || {}, place: fwPlace(S.id, x), ctl: ctl3d() }], { studio: 'fw' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 296
     if (isBar(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups, min_size: m.min_size }, o: { l: o.l, material: o.material, groups: o.groups, addons: o.addons }, view: CU.side }], { studio: 'bar', view: CU.side }); } catch (e) { if (window.console) console.warn(e); } return; }   // 295
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
@@ -3196,7 +3238,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=74').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=75').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
