@@ -5,11 +5,12 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=58';
-import { pergolaModel } from './pergola3d.js?v=45';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=59';
+import { pergolaModel } from './pergola3d.js?v=46';
 import { outline, sofaLayout } from './plan2d.js?v=31';
 import { plantModel } from './plants3d.js?v=3';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=5';
+import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=1';   // 294: the design studio setting (planters)
 const LAYK = k => !!LSPEC[k];
 
 let R = null, HANDLER = null;
@@ -1012,7 +1013,25 @@ window.Space3D = { show, onEvent, zoom, home, resize, snapshot, panMode, nightMo
 // 199b: a small 3D preview of one design (planters…) on a plain patio — the customiser shows it next to the photo.
 // items: [{cat, cfgId, pick, cfg, w, d, h}] — drawn side by side (0.5 ft apart), front to the camera.
 let PV = null;
-export function preview(el, items) {
+// 294 (owner): the planter studio — grey 2 × 4 ft tiles, a 3 ft parapet in an L (back + left), the pieces along it from the corner
+// (back wall first, then the side wall; a round one sits in the corner), real plants in them, a 5 ft 9 in person for scale.
+function cornerStudio(items, first) {
+  const g = new THREE.Group(), GAP = 0.35, IN = 0.25, PT = 0.75, n = (items || []).length, nb = /-CW$/.test(((items || [])[0] || {}).pick || '') ? n : Math.ceil(n / 2);   // a corner quarter keeps its corner against the back wall
+  let bx = IN, sz = 0, H = 0, D0 = 0;
+  (items || []).forEach(it => D0 = Math.max(D0, +it.d || 2));
+  (items || []).forEach((it, i) => { const w = +it.w || 2, d = +it.d || 2, m = generic(it.cat, w, d, +it.h || 2, it); H = Math.max(H, +it.h || 2);
+    if (i < nb) { m.position.set(bx + w / 2, 0, IN + d / 2); bx += w + GAP; }
+    else { if (!sz) sz = IN + D0 + GAP; m.rotation.y = Math.PI / 2; m.position.set(IN + d / 2, 0, sz + w / 2); sz += w + GAP; }
+    g.add(m); });
+  const L1 = Math.max(10, bx + 4), L2 = Math.max(10, sz + 4);
+  sWall(g, -PT, -PT / 2, L1, -PT / 2, 3, PT); sWall(g, -PT / 2, 0, -PT / 2, L2, 3, PT);
+  studioFloor(g, -PT, -PT, L1 + PT, L2 + PT);
+  const px = Math.max(bx, 3) + 1.4; sPerson(g, px, IN + 1.3, -0.35);   // beside the last piece on the back wall, out of the way
+  if (PV.group) PV.scene.remove(PV.group); PV.group = g; PV.scene.add(g);
+  const cx = (px + 0.6) / 2, cz = Math.max(sz, D0 + 2) / 2, span = Math.max(px + 1, sz, 8) + 4;
+  if (first || PV.span !== Math.round(span * 2)) { PV.span = Math.round(span * 2); PV.controls.target.set(cx, 2.2, cz); PV.cam.position.set(cx + span * 0.45, span * 0.55 + 3, cz + span * 1.25); PV.controls.update(); }
+}
+export function preview(el, items, opts) {
   if (!PV || PV.el !== el) {
     if (PV) { try { PV.renderer.dispose(); PV.ro && PV.ro.disconnect(); } catch (e) {} }
     const renderer = new THREE.WebGLRenderer({ antialias: !LITE, preserveDrawingBuffer: true });
@@ -1026,13 +1045,15 @@ export function preview(el, items) {
     Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, far: 80 }); scene.add(hemi, sun);
     const fl = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat('pv_floor', 0xD9CFC0, { roughness: 0.95 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; scene.add(fl);
     const wall = new THREE.Mesh(new THREE.BoxGeometry(120, 12, 0.5), mat('pv_wall', 0xE8E1D6)); wall.position.set(0, 6, -6); wall.receiveShadow = true; scene.add(wall);
-    PV = { el, renderer, scene, cam, controls, group: null, key: '' };
+    PV = { el, renderer, scene, cam, controls, group: null, key: '', fl, wall };
     const size = () => { const w = el.clientWidth || 600, h = el.clientHeight || 400; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); };
     PV.size = size; size(); try { PV.ro = new ResizeObserver(size); PV.ro.observe(el); } catch (e) {}
     const loop = () => { if (!PV || PV.renderer !== renderer) return; if (el.isConnected && el.offsetParent !== null) { controls.update(); renderer.render(scene, cam); } requestAnimationFrame(loop); }; loop();
   }
   const key = JSON.stringify(items); if (key === PV.key) return; const first = !PV.key; PV.key = key;
   if (PV.group) PV.scene.remove(PV.group);
+  const corner = opts && opts.studio === 'corner'; PV.fl.visible = PV.wall.visible = !corner; PV.scene.background = new THREE.Color(corner ? 0xF4F2EE : 0xF1ECE3);
+  if (corner) return cornerStudio(items, first);
   const g = new THREE.Group(); let x = 0, W = 0, D = 0, H = 0;
   (items || []).forEach(it => { const m = generic(it.cat, +it.w || 2, +it.d || 2, +it.h || 2, it), y = it.par ? 3 : 0; m.position.set(x + (+it.w || 2) / 2, y, 0); g.add(m);
     if (it.par) box(g, (+it.w || 2) + 1, 3, 0.75, x + (+it.w || 2) / 2, 1.5, 0, mat('pv_par', 0xE3DDD2));   // 211: a screen that goes on the parapet / boundary wall, shown on one
