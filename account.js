@@ -129,15 +129,21 @@
     document.querySelectorAll('.wlcount').forEach(el => { el.textContent = n || ''; el.hidden = !n })
     const id = typeof curPid !== 'undefined' ? curPid : null, b = $('pdWish')
     if (b) { const on = !!id && (wl || []).includes(id); b.classList.toggle('on', on); const l = b.querySelector('.wl-l'); if (l) l.textContent = on ? 'Saved' : 'Save' }
+    // product cards + quick view hearts
+    document.querySelectorAll('[data-wl]').forEach(h => { const on = (wl || []).includes(h.dataset.wl); h.classList.toggle('on', on); if (h.id === 'qvWl') h.textContent = on ? '♥' : '♡' })
   }
+  window.acWlHas = id => (wl || []).includes(id)
   window.acWishToggle = function (id) {
     id = id || (typeof curPid !== 'undefined' ? curPid : null); if (!id) return
+    if (!sess && typeof qvClose === 'function') qvClose()   // sign-in screen must not sit under the quick view
     acRequire(async () => {
       const list = [...await wlLoad()], i = list.indexOf(id)
       i >= 0 ? list.splice(i, 1) : list.unshift(id)
       try { await wlSave(list); say(i >= 0 ? 'Removed from wishlist' : 'Saved to wishlist') } catch (e) { say(e.message) }
-      if ($('account')?.style.display === 'block' && $('wlGrid')) acWishlist()
-      else if (typeof openProduct === 'function' && typeof PRODS !== 'undefined' && PRODS[id] && $('pdp')?.style.display !== 'block') openProduct(id)
+      // signed in just now → the sign-in screen is showing: take them to the product they saved
+      const onAc = $('account')?.style.display === 'block'
+      if (onAc && $('wlGrid')) acWishlist()
+      else if (onAc && typeof openProduct === 'function' && typeof PRODS !== 'undefined' && PRODS[id]) openProduct(id)
     }, 'Sign in to save your wishlist')
   }
   window.acWishlist = function () {
@@ -150,7 +156,7 @@
           <div class="wl-img" onclick="openProduct('${esc(id)}')"><img src="${esc((typeof IMGS !== 'undefined' && IMGS[x.img]) || '')}" alt=""></div>
           <div class="wl-n" onclick="openProduct('${esc(id)}')">${esc(x.n)}</div><div class="wl-p">${x.oo === false ? 'Coming soon' : inr0(x.p)}</div>
           <div class="wl-a">${x.oo === false ? '' : `<button class="btn" onclick="addCart('${esc(id)}')">Add to cart</button>`}<button class="btn ghost" onclick="acWishToggle('${esc(id)}')">Remove</button></div></div>` }).join('')}</div>`
-        : `<p class="mut" id="wlGrid">Nothing saved yet. Tap <b>Save</b> on any product to keep it here.</p><button class="btn" onclick="showHome()">Browse products</button>`}</div>`)
+        : `<p class="mut" id="wlGrid">Nothing saved yet. Tap <b>♡</b> on any product to keep it here — it stays saved in your account on every device.</p><button class="btn" onclick="showHome()">Browse products</button>`}</div>`)
     }, 'Sign in to see your wishlist')
   }
   window.acWlPaint = wlPaint

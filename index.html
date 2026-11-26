@@ -2432,7 +2432,7 @@ footer.of .of-city,footer.of .of-note{font-size:11px;color:#a8a49b;margin:10px 0
     <div class="qship" id="qvShip"></div>
     <div class="qdesc" id="qvDesc"></div>
     <div class="qbtns">
-      <button class="wl" onclick="this.classList.toggle('on');toast(this.classList.contains('on')?'Added to wishlist':'Removed from wishlist')">♡</button>
+      <button class="wl" id="qvWl" onclick="window.acWishToggle&&acWishToggle(qvId)">♡</button>
       <button class="btn" id="qvAdd">Add to Cart</button>
     </div>
     <span class="qfull" id="qvFull">View full details →</span>
@@ -2994,7 +2994,7 @@ function renderPLP(){ try{ plpCrumb(); }catch(e){}
     const off = !soon(x) && !x.cz && x.m>x.p ? Math.round((1-x.p/x.m)*100)+'% OFF' : '';
     return `<div class="pc" onclick="openProduct('${id}')">
       ${off?`<span class="offb">${off}</span>`:''}
-      <span class="heart" onclick="event.stopPropagation();this.classList.toggle('on')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></span>
+      <span class="heart${window.acWlHas&&acWlHas('${id}')?' on':''}" data-wl="${id}" onclick="event.stopPropagation();window.acWishToggle&&acWishToggle('${id}')"><svg viewBox="0 0 24 24"><path d="M12 20 C6 15 3 11.5 3 8.5 C3 6 5 4 7.5 4 C9.5 4 11 5 12 6.5 C13 5 14.5 4 16.5 4 C19 4 21 6 21 8.5 C21 11.5 18 15 12 20 Z"/></svg></span>
       ${cardIm(id)}
       <div class="bd"><div class="nm">${vName(id)}</div>
         <div class="rate"><span class="st">${x.r} ★</span>${x.c}</div>
@@ -3560,7 +3560,7 @@ function dealDayPaint(){
 // ---- tile buttons + quick view ----
 function tbHTML(id){if(pgRate(PRODS[id])) return `<div class="tb"><button class="qvb" onclick="event.stopPropagation();pgCard('${id}','3d')">Customise</button><button class="adb" onclick="event.stopPropagation();pgCard('${id}','price')">Check price</button></div>`; return `<div class="tb"><button class="qvb" onclick="event.stopPropagation();qvOpen('${id}')">Quick view</button>${soon(id)?`<button class="adb soonbtn" disabled onclick="event.stopPropagation()">Coming soon</button>`:`<button class="adb" onclick="event.stopPropagation();addCart('${id}')">+ Add</button>`}</div>`;}
 let qvId=null;
-function qvOpen(id){qvId=id;const x=PRODS[id];
+function qvOpen(id){qvId=id;const x=PRODS[id];{const w=document.getElementById('qvWl');if(w){w.dataset.wl=id;const on=!!(window.acWlHas&&acWlHas(id));w.classList.toggle('on',on);w.textContent=on?'♥':'♡';}}
  document.getElementById('qvImg').src=IMGS[x.img];
  document.getElementById('qvName').textContent=x.n;
  document.getElementById('qvR').textContent=x.r+' ★';
@@ -4747,7 +4747,7 @@ async function shareProduct(){
   try{ await navigator.clipboard.writeText(url); toast('Link copied'); }catch(e){ toast(url); }
 }
 </script>
-<script src="/account.js?v=13"></script>
+<script src="/account.js?v=14"></script>
 <script src="/track.js?v=4"></script>
 <script src="/store.js?v=7"></script>
 <script src="/near.js?v=14"></script>
