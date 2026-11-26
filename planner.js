@@ -368,19 +368,18 @@ function plantPicker(it) { const G = plantList(), keys = Object.keys(G); if (!ke
     return `<button type="button" class="pl-ds${k === it.plant ? ' on' : ''}" data-pl="plk:${k}" aria-pressed="${k === it.plant}">${im ? `<img src="${esc(im)}" alt="" loading="lazy">` : '<i></i>'}<b>${esc(plantName(id))}</b><small>${esc(LIGHT_T[PLANT_LIGHT[k]] || '')}</small></button>`; }).join('') + '</div>';
   return h; }
 function oFor(m, it) {   // the item's size in the words of that design's price list (clamped to what it allows)
-  const u = m.unit, cl = (v, r) => { const lo = num(r && r.min), hi = num(r && r.max); v = num(v) || lo || 1; if (lo != null) v = Math.max(lo, v); if (hi != null) v = Math.min(hi, v); return v; };
+  const u = m.unit, cl = (v) => num(v) || 1;   /* 238 (owner): no size limits — the plan's own size, a smaller one is billed as the design's minimum */
   const o = { pin: '', zone: null };
   if (u === 'fixed') o.size = ((m.sizes || [])[0] || {}).label;
-  else if (u === 'seat') o.n = num(m.n && m.n.min);
+  else if (u === 'seat') o.n = Math.max(1, num(m.min_size) || num(m.n && m.n.min) || 1);
   else {
     const c = CAT[it.cat], len0 = it.pw != null ? it.pw : it.w, dep = c.kind === 'wall' || c.kind === 'edge' ? it.h : it.d;
-    const rL = u === 'face' ? m.w : m.l, mx = num(rL && rL.max), n = mx && len0 > mx ? Math.ceil(len0 / mx - 0.001) : 1, len = Math.round(len0 / n * 2) / 2;   // 193c: longer than one piece → equal pieces
+    const n = 1, len = Math.round(len0 * 2) / 2;   /* 238: one piece at any length (was split by the old maximum) */   // 193c: longer than one piece → equal pieces
     o._n = n;
     if (u === 'area') { o.l = cl(len, m.l); o.w = cl(dep, m.w); }
     else if (u === 'length') o.l = cl(len, m.l);
     else if (u === 'face') { o.w = cl(len, m.w); }
-    const hs = (m.h && m.h.options) || []; if (hs.length) { const tgt = it.h || num(hs[0]); o.h = num(hs.slice().sort((a, b) => Math.abs(num(a) - tgt) - Math.abs(num(b) - tgt))[0]); }
-    else if (u === 'face') o.h = cl(it.h, m.h);
+    const hs = (m.h && m.h.options) || []; if (u === 'face') o.h = cl(it.h || num(hs[0]));   /* 238: the plan's own height */
   }
   o.groups = {}; (m.groups || []).forEach(g => { const op = (g.options || []).slice().sort((a, b) => ((num(a.fixed) || 0) + (num(a.rate) || 0)) - ((num(b.fixed) || 0) + (num(b.rate) || 0)))[0]; if (op) o.groups[g.name] = op.name; });
   return o;
@@ -2237,7 +2236,7 @@ function act(a) {   // one button's action on S; true = draw again
     case 'cs': { const C2 = S.cust; if (!C2) break; const m = PR()[C2.id].cz, o = C2.o, v = a.slice(2).join(':');
       if (a[1] === 'cancel') { S.cust = null; break; }
       if (a[1] === 'use') { const x = S.items[C2.i]; ev('plan_custom', { ref: x && x.cat, sku: C2.id }); if (x) { x.cfg = JSON.parse(JSON.stringify(o)); x.cfgId = C2.id; x.pick = C2.id; realSize(x, C2.id, o); } S.cust = null; break; }
-      if (a[1] === 'size') o.size = v; else if (a[1] === 'n') o.n = Math.max(num(m.n && m.n.min) || 1, Math.min(num(m.n && m.n.max) || 99, (num(o.n) || 0) + (+a[2])));
+      if (a[1] === 'size') o.size = v; else if (a[1] === 'n') o.n = Math.max(num(m.min_size) || num(m.n && m.n.min) || 1, (num(o.n) || 0) + (+a[2]));
       else if (a[1] === 'mat') { o.material = v; const mt = (m.materials || []).find(z => z.name === v); o.colour = ((mt && mt.colours) || [])[0] ? mt.colours[0].name : ''; }
       else if (a[1] === 'col') o.colour = v; else if (a[1] === 'grp') { const [g, op] = v.split('::'); o.groups = Object.assign({}, o.groups, { [g]: op }); }
       else if (a[1] === 'add') { o.addons = (o.addons || []).includes(v) ? o.addons.filter(z => z !== v) : (o.addons || []).concat(v); }

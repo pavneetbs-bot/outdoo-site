@@ -5,6 +5,7 @@
   'use strict';
   var rnd = function (x) { return Math.round(+Number(x).toFixed(6)); };   // 150: half-up on the decimal value, same as the database
   var num = function (v) { if (typeof v === 'number') return isFinite(v) ? v : null; var s = String(v == null ? '' : v).trim(); return /^-?\d+(\.\d+)?$/.test(s) ? +s : null; };
+  function seatLo(m) { return Math.max(1, num(m && m.min_size) || num(m && m.n && m.n.min) || 1); }   /* 238: seats start at the design's minimum, no maximum */
   var arr = function (v) { return Array.isArray(v) ? v : []; };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var rs = function (n) { return '₹' + Math.round(+n || 0).toLocaleString('en-IN'); };
@@ -47,17 +48,12 @@
       return r;
     }
     if (['area', 'face', 'length', 'fixed', 'seat'].indexOf(u) < 0) return ['pricing'];
-    var lim = function (d) { return (num(m[d] && m[d].min) || 0) > 0 && (num(m[d] && m[d].max) || 0) >= (num(m[d] && m[d].min) || 0); };
     if (u === 'fixed') { if (!arr(m.sizes).length) r.push('sizes'); }
-    else if (u === 'seat') { if (!((num(m.n && m.n.min) || 0) >= 1 && (num(m.n && m.n.max) || 0) >= (num(m.n && m.n.min) || 0))) r.push('n'); }
-    else {
-      if ((u === 'area' || u === 'length') && !lim('l')) r.push('l');
-      if ((u === 'area' || u === 'face') && !lim('w')) r.push('w');
-      if (u === 'face' && !arr(m.h && m.h.options).length && !lim('h')) r.push('h');
-      if (m.panels && (u !== 'face' || !panelSizes(m).length || (num(m.w && m.w.min) || 0) < Math.min.apply(null, panelSizes(m)))) r.push('panels');
+    else {   /* 238: one minimum size instead of size limits + a minimum charge */
+      if (!((num(m.min_size) || 0) > 0)) r.push('min');
+      if (m.panels && (u !== 'face' || !panelSizes(m).length)) r.push('panels');
     }
     if (!arr(m.materials).some(function (x) { return String(x && x.name || '').trim() && ((num(x.rate) || 0) > 0 || u === 'fixed'); })) r.push('material');
-    if (u !== 'fixed' && u !== 'seat' && !((num(m.min_charge) || 0) > 0)) r.push('min');
     var md = arr(m.make_days); if (!(((num(md[1]) != null ? num(md[1]) : num(md[0])) || 0) > 0)) r.push('days');
     if (m.install && m.install.offered && !arr(m.install.cities).length) r.push('cities');
     if (m.install && m.install.required && !m.install.offered) r.push('install');   // 148
@@ -203,27 +199,25 @@
     if (m.round && num(o.l) != null) o.w = o.l;   // 199: round designs — one size across
     var pcs = num(o.pcs) == null ? 1 : num(o.pcs), pmax = num(m.pcs && m.pcs.max) == null ? 1 : num(m.pcs.max);   // 199: several pieces of one configuration
     if (pcs !== Math.floor(pcs) || pcs < 1 || pcs > pmax) return { ok: false, error: 'Choose 1 to ' + pmax + ' pieces' };
-    var u = m.unit, l = num(o.l), w = num(o.w), h = num(o.h), qty, sz = null;
+    var u = m.unit, l = num(o.l), w = num(o.w), h = num(o.h), qty, sz = null, ms = num(m.min_size) || 0, minUsed = false;
     if (u === 'fixed') { sz = arr(m.sizes).filter(function (x) { return x.label === o.size; })[0]; if (!sz) return { ok: false, error: 'Choose a size' }; qty = 1; }
-    else if (u === 'seat') { var nn = num(o.n), nlo = num(m.n.min), nhi = num(m.n.max); if (nn == null || nn !== Math.floor(nn) || nn < nlo || nn > nhi) return { ok: false, error: 'Choose ' + nlo + ' to ' + nhi + ' seats' }; qty = nn; }
-    else {
-      var chk = function (d, v, word) { var lo = num(m[d] && m[d].min), hi = num(m[d] && m[d].max); return v == null || v < lo || v > hi ? word + ' must be ' + lo + ' to ' + hi + ' ft' : null; };
-      var e;
-      if (u === 'area' || u === 'length') { e = chk('l', l, 'Length'); if (e) return { ok: false, error: e }; }
-      if (u === 'area' || u === 'face') { e = chk('w', w, m.panels ? 'Length' : 'Width'); if (e) return { ok: false, error: e }; }
-      if (arr(m.h && m.h.options).length) { if (h == null || !m.h.options.some(function (x) { return num(x) === h; })) return { ok: false, error: 'Choose a height' }; }
-      else if (u === 'area' && m.hr) { if (h == null) h = num(m.ht); e = chk('hr', h, 'Height'); if (e) return { ok: false, error: e }; }   // 204
-      else if (u === 'face') { e = chk('h', h, 'Height'); if (e) return { ok: false, error: e }; }
+    else if (u === 'seat') { var nn = num(o.n), nlo = Math.max(1, ms || 1); if (nn == null || nn !== Math.floor(nn) || nn < nlo) return { ok: false, error: 'Choose at least ' + nlo + ' seats' }; qty = nn; }
+    else {   /* 238 (owner): no size limits — any size above 0; smaller than the minimum size = charged as the minimum */
+      if ((u === 'area' || u === 'length') && !(l > 0)) return { ok: false, error: 'Enter the length' };
+      if ((u === 'area' || u === 'face') && !(w > 0)) return { ok: false, error: m.panels ? 'Enter the running length' : 'Enter the width' };
+      if (u === 'area' && m.hr && h == null) h = num(m.ht);   /* 204: planters — none sent = the design's height */
+      if ((u === 'face' && !(h > 0)) || (h != null && !(h > 0))) return { ok: false, error: 'Enter the height' };
       qty = Math.round((u === 'area' ? l * w : u === 'face' ? w * h : l) * 100) / 100;
+      if (ms > 0 && qty < ms) { qty = ms; minUsed = true; }
     }
     var pn = u === 'face' && m.panels ? panels(m, w) : null;
-    if (u === 'face' && m.panels) { if (!pn) return { ok: false, error: 'Enter the running length' }; qty = Math.round(pn.width * h * 100) / 100; }
+    if (u === 'face' && m.panels) { if (!pn) return { ok: false, error: 'Enter the running length' }; qty = Math.round(pn.width * h * 100) / 100; if (ms > 0 && qty < ms) { qty = ms; minUsed = true; } }
     var mat = arr(m.materials).filter(function (x) { return !o.material || x.name === o.material; })[0];
     if (!mat) return { ok: false, error: 'Choose a material' };
     var rate = num(mat.rate) || 0, col = null;
     if (o.colour) { col = arr(mat.colours).filter(function (x) { return x.name === o.colour; })[0]; if (!col) return { ok: false, error: 'Choose a colour' }; rate += num(col.extra) || 0; }
     var own = u === 'fixed' && mat.prices ? num(mat.prices[sz.label]) : null;   // 147: this finish's own price for this size
-    var base = u === 'fixed' ? (own != null ? own + rate - (num(mat.rate) || 0) : (num(sz.price) || 0) + rate) : (num(mat.base) || 0) + rnd(qty * rate + (pn ? pn.width * (num(mat.rate_rft) || 0) + pn.posts * h * (num(mat.rate_postft) || 0) + pn.posts * (num(mat.rate_post) || 0) : 0)), minUsed = false, minc = num(m.min_charge) || 0;
+    var base = u === 'fixed' ? (own != null ? own + rate - (num(mat.rate) || 0) : (num(sz.price) || 0) + rate) : (num(mat.base) || 0) + rnd(qty * rate + (pn ? pn.width * (num(mat.rate_rft) || 0) + pn.posts * h * (num(mat.rate_postft) || 0) + pn.posts * (num(mat.rate_post) || 0) : 0)), minc = ms > 0 ? 0 : num(m.min_charge) || 0;
     if (u === 'area' && m.hr && num(m.ht) > 0 && l > 0 && w > 0) { var hf = (l * w + 2 * (l + w) * h) / (l * w + 2 * (l + w) * num(m.ht)); base = rnd(base * hf); minc = rnd(minc * Math.min(1, hf)); }   // 204
     if (base < minc) { base = minc; minUsed = true; }
     var picked = arr(o.addons), addons = [];
@@ -1121,7 +1115,7 @@
   function mtoInit(id) {
     var x = PRODS[id]; if (!x || !x.cz) return;
     var m = x.cz;
-    S = { id: id, img: 0, o: { n: (m.n && num(m.n.min)) || '', l: '', w: '', h: arr(m.h && m.h.options)[0] || '', size: m.unit === 'fixed' && arr(m.sizes).length === 1 ? m.sizes[0].label : '', material: (arr(m.materials)[0] || {}).name || '', colour: (arr((arr(m.materials)[0] || {}).colours)[0] || {}).name || '',   // 175: one size / the photo's finish preselected
+    S = { id: id, img: 0, o: { n: m.unit === 'seat' ? seatLo(m) : '', l: '', w: '', h: arr(m.h && m.h.options)[0] || '', size: m.unit === 'fixed' && arr(m.sizes).length === 1 ? m.sizes[0].label : '', material: (arr(m.materials)[0] || {}).name || '', colour: (arr((arr(m.materials)[0] || {}).colours)[0] || {}).name || '',   // 175: one size / the photo's finish preselected
      
       addons: arr(m.addons).filter(function (a) { return a.on; }).map(function (a) { return a.name; }), install: !!(m.install && (m.install.required || (isPg(id) && m.install.offered))), pin: lastPin(),   // pergolas: our installer first, install-yourself on the proposal
      
@@ -1535,16 +1529,16 @@
   function drawPdp() {
     var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), el = document.getElementById('mtoCfg'); if (!el) return;
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
-    var hOpts = arr(m.h && m.h.options), f = [];
+    var hOpts = [], f = [];   /* 238: no height list — any height */
     if (u === 'cabin') { cbHist(); el.innerHTML = cabinUI(m, o); if (S.studio) cbsGroup(el); cbStage(); cbSheet(); paint(); return mount3d(); }
     var np = !mtoOk();   // 172: before sign-in every variant shows (to see the finishes / colours / photos), only the prices wait
-    if (u === 'seat') { var sv = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
+    if (u === 'seat') { var sv = []; for (var i = seatLo(m); i <= seatLo(m) + 10; i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
     else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + (np ? '' : ' — ' + rs(fixedAt(m, mat, z)))]; })), o.size, 'Size'));
     else {
-      if (u === 'area' || u === 'length') f.push('<label class="mto-pk"><span>Length (ft)</span><input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>');
-      if (u === 'area' || u === 'face') f.push('<label class="mto-pk"><span>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '</span><input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>');
+      if (u === 'area' || u === 'length') f.push('<label class="mto-pk"><span>Length (ft)</span><input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + 'Any size' + '"></label>');
+      if (u === 'area' || u === 'face') f.push('<label class="mto-pk"><span>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '</span><input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + 'Any size' + '"></label>');
       if (hOpts.length) f.push(sel('data-k="h"', hOpts.map(function (h) { return [h, h + ' ft']; }), o.h, 'Height'));
-      else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>');
+      else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + 'Any size' + '"></label>');
     }
     if (mats.length > 1) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (np ? '' : u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, esc((m.labels && m.labels.material) || 'Finish')));
     var cols = arr(mat && mat.colours);
@@ -1609,16 +1603,16 @@
     if (S.pdp) return drawPdp();   // 159: Made to Order on the regular product page
     var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), imgs = gal(S.id);
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
-    var hOpts = arr(m.h && m.h.options);
+    var hOpts = [];   /* 238 */
     var size = u === 'cabin' ? cabinUI(m, o) : u === 'seat'
-      ? '<p style="font-size:13px;color:#4A4640;margin:0 0 8px">How many seats?</p><div class="mto-sw">' + (function () { var b = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) b.push('<button type="button" data-n="' + i + '" class="' + (String(o.n) === String(i) ? 'on' : '') + '">' + i + '</button>'); return b.join(''); })() + '</div>'
+      ? '<p style="font-size:13px;color:#4A4640;margin:0 0 8px">How many seats?</p><div class="mto-sw">' + (function () { var b = []; for (var i = seatLo(m); i <= seatLo(m) + 10; i++) b.push('<button type="button" data-n="' + i + '" class="' + (String(o.n) === String(i) ? 'on' : '') + '">' + i + '</button>'); return b.join(''); })() + '</div>'
       : u === 'fixed'
       ? '<div class="mto-sw">' + arr(m.sizes).map(function (s) { return '<button type="button" data-size="' + esc(s.label) + '" class="' + (o.size === s.label ? 'on' : '') + '">' + esc(s.label) + ' · ' + rs(fixedAt(m, mat, s)) + '</button>'; }).join('') + '</div>'
       : '<div class="mto-g">' +
-        ((u === 'area' || u === 'length') ? '<label>Length (ft)<input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>' : '') +
-        ((u === 'area' || u === 'face') ? '<label>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '<input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>' : '') +
+        ((u === 'area' || u === 'length') ? '<label>Length (ft)<input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + 'Any size' + '"></label>' : '') +
+        ((u === 'area' || u === 'face') ? '<label>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '<input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + 'Any size' + '"></label>' : '') +
         (hOpts.length ? '<label>Height (ft)<select data-k="h">' + hOpts.map(function (h) { return '<option' + (String(h) === String(o.h) ? ' selected' : '') + '>' + esc(h) + '</option>'; }).join('') + '</select></label>'
-          : u === 'face' ? '<label>Height (ft)<input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>' : '') +
+          : u === 'face' ? '<label>Height (ft)<input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + 'Any size' + '"></label>' : '') +
         '</div><p style="font-size:13px;color:#6A6258;margin:8px 0 0">Measure the space in feet. ' + (u === 'area' ? 'Length × width is the area it covers.' : u === 'face' && m.panels ? 'Total length of the wall or parapet to cover. It is made in standard ' + panelSizes(m).join(' / ') + ' ft panels, rounded up to the next foot.' : u === 'face' ? 'Width × height of the opening or wall.' : 'Total running length.') + '</p>';
     var matHtml = u === 'cabin' || !mat ? '' : mats.length > 1 ? mats.map(function (y) { return '<label class="mto-opt' + (y === mat ? ' on' : '') + '"><input type="radio" name="mtoMat" data-mat="' + esc(y.name) + '"' + (y === mat ? ' checked' : '') + '><span><b>' + esc(y.name) + '</b><br><span style="color:#6A6258">' + (u === 'fixed' ? (y.prices && Object.keys(y.prices).length ? 'From ' + rs(Math.min.apply(null, arr(m.sizes).map(function (z) { return fixedAt(m, y, z); }))) : +y.rate ? '+ ' + rs(y.rate) : 'Standard') : m.panels ? 'Panels, frame and posts' : rs(y.rate) + ' / ' + uw) + '</span></span></label>'; }).join('') : '<p style="margin:0 0 8px;font-size:14px"><b>' + esc(mat.name) + '</b></p>';
     var cols = arr(mat && mat.colours);
@@ -1947,7 +1941,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=103').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=104').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2253,7 +2247,7 @@
   function pgGrp(m, re) { return arr(m.groups).filter(function (g) { return re.test(g.name || ''); })[0] || null; }
   function pgOpts() {
     var x = PRODS[S.id], m = x.cz, o = S.o, gv = function (re) { var g = pgGrp(m, re); return g ? (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name : ''; };
-    var lim = function (k, d) { var lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20; return Math.min(Math.max(num(o[k]) || d, lo), hi); };
+    var lim = function (k, d) { return Math.max(1, num(o[k]) || d); };   /* 238: no size limits */
     return { l: lim('l', 12), w: lim('w', 10), height: gv(/height/i) || o.h || '8 ft', material: o.material, colour: o.colour, cover: gv(/roof|cover/i), layout: gv(/layout/i), addons: arr(o.addons).slice(), aside: (function () { var r = {}; arr(o.addons).forEach(function (n) { var a = arr(m.addons).filter(function (z) { return z.name === n; })[0]; if (a && +a.sides) r[n] = pgSides(a); }); return r; })() };
   }
   function pgLay() { var q = pgOpts(); return { L: q.l, W: q.w }; }
@@ -2286,7 +2280,7 @@
     return best;
   }
   function pgSize(k, v) {   // 203: a new length / width — still on the terrace (moved to the nearest free spot), else not taken
-    var m = PRODS[S.id].cz, o = S.o, lo = num(m[k] && m[k].min) || 8, hi = num(m[k] && m[k].max) || 20, old = pgOpts()[k]; o[k] = Math.min(Math.max(Math.round(+v || old), lo), hi); S.tsMsg = '';
+    var o = S.o, old = pgOpts()[k]; o[k] = Math.max(1, Math.round(+v || old));   /* 238 (owner): no size limits — only the terrace limits it */ S.tsMsg = '';
     var t = S.site; if (!t || t.kind !== 'terrace' || t.cx == null || !tsClash(t, pgLay())) return; tsMoveTo({ cx: t.cx, cz: t.cz }, pgLay());
     if (tsClash(t, pgLay())) { o[k] = old; S.tsMsg = 'That size doesn\'t fit on this terrace'; } else { pgAutoWall(); keepSite(); }
   }
@@ -2359,7 +2353,7 @@
       return '<button type="button" class="' + (y.name === cur ? 'on' : '') + '" data-p3g="' + esc(g.name) + '" data-v="' + esc(y.name) + '"><b>' + esc(nm.split(' (')[0]) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</button>'; }).join('') + '</div>'; };
     var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }), gv = function (g) { return (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name; };
     if (k === 'size') {
-      var szIn = function (key, lbl, v) { return '<div><span>' + lbl + '</span><button type="button" data-p3d="' + key + ',-1" aria-label="Less">−</button><input type="number" inputmode="decimal" min="' + (num(m[key] && m[key].min) || 8) + '" max="' + (num(m[key] && m[key].max) || 20) + '" step="1" data-p3n="' + key + '" value="' + v + '"><i>ft</i><button type="button" data-p3d="' + key + ',1" aria-label="More">+</button></div>'; };
+      var szIn = function (key, lbl, v) { return '<div><span>' + lbl + '</span><button type="button" data-p3d="' + key + ',-1" aria-label="Less">−</button><input type="number" inputmode="decimal" min="1" step="1" data-p3n="' + key + '" value="' + v + '"><i>ft</i><button type="button" data-p3d="' + key + ',1" aria-label="More">+</button></div>'; };
       var hg = gs.filter(function (g) { return /height/i.test(g.name); })[0];
       L.push(['How big?', 'Length, width and height — the 3D changes as you go', '<div class="pq-sz">' + szIn('l', 'Length', q.l) + szIn('w', 'Width', q.w) + '</div><p class="pg3-note">' + Math.round(q.l * q.w) + ' sq ft · up to ' + (num(m.l && m.l.max) || 20) + ' × ' + (num(m.w && m.w.max) || 16) + ' ft</p>' +
         (hg ? '<p class="pq-sub">' + esc(hg.name) + ' <small>floor to the underside of the beams</small></p><div class="pq-chips">' + arr(hg.options).filter(function (y) { return y.name; }).map(function (y) { return '<button type="button" class="' + (y.name === gv(hg) ? 'on' : '') + '" data-p3g="' + esc(hg.name) + '" data-v="' + esc(y.name) + '">' + esc(y.name.split(' (')[0]) + '</button>'; }).join('') + '</div>' : '')]);
@@ -2722,15 +2716,15 @@
     if (u === 'seat') return o.n ? o.n + ' seats' : ''; return o.size || '';
   }
   function optForm(x, m, o) {   // the design's choices (same fields as the old product-page form) — prices only when signed in
-    var u = m.unit, uw = UW(u), np = !mtoOk(), f = [], hOpts = arr(m.h && m.h.options), mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
-    if (u === 'seat') { var sv = []; for (var i = num(m.n.min); i <= num(m.n.max); i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
+    var u = m.unit, uw = UW(u), np = !mtoOk(), f = [], hOpts = [], mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
+    if (u === 'seat') { var sv = []; for (var i = seatLo(m); i <= seatLo(m) + 10; i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
     else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + (np ? '' : ' — ' + rs(fixedAt(m, mat, z)))]; })), o.size, 'Size'));
     else {
-      if (u === 'area' || u === 'length') f.push('<label class="mto-pk"><span>' + (m.round ? 'Size across (ft)' : 'Length (ft)') + '</span><input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + esc(m.l.min) + '–' + esc(m.l.max) + '"></label>');
-      if ((u === 'area' && !m.round) || u === 'face') f.push('<label class="mto-pk"><span>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '</span><input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + esc(m.w.min) + '–' + esc(m.w.max) + '"></label>');
-      if (u === 'area' && m.hr) f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.hr.min) + '–' + esc(m.hr.max) + '"></label>');   // 204
+      if (u === 'area' || u === 'length') f.push('<label class="mto-pk"><span>' + (m.round ? 'Size across (ft)' : 'Length (ft)') + '</span><input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + 'Any size' + '"></label>');
+      if ((u === 'area' && !m.round) || u === 'face') f.push('<label class="mto-pk"><span>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '</span><input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + 'Any size' + '"></label>');
+      if (u === 'area' && m.hr) f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + 'Any size' + '"></label>');   // 204
       if (hOpts.length) f.push(sel('data-k="h"', hOpts.map(function (h) { return [h, h + ' ft']; }), o.h, 'Height'));
-      else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + esc(m.h.min) + '–' + esc(m.h.max) + '"></label>');
+      else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + 'Any size' + '"></label>');
     }
     if (mats.length > 1) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (np ? '' : u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels || m.pcs ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, esc((m.labels && m.labels.material) || 'Finish')));
     if (m.pcs && num(m.pcs.max) > 1) { var pc = num(o.pcs) || 1; f.push('<div class="mto-pk"><span>Pieces</span><div class="cu-pcs"><button type="button" data-cupcs="-1" aria-label="One less"' + (pc <= 1 ? ' disabled' : '') + '>−</button><b>' + pc + '</b><button type="button" data-cupcs="1" aria-label="One more"' + (pc >= num(m.pcs.max) ? ' disabled' : '') + '>+</button></div></div>'); }   // 199
@@ -2754,7 +2748,8 @@
     if (!ov) { ov = document.createElement('div'); ov.id = 'cuOv'; ov.className = 'pg3-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov);
       ov.addEventListener('input', onInput); ov.addEventListener('change', onChange); ov.addEventListener('click', cuClick); }
     var x = PRODS[S.id], m0 = x.cz, o0 = S.o; ov.setAttribute('aria-label', 'Customise ' + x.n);
-    ['l', 'w', 'h'].forEach(function (k) { if (!num(o0[k]) && m0[k] && num(m0[k].min) && !(k === 'h' && arr(m0.h.options).length)) o0[k] = num(m0[k].min); });   // a size to start from: the price shows at once
+    ['l', 'w', 'h'].forEach(function (k) { if (!num(o0[k]) && m0[k] && num(m0[k].min) && !(k === 'h' && arr(m0.h.options).length)) o0[k] = num(m0[k].min); });
+    var sq0 = Math.ceil(Math.sqrt(num(m0.min_size) || 0)); if (sq0 > 0) { if (m0.unit === 'length' && !num(o0.l)) o0.l = num(m0.min_size); if ((m0.unit === 'area' || m0.unit === 'face') && !num(o0.w)) o0.w = sq0; if (m0.unit === 'area' && !num(o0.l)) o0.l = sq0; if (m0.unit === 'face' && !num(o0.h)) o0.h = sq0; }   /* 238: else about the minimum size */   // a size to start from: the price shows at once
     if (m0.unit === 'fixed' && !o0.size && arr(m0.sizes).length) o0.size = m0.sizes[0].label;
     if (m0.hr && num(o0.h) == null && num(m0.ht)) o0.h = Math.round(num(m0.ht) * 4) / 4;   // 204: the design's own height to start
     arr(m0.groups).forEach(function (g) { if (g.name && !(o0.groups || {})[g.name] && arr(g.options)[0]) { o0.groups = Object.assign({}, o0.groups); o0.groups[g.name] = g.options[0].name; } });   // 199: first choice of each option group (e.g. No light)
@@ -2823,7 +2818,7 @@
   }
   window.mtoPropFromPlan = function (it, same) {   // the planner's "Proposal & add to cart" for one of these things: its page, set up as in the plan, then the proposal
     var id = it && it.cfgId; if (!id || !PRODS[id] || !PRODS[id].cz) return false; var m = PRODS[id].cz;
-    var o = Object.assign({}, it.cfg || {}); o.l = it.w; o.w = m.round ? it.w : it.d; if (m.hr && num(it.h)) o.h = Math.max(num(m.hr.min) || 1, Math.min(num(m.hr.max) || 4, num(it.h))); if (m.pcs && same > 1) o.pcs = Math.min(num(m.pcs.max) || 1, same);
+    var o = Object.assign({}, it.cfg || {}); o.l = it.w; o.w = m.round ? it.w : it.d; if (m.hr && num(it.h)) o.h = num(it.h);   /* 238: no height cap */ if (m.pcs && same > 1) o.pcs = Math.min(num(m.pcs.max) || 1, same);
     try { openProduct(id); } catch (e) { return false; }
     var k = 0; (function w() { if (!S || S.id !== id || !S.pdp) { if (k++ < 80) return setTimeout(w, 100); return; } S.o = Object.assign(S.o || {}, o); S.proj = 'same'; draw(); propGo(); })();
     return true;
