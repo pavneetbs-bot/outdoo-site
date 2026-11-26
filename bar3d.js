@@ -4,7 +4,7 @@
 // (open / HDHMR / HPL / steel), bar stools in front, SS foot rail, LED under the top, a back-bar bottle shelf on the wall.
 // L-shaped designs get a return arm. Units: feet, y up; the customer's side faces +z, the bartender's side −z.
 import * as THREE from './vendor/three/three.module.min.js';
-import { studioFloor, wall as sWall, person } from './studio3d.js?v=4';
+import { studioFloor, wall as sWall, person } from './studio3d.js?v=5';
 
 const M = {}, T = {};
 const mt = (k, o) => M[k] || (M[k] = new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.75 }, o)));

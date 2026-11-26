@@ -2,7 +2,7 @@
 // cabin, bar, feature wall… designers. Plain grey 2 × 4 ft tiles, a soft ground beyond, a 3 ft parapet / wall where the
 // element usually stands against one, and a 5 ft 9 in person for scale (no furniture / planters). Units: feet, y up.
 import * as THREE from './vendor/three/three.module.min.js';
-import { layCanvas, layPeriod } from './floorlay.js?v=7';
+import { layCanvas, layPeriod } from './floorlay.js?v=8';
 const M = {}, mat = (k, o) => M[k] || (M[k] = new THREE.MeshStandardMaterial(o));
 let STX = null;
 export function studioFloor(g, x0, z0, w, d, y) {

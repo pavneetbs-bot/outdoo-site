@@ -23,8 +23,9 @@ export const SPECS = {
   sant_path: { pat: 'pebmosaic', P: 3, pal: ['#1F4FA8', '#2A5CB6', '#1A4592', '#3368C0'], v: 0.08, j: '#F6F5F1', m: 'stone' },   // 296: white floor, painted blue pebbles
   sant_border: { pat: 'stack', w: 0.33, d: 0.33, g: 0.02, pal: ['#2B5DA8', '#2F65B3', '#26549A', '#3470BE'], v: 0.1, j: '#F4F2EC', m: 'glaze' },
   // Modern — 2 × 4 concrete pavers, stack bond, grass strips between the rows
-  mod_field: { pat: 'stack', w: 2, d: 4, g: 0.03, gz: 0.35, jz: 'grass', pal: ['#B7B6B1', '#AEADA8', '#BFBEB9', '#A6A5A0'], v: 0.04, j: '#8E8C87', m: 'cement' },
+  mod_field: { pat: 'stack', w: 2, d: 4, g: 0.03, gz: 0.35, jz: 'grass', pal: ['#D9D2C5', '#D2CBBE', '#DED8CC', '#CFC8BA'], v: 0.04, j: '#A8A198', m: 'cement' },
   mod_rug: { pat: 'stack', w: 1, d: 3, g: 0.02, pal: ['#4A4A48', '#444442', '#52524F'], v: 0.04, j: '#2E2E2C', m: 'cement' },
+  mod_deck: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#9A6A42', '#8F6240', '#A47249', '#8A5D3A'], v: 0.06, j: '#3A2618', m: 'wpc' },   // 298: warm teak WPC
   mod_border: { pat: 'stack', w: 0.75, d: 2, g: 0.02, pal: ['#2F2E2C', '#363431', '#2A2927'], v: 0.06, j: '#1E1D1B', m: 'stone' },
   // Contemporary — travertine French pattern, oak herringbone deck where people sit
   cont_field: { pat: 'french', u: 0.67, g: 0.025, pal: ['#E2D5BE', '#DCCDB3', '#E7DCC7', '#D5C4A7', '#DFD1B8'], v: 0.05, j: '#CBBC9F', m: 'trav' },
@@ -44,7 +45,7 @@ export const SPECS = {
 // 276c (owner): the floor-layout roles — a calm base, the feature (runners, rugs, hubs), checkers
 Object.assign(SPECS, {
   turk_base: { pat: 'oct', u: 2, g: 0.03, pal: ['#EDE4D3', '#E6DBC6', '#F0E8D9'], pal2: ['#C9AE86', '#BFA27A', '#B08D57', '#C9AE86', '#BFA27A', '#2F6E73'], v: 0.04, j: '#D8CCB6', m: 'trav' },   // 294: cream travertine, brass / teal cabochon dots
-  mod_plain: { pat: 'stack', w: 2, d: 4, g: 0.02, pal: ['#B7B6B1', '#AEADA8', '#BFBEB9', '#A6A5A0'], v: 0.04, j: '#8E8C87', m: 'cement' },
+  mod_plain: { pat: 'stack', w: 2, d: 4, g: 0.02, pal: ['#D9D2C5', '#D2CBBE', '#DED8CC', '#CFC8BA'], v: 0.04, j: '#A8A198', m: 'cement' },
   min_path: { pat: 'stack', w: 1, d: 3, g: 0.015, pal: ['#D9D6D0', '#D3D0C9', '#DEDBD5'], v: 0.02, j: '#BDB8AF', m: 'micro' },
   cont_enc: { pat: 'enc', u: 0.67, g: 0.012, pal: ['#E6DCC9', '#E1D6C2', '#EADFCD'], ink: ['#8E8A84'], ink2: '#B9A487', v: 0.03, j: '#CFC4B0', m: 'cement' },
   boho_enc: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#EFE4D2', '#EADFCB', '#F2E8D8'], ink: ['#B5562F'], ink2: '#6B7A4A', v: 0.04, j: '#D8C6AA', m: 'cement' },
