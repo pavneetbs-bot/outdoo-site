@@ -354,9 +354,11 @@
     'body.cb-studio .ctas .cbbar{left:0;width:auto;height:auto;min-height:74px;border-left:0;border-top:1px solid #E7DDCF;display:flex;padding:10px 14px calc(10px + env(safe-area-inset-bottom))}body.cb-studio.cbs-big .ctas .cbbar{left:0;right:0;bottom:0;border-radius:0}'+
     '.cbs-hint{white-space:normal;text-align:center;font-size:10.5px;width:86%;line-height:1.3}.cbs-ed{right:56px}'+
     /* 313: the options are a sheet over the 3D with a handle, like the other studios */
-    'body.cb-studio{--cbs3d:58dvh}body.cb-studio #mtoCfg{top:calc(var(--cbsh) + var(--cbs3d) - 14px);z-index:902;border-top:1px solid #E2D6C4!important;border-radius:18px 18px 0 0!important;box-shadow:0 -6px 18px rgba(0,0,0,.08);padding:0 14px 44px!important}body.cb-studio #mtoCfg{transition:top .22s ease;overscroll-behavior:contain}body.cb-studio #mtoCfg.cbs-drag{transition:none}body.cb-studio .ctas{z-index:903!important}'+
+    'body.cb-studio{--cbs3d:58dvh}body.cb-studio .ctas{z-index:903!important}'+
     '.cbs-z{max-height:calc(100% - 78px);flex-wrap:wrap-reverse;align-content:flex-start}.cbs-z button{width:36px;height:36px;font-size:17px}'+
-    'body.cb-studio #mtoCfg .ds-hdl{display:flex;position:sticky;top:0;z-index:3;background:#fff;margin:0 -14px 4px;width:calc(100% + 28px)}}'+
+    /* 313d: the list is a native scroller over the 3D — a see-through gap as tall as the 3D, then the white sheet (background scrolls with it) */
+    'body.cb-studio #mtoCfg{top:var(--cbsh)!important;bottom:74px;z-index:902;pointer-events:none;border:0!important;border-radius:0!important;box-shadow:none!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:calc(var(--cbs3d) - 14px) 14px 44px!important;background:linear-gradient(to bottom,transparent calc(var(--cbs3d) - 14px + 12px),#fff 0) local!important}'+
+    'body.cb-studio #mtoCfg>*{pointer-events:auto}body.cb-studio #mtoCfg .ds-hdl{display:flex;position:relative;z-index:3;background:#fff;margin:0 -14px 4px;width:calc(100% + 28px);border-radius:18px 18px 0 0;box-shadow:0 -6px 18px rgba(0,0,0,.08);border-top:1px solid #E2D6C4}}'+
     'body.cb-studio .cb-sheet{z-index:950}body.cb-studio .cb-avg{z-index:960}'+
     'body.cb-studio .pdp-cab .pdp-grid>div:first-child{position:static!important}body.cb-studio .ctas{z-index:902!important}body.cb-studio .ctas{background:none!important;box-shadow:none!important;border:0!important;padding:0!important}body.cb-studio .ctas .cbcta{display:none!important}body.cb-studio #nearPill,body.cb-studio .wafab{display:none!important}'+
     'body.cb-studio .pdp-info{position:static!important;top:auto!important}'+   /* a sticky column makes its own layer and hid the options under the studio */
@@ -2427,34 +2429,16 @@
       document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up); }, true);
   }
   var DS_ULH = 58, CB_ULH = 58;
-  // 313b (owner: "sheet baaki customiser jaisa smooth nahi"): the sheet moves like a real bottom sheet — while a finger is on it only the
-  // sheet's top moves (no 3D resize per frame, so it follows the finger); a swipe on the options moves the sheet first (down when the list is at
-  // its top, up until the 3D is 26 dvh) and then scrolls the list; the 3D is fitted to what shows once the finger is lifted. Tap on the handle = big / small.
-  var CBD = null;
-  function cbsHdr() { return parseFloat(getComputedStyle(document.body).getPropertyValue('--cbsh')) || 96; }
-  function cbsMx() { return Math.max(30, (innerHeight - cbsHdr() - 74 - 150) / (innerHeight / 100)); }
-  function cbsTopPx(v) { return cbsHdr() + v * innerHeight / 100 - 14; }
-  function cbsBegin(y) { var c = document.getElementById('mtoCfg'); if (!c) return false; CBD = { y0: y, h0: CB_ULH, v: CB_ULH, moved: false, mx: cbsMx(), c: c }; c.classList.add('cbs-drag'); return true; }
-  function cbsMove(y) { if (!CBD) return; var d = (y - CBD.y0) / (innerHeight / 100); if (Math.abs(d) > 1) CBD.moved = true;
-    CBD.v = Math.max(26, Math.min(CBD.mx, CBD.h0 + d)); CBD.c.style.top = cbsTopPx(CBD.v) + 'px'; }
-  function cbsEnd(tap) { if (!CBD) return; var D = CBD, v = D.v; CBD = null; if (tap && !D.moved) v = CB_ULH >= D.mx - 4 ? 36 : D.mx;
-    D.c.classList.remove('cbs-drag'); D.c.style.top = cbsTopPx(v) + 'px'; CB_ULH = v;
-    setTimeout(function () { var c = document.getElementById('mtoCfg') || D.c, st = c.scrollTop; document.body.style.setProperty('--cbs3d', v + 'dvh'); D.c.style.top = ''; try { window.dispatchEvent(new Event('resize')); } catch (x) {} [0, 60, 200].forEach(function (t) { setTimeout(function () { var c2 = document.getElementById('mtoCfg'); if (c2 && st && !c2.scrollTop) c2.scrollTop = st; }, t); }); }, 230); }
+  // 313d (owner: "planner jaisa smooth"): like the planner — the options list is one native scroller whose top is a see-through gap the height
+  // of the 3D, so a swipe scrolls the white sheet up over the 3D with the phone's own momentum; the handle sets the 3D height live (pointer capture).
   function cbSheetDrag(e) {
-    e.preventDefault(); if (!cbsBegin(e.clientY)) return;
-    var mv = function (ev) { cbsMove(ev.clientY); }, up = function () { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); cbsEnd(true); };
-    document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+    e.preventDefault(); var hd = e.target.closest('.ds-hdl'), B = document.body, H = innerHeight / 100, hdr = parseFloat(getComputedStyle(B).getPropertyValue('--cbsh')) || 96, mx = Math.max(30, (innerHeight - hdr - 74 - 150) / H);
+    var y0 = e.clientY, h0 = CB_ULH, moved = false, set = function (v) { CB_ULH = Math.max(26, Math.min(mx, v)); B.style.setProperty('--cbs3d', CB_ULH + 'dvh'); }, fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
+    try { hd.setPointerCapture(e.pointerId); } catch (x) {}
+    var c = document.getElementById('mtoCfg'); if (c) c.scrollTop = 0;
+    hd.onpointermove = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) set(h0 + d); };
+    hd.onpointerup = hd.onpointercancel = function () { hd.onpointermove = hd.onpointerup = hd.onpointercancel = null; if (!moved) set(CB_ULH >= mx - 4 ? 36 : mx); fit(); setTimeout(fit, 120); };
   }
-  (function () { var T = null;
-    var on = function (e) { return innerWidth < 900 && document.body.classList.contains('cb-studio') && e.target.closest && e.target.closest('#mtoCfg') && !e.target.closest('.ds-hdl'); };
-    document.addEventListener('touchstart', function (e) { T = on(e) && e.touches.length === 1 ? { y: e.touches[0].clientY, m: null } : null; }, { passive: true, capture: true });
-    document.addEventListener('touchmove', function (e) { if (!T) return; var y = e.touches[0].clientY, dy = y - T.y, c = document.getElementById('mtoCfg'); if (!c) return;
-      if (!T.m) { if (Math.abs(dy) < 6) return; T.m = (dy > 0 && c.scrollTop <= 0) || (dy < 0 && CB_ULH > 26.5) ? 'sheet' : 'scroll'; if (T.m === 'sheet') cbsBegin(y); }
-      if (T.m === 'man') { e.preventDefault(); c.scrollTop += T.ly - y; T.ly = y; return; }
-      if (T.m === 'sheet') { e.preventDefault(); cbsMove(y); if (dy < 0 && CBD && CBD.v <= 26.01) { cbsEnd(false); T.m = 'man'; T.ly = y; } } }, { passive: false, capture: true });
-    document.addEventListener('touchend', function () { if (T && T.m === 'sheet') cbsEnd(false); T = null; }, { passive: true, capture: true });
-    document.addEventListener('touchcancel', function () { if (T && T.m === 'sheet') cbsEnd(false); T = null; }, { passive: true, capture: true });
-  })();
 
   // 298 (owner: "bottom sheet gayab, changes unsave"): the sheet can't be pushed off the screen (the 3D at most what leaves the question visible above the footer),
   // and every designer's choices are kept per design (localStorage outrr_cz_<sku>, 14 days) so a re-opened page or a reload never loses them
