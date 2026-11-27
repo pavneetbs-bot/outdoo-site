@@ -352,7 +352,11 @@
     '@media(max-width:899px){body.cb-studio{--cbsh:96px;--cbsp:auto;--cbs3d:52vh;--cbs3d:52dvh}.cbs-hd{flex-wrap:wrap;align-content:center;row-gap:6px;padding:6px 10px!important}.cbs-tt{flex:1!important;max-width:none;text-align:center!important}.cbs-st{order:3;flex:0 0 100%!important;justify-content:flex-start!important;overflow-x:auto}.cbs-x{width:36px;height:36px}'+
     'body.cb-studio #mtoCfg{top:calc(var(--cbsh) + var(--cbs3d));bottom:74px;height:auto;display:block;overflow:auto;padding:10px 14px 14px!important}.cbs-o{display:block;height:auto;overflow:visible}.cbs-o>*{max-width:none}.cbs-o .wz-cards{overflow-x:auto;padding-bottom:4px}.cbs-o .wz-row,.cbs-o .wz-note,.cbs-o .wz-sum,.cbs-o .wz-elev{width:auto}.cbs-t{margin-bottom:8px}'+
     'body.cb-studio .ctas .cbbar{left:0;width:auto;height:auto;min-height:74px;border-left:0;border-top:1px solid #E7DDCF;display:flex;padding:10px 14px calc(10px + env(safe-area-inset-bottom))}body.cb-studio.cbs-big .ctas .cbbar{left:0;right:0;bottom:0;border-radius:0}'+
-    '.cbs-hint{white-space:normal;text-align:center;font-size:10.5px;width:86%;line-height:1.3}.cbs-ed{right:56px}}'+
+    '.cbs-hint{white-space:normal;text-align:center;font-size:10.5px;width:86%;line-height:1.3}.cbs-ed{right:56px}'+
+    /* 313: the options are a sheet over the 3D with a handle, like the other studios */
+    'body.cb-studio{--cbs3d:58dvh}body.cb-studio #mtoCfg{top:calc(var(--cbsh) + var(--cbs3d) - 14px);z-index:902;border-top:1px solid #E2D6C4!important;border-radius:18px 18px 0 0!important;box-shadow:0 -6px 18px rgba(0,0,0,.08);padding:0 14px 44px!important}body.cb-studio .ctas{z-index:903!important}'+
+    '.cbs-z{max-height:calc(100% - 78px);flex-wrap:wrap-reverse;align-content:flex-start}.cbs-z button{width:36px;height:36px;font-size:17px}'+
+    'body.cb-studio #mtoCfg .ds-hdl{display:flex;position:sticky;top:0;z-index:3;background:#fff;margin:0 -14px 4px;width:calc(100% + 28px)}}'+
     'body.cb-studio .cb-sheet{z-index:950}body.cb-studio .cb-avg{z-index:960}'+
     'body.cb-studio .pdp-cab .pdp-grid>div:first-child{position:static!important}body.cb-studio .ctas{z-index:902!important}body.cb-studio .ctas{background:none!important;box-shadow:none!important;border:0!important;padding:0!important}body.cb-studio .ctas .cbcta{display:none!important}body.cb-studio #nearPill,body.cb-studio .wafab{display:none!important}'+
     'body.cb-studio .pdp-info{position:static!important;top:auto!important}'+   /* a sticky column makes its own layer and hid the options under the studio */
@@ -624,7 +628,7 @@
     var el = document.getElementById('cb3d'); if (!el || !S || !S.wz) return;
     var hd = S.pdp && document.querySelector('header'), box = el.parentNode; if (box && box.classList.contains('wz-3d')) box.style.top = (hd ? Math.max(0, Math.round(hd.getBoundingClientRect().height)) : 52) + 'px';   // stay under the store header
     if (C3.st === 2) { try { if (!C3.ev) { C3.ev = 1; window.Cabin3D.onEvent(on3d); }
-      window.Cabin3D.show(el, PRODS[S.id].cz.cabin, S.o.layout, S.view3, { sel: S.sel3 ? { bay: S.sel3 } : S.psel != null ? { pl: S.psel } : null, furn: S.furn || 'none', night: !!S.night, site: S.studio ? tsOpts() : null, studio: !!(DS_SOLO && S.studio && !S.site), look: DS_SOLO && S.studio && !S.site && lookArr().length ? lookNow() : null }); } catch (er) { C3.st = -1; if (window.console) console.warn(er); } return; }
+      window.Cabin3D.show(el, PRODS[S.id].cz.cabin, S.o.layout, S.view3, { sel: S.sel3 ? { bay: S.sel3 } : S.psel != null ? { pl: S.psel } : null, furn: DS_SOLO && S.studio ? 'none' : S.furn || 'none', night: !!S.night, site: S.studio ? tsOpts() : null, studio: !!(DS_SOLO && S.studio && !S.site), look: DS_SOLO && S.studio && !S.site && lookArr().length ? lookNow() : null }); } catch (er) { C3.st = -1; if (window.console) console.warn(er); } return; }
     if (C3.st !== 0) return;
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
@@ -1238,7 +1242,7 @@
     if (S.studio) {
       var cS = PRODS[S.id].cz.cabin, vS = S.view3 === 'cut' ? 'cut' : '3d', flS = (FURN.filter(function (f) { return f[0] === (S.furn || 'none'); })[0] || FURN[4])[1], ok3 = C3.st !== -1;
       st.innerHTML = '<div class="cbs-v"><div class="wz-3dv" id="cb3d">' + (C3.st === 2 ? '' : wzIso(cS, S.o.layout)) + '</div>' +
-        (C3.st === 2 ? '<div class="cb-ov"><button type="button" data-cbroof="1" aria-pressed="' + (vS === 'cut') + '">' + (vS === 'cut' ? '⌂ Roof on' : '⌂ Roof off') + '</button><button type="button" data-e3furn="1">🛋 ' + esc(flS) + '</button><button type="button" data-e3night="1" aria-pressed="' + !!S.night + '">' + (S.night ? '🌙 Evening' : '☀ Day') + '</button>' + (DS_SOLO ? '' : '<button type="button" data-cbsite="1" aria-pressed="' + !!S.siteEd + '">' + (S.site && S.site.kind === 'terrace' ? '🏙 Terrace' : '🌳 Lawn') + '</button>') + '</div>' +
+        (C3.st === 2 ? '<div class="cb-ov"><button type="button" data-cbroof="1" aria-pressed="' + (vS === 'cut') + '">' + (vS === 'cut' ? '⌂ Roof on' : '⌂ Roof off') + '</button><button type="button" data-e3night="1" aria-pressed="' + !!S.night + '">' + (S.night ? '🌙 Evening' : '☀ Day') + '</button>' + (DS_SOLO ? '' : '<button type="button" data-cbsite="1" aria-pressed="' + !!S.siteEd + '">' + (S.site && S.site.kind === 'terrace' ? '🏙 Terrace' : '🌳 Lawn') + '</button>') + '</div>' +
           '<div class="cbs-z">' + (DS_SOLO ? '' : '<button type="button" data-cbz="undo" aria-label="Undo" title="Undo (Ctrl+Z)"' + (S.hi > 0 ? '' : ' disabled') + '>↶</button><button type="button" data-cbz="redo" aria-label="Redo" title="Redo (Ctrl+Y)"' + (S.hist && S.hi < S.hist.length - 1 ? '' : ' disabled') + '>↷</button>') +
           (S.site && S.site.kind === 'terrace' && !S.siteEd ? '<button type="button" data-cbz="whole" class="' + (S.whole ? 'on' : '') + '" aria-pressed="' + !!S.whole + '" aria-label="' + (S.whole ? 'Back to the cabin' : 'See the whole terrace') + '" title="' + (S.whole ? 'Back to the cabin' : 'Whole terrace') + '">' + (S.whole ? '◎' : '▦') + '</button>' : '') +
           '<button type="button" data-cbz="in" aria-label="Zoom in">+</button><button type="button" data-cbz="out" aria-label="Zoom out">−</button>' +
@@ -2413,13 +2417,19 @@
     document.addEventListener('click', function (e) { var m = e.target.closest && e.target.closest('[data-dsmy],[data-dsx]'); if (m) { e.stopPropagation(); if (m.hasAttribute('data-dsmy')) dsMy(); else dsAct(m.getAttribute('data-dsx')); return; }
       var dm = e.target.id === 'dsMy' && e.target; if (dm) { dm.classList.remove('open'); return; } }, true);
     document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-dsall]'); if (!b) return; e.stopPropagation(); DS_ALL = !DS_ALL; var g = b.closest('.ds-g'); if (g) g.classList.toggle('all', DS_ALL); b.textContent = 'All steps ' + (DS_ALL ? '▴' : '▾'); b.setAttribute('aria-expanded', DS_ALL); }, true);
-    document.addEventListener('pointerdown', function (e) { var hd = e.target.closest && e.target.closest('.ds-hdl'); if (!hd) return; var ov = hd.closest('.pg3-ov'); if (!ov) return; e.preventDefault();
+    document.addEventListener('pointerdown', function (e) { var hd = e.target.closest && e.target.closest('.ds-hdl'); if (!hd) return; if (hd.closest('#mtoCfg') && document.body.classList.contains('cb-studio')) return cbSheetDrag(e); var ov = hd.closest('.pg3-ov'); if (!ov) return; e.preventDefault();
       var y0 = e.clientY, H = innerHeight / 100, h0 = DS_ULH, moved = false, fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
       var set = function (v) { DS_ULH = Math.max(26, Math.min(dsMax(ov), v)); ov.style.setProperty('--ulh', DS_ULH + 'dvh'); };
       var mv = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) set(h0 + d); }, up = function () { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); if (!moved) set(DS_ULH >= dsMax(ov) - 4 ? 36 : 99); fit(); setTimeout(fit, 150); };
       document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up); }, true);
   }
-  var DS_ULH = 58;
+  var DS_ULH = 58, CB_ULH = 58;
+  function cbSheetDrag(e) {   // 313: the cabin studio's options sheet on phones — drag the handle (3D 26 dvh … up to the footer), a tap swaps big / small
+    e.preventDefault(); var B = document.body, H = innerHeight / 100, hdr = parseFloat(getComputedStyle(B).getPropertyValue('--cbsh')) || 96, mx = Math.max(30, (innerHeight - hdr - 74 - 150) / H);
+    var y0 = e.clientY, h0 = CB_ULH, moved = false, set = function (v) { CB_ULH = Math.max(26, Math.min(mx, v)); B.style.setProperty('--cbs3d', CB_ULH + 'dvh'); }, fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
+    var mv = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) set(h0 + d); }, up = function () { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); if (!moved) set(CB_ULH >= mx - 4 ? 36 : 99); fit(); setTimeout(fit, 150); };
+    document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+  }
   // 298 (owner: "bottom sheet gayab, changes unsave"): the sheet can't be pushed off the screen (the 3D at most what leaves the question visible above the footer),
   // and every designer's choices are kept per design (localStorage outrr_cz_<sku>, 14 days) so a re-opened page or a reload never loses them
   function dsMax(ov) { var hd = ov.querySelector('.pg3-hd'), ft = ov.querySelector('.pg3-ft'), H = innerHeight || 700, px = H - (hd ? hd.offsetHeight : 50) - (ft ? ft.offsetHeight : 120) - 150; return Math.max(30, Math.min(66, px / H * 100)); }
