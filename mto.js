@@ -2492,11 +2492,11 @@
   }
   // 250 (owner): "Customise" opens the list of your saved designs first (like the planner's plan list) — tabs by stage
   // (Conceptualisation · Proposal · Transformation), this product's designs on top, the other products' in their own section, + A new design
-  var DSP = { go: null, tab: '' };
+  var DSP = { go: null, tab: '', seen: {} };
   function dsGate(go) {
-    if (!S || !S.id || S.lkChild || S.fromPlan != null || !dsIn()) return go();
+    if (!S || !S.id || S.lkChild || S.fromPlan != null || !dsIn() || DSP.seen[S.id]) return go();   /* owner (27 Nov): only when this design has saved ones, and once — the next Customise goes straight in */
     DSP.go = go; DSP.tab = ''; var ov = dspOv(); ov.innerHTML = '<div class="sp-hd"><b>Your designs</b><button type="button" data-dsp="x" aria-label="Close">✕</button></div><div class="sp-bd"><p class="sp-sub">Loading your designs…</p></div>'; ov.classList.add('open'); document.body.classList.add('sp-on');
-    var id0 = S.id; dsList(true).then(function (L) { if (!S || S.id !== id0 || !ov.classList.contains('open')) return; if (!L.length) { dspClose(); return go(); } dspPaint(); }, function () { dspClose(); go(); });
+    var id0 = S.id; dsList(true).then(function (L) { if (!S || S.id !== id0 || !ov.classList.contains('open')) return; if (!L.some(function (z) { return z.sku === id0; })) { dspClose(); return go(); } DSP.seen[id0] = 1; dspPaint(); }, function () { dspClose(); go(); });
   }
   function dspOv() { propCss(); var ov = document.getElementById('dsPick'); if (!ov) { ov = document.createElement('div'); ov.id = 'dsPick'; ov.className = 'sp-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov);
     ov.addEventListener('click', function (e) { var b = e.target.closest('[data-dsp]'); if (b) dspAct(b.getAttribute('data-dsp')); }); } return ov; }
