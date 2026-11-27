@@ -5,14 +5,15 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=74';
-import { pergolaModel } from './pergola3d.js?v=61';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=76';
+import { pergolaModel } from './pergola3d.js?v=63';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
 import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=7';   // 294: the design studio setting (planters)
 import { barStudio, barSpec } from './bar3d.js?v=6';   // 295: the bar studio
-import { fwStudio } from './fw3d.js?v=4';   // 296: the feature wall studio   // 295: the bar studio
+import { fwStudio } from './fw3d.js?v=4';
+import { benchStudio, benchModel, benchCode } from './bench3d.js?v=1';   // 307: the bench studio + bench models for Complete the look   // 296: the feature wall studio   // 295: the bar studio
 const LAYK = k => !!LSPEC[k];
 
 let R = null, HANDLER = null;
@@ -564,6 +565,8 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
   } else if (cat === 'counter') {   // 239: food / buffet counter — base, stone top, a cooktop and a sink on it (back = −z, against the wall)
     box(g, w - 0.1, 0.35, d * 0.9 - 0.25, 0, 0.175, -d * 0.05 - 0.12, K.frame); box(g, w, 2.55, d * 0.9, 0, 1.625, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, mat('c_granite', 0x2F2E2D, { roughness: 0.25, metalness: 0.1 }));   // 285: cabinets — plinth, door lines, handles
     { const nd = Math.max(2, Math.round(w / 2)), fz = -d * 0.05 + d * 0.45 + 0.02, hm = mat('c_steel', 0xA8A8A6, { metalness: 0.8, roughness: 0.3 }); for (let i = 1; i < nd; i++) box(g, 0.03, 2.4, 0.03, -w / 2 + i * w / nd, 1.6, fz, K.frame); for (let i = 0; i < nd; i++) box(g, 0.5, 0.05, 0.06, -w / 2 + (i + 0.5) * w / nd, 2.6, fz + 0.02, hm); }   // 258 (owner): no wall behind it, a plain granite top
+  } else if (cat === 'bench' && it && benchCode(it.pick || it.sku || it.cfgId)) {   // 307: an outrr bench — its real model at its seats
+    const B = benchModel(benchCode(it.pick || it.sku || it.cfgId), (it.cfg && +it.cfg.n) || 3); g.add(B.g);
   } else if (cat === 'bench') {
     box(g, w, 0.2, d * 0.8, 0, 1.5, 0, K.wood); [-w / 2 + 0.4, w / 2 - 0.4].forEach(x => box(g, 0.25, 1.4, d * 0.7, x, 0.7, 0, K.frame));
   } else if (cat === 'table') {
@@ -1307,6 +1310,14 @@ export function preview(el, items, opts) {
     if (lw) { const lb = new THREE.Box3().setFromObject(B.g.children[B.g.children.length - 1]); B.g.children.forEach(c => { if (c.userData.person && isFinite(lb.max.x)) c.position.x = Math.max(c.position.x, lb.max.x + 1.4); }); }   // the person stands clear of the pieces
     const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'scr' + (opts.place || '') + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar, ty = Math.min(B.H * 0.5, 5);
       PV.controls.target.set(0, ty, 1); const deep = /pergola|utility|balcony|pool/.test(opts.place || ''); PV.cam.position.set(-sp * (deep ? 0.62 : 0.3), ty + sp * (deep ? 0.38 : 0.22), sp * (deep ? 1.2 : 1.35)); PV.controls.update(); }
+    return;
+  }
+  if (opts && opts.studio === 'bench') {   // 307: an outrr bench at the customer's seats, on the studio floor
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
+    const B = benchStudio(items[0] || {}); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'bn' + (items[0] || {}).code + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar;
+      PV.controls.target.set(0, Math.min(B.H * 0.45, 3), 0); PV.cam.position.set(sp * 0.45, sp * 0.42 + 2, sp * 0.95); PV.controls.update(); }
     return;
   }
   if (opts && opts.studio === 'bar') {   // 295: one bar frame with the design's look + the customer's picks, a 9 ft wall 3 ft behind it

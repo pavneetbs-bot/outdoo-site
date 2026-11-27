@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=74';
+import { plotModel } from './cabin3d.js?v=76';
 import { studioFloor, person } from './studio3d.js?v=7';   // 283: the design studio setting (shared with every designer)
 
 const MM = v => v / 304.8;   // mm → ft
@@ -235,7 +235,7 @@ function setNight(on) {
   R.hemi.intensity = on ? 0.12 : 0.7; R.sun.intensity = on ? 0.08 : 1.9; mat('led', {}).emissiveIntensity = on ? 2.4 : 0; mat('led', {}).color.set(on ? 0xfff3d0 : 0x3a3a3a); if (M.spot) M.spot.emissiveIntensity = on ? 3 : 0.4; if (M.cove) M.cove.emissiveIntensity = on ? 2.5 : 0.25;
 }
 // 193f: on a terrace (opts.site: the studio's terrace — cx / cz = the pergola's corner, rot = where its front faces), with an optional deck and furniture to see it
-let FURN = null, FURN_LOADING = false, ITEMS = null;
+let FURN = null, FURN_LOADING = false, ITEMS = null, LAST = null;
 function extras(g, L, W, opts, wall) {   // deck under it (fits the pergola unless sized) + a furniture set, both to see it; returns the pergola's lift
   const dk = opts.deck, y0 = dk ? 0.6 : 0;
   if (dk) { const dl = +dk.l || L + 1, dw = +dk.w || W + 1, x0 = L / 2 - dl / 2, z0 = wall ? -0.25 : W / 2 - dw / 2, nose = 0.15, th = 0.12, op = { front: 1, left: 1, right: 1, back: wall ? 0 : 1 };
@@ -269,11 +269,11 @@ export function view(v) {   // 203: 'top' looks straight down on the terrace; '3
 function dims(t, L, W) { return (+t.rot || 0) % 180 ? [W, L] : [L, W]; }
 function frame(cx, cz, d, h) { R.controls.target.set(cx, h, cz); R.cam.position.set(cx + d * 0.55, h + d * 0.55, cz + d * 0.75); R.controls.update(); }
 export function show(el, sku, o, opts) {
-  opts = opts || {}; ensure(el); ptr();
+  opts = opts || {}; LAST = [el, sku, o, opts]; ensure(el); ptr();   /* 307: the late space3d load redraws with the latest choices (night stayed on) */
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
   const LK = !t && opts.studio && opts.look && (opts.look.items.length || opts.look.pend) ? opts.look : null;   // 296: Complete the look
-  if ((opts.furn || wantAr || (LK && LK.items.length)) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=84').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr || (LK && LK.items.length)) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=86').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show.apply(null, LAST); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' + JSON.stringify(opts.deck) : '') + (opts.furn || '') + (FURN ? 'F' : '') + (LK ? JSON.stringify(LK) : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';

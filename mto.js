@@ -629,8 +629,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=74').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=74'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=76').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=76'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1970,7 +1970,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=133').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=135').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2598,6 +2598,12 @@
     screen: { plants: ['sides', 2], planters: ['sides', 2], geyser: ['front', 1], bench: ['front', 1] },
     water: { plants: ['sides', 2], planters: ['sides', 2], bench: ['front', 1], sculptures: ['right', 1] } };
   var LK_SZ = { sofa: [8, 6, 3], dining: [7, 6, 3.2], chair: [2.5, 2.5, 3], bench: [5, 2, 1.6], table: [3, 3, 2.5], stool: [1.5, 1.5, 2.6], swing: [6, 4.5, 7], planter: [2, 2, 3.5], plant: [2, 2, 5], feature: [10, 0.6, 8], privacy: [8, 0.5, 6], bar: [8, 2.5, 3.6], counter: [8, 2.5, 3], lights: [0.8, 0.8, 3], sculpture: [2, 2, 4], water: [3.5, 3.5, 2] };
+  var BN_LIN = function (a, b, h) { return function (n) { return [a * n + b, h[0], h[1]]; }; }, BN_FIX = function (L, D, H) { return function (n) { var k = Math.max(1, n / 8); return [L * k, D * k, H]; }; };
+  var BN_FP = { LS: BN_LIN(2, 0, [1.54, 1.5]), LB: BN_LIN(2, 0, [1.54, 2.7]), JB: BN_LIN(2, 0, [1.54, 2.8]), CF: BN_LIN(2, 0, [1.54, 1.5]), PC: BN_LIN(2, 0, [1.97, 1.35]), GP: BN_LIN(2, 0.1, [1.74, 1.5]), FW: BN_LIN(2, 0, [1.48, 1.55]),
+    WB: BN_LIN(2, 0, [2.13, 3]), PB: BN_LIN(2, 1, [3.9, 2.7]), PE: BN_LIN(2, 5.3, [3.72, 2.2]), GR: BN_LIN(2, 5.5, [3.72, 2.2]), PS: function (n) { return [Math.ceil(n / 2) * 2, 5.6, 2.5]; }, IP: function (n) { return [n + 0.6, 4.9, 2.2]; },
+    CB: function (n) { var s = 4.92 * Math.sqrt(n / 6); return [s, s * 1.49, 1.4]; }, LC: function (n) { var a = Math.max(2, n / 2) * 2 + 1.7; return [a, a, 2.2]; }, SP: function (n) { return [Math.ceil(n / 2) * 2 + 1.84, 5.23, 3]; },
+    AB: function (n) { return [n * 1.95, 2.4 + n * 0.4, 2.7]; }, AC: function (n) { return [n * 1.95, 1.5 + n * 0.33, 1.5]; }, CP: function (n) { return [n * 2.3 + 2, 4.2 + n * 0.45, 2.7]; }, SW: function (n) { return [n * 2 + 1.5, 2.9, 1.5]; },
+    HM: function (n) { var k = Math.max(0.8, n / 5); return [9.8 * k + 0.2, 5.8 * k, 3.2]; }, RT: BN_FIX(6.94, 6.94, 1.5), TS: BN_FIX(6.96, 6.96, 1.5) };
   var LK_PL = ['OLIVE', 'BLACKFICUS', 'PACHIRA', 'ARECA', 'RHAPIS', 'FISHTAIL', 'BAMBOO', 'PHOENIX', 'LIVISTONA', 'CYCAS', 'FOXTAIL', 'TRAVELLER', 'BANANA', 'HIBISCUS', 'IXORA', 'MOGRA', 'CHANDNI', 'RAATKIRANI', 'TECOMA', 'KANER', 'ADENIUM', 'BIRDPARADISE', 'CROTON', 'CORDYLINE', 'SCHEFFLERA', 'SONGOFINDIA', 'KAMINI', 'DURANTA', 'FICUSPANDA', 'MORPANKHI', 'FOUNTAINGRASS', 'AGAVE', 'SNAKEPLANT', 'BOUGAINVILLEA', 'MADHUMALTI', 'CHAMPA'];
   function lookC(k) { return LOOKC.filter(function (c) { return c.k === k; })[0]; }
   function lookHost(id) { id = id || (S && S.id); var x = PRODS[id] || {}; return isPg(id) ? 'pergola' : isFw(id) ? 'fw' : x.cz && x.cz.unit === 'cabin' ? 'cabin' : isBar(id) ? 'bar' : /^MTO-PL-[A-Z]/.test(String(id || '')) ? 'planter' : isScr(id) ? 'screen' : isWtr(id) ? 'water' : ''; }
@@ -2629,6 +2635,7 @@
   function lookDims(e) {   // the piece's footprint: a Made to Order piece at the size the customer set, else the usual size of that kind
     var x = PRODS[e.id], cat = lookCat(e), z = LK_SZ[cat] || LK_SZ.sofa, o = e.o, m = x && x.cz, d = { cat: cat, w: z[0], d: z[1], h: z[2] };
     if (cat === 'plant') d.h = lookPlant(e.id, x.n).h;
+    var bnc = /^MTO-BN-([A-Z]{2})$/.exec(e.id); if (bnc && BN_FP[bnc[1]]) { var sn = (o && num(o.n)) || 3, fp = BN_FP[bnc[1]](sn); d.w = fp[0]; d.d = fp[1]; d.h = fp[2]; }   /* 307: the real bench's footprint */
     var nz = /(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)(?:\s*[x×]\s*\d+(?:\.\d+)?)?\s*(inch|inches|in\b|"|ft|feet|cm)/i.exec(String(x && x.n || ''));
     if (nz && !(m && o) && cat !== 'plant') { var uf = /cm/i.test(nz[3]) ? 1 / 30.48 : /ft|feet/i.test(nz[3]) ? 1 : 1 / 12, a1 = +nz[1] * uf, b1 = +nz[2] * uf; if (a1 >= 0.4 && a1 <= 20 && b1 >= 0.4 && b1 <= 20) { d.w = Math.round(a1 * 4) / 4; d.d = Math.round(b1 * 4) / 4; } }   /* 305: its size from its name */
     if (cat === 'sofa' && !(m && o && /face|length|area/.test(m.unit))) { var sn = String(x.n || ''); if (/single|1[ -]?seat|one seat|arm ?chair|lounge chair/i.test(sn)) { d.w = 2.8; d.d = 2.8; } else if (/2[ -]?seat|two seat|love ?seat/i.test(sn)) { d.w = 5; d.d = 2.8; } else if (/3[ -]?seat|three seat/i.test(sn)) { d.w = 7; d.d = 3; } }   /* 305: a single seater isn't an 8 ft sofa set */
@@ -3121,7 +3128,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, look: DS_SOLO && !S.site && lookArr().length ? lookNow() : null, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } lk2Sync(); return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=61').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=63').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -3484,6 +3491,7 @@
     if (!ov) { ov = document.createElement('div'); ov.id = 'cuOv'; ov.className = 'pg3-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov);
       ov.addEventListener('input', onInput); ov.addEventListener('change', onChange); ov.addEventListener('click', cuClick); }
     var x = PRODS[S.id], m0 = x.cz, o0 = S.o; ov.setAttribute('aria-label', 'Customise ' + x.n);
+    if (isBn(S.id) && !o0._bn) { o0._bn = 1; var rs0 = arr(m0.specs).map(function (z) { return /(\d+)\s*seats?\s*=/.exec(z.value || ''); }).filter(Boolean)[0]; if (rs0 && +rs0[1] > num(o0.n)) o0.n = +rs0[1]; }   /* 307: a bench opens at its drawing's seats */
     ['l', 'w', 'h'].forEach(function (k) { if (!num(o0[k]) && m0[k] && num(m0[k].min) && !(k === 'h' && arr(m0.h.options).length)) o0[k] = num(m0[k].min); });
     var sq0 = Math.ceil(Math.sqrt(num(m0.min_size) || 0)); if (sq0 > 0) { if (m0.unit === 'length' && !num(o0.l)) o0.l = num(m0.min_size); if ((m0.unit === 'area' || m0.unit === 'face') && !num(o0.w)) o0.w = sq0; if (m0.unit === 'area' && !num(o0.l)) o0.l = sq0; if (m0.unit === 'face' && !num(o0.h)) o0.h = sq0; }   /* 238: else about the minimum size */   // a size to start from: the price shows at once
     if (isFw(S.id) && !o0._fw) { o0._fw = 1; if (num(o0.w) < 8) o0.w = 8; if (num(o0.h) < 9) o0.h = 9; }   // 296: a feature wall starts at 8 × 9 ft (the smallest billed size is too small to judge)
@@ -3563,7 +3571,8 @@
   // 199: designs that sit in the planner as one of its things (planters…): "See it in my space" puts the pieces on a plan — the one on this device, a saved one, or a new space
   var PCAT = { planters: 'planter', 'privacy-screens': 'privacy' };
   function isBar(sku) { return /^MTO-BR-/.test(sku || ''); }   // 295: bars get the bar studio
-  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku) || /^MTO-FW-/.test(sku || '') || isWtr(sku); }
+  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku) || /^MTO-FW-/.test(sku || '') || isWtr(sku) || isBn(sku); }
+  function isBn(id) { return /^MTO-BN-[A-Z]{2}$/.test(String(id || '')); }   /* 307: benches have their own 3D (bench3d.js) */
   function fwPlace(sku, x) { var t = String((x && x.sb) || ''); return /-FS$/.test(sku) || /garden|lawn/i.test(t) ? 'garden' : /entrance/i.test(t) ? 'entrance' : /caf|commercial/i.test(t) ? 'commercial' : /cabin|mumty/i.test(t) ? 'cabin' : 'terrace'; }
   function cuSpace() {
     var x = PRODS[S.id], m = x.cz, o = S.o, cat = PCAT[x.col]; if (!cat || !window.outrrPlan || !window.mtoSpaceAsk) return;
@@ -3606,7 +3615,8 @@
   function cu3dDraw0() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=84').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=86').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (isBn(S.id)) { try { CU3.m.preview(el, [{ code: S.id.slice(7), n: num(o.n) || seatLo(m) || 3 }], { studio: 'bench' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 307
     if (isFw(S.id)) { try { CU3.m.preview(el, [{ code: S.id.replace(/^MTO-/, ''), W: num(o.w) || 8, H: num(o.h) || 9, groups: o.groups || {}, place: fwPlace(S.id, x) }], { studio: 'fw', look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 296
     if (isBar(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups, min_size: m.min_size }, o: { l: o.l, material: o.material, groups: o.groups, addons: o.addons }, view: CU.side }], { studio: 'bar', view: CU.side, look: lookNow() /* 6 ft deep: the bar + its stools in front */ }); } catch (e) { if (window.console) console.warn(e); } return; }   // 295
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
@@ -3861,7 +3871,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=84').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=86').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
