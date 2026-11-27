@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=96';
-import { pergolaModel } from './pergola3d.js?v=83';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=97';
+import { pergolaModel } from './pergola3d.js?v=84';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -370,6 +370,10 @@ function teakSlatMat() {   // 298: warm teak vertical slats with dark gaps
 const mWW = () => mat('c_m_ww3', 0xF1ECE3, { roughness: 0.85 });   // 319 (owner: Modern too dark → white + teak, black accents)
 function whiteFluteMat() { if (M.c_m_flw) return M.c_m_flw; const c = document.createElement('canvas'); c.width = 128; c.height = 16; const x = c.getContext('2d'); for (let i = 0; i < 4; i++) { const g0 = x.createLinearGradient(i * 32, 0, i * 32 + 32, 0); g0.addColorStop(0, '#DCD5CA'); g0.addColorStop(0.35, '#F6F2EA'); g0.addColorStop(0.7, '#EDE7DD'); g0.addColorStop(1, '#D6CFC4'); x.fillStyle = g0; x.fillRect(i * 32, 0, 32, 16); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 1); if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return (M.c_m_flw = new THREE.MeshStandardMaterial({ map: t, roughness: 0.8 })); }
+function teakLouvMat() {   // 320 (owner: cabin dark + wooden louvres): horizontal teak louvres with dark shadow gaps
+  if (M.c_m_tlv) return M.c_m_tlv; const c = document.createElement('canvas'); c.width = 64; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#1C1C1C'; x.fillRect(0, 0, 64, 128);
+  for (let i = 0; i < 4; i++) { const y = i * 32 + 4, g0 = x.createLinearGradient(0, y, 0, y + 24); g0.addColorStop(0, '#A06C46'); g0.addColorStop(0.45, '#86583A'); g0.addColorStop(1, '#5E3D27'); x.fillStyle = g0; x.fillRect(0, y, 64, 24); x.fillStyle = 'rgba(40,20,10,0.18)'; for (let k = 0; k < 6; k++) x.fillRect(Math.random() * 64, y + 2 + Math.random() * 20, 18 + Math.random() * 20, 1); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, 4.5); if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return (M.c_m_tlv = new THREE.MeshStandardMaterial({ map: t, roughness: 0.7 })); }
 function charFluteMat() {   // 318: Modern cabin = charcoal fluted panels (black box)
   if (M.c_m_flc) return M.c_m_flc; const c = document.createElement('canvas'); c.width = 128; c.height = 16; const x = c.getContext('2d'); for (let i = 0; i < 4; i++) { const g0 = x.createLinearGradient(i * 32, 0, i * 32 + 32, 0); g0.addColorStop(0, '#1E1E1E'); g0.addColorStop(0.35, '#3A3A3A'); g0.addColorStop(0.7, '#2C2C2C'); g0.addColorStop(1, '#181818'); x.fillStyle = g0; x.fillRect(i * 32, 0, 32, 16); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 1); if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return (M.c_m_flc = new THREE.MeshStandardMaterial({ map: t, roughness: 0.5, metalness: 0.2 })); }
@@ -377,9 +381,9 @@ function upLight(g, x, z, zf, H) {   // 298: a black up-light at the foot of a w
   box(g, 0.22, 0.14, 0.22, x, 0.07, z, mChar(), false); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 10), mLed()); l.position.set(x, 0.15, z); g.add(l);
   const s = new THREE.Sprite(haloMat()); s.scale.set(1.2, Math.min(H, 4), 1); s.position.set(x, Math.min(H, 4) / 2 + 0.1, zf); nightOnly(s, g); }
 function modCabin(g) {   // 298 → 318 (owner: 'black box + glass'): charcoal fluted solid walls, charcoal roof + fascia + plinth, black frames, big glass, teak only on doors, a warm cove line round the roof edge
-  const sl = whiteFluteMat(), ch = mChar(), ww = mat('c_m_ww', 0xEFE9DF, { roughness: 0.9 }), tk = mTeak();   /* 319: warm white fluted walls + roof, black frames / fascia / plinth */ g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex();
+  const sl = teakLouvMat(), ch = mChar(), ww = mat('c_m_roof', 0x2C2C2C, { roughness: 0.6, metalness: 0.2 }), tk = mTeak();   /* 320 (owner): dark cabin — teak louvres on the solid walls, charcoal roof / fascia / frames / plinth */ g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex();
     const lu = ((c >> 16) & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + (c & 255) * 0.11, em = o.material.emissive && o.material.emissive.getHex();   /* 318: any light opaque wall shade (the wall finish / shade colours too) → charcoal flutes; the inside stays light */
-    if (c === 0xE4E1DA) o.material = ww; else if (c === 0xF2F0EB || c === 0x6E6C68 || (!o.material.transparent && !em && lu > 200 && ![0xF7F5F0, 0xDCD5C6, 0xFFFFFF].includes(c))) o.material = sl; else if (c === 0x5A564F) o.material = ch; else if (c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = tk; });
+    if (c === 0xE4E1DA) o.material = ww; else if (c === 0xF7F5F0) o.material = ch; else if (c === 0xF2F0EB || c === 0x6E6C68 || (!o.material.transparent && !em && lu > 200 && ![0xF7F5F0, 0xDCD5C6, 0xFFFFFF].includes(c))) o.material = sl; else if (c === 0x5A564F) o.material = ch; else if (c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = tk; });
   g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3().setFromObject(g).applyMatrix4(inv); let top = -1e9; g.traverse(o => { if (o.isMesh && o.material === ww) { const b = new THREE.Box3().setFromObject(o).applyMatrix4(inv); if (b.max.y > top) top = b.max.y; } }); if (top < 0) top = B.max.y;
   const y = top - 0.45, L = mLed(), cv = new THREE.Group(); cv.name = 'm_cove'; [[B.max.x - B.min.x, (B.min.x + B.max.x) / 2, B.min.z - 0.02, 0], [B.max.x - B.min.x, (B.min.x + B.max.x) / 2, B.max.z + 0.02, 0], [B.max.z - B.min.z, B.min.x - 0.02, (B.min.z + B.max.z) / 2, 1], [B.max.z - B.min.z, B.max.x + 0.02, (B.min.z + B.max.z) / 2, 1]].forEach(([len, x, z, r]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(r ? 0.05 : len - 0.3, 0.05, r ? len - 0.3 : 0.05), L); m.position.set(x, y, z); cv.add(m); });
   g.add(cv); }
