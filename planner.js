@@ -152,9 +152,20 @@ function clashes(it, i) {   // what it would sit on
   if (S.items.some((o, j) => j !== i && !att(o) && (fl ? FLX.has(it.cat) && FLX.has(o.cat) && it.cat !== o.cat : false) && hit(r, rectI(o)))) return 'item';   // 224: nothing stands on the pathway; pathway / grass / deck don't overlap   // decking goes under things, never under a cabin
   return '';
 }
-function placeFree(it, i, from) {   // nearest free spot to where it was dropped (spiral), keeping its turn
+const BLKN = { mumty: 'stairs room', room: 'room', lift: 'lift', shaft: 'shaft', troom: 'temp room', tank: 'water tank', ac: 'AC units' };
+function whyNot(it, i) {   // owner: say why a thing can't go where it was dropped
+  const nm = (CAT[it.cat] && CAT[it.cat].t || 'It').replace(/^./, c => c.toUpperCase()), r = rectI(it), t = S.site, why = clashes(it, i);
+  if (why === 'edge') return nm + ' doesn\'t fit inside the parapet there.';
+  if (why === 'door') { const bs = (t.blocks || []).filter(b => ['mumty', 'room', 'lift', 'troom'].includes(b.type)), zs = doorZones(), k = zs.findIndex(z => hit(r, z)), b = bs[k];
+    const blk = (t.blocks || []).find(b2 => hit(r, b2)), deep = blk ? ' — and it is ' + fiTxt(Math.max(r.z + r.d - blk.z, 0.01)) + ' too long for the space there' : '';
+    return nm + ' would block the ' + (b ? BLKN[b.type] || 'room' : 'room') + '\'s door (keep 4′ 6″ in front of a door free)' + deep + '. Make it smaller with Size, turn it, or put it elsewhere.'; }
+  if (why === 'block') { const b = (t.blocks || []).find(b2 => hit(r, b2) && !(b2.type === 'shaft' && OVSH.has(it.cat)));
+    if (b) { const ox = Math.min(r.x + r.w, b.x + b.w) - Math.max(r.x, b.x), oz = Math.min(r.z + r.d, b.z + b.d) - Math.max(r.z, b.z); return nm + ' runs ' + fiTxt(Math.min(ox, oz)) + ' into the ' + (BLKN[b.type] || 'block') + '. Make it smaller with Size, or turn it.'; } }
+  if (why === 'item') { const o = S.items.find((o2, j) => j !== i && !att(o2) && hit(r, rectI(o2))); if (o) return nm + ' would stand on the ' + ((o.label || (CAT[o.cat] && CAT[o.cat].t) || 'thing').toLowerCase()) + ' there.'; }
+  return nm + ' can\'t go there.'; }
+function placeFree(it, i, from, maxR) {   // nearest free spot to where it was dropped (spiral), keeping its turn; maxR = how far it may go
   if (!clashes(it, i)) return true; const x0 = from ? from[0] : it.x, z0 = from ? from[1] : it.z, t = S.site;
-  for (let r = 0.5; r <= Math.max(t.pw, t.pd); r += 0.5) for (let a = 0; a < 24; a++) { it.x = r2(x0 + r * Math.cos(a * Math.PI / 12)); it.z = r2(z0 + r * Math.sin(a * Math.PI / 12)); if (!clashes(it, i)) return true; }
+  for (let r = 0.5; r <= (maxR || Math.max(t.pw, t.pd)); r += 0.5) for (let a = 0; a < 24; a++) { it.x = r2(x0 + r * Math.cos(a * Math.PI / 12)); it.z = r2(z0 + r * Math.sin(a * Math.PI / 12)); if (!clashes(it, i)) return true; }
   return false;
 }
 function snapEdge(it) {   // railings / gates: run along the nearest edge, against it
@@ -1654,7 +1665,10 @@ function suUp0() { const D = SUD; SUD = null; if (!D) return;
   if (D.G.length === 1) { const i = D.G[0], it = S.items[i];
     if (CAT[it.cat] && CAT[it.cat].kind === 'wall') { delete it.wside; snapWall(it, true); }   // 268 (owner): dragged by hand → the wall it is dropped on wins over the wall picked before   // 242: a wall panel dropped anywhere goes onto the nearest wall at that spot
     const big = !isDecor(it) && !it.old; if (big) { S._igDec = true; if (it.cat === 'cabin') cabFlush(it, i); }   // 302 (owner): a cabin dropped in a corner stays there — its projection on a wall side is dropped (cabWalls) and the plants / furniture in the way move off
-    if (clashes(it, i)) { if (!settle(it, i, [it.x, it.z])) { Object.assign(it, JSON.parse(keep[0])); S.msg = 'It can\'t go there'; } } else if (CAT[it.cat] && CAT[it.cat].kind === 'wall') settle(it, i, [it.x, it.z]);
+    const wl = CAT[it.cat] && CAT[it.cat].kind === 'wall';
+    if (clashes(it, i)) { const why = whyNot(it, i), x1 = it.x, z1 = it.z;   // owner (video 27 Nov): a dropped thing never jumps to a far spot — a small nudge (≤ 2 ft) or back where it was, saying why
+      const ok = wl ? settle(it, i, [it.x, it.z]) && Math.hypot(it.x - x1, it.z - z1) <= 2.5 : placeFree(it, i, [x1, z1], 2);
+      if (!ok) { Object.assign(it, JSON.parse(keep[0])); S.msg = why; suToast(why, true); } } else if (wl) settle(it, i, [it.x, it.z]);
     S._igDec = false; if (big) { const m = decorFit(); if (m) S.msg = m; } }
   else if (D.G.some(j => clashes(S.items[j], j))) { D.G.forEach((j, k) => Object.assign(S.items[j], JSON.parse(keep[k]))); S.msg = 'It can\'t go there'; }   // a group moves together or not at all
   cabFixAll(); const sel0 = S.sel != null ? S.items[S.sel] : null; scrAfter(D.G.map(j => S.items[j])); if (sel0) S.sel = S.items.indexOf(sel0); draw(true); suPaint(); }
@@ -1669,7 +1683,7 @@ const NOADD = new Set(['mstair', 'works', 'privacy', 'accover', 'shaftcover', 'p
 // 266 (owner): every 2D stage has the same side panel — what is picked so far, stage-wise, each one can be removed / changed / added to
 function grpsOf(k) { const out = []; S.items.forEach((o, j) => { if (!o || o.cat !== k || o.old) return; const g = o.grp ? 'g' + o.grp : null, f = g && out.find(x => x.g === g); if (f) f.ix.push(j); else out.push({ g, ix: [j] }); }); return out; }
 function itSpec(it) { const f = foot(it), sz = `${fiTxt(f[0])} × ${fiTxt(f[1])}`;
-  if (it.cat === 'cabin') { const L = cabinLay(it), g = (CAB_GLZ.find(z => CAB_SKU[z[0]].test(it.sku || '')) || [0, ''])[1]; return [g, (+L.L || 12) + "' × " + (+L.W || 10) + "'", (it.purpose || []).join(', ')].filter(Boolean).join(' · '); }
+  if (it.cat === 'cabin') { const L = cabinLay(it), g = (CAB_GLZ.find(z => CAB_SKU[z[0]].test(it.sku || '')) || [0, ''])[1]; return [g, fiTxt(+L.L || 12) + ' × ' + fiTxt(+L.W || 10), (it.purpose || []).join(', ')].filter(Boolean).join(' · '); }
   if (it.cat === 'pergola') return sz + ' · ~' + Math.round(f[0] * f[1]) + ' sq ft';
   if (it.cat === 'bar') return (it.shape === 'L' ? 'L-shape' : it.shape === 'curve' ? 'Curved' : 'Straight') + ' · ' + sz;
   if (it.cat === 'fbench') return (it.shape === 'curve' ? 'Curved' : it.grp ? 'L-shape' : 'Straight') + (it.plant && it.plant !== 'none' ? ' · with planters' : '');
@@ -2596,7 +2610,7 @@ window.outrrPlanFloor = (k, L) => { S.su = S.su || { green: 'balanced', have: {}
 window.outrrPlanProp = () => { window.outrrPropTest = 1; S.su = S.su || { green: 'balanced', have: {}, rm: {} }; suOpen(SUQ.indexOf('prop')); };   // for tests
 window.outrrPlanTheme = k => { S.su = S.su || { green: 'balanced', have: {}, rm: {} }; themeApply(k); };   // for tests
 window.outrrPlanSu = q => { S.su = S.su || { green: 'balanced', have: {}, rm: {} }; suOpen(SUQ.indexOf(q)); };   // for tests
-window.outrrPlanState = () => S; window.outrrPlanMove = (i, x, z) => on3d({ t: 'move', i, x, z }); window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
+window.outrrPlanState = () => S; window.outrrSuPaint = () => suPaint(); window.outrrPlanMove = (i, x, z) => on3d({ t: 'move', i, x, z }); window.outrrPlanLW = () => lifewall(); window.outrrPlanPrice = it => fromPrice(it);   // for tests
 // 193j: the cabin studio / pergola designer add things around their design with the planner's own rules, on a plan object { site, items, sel }
 function withPlan(plan, fn) {
   const keep = S; S = { v: 1, step: 1, site: plan.site, items: plan.items || [], sel: plan.sel != null ? plan.sel : null, ask: plan.ask || null, msg: '', view: '3d', hist: [], hi: -1 }; QUIET = true;
