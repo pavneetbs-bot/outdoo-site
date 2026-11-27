@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=69';
-import { pergolaModel } from './pergola3d.js?v=56';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=70';
+import { pergolaModel } from './pergola3d.js?v=57';
 import { outline, sofaLayout } from './plan2d.js?v=35';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=9';
@@ -244,6 +244,7 @@ const THEMES = { modern: { frame: 0x2E2E2E, wood: 0x8C8C8C, wood2: 0x5E5E5E, cus
   santorini: { frame: 0x1F4FA8, wood: 0xD8C6A5, wood2: 0xBFAE8E, cush: 0xF7F7F4, cush2: 0x1F4FA8, stone: 0xF6F5F1, pot: 0xC9774A, acc1: 0x1F4FA8, acc2: 0x6FA3D9, frp: 0xF6F5F1 },   // 296 (owner locked the Santorini guide): rough white lime, Aegean blue timber, terracotta urns
   modern: { frame: 0x2A2A2A, wood: 0x9A6A42, wood2: 0x6E4B2F, cush: 0xEFE9DF, cush2: 0xD9D2C5, stone: 0xB7B2AA, pot: 0x2A2A2A, acc1: 0x55634A, acc2: 0x2A2A2A, frp: 0x2A2A2A },   // 298 (owner locked the Modern guide): charcoal, warm teak, warm white / cream, stone grey, warm LED
   contemporary: { frame: 0x8C6A43, wood: 0xB08560, wood2: 0x8C6A4E, cush: 0xEDE6DA, cush2: 0xD8C9A8, stone: 0xD9CDB8, pot: 0xA89A88, acc1: 0x8FA38A, acc2: 0xC26445, frp: 0xA89A88, metal: 1 },
+  fusion: { frame: 0x2A2A2A, wood: 0x86583A, wood2: 0x6E4B2F, cush: 0xEDE6DA, cush2: 0xD9C6AC, stone: 0xD9CDB8, pot: 0x8C8A84, acc1: 0x1F7A72, acc2: 0xC9A86C, frp: 0x2A2A2A },   // 300 (owner): Fusion = the base every element sits on (greige, charcoal, teak); each element takes its own theme — FUSION / P.fmix
   boho: { frame: 0x8A6440, wood: 0x9A7450, wood2: 0x7A5A3C, cush: 0xEDE5D8, cush2: 0xD9C6AC, stone: 0xEFE8DD, pot: 0xB8734A, acc1: 0xC9A574, acc2: 0x6B7A4A, frp: 0xEFE8DD },   // 299 (owner's Ibiza refs, 27 Nov): warm white lime, arches with rubble stone, raw timber + reed roof, rattan, terracotta, olive
 };
 THEMES.modern0 = THEMES.modern;
@@ -540,7 +541,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     let x0 = -w / 2, x1 = w / 2; if (bk) pbox(g, w, PB, 0, -d / 2 + PB / 2, 2.6);
     if (sd && w > 4) { if (pe.l) { pbox(g, PB, d / 2 - zb, x0 + PB / 2, (zb + d / 2) / 2, 2.2); x0 += PB; } if (pe.r) { pbox(g, PB, d / 2 - zb, x1 - PB / 2, (zb + d / 2) / 2, 2.2); x1 -= PB; } }
     const sw = x1 - x0, sx = (x0 + x1) / 2, sdp = d / 2 - zb - 0.3, sz = zb + 0.3 + sdp / 2;
-    const ST = themeKey() === 'santorini', MD = themeKey() === 'modern', BH = themeKey() === 'boho', SB = themeKey() === 'tropical' ? K.wood2 : ST || BH ? (BH ? bLime() : sLime()) : MD ? mTeak() : K.stone; if (MD) { box(g, sw - 0.3, 0.3, sdp - 0.3, sx, 0.15, sz - 0.1, mChar()); box(g, sw, 1.1, sdp, sx, 0.85, sz, SB); box(g, sw - 0.4, 0.04, 0.05, sx, 0.25, sz + sdp / 2 - 0.12, mLed(), false); } else box(g, sw, 1.4, sdp, sx, 0.7, sz, SB); if (themeKey() === 'tropical') for (let x = sx - sw / 2 + 0.25; x < sx + sw / 2; x += 0.35) box(g, 0.05, 1.2, 0.03, x, 0.72, sz + sdp / 2 + 0.01, K.frame, false); cush(g, sw - 0.1, 0.28, sdp - 0.2, sx, 1.54, sz + 0.05, ST ? stripeMat() : K.cush); box(g, sw, 1.5, 0.3, sx, 2.15, zb + 0.15, SB); if (BH) { const n = Math.max(2, Math.round(sw / 1.4)); for (let k = 0; k < n; k++) { const c = cush(g, sw / n - 0.12, 1.2, 0.4, sx - sw / 2 + (k + 0.5) * sw / n, 2.25, zb + 0.5, [K.cush, K.cush2, K.cush][k % 3]); c.rotation.x = -0.15; } } else if (ST) { const n = Math.max(2, Math.round(sw / 1.6)); for (let k = 0; k < n; k++) { const c = cush(g, sw / n - 0.15, 1.1, 0.35, sx - sw / 2 + (k + 0.5) * sw / n, 2.2, zb + 0.5, k % 2 ? sBlue() : stripeMat()); c.rotation.x = -0.15; } } else cush(g, sw - 0.2, 1.0, 0.3, sx, 2.15, zb + 0.47, K.cush2);   // 292: tropical = dark-wood slatted seat
+    const ST = themeKey() === 'santorini', FU = themeKey() === 'fusion', MD = themeKey() === 'modern' || FU, BH = themeKey() === 'boho', SB = themeKey() === 'tropical' ? K.wood2 : ST || BH ? (BH ? bLime() : sLime()) : MD ? mTeak() : K.stone; if (MD) { box(g, sw - 0.3, 0.3, sdp - 0.3, sx, 0.15, sz - 0.1, mChar()); box(g, sw, 1.1, sdp, sx, 0.85, sz, SB); box(g, sw - 0.4, 0.04, 0.05, sx, 0.25, sz + sdp / 2 - 0.12, mLed(), false); if (FU) zelPlane(g, sw - 0.2, 0.5, sx, 1.05, sz + sdp / 2 + 0.01, 0); } else box(g, sw, 1.4, sdp, sx, 0.7, sz, SB); if (themeKey() === 'tropical') for (let x = sx - sw / 2 + 0.25; x < sx + sw / 2; x += 0.35) box(g, 0.05, 1.2, 0.03, x, 0.72, sz + sdp / 2 + 0.01, K.frame, false); cush(g, sw - 0.1, 0.28, sdp - 0.2, sx, 1.54, sz + 0.05, ST ? stripeMat() : K.cush); box(g, sw, 1.5, 0.3, sx, 2.15, zb + 0.15, SB); if (FU) { const n = Math.max(2, Math.round(sw / 1.5)); for (let k = 0; k < n; k++) { const c = cush(g, sw / n - 0.12, 1.2, 0.4, sx - sw / 2 + (k + 0.5) * sw / n, 2.15, zb + 0.5, K.cush); c.rotation.x = -0.15; const bo = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.1, 12), k % 2 ? mat('c_fu_brass', 0xC9A86C, { roughness: 0.8 }) : mat('c_fu_teal', 0x1F7A72, { roughness: 0.9 })); bo.rotation.z = Math.PI / 2; bo.position.set(sx - sw / 2 + (k + 0.5) * sw / n, 1.75, zb + 1.0); g.add(bo); } } else if (BH) { const n = Math.max(2, Math.round(sw / 1.4)); for (let k = 0; k < n; k++) { const c = cush(g, sw / n - 0.12, 1.2, 0.4, sx - sw / 2 + (k + 0.5) * sw / n, 2.25, zb + 0.5, [K.cush, K.cush2, K.cush][k % 3]); c.rotation.x = -0.15; } } else if (ST) { const n = Math.max(2, Math.round(sw / 1.6)); for (let k = 0; k < n; k++) { const c = cush(g, sw / n - 0.15, 1.1, 0.35, sx - sw / 2 + (k + 0.5) * sw / n, 2.2, zb + 0.5, k % 2 ? sBlue() : stripeMat()); c.rotation.x = -0.15; } } else cush(g, sw - 0.2, 1.0, 0.3, sx, 2.15, zb + 0.47, K.cush2);   // 292: tropical = dark-wood slatted seat
   } else if (cat === 'counter') {   // 239: food / buffet counter — base, stone top, a cooktop and a sink on it (back = −z, against the wall)
     box(g, w - 0.1, 0.35, d * 0.9 - 0.25, 0, 0.175, -d * 0.05 - 0.12, K.frame); box(g, w, 2.55, d * 0.9, 0, 1.625, -d * 0.05, K.wood2); box(g, w + 0.2, 0.15, d, 0, 2.97, 0, mat('c_granite', 0x2F2E2D, { roughness: 0.25, metalness: 0.1 }));   // 285: cabinets — plinth, door lines, handles
     { const nd = Math.max(2, Math.round(w / 2)), fz = -d * 0.05 + d * 0.45 + 0.02, hm = mat('c_steel', 0xA8A8A6, { metalness: 0.8, roughness: 0.3 }); for (let i = 1; i < nd; i++) box(g, 0.03, 2.4, 0.03, -w / 2 + i * w / nd, 1.6, fz, K.frame); for (let i = 0; i < nd; i++) box(g, 0.5, 0.05, 0.06, -w / 2 + (i + 0.5) * w / nd, 2.6, fz + 0.02, hm); }   // 258 (owner): no wall behind it, a plain granite top
@@ -644,6 +645,12 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const ins = new THREE.Mesh(new THREE.ShapeGeometry(keyhole(a, c, r), 24), zelMat()); ins.position.set(0, 0.2, z0 + 0.09); ins.receiveShadow = true; g.add(ins);
     const ro = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.55, 24), mat('c_tk_teal', 0x2F6E73, { roughness: 0.3 })); ro.position.set(0, 0.2 + c, z0 + 0.1); g.add(ro);
     [-1, 1].forEach(sg => { const lx = sg * (a + 1.1); if (Math.abs(lx) < w / 2 - 0.3) { box(g, 0.06, 0.06, 0.5, lx, c + 0.4, z0 + 0.25, mat('c_brass', 0xB08D57, { metalness: 0.8, roughness: 0.35 })); lantern(g, lx, c, z0 + 0.5, 0.7); } });
+  } else if (cat === 'feature' && themeKey() === 'fusion') {   // 300 (owner: Modern + Boho): a warm lime wall with round-headed niches of dark ledge stone, a warm LED line round each arch, a jar + olive, slim charcoal cap
+    const H = h || 8, D0 = Math.max(0.4, d), z0 = D0 / 2, lw = bLime(); box(g, w, H, D0, 0, H / 2, 0, lw); box(g, w + 0.1, 0.12, D0 + 0.1, 0, H + 0.06, 0, mChar());
+    const na = Math.max(1, Math.min(3, Math.floor(w / 3.4))), sp = w / na, a = Math.min(1.3, sp / 2 - 0.45), c0 = Math.min(H - a - 1, 4.4); box(g, w, 1.2, 1.1, 0, 0.6, z0 + 0.55, mTeak()); box(g, w - 0.3, 0.04, 0.05, 0, 0.12, z0 + 1.08, mLed(), false);
+    for (let k = 0; k < na; k++) { const cx = -w / 2 + (k + 0.5) * sp; bArch(g, a, c0, cx, 1.2, z0 + 0.01, ledgeMat()); const rim = new THREE.Mesh(new THREE.ShapeGeometry(khRim(a, c0, a + 0.001, 0.06), 20), mLed()); rim.position.set(cx, 1.2, z0 + 0.02); g.add(rim);
+      const jg = new THREE.Group(); jg.position.y = 1.2; g.add(jg); jar(jg, cx, z0 + 0.6, k % 2 ? 0.6 : 0.85, mat('c_fu_jar', 0x2E2C2A, { roughness: 0.6 })); if (k % 2 === 0) { const ol = noSh(plantModel(THREE, 'OLIVE', Math.min(c0 + a - 1, 4), { pot: 'none', seed: 4 + k })); ol.position.set(cx, 1.2 + 1.2, z0 + 0.6); g.add(ol); }
+      const s2 = new THREE.Sprite(haloMat()); s2.scale.set(a * 2, c0 + a, 1); s2.position.set(cx, 1.2 + (c0 + a) / 2, z0 + 0.1); nightOnly(s2, g); }
   } else if (cat === 'feature' && themeKey() === 'boho') {   // 299 (Ibiza refs): warm white lime wall, arched niches of rubble stone, a jar + olive in each, warm glow up the niches, rounded top
     const H = h || 8, D0 = Math.max(0.4, d), z0 = D0 / 2, lw = bLime(); box(g, w, H - 0.3, D0, 0, (H - 0.3) / 2, 0, lw); const cap = new THREE.Mesh(new THREE.CylinderGeometry(D0 / 2 + 0.05, D0 / 2 + 0.05, w, 12), lw); cap.rotation.z = Math.PI / 2; cap.position.set(0, H - 0.3, 0); g.add(cap);
     const na = Math.max(1, Math.min(3, Math.floor(w / 3.4))), sp = w / na, a = Math.min(1.3, sp / 2 - 0.45), c0 = Math.min(H - a - 1, 4.2); box(g, w, 1.4, 1.2, 0, 0.7, z0 + 0.6, lw);   // a lime seat / ledge in front
@@ -1024,8 +1031,12 @@ function floorFin(g, t, items) {
     (f.pebble === 'near' ? pebNear(t, items) : [[E, E, pw - 2 * E, b], [E, pd - E - b, pw - 2 * E, b], [E, E + b, b, pd - 2 * E - 2 * b], [pw - E - b, E + b, b, pd - 2 * E - 2 * b]]).forEach(([x, z, w, d]) => { const tx = pm.map.clone(); tx.needsUpdate = true; tx.repeat.set(w / 2, d / 2);
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: tx, roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x + w / 2, 0.04, z + d / 2); m.receiveShadow = true; g.add(m); }); }
 }
+export const FUSION = { pergola: 'modern', cabin: 'modern', bar: 'turkish', privacy: 'modern', water: 'modern', feature: 'fusion', fbench: 'fusion', plant: 'tropical', swing: 'boho', firepit: 'modern', umbrella: 'modern', sofa: 'turkish' };   // 300 (owner): pergola Modern, feature wall Modern + Boho, seating Modern + Turkish, floor Tropical + Modern
+export const FU_GRP = { counter: 'bar', rack: 'bar', stool: 'bar', planter: 'plant', frp: 'plant', vgarden: 'plant', dining: 'sofa', chair: 'sofa', table: 'sofa' };
+function fuOf(it, P) { const g = FU_GRP[it.cat] || it.cat, m = (P && P.fmix) || {}; return m[g] || FUSION[g] || 'fusion'; }
 function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (also drawn by the cabin / pergola designers)
-  (P.items || []).forEach((it, i) => { if (!it) return;
+  (P.items || []).forEach((it, i) => { if (!it) return; const T0 = THEME; if (T0 === 'fusion') THEME = fuOf(it, P); try { drawOne(it, i); } finally { THEME = T0; } });   // 300: Fusion — each element in its own theme
+  function drawOne(it, i) {
     if (it.mode === 'mst') return;   // 263: the stairs to the stairs-room roof are drawn with the roof
     if (it.box) {   // 193d: an AC cover sitting over its unit
       const hd = new THREE.Group(); hd.userData.it = i; items.add(hd); H[i] = hd; const bx = it.box, gm = generic('accover', bx.w, bx.d, bx.h); gm.position.set(bx.x + bx.w / 2, 0, bx.z + bx.d / 2); hd.add(gm);
@@ -1066,7 +1077,7 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
     }
     if (it.cat === 'pergola' && P.creepers && !it.old) try { creepers(hd, it); } catch (e) {}   // 278 (owner): only once plants are added, never on an existing pergola
     H[i] = hd;
-  });
+  }
 }
 // 193j: for the designers — the plan's things in plot coordinates (floor at y 0), not interactive except their hit boxes (userData.hit = index)
 export function itemsGroup(list, P) {
@@ -1083,7 +1094,7 @@ function camHome(t, view) {
 }
 export function show(el, P, opts) {
   opts = opts || {}; ensure(el); R.dirty = true; R.P = P; R.place = !!opts.place; R.on = opts.on || null; THEME = P.theme || 'natural'; night(!!P.night);   // 223: a screen may take the 3D's events for itself (the terrace wizard)
-  const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels, P.measure, P.theme, P.ptags, !!P.creepers]), dims = [t.kind, t.pw, t.pd].join('x');
+  const t = P.site || {}, key = JSON.stringify([t, P.items, P.sel, P.bad, P.labels, P.measure, P.theme, P.fmix, P.ptags, !!P.creepers]), dims = [t.kind, t.pw, t.pd].join('x');
   if (key !== R.key) {
     if (R.group) { R.scene.remove(R.group); R.group.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }
     R.group = build(P); R.scene.add(R.group); R.key = key;
