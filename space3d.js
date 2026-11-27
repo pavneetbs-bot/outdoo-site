@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=86';
-import { pergolaModel } from './pergola3d.js?v=73';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=87';
+import { pergolaModel } from './pergola3d.js?v=74';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -19,6 +19,7 @@ import { furnStudio, furnSpec } from './furn3d.js?v=1';   // 310
 import { graffitiStudio, graffitiSpec, vgStudio, vgSpec, deckStudio, deckSpec } from './misc3d.js?v=1';   // 309
 import { barStudio, barSpec } from './bar3d.js?v=9';   // 295: the bar studio
 import { fwStudio } from './fw3d.js?v=4';
+import { rtsHas, rtsModel, lampShade } from './rts3d.js?v=1';   // 311: fire pits / BBQ / cane lights
 import { benchStudio, benchModel, benchCode } from './bench3d.js?v=1';   // 307: the bench studio + bench models for Complete the look   // 296: the feature wall studio   // 295: the bar studio
 const LAYK = k => !!LSPEC[k];
 
@@ -510,8 +511,10 @@ let COVT = null; function coveStrip(g, bw, bd, x, z, y) { if (!R) return;   // 2
   const W0 = 0.9; [[bw, 0, bd / 2, 0], [bw, 0, -bd / 2, Math.PI], [bd, bw / 2, 0, Math.PI / 2], [bd, -bw / 2, 0, -Math.PI / 2]].forEach(([L, ox, oz, ry]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(L, W0), COVT); m.rotation.order = 'YXZ'; m.rotation.y = ry; m.rotation.x = -Math.PI / 2; m.position.set(x + ox + Math.sin(ry) * W0 / 2, y || 0.03, z + oz + Math.cos(ry) * W0 / 2); m.visible = !!R.night; m.userData.nightOnly = 1; g.add(m); (R.nl || (R.nl = [])).push(m); });
   if (!COVT.c) { const c = document.createElement('canvas'); c.width = c.height = 128; const q = c.getContext('2d'), gr = q.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,176,96,.85)'); gr.addColorStop(0.35, 'rgba(255,176,96,.35)'); gr.addColorStop(1, 'rgba(255,176,96,0)'); q.fillStyle = gr; q.fillRect(0, 0, 128, 128); COVT.c = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }); }
   [[1, 1, -Math.PI / 2], [1, -1, 0], [-1, -1, Math.PI / 2], [-1, 1, Math.PI]].forEach(([sx, sz, t0]) => { const m = new THREE.Mesh(new THREE.CircleGeometry(W0, 12, t0, Math.PI / 2), COVT.c); m.rotation.x = -Math.PI / 2; m.position.set(x + sx * bw / 2, (y || 0.03) - 0.001, z + sz * bd / 2); m.visible = !!R.night; m.userData.nightOnly = 1; g.add(m); R.nl.push(m); }); }   // 302 (owner): the glow turns round each corner instead of stopping square
+export { lampShade };
 export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
+  if (it && it.sku && rtsHas(it.sku)) { const m = rtsModel(it.sku, w, d, h); if (m) { g.add(m); (m.userData.nl || []).forEach(o => { const p = o.parent; if (p) { p.remove(o); nightOnly(o, p); } }); return g; } }   // 311: the real ready-made piece
   if (cat === 'sofa') {   // 261 (owner): a sleek rope sofa set — slim charcoal frame, woven rope back and arms, off-white cushions; pieces as ticked (sofaLayout)
     const L = sofaLayout(it && it.sconf), sx = w / (L.w || w), sz = d / (L.d || d), root = new THREE.Group(); root.scale.set(sx, 1, sz); g.add(root); const SD = 2.6;
     const fr = K.themed ? K.frame : mat('c_ropefr', 0x2B2B2B, { roughness: 0.5, metalness: 0.3 }), cu = K.themed ? K.cush : mat('c_ropecu', 0xEEE9DF, { roughness: 0.95 }), ac1 = K.themed ? K.acc1 : mat('c_ropeac1', 0xC26445, { roughness: 0.95 }), ac2 = K.themed ? K.acc2 : mat('c_ropeac2', 0x55634A, { roughness: 0.95 });   // 274: the theme's frame / cushions / accents

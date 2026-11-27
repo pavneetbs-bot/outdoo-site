@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=86';
+import { plotModel } from './cabin3d.js?v=87';
 import { studioFloor, person } from './studio3d.js?v=7';   // 283: the design studio setting (shared with every designer)
 
 const MM = v => v / 304.8;   // mm → ft
@@ -231,11 +231,12 @@ function ensure(el) {
 }
 function size() { if (!R || !R.el) return; const w = R.el.clientWidth || 600, h = R.el.clientHeight || 400; R.renderer.setSize(w, h, false); R.renderer.domElement.style.width = '100%'; R.renderer.domElement.style.height = '100%'; R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); }
 function setNight(on) {
-  R.night = on; R.scene.background = new THREE.Color(on ? 0x16203a : 0xeef0ea); R.renderer.toneMappingExposure = on ? 0.75 : 1;
+  R.night = on; R.scene.traverse(o => { if (o.userData && o.userData.nightOnly) o.visible = on; });   /* 311: glows of the look pieces (fire pits, lamps) */
+  R.scene.background = new THREE.Color(on ? 0x16203a : 0xeef0ea); R.renderer.toneMappingExposure = on ? 0.75 : 1;
   R.hemi.intensity = on ? 0.12 : 0.7; R.sun.intensity = on ? 0.08 : 1.9; mat('led', {}).emissiveIntensity = on ? 2.4 : 0; mat('led', {}).color.set(on ? 0xfff3d0 : 0x3a3a3a); if (M.spot) M.spot.emissiveIntensity = on ? 3 : 0.4; if (M.cove) M.cove.emissiveIntensity = on ? 2.5 : 0.25;
 }
 // 193f: on a terrace (opts.site: the studio's terrace — cx / cz = the pergola's corner, rot = where its front faces), with an optional deck and furniture to see it
-let FURN = null, FURN_LOADING = false, ITEMS = null, LAST = null;
+let FURN = null, FURN_LOADING = false, ITEMS = null, LAMP = null, LAST = null;
 function extras(g, L, W, opts, wall) {   // deck under it (fits the pergola unless sized) + a furniture set, both to see it; returns the pergola's lift
   const dk = opts.deck, y0 = dk ? 0.6 : 0;
   if (dk) { const dl = +dk.l || L + 1, dw = +dk.w || W + 1, x0 = L / 2 - dl / 2, z0 = wall ? -0.25 : W / 2 - dw / 2, nose = 0.15, th = 0.12, op = { front: 1, left: 1, right: 1, back: wall ? 0 : 1 };
@@ -249,7 +250,8 @@ function extras(g, L, W, opts, wall) {   // deck under it (fits the pergola unle
     set.forEach(([c, w, d, h]) => { const m = FURN(c, Math.min(w, L - 1), Math.min(d, W - 1), h); m.position.set(L / 2, y0, W / 2); g.add(m); }); }
   return y0;
 }
-function pendants(g, L, W, top) {   // 296: cane pendant lights hanging from the pergola (Complete the look)
+function pendants(g, L, W, top, sku, cnt) {   // 296: cane pendant lights hanging from the pergola (Complete the look)
+  if (sku && LAMP) { const n = Math.max(1, Math.min(4, cnt || 2)); for (let k = 0; k < n; k++) { const m = LAMP(sku); m.position.set(L * (k + 0.5) / n, top - 1.0, W / 2); (m.userData.nl || []).forEach(o => { o.visible = !!(R && R.night); o.userData.nightOnly = 1; }); g.add(m); } return; }   // 311: the picked lamp itself
   const cord = mat('pd_cord', { color: 0x222222 }), cane = mat('pd_cane', { color: 0xB08A5A, roughness: 0.9, wireframe: true }), shell = mat('pd_shell', { color: 0x9C7448, roughness: 0.95, transparent: true, opacity: 0.45 }), bulb = mat('pd_bulb', { color: 0xFFF2D0, emissive: 0xFFC97A, emissiveIntensity: 1.6 });
   const n = L > 14 ? 3 : 2; for (let k = 0; k < n; k++) { const x = L * (k + 0.5) / n, z = W / 2, y = top - 2.3;
     const c = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.6, 4), cord); c.position.set(x, top - 0.8, z); g.add(c);
@@ -273,7 +275,7 @@ export function show(el, sku, o, opts) {
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
   const LK = !t && opts.studio && opts.look && (opts.look.items.length || opts.look.pend) ? opts.look : null;   // 296: Complete the look
-  if ((opts.furn || wantAr || (LK && LK.items.length)) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=96').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show.apply(null, LAST); }).catch(() => {}); }
+  if ((opts.furn || wantAr || (LK && (LK.items.length || LK.ps))) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=97').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; LAMP = m.lampShade; R.key = ''; show.apply(null, LAST); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' + JSON.stringify(opts.deck) : '') + (opts.furn || '') + (FURN ? 'F' : '') + (LK ? JSON.stringify(LK) : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
@@ -286,8 +288,8 @@ export function show(el, sku, o, opts) {
       const M8 = LK ? 13 : 8; studioFloor(root, -M8, wl ? -1.05 : -M8, L + 2 * M8, W + (wl ? M8 + 1.05 : 2 * M8));
       if (wl) box(root, L + 10, Math.max(10, b.H + 2), 0.75, L / 2, Math.max(10, b.H + 2) / 2, -0.43, mat('studioWall', { color: 0xE9E5DE, roughness: 0.95 }));
       const y0 = extras(root, L, W, opts, wl); b.g.position.y = y0; root.add(b.g); if (LK) person(root, LK.person ? LK.person.x : L / 2 + 2.5, LK.person ? LK.person.z : W + 4, -0.3); else person(root, L + 2.6, W * 0.7, -0.5);
-      if (LK && ITEMS) { [false, true].forEach(ins => { const li = LK.items.filter(i => !!i.in === ins); if (!li.length) return; try { const gi = ITEMS(li, { labels: false, site: { kind: 'lawn', light: '' } }).g; if (ins) gi.position.y = y0; root.add(gi); } catch (e) { if (window.console) console.warn(e); } }); }
-      if (LK && LK.pend) pendants(root, L, W, y0 + b.H); }
+      if (LK && ITEMS) { [false, true].forEach(ins => { const li = LK.items.filter(i => !!i.in === ins); if (!li.length) return; try { const gi = ITEMS(li, { labels: false, site: { kind: 'lawn', light: '' } }).g; if (ins) gi.position.y = y0; gi.traverse(o => { if (o.userData && o.userData.nightOnly) o.visible = !!R.night; }); root.add(gi); } catch (e) { if (window.console) console.warn(e); } }); }
+      if (LK && LK.pend) pendants(root, L, W, y0 + b.H, LK.ps, LK.pend); }
     else if (!t) {   // a lawn with a deck / furniture: the ground drawn here, the pergola lifted onto the deck
       b = build(sku, o, true); root = new THREE.Group(); const X = S(), L = b.L, W = b.W; box(root, L + 16, 0.1, W + 16, L / 2, -0.05, W / 2, X.ground);
       if (/wall/i.test(String(o.layout || ''))) box(root, L + 4, b.H + 3, 0.6, L / 2, (b.H + 3) / 2, -0.45, X.wall);
