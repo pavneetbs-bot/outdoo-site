@@ -12,7 +12,7 @@ const shade = (c, f) => { const [r, g, b] = hx(c); const k = v => Math.max(0, Ma
 export const SPECS = {
   // Tropical — mixed-size sandstone, grass in the joints of the paths, teak deck
   trop_field: { pat: 'french', u: 1, g: 0.05, pal: ['#9C9A94', '#8C8A84', '#A6A49E', '#83817B', '#96948E', '#7C7A75'], v: 0.07, j: '#6A6863', m: 'stone' },   // 292 (owner): Tropical = grey stone pavers
-  trop_path: { pat: 'flag', n: 16, P: 6, g: 0.13, pal: ['#9A9892', '#8A8882', '#A8A6A0', '#7E7C77'], v: 0.08, j: 'grass', m: 'stone' },
+  trop_path: { pat: 'flag', n: 16, P: 6, g: 0.13, pal: ['#9A9892', '#8A8882', '#A8A6A0', '#7E7C77'], v: 0.08, j: '#6E6A62', m: 'stone' },   // 302 (owner): no grass in a path on the roof floor — rain water would sit in it; mortar joints, it drains
   trop_rug: { pat: 'deck', w: 0.47, lens: [6, 8, 10], g: 0.03, pal: ['#4E3322', '#462E1F', '#553826', '#3F2A1C'], v: 0.06, j: '#1C130C', m: 'wpc' },   // 276: decks are always WPC boards (fabricated, not civil) — teak
   // Turkish — 6" encaustic cement tiles, terracotta hex border, kilims
   turk_field: { pat: 'enc', u: 0.5, g: 0.012, pal: ['#EFE6D4', '#E9DFCB', '#F2EADA'], ink: ['#B08D57'], ink2: '#2F6E73', v: 0.04, j: '#DDD2BF', m: 'cement' },   // 294: beige encaustic, brass + a little teal
@@ -40,7 +40,7 @@ export const SPECS = {
   boho_field: { pat: 'flag', n: 16, P: 7, g: 0.16, pal: ['#E6D9C3', '#DCCDB3', '#EADFCB', '#D6C6AA', '#E1D2B8'], v: 0.05, j: '#F1EBE1', m: 'stone' },
   boho_rug: { pat: 'stack', w: 2, d: 2, g: 0.03, pal: ['#D8C8AC', '#CFBEA0', '#DDCEB4'], v: 0.06, j: '#EDE5D8', m: 'stone' },
   boho_border: { pat: 'stack', w: 1, d: 2, g: 0.03, pal: ['#CBB894', '#C2AE89', '#D2C09E'], v: 0.06, j: '#EDE5D8', m: 'stone' },
-  boho_path: { pat: 'flag', n: 14, P: 6, g: 0.12, pal: ['#C9B48E', '#BFA982', '#D3C09C'], v: 0.08, j: 'grass', m: 'stone' } };
+  boho_path: { pat: 'flag', n: 14, P: 6, g: 0.12, pal: ['#C9B48E', '#BFA982', '#D3C09C'], v: 0.08, j: '#E9E1D3', m: 'stone' } };   // 302 (owner): no grass in a path on the roof floor — rain water would sit in it; mortar joints, it drains
 
 // 276c (owner): the floor-layout roles — a calm base, the feature (runners, rugs, hubs), checkers
 Object.assign(SPECS, {

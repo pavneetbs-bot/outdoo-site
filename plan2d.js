@@ -1,4 +1,4 @@
-import { layUrl, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=9';
+import { layUrl, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
 // outrr 2D plan (234): the terrace drawn from above as an SVG — roof structures, the things set up on it, floor finishes — and,
 // when asked, AutoCAD-style dimensions (extension lines, arrows, the size written inside the line) for the terrace, every structure
 // and thing, and the biggest free spaces left. Used by the roof plan (mto.js) and the setup plan (planner.js). Units: ft,
@@ -187,7 +187,7 @@ export function svg(t, opts) { const U = 'u' + (++SVGN);   // 276c: own pattern 
     if (b.type !== 'ac') { let nm = b.pent ? 'Penthouse' : b.w >= 5 ? NAME[b.type] || '' : ''; if (nm) { lab = Math.min(lab, b.w * 0.86 / (nm.length * 0.58 + 1.3)); if (lab < s * 0.55) nm = ''; } const ix = b.x + b.w / 2 - (nm ? nm.length * lab * 0.29 + lab * 0.1 : 0); h += icoG(b.type === 'room' && b.pent ? 'cabin' : b.type === 'troom' ? 'room' : b.type, ix, b.z + b.d / 2, lab * 1.1) + (nm ? `<text x="${ix + lab * 0.75}" y="${b.z + b.d / 2}" font-size="${lab}" class="p2lb" style="text-anchor:start">${nm}</text>` : ''); }
     h += '</g>'; });
   // the things that stand on it (pergolas last, as an outline over what is under them)
-  items.forEach((it, i) => { if (it && !it.segs && !it.box && it.mode !== 'mst' && !['deck', 'turf', 'pathway', 'pergola'].includes(it.cat)) h += drawn(it, i); });
+  items.forEach((it, i) => { if (it && !it.segs && !it.box && (it.mode !== 'mst' || (it.cat === 'mstair' && +it.w > 0)) && !['deck', 'turf', 'pathway', 'pergola'].includes(it.cat)) h += drawn(it, i); });   // 302: the stairs to the stairs-room roof are on the plan
   items.forEach((it, i) => { if (it && !it.segs && !it.box && it.cat === 'pergola') h += drawn(it, i); });
   // road + north
   const rd = opts.road || ['front'], lt = (x, y, tx, r) => `<text x="${x}" y="${y}" font-size="${s * 1.2}" class="p2lb" style="fill:#8a3a1f"${r ? ` transform="rotate(${r} ${x} ${y})"` : ''}>${tx}</text>`;

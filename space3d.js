@@ -5,14 +5,14 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=72';
-import { pergolaModel } from './pergola3d.js?v=59';
-import { outline, sofaLayout } from './plan2d.js?v=35';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=73';
+import { pergolaModel } from './pergola3d.js?v=60';
+import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
-import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=9';
-import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=6';   // 294: the design studio setting (planters)
-import { barStudio, barSpec } from './bar3d.js?v=5';   // 295: the bar studio
-import { fwStudio } from './fw3d.js?v=3';   // 296: the feature wall studio   // 295: the bar studio
+import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
+import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=7';   // 294: the design studio setting (planters)
+import { barStudio, barSpec } from './bar3d.js?v=6';   // 295: the bar studio
+import { fwStudio } from './fw3d.js?v=4';   // 296: the feature wall studio   // 295: the bar studio
 const LAYK = k => !!LSPEC[k];
 
 let R = null, HANDLER = null;
@@ -500,7 +500,9 @@ const TROP_S = ['SNAKEPLANT', 'CROTON', 'RHAPIS', 'FOUNTAINGRASS'], TROP_B = ['A
 const noSh = m => { if (LITE) m.traverse(o => { o.castShadow = false; }); return m; };
 let COVT = null; function coveStrip(g, bw, bd, x, z, y) { if (!R) return;   // 268 (owner): a soft warm line of light on the floor just outside each edge (was a lit square under the whole thing)
   if (!COVT) { const c = document.createElement('canvas'); c.width = 4; c.height = 64; const q = c.getContext('2d'), gr = q.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(255,176,96,.85)'); gr.addColorStop(0.35, 'rgba(255,176,96,.35)'); gr.addColorStop(1, 'rgba(255,176,96,0)'); q.fillStyle = gr; q.fillRect(0, 0, 4, 64); COVT = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }); }
-  const W0 = 0.9; [[bw, 0, bd / 2, 0], [bw, 0, -bd / 2, Math.PI], [bd, bw / 2, 0, Math.PI / 2], [bd, -bw / 2, 0, -Math.PI / 2]].forEach(([L, ox, oz, ry]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(L, W0), COVT); m.rotation.order = 'YXZ'; m.rotation.y = ry; m.rotation.x = -Math.PI / 2; m.position.set(x + ox + Math.sin(ry) * W0 / 2, y || 0.03, z + oz + Math.cos(ry) * W0 / 2); m.visible = !!R.night; m.userData.nightOnly = 1; g.add(m); (R.nl || (R.nl = [])).push(m); }); }
+  const W0 = 0.9; [[bw, 0, bd / 2, 0], [bw, 0, -bd / 2, Math.PI], [bd, bw / 2, 0, Math.PI / 2], [bd, -bw / 2, 0, -Math.PI / 2]].forEach(([L, ox, oz, ry]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(L, W0), COVT); m.rotation.order = 'YXZ'; m.rotation.y = ry; m.rotation.x = -Math.PI / 2; m.position.set(x + ox + Math.sin(ry) * W0 / 2, y || 0.03, z + oz + Math.cos(ry) * W0 / 2); m.visible = !!R.night; m.userData.nightOnly = 1; g.add(m); (R.nl || (R.nl = [])).push(m); });
+  if (!COVT.c) { const c = document.createElement('canvas'); c.width = c.height = 128; const q = c.getContext('2d'), gr = q.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, 'rgba(255,176,96,.85)'); gr.addColorStop(0.35, 'rgba(255,176,96,.35)'); gr.addColorStop(1, 'rgba(255,176,96,0)'); q.fillStyle = gr; q.fillRect(0, 0, 128, 128); COVT.c = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }); }
+  [[1, 1, -Math.PI / 2], [1, -1, 0], [-1, -1, Math.PI / 2], [-1, 1, Math.PI]].forEach(([sx, sz, t0]) => { const m = new THREE.Mesh(new THREE.CircleGeometry(W0, 12, t0, Math.PI / 2), COVT.c); m.rotation.x = -Math.PI / 2; m.position.set(x + sx * bw / 2, (y || 0.03) - 0.001, z + sz * bd / 2); m.visible = !!R.night; m.userData.nightOnly = 1; g.add(m); R.nl.push(m); }); }   // 302 (owner): the glow turns round each corner instead of stopping square
 export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor; w along x, d along z (the back is -z)
   const g = new THREE.Group(), K = C();
   if (cat === 'sofa') {   // 261 (owner): a sleek rope sofa set — slim charcoal frame, woven rope back and arms, off-white cushions; pieces as ticked (sofaLayout)
@@ -542,12 +544,13 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     cush(g, w * 0.8, 0.3, d * 0.8, 0, 1.42, 0, K.cush); box(g, w * 0.8, 1.8, 0.3, 0, 2.4, -d * 0.4 + 0.15, K.frame);
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 1.3, 0.15, a * w * 0.35, 0.65, b * d * 0.35, K.frame)); box(g, 0.15, 0.6, d * 0.8, -w * 0.4, 1.9, 0, K.frame); box(g, 0.15, 0.6, d * 0.8, w * 0.4, 1.9, 0, K.frame);
   } else if (cat === 'shaftcover') {   // 241: on top of the shaft — an MS tube frame with a white polycarbonate sheet, a little sloped
-    const y = (h || 3.4) - 0.4, fm = K.frame; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => box(g, 0.15, 0.5, 0.15, a * (w / 2 - 0.08), y + 0.25, b * (d / 2 - 0.08), fm));
-    box(g, w, 0.12, 0.12, 0, y + 0.5, -d / 2 + 0.06, fm); box(g, w, 0.12, 0.12, 0, y + 0.62, d / 2 - 0.06, fm); box(g, 0.12, 0.12, d, -w / 2 + 0.06, y + 0.56, 0, fm); box(g, 0.12, 0.12, d, w / 2 - 0.06, y + 0.56, 0, fm);
+    const y = Math.max(0.08, (h == null ? 3.4 : h) - 0.4), fm = K.frame;   // 302 (owner): the frame sits right on the shaft's walls (it stood on 0.5 ft legs and looked to float)
+    box(g, w, 0.12, 0.12, 0, y + 0.06, -d / 2 + 0.06, fm); box(g, w, 0.12, 0.12, 0, y + 0.06, d / 2 - 0.06, fm); box(g, 0.12, 0.12, d, -w / 2 + 0.06, y + 0.06, 0, fm); box(g, 0.12, 0.12, d, w / 2 - 0.06, y + 0.06, 0, fm);
+    box(g, 0.12, 0.14, d, -w / 2 + 0.06, y + 0.19, 0, fm); box(g, 0.12, 0.14, d, w / 2 - 0.06, y + 0.19, 0, fm);
     const sm = (it && it.smat) || 'poly';   // 262 (owner): the cover's material
-    if (sm === 'grill') { for (let x = -w / 2 + 0.15; x < w / 2; x += 0.25) box(g, 0.04, 0.08, d, x, y + 0.6, 0, fm); box(g, w, 0.08, 0.04, 0, y + 0.6, 0, fm); }
-    else if (sm === 'louvre') { const al = mat('c_alu', 0xB9BCC0, { metalness: 0.5, roughness: 0.4 }); for (let z = -d / 2 + 0.2; z < d / 2; z += 0.35) { const b2 = box(g, w, 0.03, 0.3, 0, y + 0.6, z, al); b2.rotation.x = 0.5; } }
-    else { const sh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, sm === 'glass' ? 0.1 : 0.05, d + 0.3), sm === 'glass' ? mat('c_sglass', 0xBFDDE6, { roughness: 0.05, transparent: true, opacity: 0.45, metalness: 0.1 }) : sm === 'cement' ? mat('c_scem', 0xA7A49E, { roughness: 0.95 }) : mat('c_poly', 0xF4F4F2, { roughness: 0.35, transparent: true, opacity: 0.88 })); sh.position.set(0, y + 0.66, 0); if (sm !== 'glass') sh.rotation.x = Math.atan2(0.12, d); sh.castShadow = true; g.add(sh); }
+    if (sm === 'grill') { for (let x = -w / 2 + 0.15; x < w / 2; x += 0.25) box(g, 0.04, 0.08, d, x, y + 0.16, 0, fm); box(g, w, 0.08, 0.04, 0, y + 0.16, 0, fm); }
+    else if (sm === 'louvre') { const al = mat('c_alu', 0xB9BCC0, { metalness: 0.5, roughness: 0.4 }); for (let z = -d / 2 + 0.2; z < d / 2; z += 0.35) { const b2 = box(g, w, 0.03, 0.3, 0, y + 0.22, z, al); b2.rotation.x = 0.5; } }
+    else { const sh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, sm === 'glass' ? 0.1 : 0.05, d + 0.3), sm === 'glass' ? mat('c_sglass', 0xBFDDE6, { roughness: 0.05, transparent: true, opacity: 0.45, metalness: 0.1 }) : sm === 'cement' ? mat('c_scem', 0xA7A49E, { roughness: 0.95 }) : mat('c_poly', 0xF4F4F2, { roughness: 0.35, transparent: true, opacity: 0.88 })); sh.position.set(0, y + 0.29, 0); if (sm !== 'glass') sh.rotation.x = Math.atan2(0.1, d); sh.castShadow = true; g.add(sh); }
   } else if (cat === 'fbench' && themeKey() === 'turkish' && !(it && it.shape === 'curve') && !(it && it.plant)) {   // 275 (owner): Turkish majlis — a low base, a thick floor mattress, cushions against the wall, bolsters at the ends
     box(g, w, 0.7, d, 0, 0.35, 0, K.stone); zelPlane(g, w, 0.3, 0, 0.45, d / 2 + 0.01); cush(g, w - 0.1, 0.55, d - 0.4, 0, 0.95, 0.15, K.cush);   // 294: lime base, beige zellige band, beige mattress
     const n = Math.max(2, Math.round(w / 2.2)); for (let k = 0; k < n; k++) { const x = -w / 2 + w * (k + 0.5) / n, c = cush(g, Math.min(2, w / n - 0.15), 1.5, 0.45, x, 1.85, -d / 2 + 0.4, k % 3 === 1 ? K.acc1 : K.cush2); c.rotation.x = -0.18; }
