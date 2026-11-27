@@ -5,13 +5,16 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=78';
-import { pergolaModel } from './pergola3d.js?v=65';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=81';
+import { pergolaModel } from './pergola3d.js?v=68';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
 import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=7';   // 294: the design studio setting (planters)
 import { railStudio, railSpec } from './rail3d.js?v=1';   // 309
+import { gateStudio, gateSpec } from './gate3d.js?v=1';   // 309
+import { acStudio, acSpec } from './ac3d.js?v=1';   // 309
+import { graffitiStudio, graffitiSpec, vgStudio, vgSpec, deckStudio, deckSpec } from './misc3d.js?v=1';   // 309
 import { barStudio, barSpec, kitchenStudio, kitchenSpec, isKitchen } from './bar3d.js?v=7';   // 295: the bar studio
 import { fwStudio } from './fw3d.js?v=4';
 import { benchStudio, benchModel, benchCode } from './bench3d.js?v=1';   // 307: the bench studio + bench models for Complete the look   // 296: the feature wall studio   // 295: the bar studio
@@ -1319,6 +1322,30 @@ export function preview(el, items, opts) {
     const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
     const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'bn' + (items[0] || {}).code + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar;
       PV.controls.target.set(0, Math.min(B.H * 0.45, 3), 0); PV.cam.position.set(sp * 0.45, sp * 0.42 + 2, sp * 0.95); PV.controls.update(); }
+    return;
+  }
+  if (opts && (opts.studio === 'gf' || opts.studio === 'vg' || opts.studio === 'dk')) {   // 309: graffiti on a wall / a vertical garden / a deck
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
+    const it0 = items[0] || {}, k = opts.studio, B = k === 'gf' ? graffitiStudio(graffitiSpec(it0.sku, it0.m || {}, it0.o || {}, it0.img)) : k === 'vg' ? vgStudio(vgSpec(it0.sku, it0.m || {}, it0.o || {})) : deckStudio(deckSpec(it0.sku, it0.m || {}, it0.o || {}));
+    if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = k + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar;
+      if (k === 'dk') { PV.controls.target.set(0, 0.5, 0); PV.cam.position.set(sp * 0.45, sp * 0.55, sp * 0.8); } else { PV.controls.target.set(0, B.H * 0.5, 0); PV.cam.position.set(sp * 0.35, B.H * 0.5 + sp * 0.18, sp * 1.45); } PV.controls.update(); }
+    return;
+  }
+  if (opts && opts.studio === 'ac') {   // 309: an AC cover round its AC unit, against a terrace wall
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
+    const it0 = items[0] || {}, B = acStudio(acSpec(it0.sku, it0.m || {}, it0.o || {})); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'ac' + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar;
+      PV.controls.target.set(0, B.cy, 0); PV.cam.position.set(sp * 0.42, B.cy + sp * 0.3, sp * 0.95); PV.controls.update(); }
+    return;
+  }
+  if (opts && opts.studio === 'gate') {   // 309: a gate / door at the customer's width × height and colour, in its usual setting
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
+    const it0 = items[0] || {}, B = gateStudio(gateSpec(it0.sku, it0.m || {}, it0.o || {})); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'gt' + Math.round(B.W) + '_' + Math.round(B.H) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = Math.max(B.W * 1.4, B.H * 1.8, 9) * nar;
+      PV.controls.target.set(0, B.H * 0.5, 0); PV.cam.position.set(sp * 0.45, B.H * 0.55 + sp * 0.2, sp * 1.55); PV.controls.update(); }
     return;
   }
   if (opts && opts.studio === 'rail') {   // 309: a railing at the customer's length / height / fixing / corners on a balcony slab
