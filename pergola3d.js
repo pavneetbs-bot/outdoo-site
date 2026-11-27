@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=71';
+import { plotModel } from './cabin3d.js?v=72';
 import { studioFloor, person } from './studio3d.js?v=6';   // 283: the design studio setting (shared with every designer)
 
 const MM = v => v / 304.8;   // mm → ft
@@ -273,7 +273,7 @@ export function show(el, sku, o, opts) {
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
   const LK = !t && opts.studio && opts.look && (opts.look.items.length || opts.look.pend) ? opts.look : null;   // 296: Complete the look
-  if ((opts.furn || wantAr || (LK && LK.items.length)) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=81').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr || (LK && LK.items.length)) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=82').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' + JSON.stringify(opts.deck) : '') + (opts.furn || '') + (FURN ? 'F' : '') + (LK ? JSON.stringify(LK) : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';

@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=71';
-import { pergolaModel } from './pergola3d.js?v=58';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=72';
+import { pergolaModel } from './pergola3d.js?v=59';
 import { outline, sofaLayout } from './plan2d.js?v=35';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=9';
@@ -27,7 +27,7 @@ const WMAP = { cascade: 'WC-TRIPLE', wall: 'WW-SPIL', rain: 'WW-MIRR', geyser: '
 function wCode(it) { const id = String(it.wsku || it.pick || it.cfgId || '').replace(/^MTO-/, ''); return WLIB[id] ? id : WMAP[it.mech] || ''; }
 let WTX = {};
 function finTx(k) { if (WTX[k]) return WTX[k]; const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
-  const P = { zellige: ['#1F6F7E', '#2A8494', '#175C69', 16], slate: ['#3B3E42', '#4A4E53', '#2F3236', 32], stack: ['#8C7A64', '#A08B70', '#6F604E', 0], tstone: ['#7A7873', '#8C8A84', '#66645F', 0], cement: ['#9A9893', '#A9A7A2', '#8E8C87', 0], wpc: ['#6B4A33', '#7D5A40', '#5A3D2A', -1], green: ['#2F6B34', '#4C8A3C', '#22552A', 0] }[k] || ['#999', '#aaa', '#888', 0];
+  const P = { zellige: ['#1F6F7E', '#2A8494', '#175C69', 16], slate: ['#3B3E42', '#4A4E53', '#2F3236', 32], stack: ['#8C7A64', '#A08B70', '#6F604E', 0], tstone: ['#7A7873', '#8C8A84', '#66645F', 0], cement: ['#9A9893', '#A9A7A2', '#8E8C87', 0], wpc: ['#6B4A33', '#7D5A40', '#5A3D2A', -1], green: ['#2F6B34', '#4C8A3C', '#22552A', 0], gmos: ['#2C8C9A', '#3AA3B0', '#1F6F7E', 8] }[k] || ['#999', '#aaa', '#888', 0];
   x.fillStyle = P[0]; x.fillRect(0, 0, 128, 128);
   if (P[3] > 0) { for (let i = 0; i < 128; i += P[3]) for (let j = 0; j < 128; j += P[3]) { x.fillStyle = (i + j) % (P[3] * 2) ? P[1] : P[2]; x.fillRect(i + 1, j + 1, P[3] - 2, P[3] - 2); } }
   else if (P[3] < 0) { for (let i = 0; i < 128; i += 16) { x.fillStyle = P[1]; x.fillRect(i, 0, 10, 128); x.fillStyle = P[2]; x.fillRect(i + 10, 0, 6, 128); } }
@@ -35,31 +35,47 @@ function finTx(k) { if (WTX[k]) return WTX[k]; const c = document.createElement(
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6, 4); if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return (WTX[k] = t); }
 function finMat(k) { if (k === 'mirror') return mat('c_wmir', 0xD7DCE0, { metalness: 0.95, roughness: 0.12 }); if (k === 'granite') return mat('c_wgran', 0x1D1E20, { roughness: 0.25, metalness: 0.2 }); if (k === 'marble') return mat('c_wmarb', 0xEDEBE6, { roughness: 0.3 }); if (k === 'corten') return mat('c_wcor', 0x8B4A2B, { roughness: 0.85 }); if (k === 'concrete') return mat('c_wconc', 0xB4B1AA, { roughness: 0.9 });
   if (k === 'glass') return mat('c_wglass', 0xCFE6EC, { transparent: true, opacity: 0.35, roughness: 0.05, metalness: 0.1 }); if (k === 'slime') return sLime(); if (k === 'ledge') return ledgeMat(); if (k === 'blime') return bLime(); if (k === 'zelb') { if (!M.c_zelb) { const t = zelTex().clone(); t.needsUpdate = true; t.repeat.set(3, 3); M.c_zelb = new THREE.MeshStandardMaterial({ map: t, roughness: 0.35 }); } return M.c_zelb; } return mat('c_wf_' + k, 0xffffff, { map: finTx(k), roughness: 0.85 }); }
-function waterLib(g, w, d, code, K) {
+// 301: falling water that moves — a streaky sheet whose texture runs down (studio only; the planner keeps the still sheet)
+let WSA = null; function wSheetA() { if (WSA) return WSA; const c = document.createElement('canvas'); c.width = 64; c.height = 256; const x = c.getContext('2d'); x.fillStyle = 'rgba(210,240,250,0.35)'; x.fillRect(0, 0, 64, 256);
+  for (let i = 0; i < 90; i++) { const xx = (i * 37) % 64, yy = (i * 71) % 256, l = 20 + (i % 5) * 14; x.fillStyle = `rgba(255,255,255,${0.25 + (i % 4) * 0.12})`; x.fillRect(xx, yy, 1 + (i % 2), l); if (yy + l > 256) x.fillRect(xx, 0, 1 + (i % 2), yy + l - 256); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 1.5);
+  WSA = new THREE.MeshStandardMaterial({ map: t, color: 0xDDF4FB, transparent: true, opacity: 0.62, roughness: 0.05, metalness: 0.05, emissive: 0x2E6F86, emissiveIntensity: 0.22, side: THREE.DoubleSide, depthWrite: false }); return WSA; }
+function pvAnim(f) { if (PV) (PV.anim || (PV.anim = [])).push(f); }
+const W_FIN = [[/zellige/i, 'zellige'], [/stacked stone/i, 'stack'], [/granite/i, 'granite'], [/slate/i, 'slate'], [/cement/i, 'cement'], [/corten/i, 'corten'], [/mirror/i, 'mirror'], [/wpc/i, 'wpc'], [/marble/i, 'marble'], [/glass mosaic/i, 'gmos'], [/concrete/i, 'concrete'], [/glass/i, 'glass'], [/vertical garden/i, 'green']];
+export function wFin(name) { const r = W_FIN.find(p => p[0].test(String(name || ''))); return r ? r[1] : ''; }
+function waterLib(g, w, d, code, K, wo) {
+  wo = wo || {};
   if (themeKey() === 'modern') K = Object.assign({}, K, { stone: mChar() });   // 298: Modern — charcoal basin under the dark ledge stone
   if (themeKey() === 'santorini') azPlane(g, w - 0.1, 0.7, 0, 0.42, d / 2 + 0.02);   // 296: Santorini — a blue-white tile band on the basin front
-  const [fin0, kind, ex] = WLIB[code], fin = !['glass', 'green', 'mirror'].includes(fin0) && themeKey() === 'tropical' ? 'tstone' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'turkish' ? 'zelb' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'santorini' ? 'slime' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'modern' ? 'ledge' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'boho' ? 'blime' : fin0,   /* 294: Turkish = beige zellige */ FM = finMat(fin),   /* 292: tropical = rough grey stone face */ sheet = mat('c_wsheet2', 0xCFEFF8, { transparent: true, opacity: 0.42, roughness: 0.05, metalness: 0.05, emissive: 0x2E6F86, emissiveIntensity: 0.2, side: THREE.DoubleSide, depthWrite: false }), wat = mat('c_wpool', 0x5FA9C4, { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.85 }), ss = mat('c_wss', 0xC9CED2, { metalness: 0.9, roughness: 0.25 }), led = mat('c_wled', 0xFFE2B0, { emissive: 0xFFB866, emissiveIntensity: 1.6 });
+  let [fin0, kind, ex] = WLIB[code]; if (wo.fin) fin0 = wo.fin; const fin = !['glass', 'green', 'mirror'].includes(fin0) && themeKey() === 'tropical' ? 'tstone' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'turkish' ? 'zelb' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'santorini' ? 'slime' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'modern' ? 'ledge' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'boho' ? 'blime' : fin0,   /* 294: Turkish = beige zellige */ FM = finMat(fin),   /* 292: tropical = rough grey stone face */ sheet = wo.anim ? wSheetA() : mat('c_wsheet2', 0xCFEFF8, { transparent: true, opacity: 0.42, roughness: 0.05, metalness: 0.05, emissive: 0x2E6F86, emissiveIntensity: 0.2, side: THREE.DoubleSide, depthWrite: false }), wat = mat('c_wpool', 0x5FA9C4, { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.85 }), ss = mat('c_wss', 0xC9CED2, { metalness: 0.9, roughness: 0.25 }), led = mat('c_wled', 0xFFE2B0, { emissive: 0xFFB866, emissiveIntensity: 1.6 });
+  if (wo.anim) pvAnim(tm => { if (sheet.map) sheet.map.offset.y = (tm * 0.9) % 1; });   // 301: the water runs down
+  if (wo.rgb) pvAnim(tm => { const c = new THREE.Color().setHSL((tm * 0.06) % 1, 0.85, 0.6); led.emissive.copy(c); washMat().color.copy(c); haloMat('b').color.copy(c); haloMat().color.copy(c); });   // 301: RGB LED — the colours change
+  else { led.emissive.setHex(0xFFB866); washMat().color.setHex(0xffffff); haloMat('b').color.setHex(0xffffff); haloMat().color.setHex(0xffffff); }
   const pebbles = (pw, pd, y, z0) => { const pb = mat('c_wpeb', 0xD9D2C6, { roughness: 0.9 }); for (let i = 0; i < Math.min(40, Math.round(pw * 3)); i++) { const r = 0.08 + (i % 3) * 0.03, m0 = new THREE.Mesh(new THREE.SphereGeometry(r, 6, 4), pb); m0.scale.y = 0.5; m0.position.set(-pw / 2 + 0.2 + ((i * 0.6173) % 1) * (pw - 0.4), y, z0 - pd / 2 + 0.15 + ((i * 0.381) % 1) * (pd - 0.3)); g.add(m0); } };
   if (kind === 'geyser') { const H = code === 'TG-CUBE1' ? 2 : 1.5, wall = 0.25; box(g, w, H, d, 0, H / 2, 0, FM); box(g, w - wall * 2, 0.04, d - wall * 2, 0, H + 0.01, 0, wat); [[w + 0.15, 0.2, 0, d / 2], [w + 0.15, 0.2, 0, -d / 2], [0.2, d + 0.15, w / 2, 0], [0.2, d + 0.15, -w / 2, 0]].forEach(([a, b, x, z]) => box(g, a, 0.12, b, x, H + 0.06, z, fin === 'stack' ? K.stone : FM));
     const n = ex.length, pts = code === 'TG-QUINT' ? [[0, 0], [-w / 4, -d / 4], [w / 4, -d / 4], [-w / 4, d / 4], [w / 4, d / 4]] : ex.map((_, k) => [-w / 2 + w * (k + 0.5) / n, 0]), foam = mat('c_wfoam', 0xF7FBFC, { transparent: true, opacity: 0.85, roughness: 0.6, emissive: 0x8FB8C8, emissiveIntensity: 0.15 });
-    pts.forEach(([x, z], k) => { const hh = ex[k] || 2; const j = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, hh, 10), foam); j.position.set(x, H + hh / 2, z); g.add(j); const t = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 6), foam); t.position.set(x, H + hh, z); g.add(t); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.03, 10), led); l.position.set(x, H - 0.22, z); g.add(l);
+    pts.forEach(([x, z], k) => { const hh = ex[k] || 2; const j = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.22, hh, 10), foam); j.position.set(x, H + hh / 2, z); g.add(j); const t = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 6), foam); t.position.set(x, H + hh, z); g.add(t);
+      if (wo.anim) pvAnim(tm => { const s0 = 0.86 + 0.14 * Math.sin(tm * 5.2 + k * 1.7); j.scale.y = s0; j.position.y = H + hh * s0 / 2; t.position.y = H + hh * s0; t.scale.setScalar(0.9 + 0.2 * Math.sin(tm * 7 + k)); }); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.03, 10), led); l.position.set(x, H - 0.22, z); g.add(l);
       const gj = new THREE.Sprite(haloMat()); gj.scale.set(1.1, hh + 0.9, 1); gj.position.set(x, H + hh / 2, z); nightOnly(gj, g); const gt = new THREE.Sprite(haloMat()); gt.scale.set(1.3, 1.3, 1); gt.position.set(x, H + hh, z); nightOnly(gt, g); }); return; }   // 266 (owner): lit from under, the jets glow at night
-  const bd = code.startsWith('WC') ? 2 : 1.5, FH = 7.5, ft = 0.8, fz = -d / 2 + ft / 2, bz = fz + ft / 2 + bd / 2;   // face 10 × 6 ft on an 18 in basin; the basin in front
+  const bd = code.startsWith('WC') ? 2 : 1.5, FH = wo.H ? Math.max(3, Math.min(14, +wo.H)) : 7.5, kH = FH / 7.5, ft = 0.8, fz = -d / 2 + ft / 2, bz = fz + ft / 2 + bd / 2;   // face 10 × 6 ft on an 18 in basin; the basin in front
   const trough = z0 => { box(g, w, 1.3, bd, 0, 0.65, z0, K.stone); const rm = 0.25; box(g, w + 0.1, 0.35, rm, 0, 1.47, z0 + bd / 2 - rm / 2 + 0.05, K.stone); box(g, w + 0.1, 0.35, rm, 0, 1.47, z0 - bd / 2 + rm / 2 - 0.05, K.stone); [-1, 1].forEach(a => box(g, rm, 0.35, bd, a * (w / 2 - rm / 2 + 0.05), 1.47, z0, K.stone));   // 263: an open basin — the water and pebbles show
     box(g, w - 0.5, 0.03, bd - 0.5, 0, 1.45, z0, wat); pebbles(w - 0.6, bd - 0.6, 1.47, z0); box(g, w - 0.6, 0.04, 0.06, 0, 1.5, z0 + bd / 2 - 0.3, led); };
   if (kind === 'rain' && fin === 'green') { [-1, 1].forEach(a => { const c0 = box(g, 2, FH, ft, a * (w / 2 - 1), FH / 2, fz, finMat('green')); }); box(g, w, 0.3, 0.7, 0, FH - 0.15, fz + 0.3, ss); }
   else { const face = box(g, w, FH, ft, 0, FH / 2, fz, FM); if (fin === 'glass') { box(g, w, 0.25, ft + 0.2, 0, 0.12, fz, ss); box(g, w, 0.2, ft + 0.3, 0, FH, fz, ss); } }
-  trough(bz); if (code === 'WW-DUO') trough(fz - ft / 2 - bd / 2);
+  trough(bz); if (code === 'WW-DUO' || wo.duo) trough(fz - ft / 2 - bd / 2);
+  if (wo.duo && code !== 'WW-DUO') { const p1 = new THREE.Mesh(new THREE.PlaneGeometry(w * 0.9, FH - 1.6), sheet); p1.position.set(0, (FH + 1.4) / 2, fz - ft / 2 - 0.03); g.add(p1); }   // 301: free-standing, double-sided — water down the back too
+  if (wo.greens) [-1, 1].forEach(a => { box(g, 2, FH, ft + 0.2, a * (w / 2 + 1.05), FH / 2, fz, finMat('green')); box(g, 2.1, 0.5, ft + 0.4, a * (w / 2 + 1.05), 0.25, fz, K.stone); });   // 301: vertical-garden columns both sides
+  if (wo.pelmet) { box(g, w + 0.3, 0.32, 1.3, 0, FH + 0.16, fz + 0.3, ss); const nP = Math.max(2, Math.round(w / 3)); for (let k = 0; k < nP; k++) { const wm = new THREE.Mesh(new THREE.PlaneGeometry(2.6, FH - 1.4), washMat()); wm.position.set(-w / 2 + w * (k + 0.5) / nP, FH - (FH - 1.4) / 2, fz + ft / 2 + 0.08); nightOnly(wm, g); } }   // 301: SS pelmet with LED downlights
   const zf = fz + ft / 2 + 0.03, fall = (fw, top, bot, x, z) => { const p0 = new THREE.Mesh(new THREE.PlaneGeometry(fw, Math.max(0.1, top - bot)), sheet); p0.position.set(x || 0, (top + bot) / 2, z == null ? zf : z); g.add(p0); };
   if (kind === 'spill') { box(g, w * 0.92, 0.08, 0.4, 0, FH - 0.3, zf + 0.15, ss); fall(w * 0.9, FH - 0.32, 1.32, 0, zf + 0.3); if (code === 'WW-DUO') { box(g, w * 0.92, 0.08, 0.4, 0, FH - 0.3, fz - ft / 2 - 0.15, ss); fall(w * 0.9, FH - 0.32, 1.32, 0, fz - ft / 2 - 0.3); } }
   else if (kind === 'weep') { fall(w * 0.98, FH - 0.2, 1.32, 0, zf + 0.005); box(g, w, 0.25, 0.4, 0, FH, fz, ss); }
   else if (kind === 'rain') { const cw = fin === 'green' ? w - 4.2 : w * 0.9, hy = fin === 'green' ? FH - 0.3 : FH - 0.4; if (fin !== 'green') box(g, cw + 0.2, 0.2, 0.35, 0, hy, zf + 0.2, ss); const n = Math.round(cw * 3); for (let k = 0; k < n; k++) { const c0 = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, hy - 1.35, 3), sheet); c0.position.set(-cw / 2 + cw * (k + 0.5) / n, (hy + 1.35) / 2, zf + 0.3 + ((k * 7) % 3) * 0.04); g.add(c0); } }
-  else if (kind === 'arch') { const nm = mat('c_wniche', 0x0F3E47, { roughness: 0.4 }), sh = new THREE.Shape(); sh.moveTo(-1.65, 0); sh.lineTo(1.65, 0); sh.lineTo(1.65, 3.3); sh.absarc(0, 3.3, 1.65, 0, Math.PI, false); sh.lineTo(-1.65, 0); const ni = new THREE.Mesh(new THREE.ShapeGeometry(sh, 16), nm); ni.position.set(0, 1.6, zf + 0.01); g.add(ni); box(g, 3, 0.08, 0.35, 0, 4.9, zf + 0.15, ss); fall(3, 4.88, 1.32, 0, zf + 0.28); }
+  else if (kind === 'arch') { const nm = mat('c_wniche', 0x0F3E47, { roughness: 0.4 }), sh = new THREE.Shape(); sh.moveTo(-1.65, 0); sh.lineTo(1.65, 0); sh.lineTo(1.65, 3.3); sh.absarc(0, 3.3, 1.65, 0, Math.PI, false); sh.lineTo(-1.65, 0); const ni = new THREE.Mesh(new THREE.ShapeGeometry(sh, 16), nm); ni.position.set(0, 1.6, zf + 0.01); ni.scale.y = Math.min(1.6, kH); g.add(ni); const ay = 1.6 + 3.3 * Math.min(1.6, kH); box(g, 3, 0.08, 0.35, 0, ay, zf + 0.15, ss); fall(3, ay - 0.02, 1.32, 0, zf + 0.28); }
   else if (kind === 'runnel') { box(g, 0.6, FH - 1.5, 0.1, 0, (FH + 1.5) / 2, zf - 0.04, mat('c_wrun', 0x111214, { roughness: 0.2 })); fall(0.5, FH - 0.2, 1.4, 0, zf + 0.02); box(g, 0.72, 0.06, 0.46, 0, 1.6, zf + 0.2, ss); }
-  else if (kind === 'spout') [-1, 0, 1].forEach(a => { const x = a * w * 0.28; box(g, 0.4, 0.17, 0.72, x, 4.5, zf + 0.36, finMat('corten')); const c = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x, 4.45, zf + 0.72), new THREE.Vector3(x, 4.2, zf + 1.4), new THREE.Vector3(x, 1.35, bz + 0.1)); const tb = new THREE.Mesh(new THREE.TubeGeometry(c, 12, 0.09, 6, false), sheet); g.add(tb); });
-  else if (kind === 'step' || kind === 'tilt') [[0.5, 5.8], [1, 4.3], [1.5, 2.8]].forEach(([pj, y], k) => { const sw = w * (0.7 - k * 0.12); if (kind === 'tilt') { const p0 = box(g, sw, 2, 0.08, 0, y - 0.6, zf + pj / 2 + 0.2, ss); p0.rotation.x = -0.35; } else box(g, sw, 0.18, pj, 0, y, zf + pj / 2, fin === 'cement' ? K.stone : ss); fall(sw * 0.95, y - 0.05, k === 2 ? 1.32 : y - 1.45, 0, zf + pj + 0.03); });
+  else if (kind === 'spout') [-1, 0, 1].forEach(a => { const x = a * w * 0.28; box(g, 0.4, 0.17, 0.72, x, 4.5 * kH, zf + 0.36, finMat('corten')); const c = new THREE.QuadraticBezierCurve3(new THREE.Vector3(x, 4.45 * kH, zf + 0.72), new THREE.Vector3(x, 4.2 * kH, zf + 1.4), new THREE.Vector3(x, 1.35, bz + 0.1)); const tb = new THREE.Mesh(new THREE.TubeGeometry(c, 12, 0.09, 6, false), sheet); g.add(tb); });
+  else if (kind === 'step' || kind === 'tilt') [[0.5, 5.8], [1, 4.3], [1.5, 2.8]].forEach(([pj, y0], k) => { const y = 1.5 + (y0 - 1.5) * kH; const sw = w * (0.7 - k * 0.12); if (kind === 'tilt') { const p0 = box(g, sw, 2, 0.08, 0, y - 0.6, zf + pj / 2 + 0.2, ss); p0.rotation.x = -0.35; } else box(g, sw, 0.18, pj, 0, y, zf + pj / 2, fin === 'cement' ? K.stone : ss); fall(sw * 0.95, y - 0.05, k === 2 ? 1.32 : y - 1.45, 0, zf + pj + 0.03); });
   else if (kind === 'bubb') [-1, 0, 1].forEach(a => { const x = a * w * 0.3; const r0 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.85, 8), ss); r0.position.set(x, 1.6, bz); g.add(r0); const b = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), sheet); b.position.set(x, 2.02, bz); g.add(b); });
-  else if (kind === 'casc') { let x0 = -(ex.reduce((a, q) => a + q[0], 0) + (ex.length - 1) * 0.7) / 2; ex.forEach(([nw, ly]) => { const x = x0 + nw / 2; x0 += nw + 0.7; box(g, nw + 0.1, 0.12, 0.3, x, ly, zf + 0.12, ss); const c = new THREE.QuadraticBezierCurve3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.15, 0.22), new THREE.Vector3(0, -(ly - 1.45), 0.4));
+  else if (kind === 'casc') { let x0 = -(ex.reduce((a, q) => a + q[0], 0) + (ex.length - 1) * 0.7) / 2; ex.forEach(([nw, ly0]) => { const ly = 1.45 + (ly0 - 1.45) * kH, x = x0 + nw / 2; x0 += nw + 0.7; box(g, nw + 0.1, 0.12, 0.3, x, ly, zf + 0.12, ss); const c = new THREE.QuadraticBezierCurve3(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -0.15, 0.22), new THREE.Vector3(0, -(ly - 1.45), 0.4));
       const pts = c.getPoints(10), sg = new THREE.BufferGeometry(), pos = []; for (let i = 0; i < pts.length - 1; i++) { const p0 = pts[i], p1 = pts[i + 1]; [[-nw / 2 + 0.05, p0], [nw / 2 - 0.05, p0], [-nw / 2 + 0.05, p1], [nw / 2 - 0.05, p0], [nw / 2 - 0.05, p1], [-nw / 2 + 0.05, p1]].forEach(([dx, p]) => pos.push(x + dx, ly - 0.06 + p.y, zf + 0.26 + p.z)); }
       sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.computeVertexNormals(); g.add(new THREE.Mesh(sg, sheet)); }); }
   const nU = Math.max(1, Math.round(w / 2.6)), uh = FH - 1.6;   // 266 (owner): underwater lights in the basin wash up the wall at night
@@ -578,7 +594,7 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     pbox(g, w, d, 0, 0, 2, K.frp);   // 274: trough in the theme's colour
   } else if (cat === 'planter') {   // 262 (owner): one of our real plant models in a pot — a tropical mix, sizes vary
     const sdp = Math.abs(Math.round((+(it && it.x) || 1) * 13 + (+(it && it.z) || 1) * 7)), k = TROP_B[sdp % TROP_B.length], m = noSh(plantModel(THREE, k, 3 + (sdp % 2) * 1.5, { pot: 'pot', seed: 1 })); m.rotation.y = (sdp % 12) * 0.52; g.add(m);
-  } else if (cat === 'water' && it && WLIB[wCode(it)]) { waterLib(g, w, d, wCode(it), K);   // 262 (owner): the water features as in our library (MTO-WW / WC / TG)
+  } else if (cat === 'water' && it && WLIB[wCode(it)]) { waterLib(g, w, d, wCode(it), K, it.wo);   // 262 (owner): the water features as in our library (MTO-WW / WC / TG)
   } else if (cat === 'water' && it && it.mech) {   // 247 (owner): water feature by its mechanism — cascade / wall fall / rain curtain / geyser jets
     const sheet = mat('c_wsheet', 0xA9DCEB, { transparent: true, opacity: 0.55, roughness: 0.05, metalness: 0.1, emissive: 0x2E6F86, emissiveIntensity: 0.15, side: THREE.DoubleSide }), m = it.mech;
     const pool = (pw, pd, z0) => { box(g, pw, 0.9, pd, 0, 0.45, z0, K.stone); box(g, pw - 0.3, 0.06, pd - 0.3, 0, 0.88, z0, K.water); if (themeKey() === 'santorini') { azPlane(g, pw - 0.02, 0.8, 0, 0.45, z0 + pd / 2 + 0.01); } if (themeKey() === 'tropical') { box(g, pw + 0.1, 0.12, 0.3, 0, 0.96, z0 + pd / 2 - 0.1, K.wood2); box(g, pw + 0.1, 0.12, 0.3, 0, 0.96, z0 - pd / 2 + 0.1, K.wood2); box(g, 0.3, 0.12, pd, -pw / 2 + 0.1, 0.96, z0, K.wood2); box(g, 0.3, 0.12, pd, pw / 2 - 0.1, 0.96, z0, K.wood2); } };   // 292: tropical = dark-wood edge
@@ -1171,6 +1187,17 @@ function lookOn(g, look, ox, oz) {   // 299: Complete the look pieces round a st
 // 300: the customiser's night view — no sky light, only what glows (LED strips, backlit jaali, lamps)
 function pvNight(on) { if (!PV || PV.isNight === on) return; PV.isNight = on; PV.scene.environment = on ? null : PV.env; PV.hemi.intensity = on ? 0.16 : 0.8; PV.sun.intensity = on ? 0.12 : 1.7; PV.renderer.toneMappingExposure = on ? 1.25 : 1; }
 function pvGlow(g) { g.traverse(o => { if (o.userData && o.userData.nightOnly) o.visible = true; }); }
+// 301: a water feature in its usual setting. Its footprint is centred on 0, the face at the back (-z), the basin in front.
+function wtrStudio(it, o) {
+  const g = new THREE.Group(), code = wCode(it), geys = /^TG-/.test(code), wo = it.wo || {}, W = Math.max(2, +it.w || 8), D = Math.max(1, +it.d || 2), FH = geys ? 2 : Math.max(3, Math.min(14, +wo.H || 7.5)), ex = wo.greens ? 4.2 : 0, FW = W + ex + 16;
+  const M2 = (k, c, x) => mat(k, c, Object.assign({ roughness: 0.9 }, x || {}));
+  studioFloor(g, -FW / 2, -D / 2 - (geys || wo.duo ? 6 : 0.6), FW, 18);
+  if (geys || wo.duo) { const l = new THREE.Mesh(new THREE.PlaneGeometry(FW + 10, 16), M2('pv_lawn', 0x6E9B4A, { roughness: 1 })); l.rotation.x = -Math.PI / 2; l.position.set(0, 0.002, -D / 2 - 6 - 8); l.receiveShadow = true; g.add(l); }
+  else box(g, FW, Math.max(10, FH + 2), 0.6, 0, Math.max(10, FH + 2) / 2, -D / 2 - 0.3, M2('pv_twall', 0xD9D1C4));   // the terrace wall it stands against
+  const m = generic('water', W, D, FH, it); g.add(m);
+  sPerson(g, W / 2 + ex / 2 + 2.6, geys ? -D / 2 + 0.5 : D / 2 + 1.6, -0.35);
+  return { g, L: W + ex, D, H: Math.max(FH + (wo.pelmet ? 0.4 : 0), geys ? 6 : 0), geys, span: Math.max(W + ex + 8, (geys ? 6 : FH) * 1.6 + 4, 12) };
+}
 // 300: a privacy screen / partition in its usual setting. The screen runs along x centred on 0, its front towards +z.
 function scrStudio(it, o) {
   const g = new THREE.Group(), L = Math.max(1, +it.w || 8), H = Math.max(0.8, +it.h || 4), pl = o.place || 'parapet', FW = L + 16, night = !!o.night;
@@ -1247,10 +1274,10 @@ export function preview(el, items, opts) {
     PV = { el, renderer, scene, cam, controls, group: null, key: '', fl, wall, hemi, sun, env: scene.environment };
     const size = () => { const w = el.clientWidth || 600, h = el.clientHeight || 400; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); };
     PV.size = size; size(); try { PV.ro = new ResizeObserver(size); PV.ro.observe(el); } catch (e) {}
-    const loop = () => { if (!PV || PV.renderer !== renderer) return; if (el.isConnected && el.offsetParent !== null) { controls.update(); renderer.render(scene, cam); } requestAnimationFrame(loop); }; loop();
+    const loop = () => { if (!PV || PV.renderer !== renderer) return; if (el.isConnected && el.offsetParent !== null) { controls.update(); if (PV.anim && PV.anim.length) { const tm = performance.now() / 1000; PV.anim.forEach(f => { try { f(tm); } catch (e) {} }); } renderer.render(scene, cam); } requestAnimationFrame(loop); }; loop();
   }
   const key = JSON.stringify(items) + JSON.stringify((opts && opts.look) || '') + (opts && opts.night ? 'N' : '') + (opts && opts.place || ''); if (key === PV.key) return; const first = !PV.key; PV.key = key;
-  pvNight(!!(opts && opts.night));
+  pvNight(!!(opts && opts.night)); PV.anim = [];
   if (PV.group) PV.scene.remove(PV.group);
   const corner = opts && opts.studio === 'corner'; PV.fl.visible = PV.wall.visible = !corner; PV.scene.background = new THREE.Color(corner ? 0xF4F2EE : 0xF1ECE3);
   if (corner) return cornerStudio(items, first, opts.look);
@@ -1259,6 +1286,15 @@ export function preview(el, items, opts) {
     const B = fwStudio(items[0] || {}); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
     const lw = lookOn(B.g, opts.look, -Math.max(2, +(items[0] || {}).W || 8) / 2, 0), bsp = Math.max(B.span, lw ? lw + 4 : 0);
     const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'fw' + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * (lw ? nar : 1); /* 299: a phone sees the pieces at the sides too */ PV.controls.target.set(0, Math.min(B.H * .48, 5), 1); PV.cam.position.set(-sp * 0.22, B.H * .5 + sp * .14, sp * 1.25); PV.controls.update(); }
+    return;
+  }
+  if (opts && opts.studio === 'wtr') {   // 301: a water feature — on a terrace wall (walls / cascades), free-standing on a deck by the lawn (geysers, double-sided)
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(opts.night ? 0x141B2B : 0xF4F2EE);
+    const B = wtrStudio(items[0] || {}, opts); PV.group = B.g; PV.scene.add(B.g); if (opts.night) pvGlow(B.g);
+    const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
+    if (lw) { const lb = new THREE.Box3().setFromObject(B.g.children[B.g.children.length - 1]); B.g.children.forEach(c => { if (c.userData.person && isFinite(lb.max.x)) c.position.x = Math.max(c.position.x, lb.max.x + 1.4); }); }
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'wtr' + Math.round(bsp) + Math.round(B.H) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar, ty = Math.min(B.H * 0.45, 4.5);
+      PV.controls.target.set(0, ty, 0.5); PV.cam.position.set(-sp * 0.32, ty + sp * (B.geys ? 0.4 : 0.22), sp * 1.3); PV.controls.update(); }
     return;
   }
   if (opts && opts.studio === 'scr') {   // 300: a privacy screen / partition in its usual place (parapet, boundary wall, balcony, between pergola posts, by a pool, hiding AC units…)
