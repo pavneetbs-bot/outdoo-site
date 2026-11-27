@@ -21,7 +21,7 @@
     { id:'fire', slots:['H2','C1','C4','P2','C2','H4','C3','S1'], cols:['fire-pits'], img:['fp-teardrop','fp-orb'], bg:'#1E1D1B', fg:'#fff', ac:'#F4C76B',
       eye:'Fire pits & BBQ · ready to ship', h:'Gather round', em:'the fire.', p:'Hand-cut steel fire pits and barbecues for long winter evenings.', btn:'Shop fire pits', act:'col:fire-pits' },
     { id:'bar', slots:['H2','H3','C1','C4','P2','C3','C2','H4'], cols:['bar-counters'], img:['mto-bar-subway','mto-bar-arch'], bg:'#262422', fg:'#fff', ac:'#F4C76B',
-      eye:'New Year · Outdoor kitchens', h:'Host the New Year', em:'outdoors.', p:'Bar counters, BBQ stations and pizza-oven counters, made to your length.', btn:'Plan your bar', act:'col:bar-counters' },
+      eye:'New Year · Bar counters', h:'Host the New Year', em:'outdoors.', p:'Bar counters made to your length, for terrace parties.', btn:'Plan your bar', act:'col:bar-counters' },
     { id:'pergola', slots:['H2','C1','C4','P2','C3','C2'], cols:['shade'], img:['mto-pergola','cat-shade-2'], bg:'#55634A', fg:'#fff', ac:'#EADCC8',
       eye:'Build in winter, sit out in summer', h:'Plan your pergola', em:'this season.', p:'Louvre, slatted and gable pergolas, made to your terrace size.', btn:'See pergolas', act:'col:shade' },
     { id:'furn', slots:['H2','C1','C4','P2','C2','H4','C3'], cols:['furniture'], img:['mto-sofa-teak','mto-chair'], bg:'#EADCC8', fg:'#2E2E2E', ac:'#C26445',

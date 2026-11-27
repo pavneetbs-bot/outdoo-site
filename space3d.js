@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=83';
-import { pergolaModel } from './pergola3d.js?v=70';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=84';
+import { pergolaModel } from './pergola3d.js?v=71';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -16,7 +16,7 @@ import { gateStudio, gateSpec } from './gate3d.js?v=1';   // 309
 import { acStudio, acSpec } from './ac3d.js?v=1';   // 309
 import { scStudio, scSpec } from './sculpt3d.js?v=1';   // 309b
 import { graffitiStudio, graffitiSpec, vgStudio, vgSpec, deckStudio, deckSpec } from './misc3d.js?v=1';   // 309
-import { barStudio, barSpec, kitchenStudio, kitchenSpec, isKitchen } from './bar3d.js?v=7';   // 295: the bar studio
+import { barStudio, barSpec } from './bar3d.js?v=9';   // 295: the bar studio
 import { fwStudio } from './fw3d.js?v=4';
 import { benchStudio, benchModel, benchCode } from './bench3d.js?v=1';   // 307: the bench studio + bench models for Complete the look   // 296: the feature wall studio   // 295: the bar studio
 const LAYK = k => !!LSPEC[k];
@@ -1365,7 +1365,7 @@ export function preview(el, items, opts) {
   }
   if (opts && opts.studio === 'bar') {   // 295: one bar frame with the design's look + the customer's picks, a 9 ft wall 3 ft behind it
     PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
-    const it0 = items[0] || {}, kit = isKitchen(it0.sku), B = (kit ? kitchenStudio : barStudio)(Object.assign(it0.m ? (kit ? kitchenSpec : barSpec)(it0.sku, it0.m, it0.o || {}) : it0, { view: opts.view }));   /* 309: kitchens */ if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const it0 = items[0] || {}, B = barStudio(Object.assign(it0.m ? barSpec(it0.sku, it0.m, it0.o || {}) : it0, { view: opts.view })); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
     const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
     const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = (opts.view || 'front') + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * (lw ? nar : 1), bk = opts.view === 'back';
       PV.controls.target.set(0, 2.6, bk ? -1 : 0.6); PV.cam.position.set(sp * 0.5, sp * 0.5 + 2.5, (bk ? -1 : 1) * sp * 1.2); PV.controls.update(); }

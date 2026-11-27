@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=93';
+import * as S3 from './space3d.js?v=94';
 import * as P2 from './plan2d.js?v=36';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=4';
-import { cutHit, mumtyProj, mstGap, mstGeom } from './cabin3d.js?v=83';
+import { cutHit, mumtyProj, mstGap, mstGeom } from './cabin3d.js?v=84';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -907,7 +907,7 @@ function gWalls() {   // 247: walls graffiti can go on — the stairs room's fac
   ['back', 'left', 'right'].filter(sd => !g.road.includes(sd)).forEach(sd => L.push(['p:' + sd, sd[0].toUpperCase() + sd.slice(1) + ' parapet wall'])); return L; }
 const PGPPL = { '2-4': [15, 10], '5-8': [20, 15], '9-12': [30, 20], '12+': [32, 25] }, CABPPL = { '1-2': [15, 10], '3-4': [20, 15], '5-8': [30, 20], '9-12': [40, 20] };   // 268 (owner): Small 150 · Medium 300 · Large 600 · Extra large 800 sq ft
 const SZT = ['Small', 'Medium', 'Large', 'Extra large'];
-const PG_IDEAL = [['4 – 6 people', 'A swing or a 2-seater, a 4-seater dining, tea / reading corner'], ['8 – 12 people', 'Sofa lounge + coffee table, 6-seater dining, a bar corner, hot tub'], ['15 – 25 people', 'Family / party lounge, dining for 10, bar + seating, outdoor kitchen, yoga deck'], ['25 – 35 people', 'Events, lounge + dining + bar together, open-air movie nights, kids’ play area']];
+const PG_IDEAL = [['4 – 6 people', 'A swing or a 2-seater, a 4-seater dining, tea / reading corner'], ['8 – 12 people', 'Sofa lounge + coffee table, 6-seater dining, a bar corner, hot tub'], ['15 – 25 people', 'Family / party lounge, dining for 10, bar + seating, food counter, yoga deck'], ['25 – 35 people', 'Events, lounge + dining + bar together, open-air movie nights, kids’ play area']];
 const CAB_IDEAL = [['2 – 4 people', 'WFH office for 1–2, reading / music room, guest bedroom, gym corner, pantry'], ['4 – 8 people', 'Bedroom with washroom, office for 4, home gym, home theatre (6 seats), kids’ room'], ['8 – 15 people', '1 BHK setup, theatre + bar, games room with a pool table, gym + yoga, dining for 10'], ['15 – 20 people', '2 BHK setup, home theatre + bar lounge, pool table + games, office for 8–10, party hall']];
 function pplTag(d, n) { return d ? `<small style="display:block;font-weight:400;font-size:11px;color:#8A8278">${SZT[n]} · ~${d[0] * d[1]} sq ft</small>` : ''; }
 function szRows(pre, keys, map, ideal, cur) { return '<div class="pl-szt">' + keys.map((k, n) => { const d = map[k]; return `<button type="button" data-su="${pre}${k}" class="${cur === k ? 'on' : ''}"><span class="pl-szh"><b>${SZT[n]}</b><em>~${d[0] * d[1]} sq ft · ${d[0]}′ × ${d[1]}′</em><em>${ideal[n][0]}</em></span><small><b>Ideal for:</b> ${ideal[n][1]}</small></button>`; }).join('') + '</div>'; }

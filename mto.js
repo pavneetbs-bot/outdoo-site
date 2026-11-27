@@ -629,8 +629,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=83').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=83'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=84').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=84'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1970,7 +1970,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=142').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=143').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -3128,7 +3128,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, look: DS_SOLO && !S.site && lookArr().length ? lookNow() : null, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } lk2Sync(); return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=70').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=71').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -3500,7 +3500,7 @@
     arr(m0.groups).forEach(function (g) { if (g.name && !(o0.groups || {})[g.name] && arr(g.options)[0]) { o0.groups = Object.assign({}, o0.groups); o0.groups[g.name] = g.options[0].name; } });   // 199: first choice of each option group (e.g. No light)
     var lp = S.lkChild && LKP ? PRODS[LKP.S.id] : null; ov.classList.toggle('lk-top', !!(lp && LKP.kind !== 'cu')); if (lp) lookCss();
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(short(x.n)) + ' · Customise</b><button type="button" data-cu="close" aria-label="' + (lp ? 'Back without saving' : 'Close') + '">' + (lp ? '← Back' : '✕ Close') + '</button></div>' + (lp ? '<div class="lk-chd">For your <b>' + esc(short(lp.n)) + '</b> — set it up, then <b>Save to my design</b>.</div>' : '') +
-      '<div class="pg3-bd"><div class="pg3-st cu-st' + (cuHas3d(x, S.id) ? '' : ' photo nog') + '"><img id="cuImg" alt="">' + (cuHas3d(x, S.id) ? '' : '<button type="button" class="cu-gn" data-cugi="-1" aria-label="Previous picture">‹</button><button type="button" class="cu-gn r" data-cugi="1" aria-label="Next picture">›</button><span class="cu-gc" id="cuGc"></span>') + (cuHas3d(x, S.id) ? '<div id="cu3d" class="cu3d"></div><div class="cu-vw"><button type="button" data-cuv="3d" class="on">3D</button>' + (isBar(S.id) && !/^MTO-(OK|BBQ|PZ)-(?!ISLAND)/.test(S.id) ? '<button type="button" data-cuside="back">Back side</button>' : '') + (isWtr(S.id) || isScr(S.id) && (arr(x.cz.addons).some(function (a) { return /LED/i.test(a.name || ''); }) || /BACKLIT|STAGGER/.test(S.id)) ? '<button type="button" data-cunt>🌙 Night</button>' : '') + '<button type="button" data-cuv="photo">Photo</button></div>' : '') + '<div class="pg3-cap" id="cuCap"></div></div><div class="pg3-pn" id="cuPn"></div></div>' +
+      '<div class="pg3-bd"><div class="pg3-st cu-st' + (cuHas3d(x, S.id) ? '' : ' photo nog') + '"><img id="cuImg" alt="">' + (cuHas3d(x, S.id) ? '' : '<button type="button" class="cu-gn" data-cugi="-1" aria-label="Previous picture">‹</button><button type="button" class="cu-gn r" data-cugi="1" aria-label="Next picture">›</button><span class="cu-gc" id="cuGc"></span>') + (cuHas3d(x, S.id) ? '<div id="cu3d" class="cu3d"></div><div class="cu-vw"><button type="button" data-cuv="3d" class="on">3D</button>' + (isBar(S.id) ? '<button type="button" data-cuside="back">Back side</button>' : '') + (isWtr(S.id) || isScr(S.id) && (arr(x.cz.addons).some(function (a) { return /LED/i.test(a.name || ''); }) || /BACKLIT|STAGGER/.test(S.id)) ? '<button type="button" data-cunt>🌙 Night</button>' : '') + '<button type="button" data-cuv="photo">Photo</button></div>' : '') + '<div class="pg3-cap" id="cuCap"></div></div><div class="pg3-pn" id="cuPn"></div></div>' +
       '<div class="pg3-ft">' + (PCAT[x.col] && !DS_SOLO ? '<button type="button" data-cu="space" class="cu-sp">📐 See it in my space</button>' : '') + '<button type="button" data-cu="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button></div>';
     if (isWtr(S.id) && !S.lkChild && !S.o._wtr && x.cz.unit === 'face') { S.o._wtr = 1; if (!num(S.o.w) || num(S.o.w) <= Math.ceil(Math.sqrt(num(x.cz.min_size) || 0))) S.o.w = 8; if (!num(S.o.h) || num(S.o.h) <= 4) S.o.h = 7; }   // 301: 8 × 7 ft to start
     if (isGt(S.id) && /^MTO-GT-(MS|WD)/.test(S.id) && !S.lkChild && !S.o._gt) { S.o._gt = 1; if (!num(S.o.w) || num(S.o.w) <= 8) S.o.w = 12; if (!num(S.o.h) || num(S.o.h) <= 5) S.o.h = 6; }   // 309: a usual main gate to start with (12 × 6 ft)
@@ -3573,7 +3573,7 @@
   }
   // 199: designs that sit in the planner as one of its things (planters…): "See it in my space" puts the pieces on a plan — the one on this device, a saved one, or a new space
   var PCAT = { planters: 'planter', 'privacy-screens': 'privacy' };
-  function isBar(sku) { return /^MTO-(BR|OK|BBQ|PZ)-/.test(sku || ''); }   /* 309: + outdoor kitchens / BBQ / pizza counters */   // 295: bars get the bar studio
+  function isBar(sku) { return /^MTO-BR-/.test(sku || ''); }   // 295: bars get the bar studio
   function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku) || /^MTO-FW-/.test(sku || '') || isWtr(sku) || isBn(sku) || isRl(sku) || isGt(sku) || isAc(sku) || /^MTO-(GF|VG|DK|SC)-/.test(sku || ''); }
   function isAc(id) { return /^MTO-AC-/.test(String(id || '')); }   /* 309: AC covers (ac3d.js) */
   function isGt(id) { return /^MTO-GT-/.test(String(id || '')); }   /* 309: gates (gate3d.js) */
@@ -3621,7 +3621,7 @@
   function cu3dDraw0() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=93').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=94').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     if (isBn(S.id)) { try { CU3.m.preview(el, [{ code: S.id.slice(7), n: num(o.n) || seatLo(m) || 3 }], { studio: 'bench' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 307
     if (isFw(S.id)) { try { CU3.m.preview(el, [{ code: S.id.replace(/^MTO-/, ''), W: num(o.w) || 8, H: num(o.h) || 9, groups: o.groups || {}, place: fwPlace(S.id, x) }], { studio: 'fw', look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 296
     var mk9 = /^MTO-(GF|VG|DK)-/.exec(S.id); if (mk9) { try { CU3.m.preview(el, [{ sku: S.id, img: refPhoto(x), m: { materials: m.materials, groups: m.groups }, o: { l: o.l, w: o.w, h: o.h, material: o.material, colour: o.colour, groups: o.groups, addons: o.addons } }], { studio: mk9[1].toLowerCase(), look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309: graffiti / vertical gardens / decks (misc3d.js)
@@ -3882,7 +3882,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=93').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=94').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
