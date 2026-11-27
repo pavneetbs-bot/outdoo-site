@@ -2418,9 +2418,12 @@
       var dm = e.target.id === 'dsMy' && e.target; if (dm) { dm.classList.remove('open'); return; } }, true);
     document.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-dsall]'); if (!b) return; e.stopPropagation(); DS_ALL = !DS_ALL; var g = b.closest('.ds-g'); if (g) g.classList.toggle('all', DS_ALL); b.textContent = 'All steps ' + (DS_ALL ? '▴' : '▾'); b.setAttribute('aria-expanded', DS_ALL); }, true);
     document.addEventListener('pointerdown', function (e) { var hd = e.target.closest && e.target.closest('.ds-hdl'); if (!hd) return; if (hd.closest('#mtoCfg') && document.body.classList.contains('cb-studio')) return cbSheetDrag(e); var ov = hd.closest('.pg3-ov'); if (!ov) return; e.preventDefault();
-      var y0 = e.clientY, H = innerHeight / 100, h0 = DS_ULH, moved = false, fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
-      var set = function (v) { DS_ULH = Math.max(26, Math.min(dsMax(ov), v)); ov.style.setProperty('--ulh', DS_ULH + 'dvh'); };
-      var mv = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) set(h0 + d); }, up = function () { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); if (!moved) set(DS_ULH >= dsMax(ov) - 4 ? 36 : 99); fit(); setTimeout(fit, 150); };
+      /* 313c (owner): like the cabin sheet — while dragging only the panel moves (transform, no 3D / layout change per frame); the 3D height is set once on release */
+      var y0 = e.clientY, H = innerHeight / 100, h0 = DS_ULH, mx = dsMax(ov), v = h0, moved = false, pn = hd.closest('.pg3-pn') || ov.querySelector('.pg3-pn'), fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
+      var cl = function (x) { return Math.max(26, Math.min(mx, x)); }, show = function (x, an) { if (!pn) return; pn.style.transition = an ? 'transform .2s ease' : 'none'; pn.style.transform = 'translateY(' + ((x - h0) * H) + 'px)'; };
+      var set = function (x) { DS_ULH = cl(x); if (pn) { pn.style.transition = 'none'; pn.style.transform = ''; } ov.style.setProperty('--ulh', DS_ULH + 'dvh'); };
+      var mv = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) { v = cl(h0 + d); show(v); } }, up = function () { document.removeEventListener('pointermove', mv); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up);
+        if (!moved) { v = h0 >= mx - 4 ? 36 : mx; show(v, true); setTimeout(function () { set(v); fit(); setTimeout(fit, 150); }, 210); return; } set(v); fit(); setTimeout(fit, 150); };
       document.addEventListener('pointermove', mv); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up); }, true);
   }
   var DS_ULH = 58, CB_ULH = 58;
