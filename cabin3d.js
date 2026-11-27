@@ -424,7 +424,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=83').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=84').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
@@ -535,7 +535,7 @@ function ensure(el) {
     renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;touch-action:none;border-radius:16px';
     R = { renderer, scene, cam, ortho, controls, sun, hemi, key: '', view: '', group: null, skyD: sky('#BFD8EA', '#F1EEE7'), skyN: sky('#0B1222', '#2B3550'), night: false };
     scene.background = R.skyD;
-    const loop = () => { R.raf = requestAnimationFrame(loop); if (!R.el || !R.el.isConnected) return; R.controls.update(); keepNear(); under(); R.renderer.render(R.scene, R.active || R.cam); };
+    const loop = () => { R.raf = requestAnimationFrame(loop); if (!R.el || !R.el.isConnected || R.el.offsetParent === null) return; R.controls.update(); keepNear(); under(); R.renderer.render(R.scene, R.active || R.cam); };
     loop();
     window.addEventListener('resize', () => R.el && size());
     const cv = renderer.domElement;

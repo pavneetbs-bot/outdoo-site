@@ -4,7 +4,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { plotModel } from './cabin3d.js?v=73';
+import { plotModel } from './cabin3d.js?v=74';
 import { studioFloor, person } from './studio3d.js?v=7';   // 283: the design studio setting (shared with every designer)
 
 const MM = v => v / 304.8;   // mm → ft
@@ -226,7 +226,7 @@ function ensure(el) {
   sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, far: 120 });
   scene.add(hemi, sun, sun.target);
   R = { renderer, scene, cam, controls, hemi, sun, el, group: null, key: '', night: false };
-  setNight(false); size(); const loop = () => { R.raf = requestAnimationFrame(loop); controls.update(); renderer.render(scene, cam); }; loop();
+  setNight(false); size(); const loop = () => { R.raf = requestAnimationFrame(loop); if (!R.el || !R.el.isConnected || R.el.offsetParent === null) return; controls.update(); renderer.render(scene, cam); }; loop();   /* 305: nothing drawn while the designer is closed (the page froze on a second open) */
   window.addEventListener('resize', size);
 }
 function size() { if (!R || !R.el) return; const w = R.el.clientWidth || 600, h = R.el.clientHeight || 400; R.renderer.setSize(w, h, false); R.renderer.domElement.style.width = '100%'; R.renderer.domElement.style.height = '100%'; R.cam.aspect = w / h; R.cam.updateProjectionMatrix(); }
@@ -273,7 +273,7 @@ export function show(el, sku, o, opts) {
   const t = opts.site && opts.site.kind === 'terrace' ? opts.site : null;
   const wantAr = t && Array.isArray(t.around) && t.around.some(Boolean);   // 193j: the plan's other things around it
   const LK = !t && opts.studio && opts.look && (opts.look.items.length || opts.look.pend) ? opts.look : null;   // 296: Complete the look
-  if ((opts.furn || wantAr || (LK && LK.items.length)) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=83').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
+  if ((opts.furn || wantAr || (LK && LK.items.length)) && !FURN && !FURN_LOADING) { FURN_LOADING = true; import('./space3d.js?v=84').then(m => { FURN = m.generic; ITEMS = m.itemsGroup; R.key = ''; show(el, sku, o, opts); }).catch(() => {}); }
   const key = sku + '|' + JSON.stringify(o) + '|' + JSON.stringify(t) + '|' + (opts.deck ? 'd' + JSON.stringify(opts.deck) : '') + (opts.furn || '') + (FURN ? 'F' : '') + (LK ? JSON.stringify(LK) : '');
   if (key !== R.key) {
     const L0 = Math.max(6, +o.l || 12), W0 = Math.max(6, +o.w || 10), mode = t ? (t.place ? 'place' : 'site') : 'lawn';
@@ -285,7 +285,7 @@ export function show(el, sku, o, opts) {
       b = build(sku, o, true); root = new THREE.Group(); const L = b.L, W = b.W, wl = /wall/i.test(String(o.layout || ''));
       const M8 = LK ? 13 : 8; studioFloor(root, -M8, wl ? -1.05 : -M8, L + 2 * M8, W + (wl ? M8 + 1.05 : 2 * M8));
       if (wl) box(root, L + 10, Math.max(10, b.H + 2), 0.75, L / 2, Math.max(10, b.H + 2) / 2, -0.43, mat('studioWall', { color: 0xE9E5DE, roughness: 0.95 }));
-      const y0 = extras(root, L, W, opts, wl); b.g.position.y = y0; root.add(b.g); if (LK) person(root, L / 2 + 2.5, W + 4, -0.3); else person(root, L + 2.6, W * 0.7, -0.5);
+      const y0 = extras(root, L, W, opts, wl); b.g.position.y = y0; root.add(b.g); if (LK) person(root, LK.person ? LK.person.x : L / 2 + 2.5, LK.person ? LK.person.z : W + 4, -0.3); else person(root, L + 2.6, W * 0.7, -0.5);
       if (LK && ITEMS) { [false, true].forEach(ins => { const li = LK.items.filter(i => !!i.in === ins); if (!li.length) return; try { const gi = ITEMS(li, { labels: false, site: { kind: 'lawn', light: '' } }).g; if (ins) gi.position.y = y0; root.add(gi); } catch (e) { if (window.console) console.warn(e); } }); }
       if (LK && LK.pend) pendants(root, L, W, y0 + b.H); }
     else if (!t) {   // a lawn with a deck / furniture: the ground drawn here, the pergola lifted onto the deck
