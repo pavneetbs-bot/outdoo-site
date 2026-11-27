@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=87';
-import { pergolaModel } from './pergola3d.js?v=74';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=88';
+import { pergolaModel } from './pergola3d.js?v=75';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -133,15 +133,73 @@ function keyhole(a, c, r) {   // 294: keyhole (horseshoe) arch — opening 2a wi
 const khPts = (a, c, r) => { const p = keyhole(a, c, r).getPoints(24); while (p.length > 1 && p[p.length - 1].distanceTo(p[0]) < 1e-4) p.pop(); return p; };   // (-a,0) up, over the arch, down to (a,0)
 const khWall = (w, h, a, c, r) => new THREE.Shape([new THREE.Vector2(-w / 2, 0)].concat(khPts(a, c, r), [new THREE.Vector2(w / 2, 0), new THREE.Vector2(w / 2, h), new THREE.Vector2(-w / 2, h)]));   // the wall round a keyhole opening (no holes — one outline)
 const khRim = (a, c, r, t) => new THREE.Shape(khPts(a + t, c, r + t).concat(khPts(a, c, r).reverse()));
-function turCabin(g) {   // 294 (owner, Turkish guide): lime-white walls, brass frames + fascia, sand plinth / roof edge, a keyhole arch over every glass bay, lanterns by the doors, bougainvillea on a corner
-  const lw = mat('c_tk_lime', 0xF4EFE6, { roughness: 0.95 }), wn = mat('c_tk_wal', 0x5A3B26, { roughness: 0.7 }), sd = mat('c_tk_sand', 0xE3CFAE, { roughness: 0.9 }), br = mat('c_tk_brass', 0xC9A86C, { metalness: 0.6, roughness: 0.32 }), pl = mat('c_tk_plinth', 0xC9AE86, { roughness: 0.9 });
-  const gl = []; g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color) return; const c = o.material.color.getHex(); if (c === 0xBFDCE6 && o.material.opacity < 0.34) { gl.push(o); return; } if (o.material.map) return;
-    if (c === 0xF2F0EB || c === 0x6E6C68) o.material = lw; else if (c === 0xE4E1DA) o.material = sd; else if (c === 0x2B2B2B) o.material = br; else if (c === 0x5A564F) o.material = pl; else if (c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = wn; });
+function engrTex() {   // 313: carved sand stone — 8-point girih stars cut into it (colour + bump)
+  if (WTX._eng) return WTX._eng; const mk = (bump) => { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.fillStyle = bump ? '#fff' : '#D9C39C'; x.fillRect(0, 0, 256, 256);
+    x.strokeStyle = bump ? '#222' : '#A98A5C'; x.lineWidth = 7; x.lineJoin = 'round'; const st = (cx, cy, r) => { x.beginPath(); for (let k = 0; k <= 16; k++) { const a = k * Math.PI / 8 - Math.PI / 2, rr = k % 2 ? r * 0.55 : r; x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } x.stroke(); };
+    [[64, 64], [192, 64], [64, 192], [192, 192]].forEach(([a, b]) => { st(a, b, 54); st(a, b, 26); }); [[0, 128], [128, 0], [256, 128], [128, 256], [128, 128], [0, 0], [256, 0], [0, 256], [256, 256]].forEach(([a, b]) => { x.beginPath(); x.moveTo(a - 20, b); x.lineTo(a, b - 20); x.lineTo(a + 20, b); x.lineTo(a, b + 20); x.closePath(); x.stroke(); });
+    if (!bump) { const d = x.getImageData(0, 0, 256, 256); for (let k = 0; k < d.data.length; k += 4) { const n = (Math.random() - 0.5) * 14; d.data[k] += n; d.data[k + 1] += n; d.data[k + 2] += n; } x.putImageData(d, 0, 0); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; if (!bump && 'colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return t; };
+  return (WTX._eng = [mk(false), mk(true)]); }
+function engrMat(rx, ry) { const k = 'c_eng_' + Math.round(rx * 2) + '_' + Math.round(ry * 2); if (M[k]) return M[k]; const [a, b] = engrTex(), m1 = a.clone(), b1 = b.clone(); [m1, b1].forEach(t => { t.needsUpdate = true; t.repeat.set(Math.max(0.5, rx), Math.max(0.5, ry)); });
+  return (M[k] = new THREE.MeshStandardMaterial({ map: m1, bumpMap: b1, bumpScale: 2.2, roughness: 0.85 })); }
+function ogee(sh, a, c, up, dir) {   // 313: Turkish "gumbad" (ogee / onion) arch from (-a, c) over the top to (a, c) — swells out, then a pointed finial; dir -1 = drawn right to left
+  const k = up, P = [[-a, c], [-a * 1.08, c + k * 0.45], [-a * 0.2, c + k * 0.62], [0, c + k]], Q = [[a * 0.2, c + k * 0.62], [a * 1.08, c + k * 0.45], [a, c]];
+  if (dir === -1) { sh.bezierCurveTo(Q[1][0], Q[1][1], Q[0][0], Q[0][1], 0, c + k); sh.bezierCurveTo(P[2][0], P[2][1], P[1][0], P[1][1], -a, c); }
+  else { sh.bezierCurveTo(P[1][0], P[1][1], P[2][0], P[2][1], 0, c + k); sh.bezierCurveTo(Q[0][0], Q[0][1], Q[1][0], Q[1][1], a, c); } }
+function ogeePts(a, c, up) { const s = new THREE.Shape(); s.moveTo(-a, c); ogee(s, a, c, up); return s.getPoints(24); }
+function turCabin(g) {   // 294 → 313 (owner: "kuch aur bold … badi badi Turkish gumbad wale doors aur fixed windows, corners pe walls pe detailing aur engraving"): lime walls, walnut frames, every glass bay framed by a deep carved ogee (gumbad) arch — tall doors, fixed windows on a carved sill —, engraved stone pilasters with stepped capitals at every corner, a zellige frieze + crenellated carved parapet on the roof edge, a small dome with a brass finial, lanterns by the doors
+  const lw = mat('c_tk_lime', 0xF4EFE6, { roughness: 0.95 }), wn = mat('c_tk_wal', 0x5A3B26, { roughness: 0.7 }), sd = mat('c_tk_sand', 0xE3CFAE, { roughness: 0.9 }), br = mat('c_tk_brass', 0xC9A86C, { metalness: 0.6, roughness: 0.32 }), pl = mat('c_tk_plinth', 0xC9AE86, { roughness: 0.9 }), cv = mat('c_tk_carve', 0xD9C39C, { roughness: 0.85 });
+  const gl = [], walls = [];
+  g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color) return; const c = o.material.color.getHex(); if (c === 0xBFDCE6 && o.material.opacity < 0.34) { gl.push(o); return; } if (o.material.map) return;
+    if (c === 0xF2F0EB || c === 0x6E6C68) { o.material = lw; walls.push(o); } else if (c === 0xE4E1DA) o.material = sd; else if (c === 0x2B2B2B) o.material = wn; else if (c === 0x5A564F) o.material = pl; else if (c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = wn; });
   g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3(), V0 = new THREE.Vector3(), V1 = new THREE.Vector3(), ar = new THREE.Group(); ar.name = 'tk_arches';
-  gl.forEach(o => { B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const vx = V0.x < 0.3, vz = V0.z < 0.3; if (!(vx || vz) || V0.y < 4.5) return; const w = vx ? V0.z : V0.x, h = V0.y; if (w < 1.6) return;
-    const a = w / 2 - 0.28, r = a * 1.12, c0 = Math.max(r * 0.4, h - r - 0.3), sh = khWall(w, h, a, c0, r);
-    const geo = new THREE.ShapeGeometry(sh, 20); [-1, 1].forEach(sg => { const m = new THREE.Mesh(geo, lw); m.castShadow = true; m.receiveShadow = true; const t = (vx ? V0.x : V0.z) / 2 + 0.03; if (vx) { m.rotation.y = Math.PI / 2; m.position.set(V1.x + sg * t, B.min.y, V1.z); } else m.position.set(V1.x, B.min.y, V1.z + sg * t); ar.add(m);
-      const rim = new THREE.Mesh(new THREE.ShapeGeometry(khRim(a, c0, r, 0.14), 20), sd); rim.position.copy(m.position); rim.rotation.copy(m.rotation); if (vx) rim.position.x += sg * 0.01; else rim.position.z += sg * 0.01; ar.add(rim); }); });
+  const ALL = new THREE.Box3(); g.children.forEach(o => { if (o.name !== 'labels') ALL.union(new THREE.Box3().setFromObject(o).applyMatrix4(inv)); });
+  const BOD = new THREE.Box3(), TB = new THREE.Box3(), TS = new THREE.Vector3(); g.traverse(o => { if (!o.isMesh || o.parent && o.parent.name === 'labels') return; TB.setFromObject(o).applyMatrix4(inv); TB.getSize(TS); if (TS.y > 5 && Math.min(TS.x, TS.z) < 0.7) BOD.union(TB); });   // the body = every tall thin wall / glass panel (not the roof projection)
+  if (BOD.isEmpty()) BOD.copy(ALL);
+  g.traverse(o => { if (!o.isMesh || o.material !== wn) return; TB.setFromObject(o).applyMatrix4(inv); TB.getSize(TS); if (TS.y < 0.7 && Math.max(TS.x, TS.z) > 3) o.material = cv; });   // the roof fascia in carved sand, not walnut
+  const cX = (BOD.min.x + BOD.max.x) / 2, cZ = (BOD.min.z + BOD.max.z) / 2, y0 = BOD.min.y, yT = BOD.max.y;
+  // the bays: big glass = doors / fixed windows; small glass (windows in a solid wall) = a fixed window
+  const bays = []; gl.forEach(o => { B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const vx = V0.x < 0.4, vz = V0.z < 0.4; if (!(vx || vz)) return; const w = vx ? V0.z : V0.x, h = V0.y; if (w < 1 || h < 1.2) return;
+    bays.push({ vx, w, h, x: V1.x, z: V1.z, y: B.min.y, big: h >= 4.5, side: vx ? (V1.x < cX ? 'l' : 'r') : (V1.z < cZ ? 'b' : 'f'), t: (vx ? V0.x : V0.z) }); });
+  g.traverse(o => { if (!o.isMesh || gl.includes(o) || o.material === lw || !o.material || !o.material.color) return; TB.setFromObject(o).applyMatrix4(inv); TB.getSize(TS); const vx = TS.x < 0.3, vz = TS.z < 0.3, w = vx ? TS.z : TS.x;   // a solid door leaf (solid cabin): walnut with brass studs, in the same gumbad arch
+    if (!(vx || vz) || TS.y < 6.5 || TS.y > 8.2 || w < 2.5 || w > 4.6) return; TB.getCenter(V1); o.material = wn; bays.push({ vx, w, h: TS.y, x: V1.x, z: V1.z, y: TB.min.y, big: true, side: vx ? (V1.x < cX ? 'l' : 'r') : (V1.z < cZ ? 'b' : 'f'), t: vx ? TS.x : TS.z, leaf: 1 }); });
+  const hMax = bays.reduce((m, b) => Math.max(m, b.h), 0), doorOf = {}; bays.forEach(b => { if (b.leaf) { doorOf[b.x + ',' + b.z] = 1; return; } if (b.big && b.h < hMax - 0.4 && b.y < 0.3 + Math.min(...bays.map(q => q.y))) doorOf[b.x + ',' + b.z] = 1; });   // a door = a tall bay that is shorter than the fixed glass (its frame) and starts at the floor
+  bays.forEach(b => { const door = !!doorOf[b.x + ',' + b.z], a = b.w / 2 - 0.42, sill = door ? 0 : b.big ? 2.1 : 0.25, up = Math.min(a * 1.25, b.h * 0.3), c = Math.max(sill + 1, b.h - up - 0.35), W = b.w, H = b.h, D = 0.22;
+    const E2 = b.big ? 0.06 : 0.22, H2 = H + (b.big ? 0.02 : 0.2), y2 = b.big ? 0 : -0.2, sh = new THREE.Shape(); if (door) { sh.moveTo(-W / 2 - E2, 0); sh.lineTo(-a, 0); sh.lineTo(-a, c); ogee(sh, a, c, up); sh.lineTo(a, 0); sh.lineTo(W / 2 + E2, 0); sh.lineTo(W / 2 + E2, H2); sh.lineTo(-W / 2 - E2, H2); sh.lineTo(-W / 2 - E2, 0); }
+    else { sh.moveTo(-W / 2 - E2, y2); sh.lineTo(W / 2 + E2, y2); sh.lineTo(W / 2 + E2, H2); sh.lineTo(-W / 2 - E2, H2); sh.lineTo(-W / 2 - E2, y2); const hole = new THREE.Path(); hole.moveTo(-a, sill); hole.lineTo(a, sill); hole.lineTo(a, c); ogee(hole, a, c, up, -1); hole.lineTo(-a, sill); sh.holes.push(hole); }
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false, curveSegments: 18 }), out = b.vx ? (b.x < cX ? -1 : 1) : (b.z < cZ ? -1 : 1);
+    [1, -1].forEach(sg => { const m = new THREE.Mesh(geo, lw); m.castShadow = m.receiveShadow = true; const o2 = sg * out > 0 ? b.t / 2 + 0.01 : -(b.t / 2 + 0.01) - D;
+      if (b.vx) { m.rotation.y = Math.PI / 2; m.position.set(b.x + o2, b.y, b.z); } else m.position.set(b.x, b.y, b.z + o2); ar.add(m); });
+    // the carved ogee molding round the opening (outside face) + walnut glazing bar + a carved sill / kick panel
+    const P = ogeePts(a + 0.08, c, up + 0.06).map(q => [q.x, q.y]), rimPts = [[-a - 0.08, sill]].concat(P, [[a + 0.08, sill]]), oz = out * (b.t / 2 + D + 0.03), rim = new THREE.CatmullRomCurve3(rimPts.map(q => b.vx ? new THREE.Vector3(b.x + oz, b.y + q[1], b.z - q[0] * out) : new THREE.Vector3(b.x + q[0], b.y + q[1], b.z + oz)));
+    const tb = new THREE.Mesh(new THREE.TubeGeometry(rim, 48, 0.09, 6, false), cv); tb.castShadow = true; ar.add(tb);
+    const wb = new THREE.CatmullRomCurve3(ogeePts(a, c, up).map(q => b.vx ? new THREE.Vector3(b.x + out * 0.02, b.y + q.y, b.z - q.x * out) : new THREE.Vector3(b.x + q.x, b.y + q.y, b.z + out * 0.02))), wt = new THREE.Mesh(new THREE.TubeGeometry(wb, 40, 0.05, 5, false), wn); ar.add(wt);
+    const bar = (u0, v0, u1, v1) => { const L = Math.hypot(u1 - u0, v1 - v0), m = new THREE.Mesh(new THREE.BoxGeometry(0.08, L, 0.08), wn); const cu = (u0 + u1) / 2, cvv = (v0 + v1) / 2; if (b.vx) m.position.set(b.x + out * 0.02, b.y + cvv, b.z - cu * out); else m.position.set(b.x + cu, b.y + cvv, b.z + out * 0.02); m.rotation[b.vx ? 'x' : 'z'] = Math.atan2(u1 - u0, v1 - v0) * (b.vx ? out : -1); ar.add(m); };
+    bar(0, sill, 0, c + up * 0.9); bar(-a, c, a, c);
+    if (!door) { const kp = sill - 0.1; if (kp > 0.4) { const pn = new THREE.Mesh(new THREE.BoxGeometry(b.vx ? 0.06 : a * 2, kp - 0.2, b.vx ? a * 2 : 0.06), engrMat(a * 2 / 1.4, (kp - 0.2) / 1.4)); if (b.vx) pn.position.set(b.x + out * (b.t / 2 + D + 0.04), b.y + 0.1 + (kp - 0.2) / 2, b.z); else pn.position.set(b.x, b.y + 0.1 + (kp - 0.2) / 2, b.z + out * (b.t / 2 + D + 0.04)); ar.add(pn); }
+      const sl = new THREE.Mesh(new THREE.BoxGeometry(b.vx ? 0.5 : a * 2 + 0.5, 0.14, b.vx ? a * 2 + 0.5 : 0.5), cv); if (b.vx) sl.position.set(b.x + out * (b.t / 2 + D), b.y + sill - 0.07, b.z); else sl.position.set(b.x, b.y + sill - 0.07, b.z + out * (b.t / 2 + D)); ar.add(sl); }
+    else { if (b.leaf) { const stM = mat('c_tk_brass', 0xC9A86C, { metalness: 0.6, roughness: 0.32 }); for (let r = 0; r < 6; r++) for (let q = -2; q <= 2; q++) { const u = q * a / 2.6, v = 0.8 + r * (c - 0.8) / 5, sp = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), stM); if (b.vx) sp.position.set(b.x + out * (b.t / 2 + 0.03), b.y + v, b.z - u * out); else sp.position.set(b.x + u, b.y + v, b.z + out * (b.t / 2 + 0.03)); ar.add(sp); } }
+      [-1, 1].forEach(s2 => { const lt = new THREE.Group(); ar.add(lt); const u = s2 * (a + 0.75), p = b.vx ? [b.x + out * (b.t / 2 + D + 0.35), b.z - u * out] : [b.x + u, b.z + out * (b.t / 2 + D + 0.35)]; if (Math.abs(u) < W / 2 + 0.6) lantern(lt, b.vx ? p[0] : p[0], b.y + c + 0.3, b.vx ? p[1] : p[1], 0.8); }); } });
+  // engraved pilasters at the body's 4 corners (stepped base + muqarnas-like capital)
+  const ph = yT - y0; [[BOD.min.x, BOD.min.z], [BOD.max.x, BOD.min.z], [BOD.min.x, BOD.max.z], [BOD.max.x, BOD.max.z]].forEach(([x, z]) => { const p = new THREE.Mesh(new THREE.BoxGeometry(0.75, ph, 0.75), engrMat(0.6, ph / 1.6)); p.position.set(x, y0 + ph / 2, z); p.castShadow = p.receiveShadow = true; ar.add(p);
+    [[1.0, 0.18, y0 + 0.09], [0.88, 0.16, y0 + 0.26], [0.9, 0.14, yT - 0.55], [1.02, 0.14, yT - 0.41], [1.14, 0.14, yT - 0.27]].forEach(([s0, h0, yy]) => { const k = new THREE.Mesh(new THREE.BoxGeometry(s0, h0, s0), cv); k.position.set(x, yy, z); k.castShadow = true; ar.add(k); }); });
+  // zellige frieze under the roof edge + crenellated carved parapet + a small dome with a brass finial
+  const RT = ALL.max.y, fw = BOD.max.x - BOD.min.x, fd = BOD.max.z - BOD.min.z;
+  [[cX, BOD.max.z + 0.02, fw, 0], [cX, BOD.min.z - 0.02, fw, Math.PI], [BOD.max.x + 0.02, cZ, fd, Math.PI / 2], [BOD.min.x - 0.02, cZ, fd, -Math.PI / 2]].forEach(([x, z, L, ry]) => { const m = zelPlane(ar, L - 0.8, 0.55, x, yT - 0.75, z, ry); m.castShadow = false; });
+  const rx0 = ALL.min.x, rx1 = ALL.max.x, rz0 = ALL.min.z, rz1 = ALL.max.z, run = (x0, z0, x1, z1) => { const L = Math.hypot(x1 - x0, z1 - z0), ang = Math.atan2(z1 - z0, x1 - x0), band = new THREE.Mesh(new THREE.BoxGeometry(L, 0.55, 0.35), engrMat(L / 1.6, 0.35)); band.position.set((x0 + x1) / 2, RT + 0.27, (z0 + z1) / 2); band.rotation.y = -ang; band.castShadow = true; ar.add(band);
+    const n = Math.max(2, Math.round(L / 1.6)); for (let k = 0; k < n; k++) { const u = (k + 0.5) / n, m = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.55, 0.37), cv); m.position.set(x0 + (x1 - x0) * u, RT + 0.82, z0 + (z1 - z0) * u); m.rotation.y = -ang; m.castShadow = true; ar.add(m);
+      const tip = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.32, 4), cv); tip.position.set(m.position.x, RT + 1.25, m.position.z); tip.rotation.y = Math.PI / 4 - ang; ar.add(tip); } };
+  run(rx0, rz1, rx1, rz1); run(rx0, rz0, rx1, rz0); run(rx0, rz0, rx0, rz1); run(rx1, rz0, rx1, rz1);
+  [['z', BOD.max.z, ALL.max.z, 1], ['z', BOD.min.z, ALL.min.z, -1], ['x', BOD.max.x, ALL.max.x, 1], ['x', BOD.min.x, ALL.min.x, -1]].forEach(([ax, w0, w1, sg]) => { const pj = Math.abs(w1 - w0); if (pj < 0.6) return;   // the projection (chajja) = a deep Ottoman eave: carved walnut corbels every ~2.5 ft under it
+    const L = ax === 'z' ? fw : fd, n = Math.max(2, Math.round(L / 2.5)), pr = new THREE.Shape(); pr.moveTo(0, 0); pr.lineTo(pj - 0.12, 0); pr.lineTo(pj - 0.12, -0.22); pr.bezierCurveTo(pj * 0.55, -0.3, 0.3, -0.5, 0.18, -1.0); pr.lineTo(0, -1.0); pr.lineTo(0, 0);
+    const geo = new THREE.ExtrudeGeometry(pr, { depth: 0.22, bevelEnabled: false, curveSegments: 10 }); geo.translate(0, 0, -0.11); const yU = Math.min(yT, ALL.max.y) - 0.02;
+    for (let k = 0; k < n; k++) { const u = -L / 2 + L * (k + 0.5) / n, m = new THREE.Mesh(geo, wn); m.castShadow = true; if (ax === 'z') { m.rotation.y = sg > 0 ? -Math.PI / 2 : Math.PI / 2; m.position.set(cX + u, yU, w0); } else { m.rotation.y = sg > 0 ? 0 : Math.PI; m.position.set(w0, yU, cZ + u); } ar.add(m); } });
+  const dr = Math.max(1.2, Math.min(2.6, Math.min(fw, fd) * 0.18)), dC = new THREE.Group(); dC.position.set(cX, RT, cZ); ar.add(dC);
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(dr, dr, 0.9, 32), engrMat(dr * 2, 0.6)); drum.position.y = 0.45; drum.castShadow = true; dC.add(drum);
+  const dm = new THREE.Mesh(new THREE.SphereGeometry(dr * 1.02, 32, 14, 0, Math.PI * 2, 0, Math.PI / 2), lw); dm.position.y = 0.9; dm.scale.y = 1.15; dm.castShadow = true; dC.add(dm);
+  const rg = new THREE.Mesh(new THREE.TorusGeometry(dr * 1.02, 0.08, 6, 40), cv); rg.rotation.x = Math.PI / 2; rg.position.y = 0.92; dC.add(rg);
+  const fn = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.9, 8), br); fn.position.y = 0.9 + dr * 1.15 + 0.4; dC.add(fn); [0.25, 0.5].forEach(yy => { const s0 = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 8), br); s0.position.y = 0.9 + dr * 1.15 + yy; dC.add(s0); });
+  const cr = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.04, 6, 20, Math.PI * 1.4), br); cr.position.y = 0.9 + dr * 1.15 + 0.95; cr.rotation.z = Math.PI * 0.8; dC.add(cr);
   g.add(ar); }
 const SB_ = 0x1F4FA8, sLime = () => mat('c_s_lime', 0xF6F5F1, { roughness: 1 }), sBlue = () => mat('c_s_blue', SB_, { roughness: 0.6 });   // 296: Santorini
 function azTex() {   // 296: blue-white azulejo tile (one canvas = one 6" tile, 4-fold flower)
