@@ -629,8 +629,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=81').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=81'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=83').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=83'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1970,7 +1970,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=141').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=142').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2272,7 +2272,7 @@
   // ------------------------------------------------------------ pergolas: "Design it in 3D" — size, height, finish, colour, roof and layout on a live model
   var P3 = { st: 0, open: false, night: false };
   function isPg(id) { return /^MTO-PG-/.test(String(id || '')); }
-  function isProp(id) { var x = PRODS[id]; return /^MTO-/.test(String(id || '')) && !/^MTO-PL-\d/.test(String(id)) && !!(x && x.cz) && ['furniture', 'sculptures'].indexOf(x.col) < 0; }   // 198: outrr's own make + install designs
+  function isProp(id) { var x = PRODS[id]; return /^MTO-/.test(String(id || '')) && !/^MTO-PL-\d/.test(String(id)) && !!(x && x.cz) && ['furniture'].indexOf(x.col) < 0; }   /* 309b: sculptures get the customiser too */   // 198: outrr's own make + install designs
   function pgGrp(m, re) { return arr(m.groups).filter(function (g) { return re.test(g.name || ''); })[0] || null; }
   function pgOpts() {
     var x = PRODS[S.id], m = x.cz, o = S.o, gv = function (re) { var g = pgGrp(m, re); return g ? (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name : ''; };
@@ -3128,7 +3128,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, look: DS_SOLO && !S.site && lookArr().length ? lookNow() : null, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } lk2Sync(); return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=68').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=70').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -3574,7 +3574,7 @@
   // 199: designs that sit in the planner as one of its things (planters…): "See it in my space" puts the pieces on a plan — the one on this device, a saved one, or a new space
   var PCAT = { planters: 'planter', 'privacy-screens': 'privacy' };
   function isBar(sku) { return /^MTO-(BR|OK|BBQ|PZ)-/.test(sku || ''); }   /* 309: + outdoor kitchens / BBQ / pizza counters */   // 295: bars get the bar studio
-  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku) || /^MTO-FW-/.test(sku || '') || isWtr(sku) || isBn(sku) || isRl(sku) || isGt(sku) || isAc(sku) || /^MTO-(GF|VG|DK)-/.test(sku || ''); }
+  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku) || /^MTO-FW-/.test(sku || '') || isWtr(sku) || isBn(sku) || isRl(sku) || isGt(sku) || isAc(sku) || /^MTO-(GF|VG|DK|SC)-/.test(sku || ''); }
   function isAc(id) { return /^MTO-AC-/.test(String(id || '')); }   /* 309: AC covers (ac3d.js) */
   function isGt(id) { return /^MTO-GT-/.test(String(id || '')); }   /* 309: gates (gate3d.js) */
   function isRl(id) { return /^MTO-RL-/.test(String(id || '')); }   /* 309: railings (rail3d.js) */
@@ -3621,10 +3621,11 @@
   function cu3dDraw0() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=91').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=93').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     if (isBn(S.id)) { try { CU3.m.preview(el, [{ code: S.id.slice(7), n: num(o.n) || seatLo(m) || 3 }], { studio: 'bench' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 307
     if (isFw(S.id)) { try { CU3.m.preview(el, [{ code: S.id.replace(/^MTO-/, ''), W: num(o.w) || 8, H: num(o.h) || 9, groups: o.groups || {}, place: fwPlace(S.id, x) }], { studio: 'fw', look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 296
     var mk9 = /^MTO-(GF|VG|DK)-/.exec(S.id); if (mk9) { try { CU3.m.preview(el, [{ sku: S.id, img: refPhoto(x), m: { materials: m.materials, groups: m.groups }, o: { l: o.l, w: o.w, h: o.h, material: o.material, colour: o.colour, groups: o.groups, addons: o.addons } }], { studio: mk9[1].toLowerCase(), look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309: graffiti / vertical gardens / decks (misc3d.js)
+    if (/^MTO-SC-/.test(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, sizes: m.sizes }, o: { size: o.size, material: o.material, colour: o.colour } }], { studio: 'sc' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309b: sculptures (sculpt3d.js)
     if (isAc(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, sizes: m.sizes, pieces: m.pieces }, o: { size: o.size, material: o.material, colour: o.colour } }], { studio: 'ac' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309
     if (isGt(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups }, o: { w: o.w, h: o.h, material: o.material, colour: o.colour, groups: o.groups } }], { studio: 'gate' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309
     if (isRl(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups }, o: { l: o.l, material: o.material, colour: o.colour, groups: o.groups, addons: o.addons } }], { studio: 'rail' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309
@@ -3881,7 +3882,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=91').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=93').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };

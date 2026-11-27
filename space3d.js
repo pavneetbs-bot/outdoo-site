@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=81';
-import { pergolaModel } from './pergola3d.js?v=68';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=83';
+import { pergolaModel } from './pergola3d.js?v=70';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -14,6 +14,7 @@ import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=7
 import { railStudio, railSpec } from './rail3d.js?v=1';   // 309
 import { gateStudio, gateSpec } from './gate3d.js?v=1';   // 309
 import { acStudio, acSpec } from './ac3d.js?v=1';   // 309
+import { scStudio, scSpec } from './sculpt3d.js?v=1';   // 309b
 import { graffitiStudio, graffitiSpec, vgStudio, vgSpec, deckStudio, deckSpec } from './misc3d.js?v=1';   // 309
 import { barStudio, barSpec, kitchenStudio, kitchenSpec, isKitchen } from './bar3d.js?v=7';   // 295: the bar studio
 import { fwStudio } from './fw3d.js?v=4';
@@ -1331,6 +1332,13 @@ export function preview(el, items, opts) {
     const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
     const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = k + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar;
       if (k === 'dk') { PV.controls.target.set(0, 0.5, 0); PV.cam.position.set(sp * 0.45, sp * 0.55, sp * 0.8); } else { PV.controls.target.set(0, B.H * 0.5, 0); PV.cam.position.set(sp * 0.35, B.H * 0.5 + sp * 0.18, sp * 1.45); } PV.controls.update(); }
+    return;
+  }
+  if (opts && opts.studio === 'sc') {   // 309b: a sculpture at the picked height + finish, on its plinth
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
+    const it0 = items[0] || {}, B = scStudio(scSpec(it0.sku, it0.m || {}, it0.o || {})); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'sc' + Math.round(B.span * 2) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = B.span * nar;
+      PV.controls.target.set(0, B.H * 0.5, 0); PV.cam.position.set(sp * 0.35, B.H * 0.6 + sp * 0.15, sp * 0.95); PV.controls.update(); }
     return;
   }
   if (opts && opts.studio === 'ac') {   // 309: an AC cover round its AC unit, against a terrace wall
