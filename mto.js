@@ -2520,23 +2520,26 @@
     { k: 'partition', t: 'Partition walls', col: 'privacy-screens', re: /^MTO-PT-/, cat: 'privacy' },
     { k: 'bar', t: 'Bar counters', col: 'bar-counters', not: /food|buffet|kitchen|grill|bbq|rack|bottle/i, cat: 'bar' },
     { k: 'food', t: 'Food counters', col: 'bar-counters', has: /food|buffet|kitchen|grill|bbq/i, cat: 'counter' },
-    { k: 'swing', t: 'Swings', col: 'furniture', has: /swing|jhool|jhul/i, cat: 'swing' }
+    { k: 'swing', t: 'Swings', col: 'furniture', has: /swing|jhool|jhul/i, cat: 'swing' },
+    { k: 'geyser', t: 'Geyser fountains', col: 'water-features', re: /^MTO-TG-/, cat: 'water' },
+    { k: 'bench', t: 'Benches', col: 'furniture', re: /^MTO-BN-/, cat: 'bench' }
   ];
   // which categories each studio offers, and where a piece goes first [side, how many]
   var LOOKSET = { pergola: ['planters', 'furniture', 'plants', 'lights', 'feature', 'partition', 'bar', 'food', 'swing'], fw: ['plants', 'planters', 'sculptures'],
-    cabin: ['furniture', 'planters', 'plants', 'lights', 'feature', 'bar', 'swing'], bar: ['furniture', 'plants', 'planters', 'lights', 'food'], planter: ['plants', 'sculptures', 'furniture', 'lights'] };
-  var LK_SIDES = { pergola: ['under', 'sides', 'left', 'right', 'front', 'back'], fw: ['sides', 'left', 'right', 'front'], cabin: ['front', 'right'], bar: ['sides', 'left', 'right', 'front'], planter: ['front', 'right'] };
+    cabin: ['furniture', 'planters', 'plants', 'lights', 'feature', 'bar', 'swing'], bar: ['furniture', 'plants', 'planters', 'lights', 'food'], planter: ['plants', 'sculptures', 'furniture', 'lights'], screen: ['plants', 'planters', 'geyser', 'bench'] };
+  var LK_SIDES = { pergola: ['under', 'sides', 'left', 'right', 'front', 'back'], fw: ['sides', 'left', 'right', 'front'], cabin: ['front', 'right'], bar: ['sides', 'left', 'right', 'front'], planter: ['front', 'right'], screen: ['sides', 'left', 'right', 'front'] };
   var LK_SN = { under: 'Under it', sides: 'Both sides', left: 'Left', right: 'Right', front: 'In front', back: 'Behind' };
   var LK_DEF = {
     pergola: { furniture: ['under', 1], swing: ['under', 1], planters: ['sides', 2], plants: ['sides', 2], lights: ['sides', 2], feature: ['back', 1], partition: ['left', 1], bar: ['right', 1], food: ['right', 1] },
     fw: { plants: ['left', 1], planters: ['sides', 2], sculptures: ['right', 1] },
     cabin: { furniture: ['front', 1], planters: ['right', 2], plants: ['front', 2], lights: ['front', 2], feature: ['right', 1], bar: ['right', 1], swing: ['front', 1] },
     bar: { furniture: ['front', 1], plants: ['sides', 2], planters: ['sides', 2], lights: ['sides', 2], food: ['right', 1] },
-    planter: { plants: ['front', 2], sculptures: ['front', 1], furniture: ['front', 1], lights: ['right', 2] } };
-  var LK_SZ = { sofa: [8, 6, 3], dining: [7, 6, 3.2], chair: [2.5, 2.5, 3], bench: [5, 2, 1.6], table: [3, 3, 2.5], stool: [1.5, 1.5, 2.6], swing: [6, 4.5, 7], planter: [2, 2, 3.5], plant: [2, 2, 5], feature: [10, 0.6, 8], privacy: [8, 0.5, 6], bar: [8, 2.5, 3.6], counter: [8, 2.5, 3], lights: [0.8, 0.8, 3], sculpture: [2, 2, 4] };
+    planter: { plants: ['front', 2], sculptures: ['front', 1], furniture: ['front', 1], lights: ['right', 2] },
+    screen: { plants: ['sides', 2], planters: ['sides', 2], geyser: ['front', 1], bench: ['front', 1] } };
+  var LK_SZ = { sofa: [8, 6, 3], dining: [7, 6, 3.2], chair: [2.5, 2.5, 3], bench: [5, 2, 1.6], table: [3, 3, 2.5], stool: [1.5, 1.5, 2.6], swing: [6, 4.5, 7], planter: [2, 2, 3.5], plant: [2, 2, 5], feature: [10, 0.6, 8], privacy: [8, 0.5, 6], bar: [8, 2.5, 3.6], counter: [8, 2.5, 3], lights: [0.8, 0.8, 3], sculpture: [2, 2, 4], water: [3.5, 3.5, 2] };
   var LK_PL = ['OLIVE', 'BLACKFICUS', 'PACHIRA', 'ARECA', 'RHAPIS', 'FISHTAIL', 'BAMBOO', 'PHOENIX', 'LIVISTONA', 'CYCAS', 'FOXTAIL', 'TRAVELLER', 'BANANA', 'HIBISCUS', 'IXORA', 'MOGRA', 'CHANDNI', 'RAATKIRANI', 'TECOMA', 'KANER', 'ADENIUM', 'BIRDPARADISE', 'CROTON', 'CORDYLINE', 'SCHEFFLERA', 'SONGOFINDIA', 'KAMINI', 'DURANTA', 'FICUSPANDA', 'MORPANKHI', 'FOUNTAINGRASS', 'AGAVE', 'SNAKEPLANT', 'BOUGAINVILLEA', 'MADHUMALTI', 'CHAMPA'];
   function lookC(k) { return LOOKC.filter(function (c) { return c.k === k; })[0]; }
-  function lookHost(id) { id = id || (S && S.id); var x = PRODS[id] || {}; return isPg(id) ? 'pergola' : isFw(id) ? 'fw' : x.cz && x.cz.unit === 'cabin' ? 'cabin' : isBar(id) ? 'bar' : /^MTO-PL-[A-Z]/.test(String(id || '')) ? 'planter' : ''; }
+  function lookHost(id) { id = id || (S && S.id); var x = PRODS[id] || {}; return isPg(id) ? 'pergola' : isFw(id) ? 'fw' : x.cz && x.cz.unit === 'cabin' ? 'cabin' : isBar(id) ? 'bar' : /^MTO-PL-[A-Z]/.test(String(id || '')) ? 'planter' : isScr(id) ? 'screen' : ''; }
   function lookCats() { return (LOOKSET[lookHost()] || []).map(lookC).filter(Boolean); }
   function lookList(c) {   // the listed products of a category, one per variant group; orderable ones and the preferred ones first
     var seen = {}, L = Object.keys(PRODS).filter(function (id) { var x = PRODS[id]; if (!x || x.bun || x.bundle || x.col !== c.col || !x.n || id === (S && S.id)) return false; if (c.re && !c.re.test(id)) return false;
@@ -3080,16 +3083,20 @@
     if (u === 'seat') return o.n ? o.n + ' seats' : ''; return o.size || '';
   }
   function optForm(x, m, o, part) {   // the design's choices (same fields as the old product-page form) — prices only when signed in; 294: part = size | look | extras (one studio stage)
-    var P = function (k) { return !part || part === k; }, u = m.unit, uw = UW(u), np = !mtoOk(), f = [], hOpts = [], mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
+    var P = function (k) { return !part || part === k; }, u = m.unit, uw = UW(u), np = !mtoOk(), f = [], hOpts = isScr(S && S.id) ? arr(m.h && m.h.options).map(num).filter(Boolean) : [], mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
     if (!P('size')) {}
     else if (u === 'seat') { var sv = []; for (var i = seatLo(m); i <= seatLo(m) + 10; i++) sv.push([i, i + ' seats']); f.push(sel('data-pick="n"', sv, o.n, 'Seats')); }
     else if (u === 'fixed') f.push(sel('data-pick="size"', [['', 'Choose a size']].concat(arr(m.sizes).map(function (z) { return [z.label, z.label + (np ? '' : ' — ' + rs(fixedAt(m, mat, z)))]; })), o.size, 'Size'));
     else {
       if (u === 'area' || u === 'length') f.push('<label class="mto-pk"><span>' + (m.round ? 'Size across (ft)' : 'Length (ft)') + '</span><input inputmode="decimal" data-k="l" value="' + esc(o.l) + '" placeholder="' + 'Any size' + '"></label>');
       if ((u === 'area' && !m.round) || u === 'face') f.push('<label class="mto-pk"><span>' + (m.panels ? 'Running length (ft)' : 'Width (ft)') + '</span><input inputmode="decimal" data-k="w" value="' + esc(o.w) + '" placeholder="' + 'Any size' + '"></label>');
+      if (u === 'face' && m.panels) { var pn0 = panels(m, o.w); f.push('<p class="pg3-note cu-mods" style="grid-column:1/-1;margin:0">' + (pn0 ? esc(num(o.w) + ' ft = ' + panelsText(pn0)) + (pn0.width > num(o.w) ? ' — made ' + pn0.width + ' ft' : '') : 'Made in ' + panelSizes(m).join(' / ') + ' ft panels') + '</p>'); }   // 300
       if (u === 'area' && m.hr) f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + 'Any size' + '"></label>');   // 204
-      if (hOpts.length) f.push(sel('data-k="h"', hOpts.map(function (h) { return [h, h + ' ft']; }), o.h, 'Height'));
+      if (hOpts.length) { var hc = CU.hc || (num(o.h) && hOpts.indexOf(num(o.h)) < 0);   // 300: the design's heights as chips + Custom (any height, priced per sq ft)
+        f.push('<div class="mto-pk" style="grid-column:1/-1"><span>Height</span><div class="cu-hch">' + hOpts.map(function (h) { return '<button type="button" data-cuh="' + h + '" class="' + (!hc && num(o.h) === h ? 'on' : '') + '">' + h + ' ft</button>'; }).join('') + '<button type="button" data-cuh="c" class="' + (hc ? 'on' : '') + '">Custom</button></div>' +
+          (hc ? '<input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="Height in ft" style="margin-top:8px">' : '') + '</div>'); }
       else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + 'Any size' + '"></label>');
+      if (isScr(S.id) && DS_SOLO && /^MTO-PS-/.test(S.id) && /parapet|boundary/.test(scrPlace(S.id, m, o))) f.push('<div class="mto-pk" style="grid-column:1/-1"><span>Where it goes (to see it)</span><div class="cu-hch">' + [['parapet', 'Terrace parapet'], ['boundary', 'Boundary wall']].map(function (w) { return '<button type="button" data-cuw="' + w[0] + '" class="' + ((CU.where || 'parapet') === w[0] ? 'on' : '') + '">' + w[1] + '</button>'; }).join('') + '</div></div>');   // 300
     }
     if (mats.length > 1 && P('look')) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (np ? '' : u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels || m.pcs ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, esc((m.labels && m.labels.material) || 'Finish')));
     if (m.pcs && num(m.pcs.max) > 1 && P('size')) { var pc = num(o.pcs) || 1; f.push('<div class="mto-pk"><span>Pieces</span><div class="cu-pcs"><button type="button" data-cupcs="-1" aria-label="One less"' + (pc <= 1 ? ' disabled' : '') + '>−</button><b>' + pc + '</b><button type="button" data-cupcs="1" aria-label="One more"' + (pc >= num(m.pcs.max) ? ' disabled' : '') + '>+</button></div></div>'); }   // 199
@@ -3121,9 +3128,10 @@
     arr(m0.groups).forEach(function (g) { if (g.name && !(o0.groups || {})[g.name] && arr(g.options)[0]) { o0.groups = Object.assign({}, o0.groups); o0.groups[g.name] = g.options[0].name; } });   // 199: first choice of each option group (e.g. No light)
     var lp = S.lkChild && LKP ? PRODS[LKP.S.id] : null; ov.classList.toggle('lk-top', !!(lp && LKP.kind !== 'cu')); if (lp) lookCss();
     ov.innerHTML = '<div class="pg3-hd"><b>' + esc(short(x.n)) + ' · Customise</b><button type="button" data-cu="close" aria-label="' + (lp ? 'Back without saving' : 'Close') + '">' + (lp ? '← Back' : '✕ Close') + '</button></div>' + (lp ? '<div class="lk-chd">For your <b>' + esc(short(lp.n)) + '</b> — set it up, then <b>Save to my design</b>.</div>' : '') +
-      '<div class="pg3-bd"><div class="pg3-st cu-st"><img id="cuImg" alt="">' + (cuHas3d(x, S.id) ? '<div id="cu3d" class="cu3d"></div><div class="cu-vw"><button type="button" data-cuv="3d" class="on">3D</button>' + (isBar(S.id) ? '<button type="button" data-cuside="back">Back side</button>' : '') + '<button type="button" data-cuv="photo">Photo</button></div>' : '') + '<div class="pg3-cap" id="cuCap"></div></div><div class="pg3-pn" id="cuPn"></div></div>' +
+      '<div class="pg3-bd"><div class="pg3-st cu-st"><img id="cuImg" alt="">' + (cuHas3d(x, S.id) ? '<div id="cu3d" class="cu3d"></div><div class="cu-vw"><button type="button" data-cuv="3d" class="on">3D</button>' + (isBar(S.id) ? '<button type="button" data-cuside="back">Back side</button>' : '') + (isScr(S.id) && (arr(x.cz.addons).some(function (a) { return /LED/i.test(a.name || ''); }) || /BACKLIT|STAGGER/.test(S.id)) ? '<button type="button" data-cunt>🌙 Night</button>' : '') + '<button type="button" data-cuv="photo">Photo</button></div>' : '') + '<div class="pg3-cap" id="cuCap"></div></div><div class="pg3-pn" id="cuPn"></div></div>' +
       '<div class="pg3-ft">' + (PCAT[x.col] && !DS_SOLO ? '<button type="button" data-cu="space" class="cu-sp">📐 See it in my space</button>' : '') + '<button type="button" data-cu="done">' + (mtoOk() ? 'Done — see my proposal' : 'Done — see my price') + '</button></div>';
-    CU.stg = S.czStg || 0; S.czStg = 0; CU.side = 'front'; ov.classList.add('open'); document.body.classList.add('pg3-on'); CU.open = true; cuDraw();
+    if (isScr(S.id) && !S.lkChild && !S.o._scr) { S.o._scr = 1; var hs9 = arr(x.cz.h && x.cz.h.options).map(num).filter(Boolean); if (!num(S.o.w) || num(S.o.w) <= Math.ceil(Math.sqrt(num(x.cz.min_size) || 0))) S.o.w = 12; if (hs9.length && !num(S.o.h)) S.o.h = hs9[hs9.length - 1]; if (hs9.length && num(S.o.h) <= hs9[0]) S.o.h = hs9[hs9.length - 1]; }   // 300: a usable start (12 ft run, the design's tallest height)
+    CU.stg = S.czStg || 0; S.czStg = 0; CU.side = 'front'; CU.hc = false; CU.night = false; ov.classList.add('open'); document.body.classList.add('pg3-on'); CU.open = true; cuDraw();
     try { if (window.otrack) otrack('customise_start', { sku: S.id, ref: 'form' }); } catch (e) {}
   };
   // 294: the general customiser on the studio base — Size → Look → Extras (a stage with nothing to ask is left out) → Your proposal
@@ -3168,6 +3176,9 @@
     if (a === 'next' || a === 'back') { var L1 = cuStages(PRODS[S.id], m, o), i1 = (CU.stg || 0) + (a === 'next' ? 1 : -1); if (a === 'next' && (CU.stg || 0) === 0) { var q1 = priceR(S.id, m, o, PCT); if (!q1.ok && q1.error && !/sign|price/i.test(q1.error)) return toast(q1.error); } CU.stg = Math.max(0, Math.min(L1.length - 1, i1)); var pn1 = document.getElementById('cuPn'); if (pn1) pn1.scrollTop = 0; return cuDraw(); }
     if (a === 'done') { var q = priceR(S.id, m, o, PCT); if (!q.ok && mtoOk()) return toast(q.error || 'Choose your size'); window.cuOpen(false); return propGo(); }
     if (!S.lkChild && lookClick(t)) return;   // 299
+    var cw = t.getAttribute('data-cuw'); if (cw) { CU.where = cw; cuDraw(); return; }
+    var hh = t.getAttribute('data-cuh'); if (hh) { if (hh === 'c') CU.hc = true; else { CU.hc = false; S.o.h = +hh; } cuDraw(); return; }   // 300
+    if (t.hasAttribute('data-cunt')) { CU.night = !CU.night; t.classList.toggle('on', CU.night); t.textContent = CU.night ? '☀ Day' : '🌙 Night'; var st5 = document.querySelector('#cuOv .cu-st'); if (st5) st5.classList.remove('photo'); return cu3dDraw(); }
     var sd = t.getAttribute('data-cuside'); if (sd) { CU.side = CU.side === 'back' ? 'front' : 'back'; t.textContent = CU.side === 'back' ? 'Front side' : 'Back side'; t.classList.toggle('on', CU.side === 'back'); var st4 = document.querySelector('#cuOv .cu-st'); if (st4) st4.classList.remove('photo'); return cu3dDraw(); }   // 295
     var vw = t.getAttribute('data-cuv'); if (vw) { var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.toggle('photo', vw === 'photo'); document.querySelectorAll('#cuOv [data-cuv]').forEach(function (b) { b.classList.toggle('on', b === t); }); if (vw === '3d') cu3dDraw(); return; }
     var pp = t.getAttribute('data-cupcs'); if (pp) { o.pcs = Math.max(1, Math.min(num(m.pcs && m.pcs.max) || 1, (num(o.pcs) || 1) + (+pp))); return draw(); }   // 199
@@ -3204,6 +3215,14 @@
     });
   }
   var CU3 = { m: null, st: 0 };
+  function isScr(id) { return /^MTO-P[ST]-/.test(String(id || '')); }
+  function scrPlace(id, m, o) {   // 300: where a screen / partition usually stands — what the studio shows
+    id = String(id || ''); var g = JSON.stringify((o && o.groups) || {}), ad = arr(o && o.addons).join(' ');
+    if (/^MTO-PT-/.test(id)) { var c = id.slice(7); return /^BAL/.test(c) ? 'balcony' : /^PER/.test(c) ? 'pergola' : /^POOL/.test(c) ? 'pool' : /^UTL/.test(c) ? 'utility' : /^FEA/.test(c) ? 'feature' : 'free'; }
+    if (/parapet face|side bracket/i.test(g) || /Side-mount/i.test(ad)) return 'face';
+    if (/On the floor/i.test(g) || /PLANTER|BAMBOO-POLE/.test(id)) return 'floor';
+    return scrPar(m, o) ? (CU.where === 'boundary' ? 'boundary' : 'parapet') : 'floor';
+  }
   function scrPar(m, o) {   // 211: a screen that goes on top of the parapet / boundary wall (1–4 ft designs, or the "On the parapet" mounting) — else a partition
     var g = JSON.stringify((o && o.groups) || {}); if (/parapet/i.test(g)) return true; if (/On the floor/i.test(g)) return false;
     var hs = arr(m.h && m.h.options).map(num).filter(Boolean); return hs.length ? Math.max.apply(null, hs) <= 4 : (num(m.h && m.h.max) || 8) <= 4;
@@ -3215,6 +3234,9 @@
     if (isFw(S.id)) { try { CU3.m.preview(el, [{ code: S.id.replace(/^MTO-/, ''), W: num(o.w) || 8, H: num(o.h) || 9, groups: o.groups || {}, place: fwPlace(S.id, x) }], { studio: 'fw', look: S.lkChild ? null : lookPlace(num(o.w) || 8, 0.6, { wall: true, thin: true }) }); } catch (e) { if (window.console) console.warn(e); } return; }   // 296
     if (isBar(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups, min_size: m.min_size }, o: { l: o.l, material: o.material, groups: o.groups, addons: o.addons }, view: CU.side }], { studio: 'bar', view: CU.side, look: S.lkChild ? null : lookPlace(num(o.l) || 8, 6, { wall: true }) /* 6 ft deep: the bar + its stools in front */ }); } catch (e) { if (window.console) console.warn(e); } return; }   // 295
     var l = num(o.l) || num(m.l && m.l.min) || 2, w = m.round ? l : num(o.w) || num(m.w && m.w.min) || 1.5, n = Math.max(1, Math.min(20, num(o.pcs) || 1)), cfg = JSON.parse(JSON.stringify(o)), its = [];
+    if (m.unit === 'face' && isScr(S.id) && DS_SOLO) { var hs1 = arr(m.h && m.h.options).map(num).filter(Boolean), L1 = Math.min(60, num(o.w) || 8);   // 300: the screen in its usual place
+      try { CU3.m.preview(el, [{ cat: PCAT[x.col] || 'privacy', cfgId: S.id, pick: S.id, cfg: cfg, w: L1, d: 0.5, h: num(o.h) || (hs1.length ? hs1[hs1.length - 1] : 4), led: arr(o.addons).some(function (a) { return /LED/i.test(a); }) }],
+        { studio: 'scr', place: scrPlace(S.id, m, o), ground: arr(o.addons).some(function (a) { return /footing|garden soil/i.test(a); }) ? 'lawn' : '', night: !!CU.night, look: S.lkChild ? null : lookPlace(L1, 0.6, { wall: true, thin: true }) }); } catch (e) { if (window.console) console.warn(e); } return; }
     if (m.unit === 'face') { var hs = arr(m.h && m.h.options).map(num).filter(Boolean); try { CU3.m.preview(el, [{ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: Math.min(60, num(o.w) || 8), d: 0.5, h: num(o.h) || (hs.length ? hs[hs.length - 1] : 4), par: scrPar(m, o) }]); } catch (e) { if (window.console) console.warn(e); } return; }   // 211: a screen — running length × height
     for (var i = 0; i < n; i++) its.push({ cat: PCAT[x.col], cfgId: S.id, pick: S.id, cfg: cfg, w: l, d: w, h: (m.hr && num(o.h)) || num(m.ht) || 2 });
     try { CU3.m.preview(el, its, DS_SOLO && x.col === 'planters' ? { studio: 'corner', look: S.lkChild ? null : lookCorner(its) } : null); } catch (e) { if (window.console) console.warn(e); }
@@ -3844,6 +3866,7 @@
       ppObs = new IntersectionObserver(function (es) { es.forEach(function (en) { document.body.classList.toggle('pp-float', !en.isIntersecting); }); }); ppObs.observe(c); }, 50);
   }
   (function () { try { var st = document.createElement('style'); st.textContent =
+    '.cu-hch{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.cu-hch button{border:1px solid #ddd;background:#fff;border-radius:999px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer;min-height:36px}.cu-hch button.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}' +
     '.cu3d{position:absolute;inset:0;z-index:1}.cu-st.photo .cu3d{display:none}.cu-st:not(.photo) #cuImg{visibility:hidden}.cu-vw{position:absolute;top:12px;left:12px;z-index:3;display:flex;background:#fff;border-radius:999px;padding:3px;box-shadow:0 2px 10px rgba(0,0,0,.12)}.cu-vw button{border:0;background:none;border-radius:999px;padding:7px 14px;font:600 13px inherit;font-family:inherit;cursor:pointer;color:#2E2E2E}.cu-vw button.on{background:#2E2E2E;color:#fff}.cu-st .pg3-cap{z-index:3}'+
     '#cuOv .pg3-pn{padding-bottom:150px}.cu-pcs{display:flex;align-items:center;gap:10px;margin-top:4px}.cu-pcs button{width:36px;height:36px;border-radius:50%;border:1px solid #ccc;background:#fff;font-size:18px;cursor:pointer}.cu-pcs button:disabled{opacity:.4}.cu-pcs b{min-width:24px;text-align:center;font-size:16px}.pg3-ft .cu-sp{background:#fff!important;color:#2E2E2E!important;border:1.5px solid #2E2E2E!important;margin-bottom:8px}' +
     '.tw-door{position:absolute;background:#8B5A2B;border-radius:2px;pointer-events:none}.tw-door-front{bottom:-2px;left:35%;width:30%;height:5px}.tw-door-back{top:-2px;left:35%;width:30%;height:5px}.tw-door-left{left:-2px;top:35%;height:30%;width:5px}.tw-door-right{right:-2px;top:35%;height:30%;width:5px}' +

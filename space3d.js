@@ -1168,6 +1168,51 @@ function lookOn(g, look, ox, oz) {   // 299: Complete the look pieces round a st
   if (!look || !look.items || !look.items.length) return 0;
   try { const gi = itemsGroup(look.items, { labels: false, site: { kind: 'lawn', light: '' } }).g; gi.position.set(ox, 0, oz); g.add(gi); const b = new THREE.Box3().setFromObject(gi); return isFinite(b.max.x) ? Math.max(b.max.x - b.min.x, (b.max.z - b.min.z) * 1.4) : 0; } catch (e) { if (window.console) console.warn(e); return 0; }
 }
+// 300: the customiser's night view — no sky light, only what glows (LED strips, backlit jaali, lamps)
+function pvNight(on) { if (!PV || PV.isNight === on) return; PV.isNight = on; PV.scene.environment = on ? null : PV.env; PV.hemi.intensity = on ? 0.16 : 0.8; PV.sun.intensity = on ? 0.12 : 1.7; PV.renderer.toneMappingExposure = on ? 1.25 : 1; }
+function pvGlow(g) { g.traverse(o => { if (o.userData && o.userData.nightOnly) o.visible = true; }); }
+// 300: a privacy screen / partition in its usual setting. The screen runs along x centred on 0, its front towards +z.
+function scrStudio(it, o) {
+  const g = new THREE.Group(), L = Math.max(1, +it.w || 8), H = Math.max(0.8, +it.h || 4), pl = o.place || 'parapet', FW = L + 16, night = !!o.night;
+  const M2 = (k, c, x) => mat(k, c, Object.assign({ roughness: 0.9 }, x || {}));
+  const pw = (h, c) => { box(g, FW, h, 0.75, 0, h / 2, -0.4, M2('pv_pw' + c, c)); box(g, FW + 0.1, 0.12, 0.87, 0, h + 0.06, -0.4, M2('pv_pwc', 0x9E9586)); };   // a parapet / boundary wall that reads against the sky
+  const lawn = (x0, z0, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), M2('pv_lawn', 0x6E9B4A, { roughness: 1 })); m.rotation.x = -Math.PI / 2; m.position.set(x0 + w / 2, 0.004, z0 + d / 2); m.receiveShadow = true; g.add(m); };
+  let y = 0, z = 0, z0 = 0.25, top = H;
+  if (pl === 'boundary') { lawn(-FW / 2, -2, FW, 20); pw(5, 0xB59F86); y = 5.12; z = -0.4; }
+  else if (o.ground === 'lawn' && /free|feature|pool|utility/.test(pl)) lawn(-FW / 2, -10, FW, 26);
+  else studioFloor(g, -FW / 2, pl === 'balcony' ? -1.1 : pl === 'pergola' || pl === 'utility' ? -9 : -1.5, FW, pl === 'balcony' ? 9.8 : 18);
+  if (pl === 'parapet' || pl === 'face' || pl === 'floor') { pw(3, 0xBDB2A1);
+    if (pl === 'parapet') { y = 3.12; z = -0.4; } else if (pl === 'face') { y = 2.2; z = 0.15; } else { y = 0; z = 0.55; } }
+  if (pl === 'balcony') {   // a balcony seen from the room: the slab with its edge, a glass railing at the edge — the screen stands just inside it
+    box(g, FW, 0.5, 10, 0, -0.25, 3.8, M2('pv_slab', 0xCFC8BC)); const gl = mat('pv_glass', 0xBFD9E2, { transparent: true, opacity: 0.35, roughness: 0.05, metalness: 0.1 });
+    box(g, FW, 3.4, 0.06, 0, 1.7, -1.05, gl); box(g, FW, 0.12, 0.16, 0, 3.45, -1.05, M2('pv_rail', 0x2B2B2B, { metalness: 0.5 })); for (let x = -FW / 2 + 0.5; x < FW / 2; x += 4) box(g, 0.1, 3.4, 0.1, x, 1.7, -1.05, M2('pv_rail', 0x2B2B2B, { metalness: 0.5 }));
+    z = -0.4; z0 = 0.2;
+  }
+  if (pl === 'pergola') {   // between the front posts of a plain charcoal pergola
+    const fr = M2('pv_pgfr', 0x2B2B2B, { metalness: 0.4, roughness: 0.5 }), ph = Math.max(H + 0.6, 8.5), D = 9;
+    [[-L / 2 - 0.17, 0], [L / 2 + 0.17, 0], [-L / 2 - 0.17, -D], [L / 2 + 0.17, -D]].forEach(([px, pz]) => box(g, 0.33, ph, 0.33, px, ph / 2, pz, fr));
+    box(g, L + 0.7, 0.5, 0.25, 0, ph - 0.25, 0, fr); box(g, L + 0.7, 0.5, 0.25, 0, ph - 0.25, -D, fr); box(g, 0.25, 0.5, D, -L / 2 - 0.17, ph - 0.25, -D / 2, fr); box(g, 0.25, 0.5, D, L / 2 + 0.17, ph - 0.25, -D / 2, fr);
+    for (let x = -L / 2 + 0.75; x < L / 2; x += 1.5) box(g, 0.12, 0.35, D, x, ph + 0.17, -D / 2, fr); top = ph + 0.4;
+  }
+  if (pl === 'pool') {   // the screen at the back of a pool deck, the water in front of it
+    const cp = M2('pv_cope', 0xE3DCCF), wt = mat('pv_water', 0x3F9FC0, { roughness: 0.08, metalness: 0.15, transparent: true, opacity: 0.88 }), pw = Math.max(8, L), pd = 7;
+    box(g, pw + 1.2, 0.18, pd + 1.2, 0, 0.09, 2.2 + pd / 2, cp); const w = new THREE.Mesh(new THREE.PlaneGeometry(pw, pd), wt); w.rotation.x = -Math.PI / 2; w.position.set(0, 0.2, 2.2 + pd / 2); g.add(w);
+  }
+  if (pl === 'utility') {   // AC outdoor units and a water tank behind it — what the partition hides
+    const ac = M2('pv_ac', 0xE6E6E2, { roughness: 0.6 }), fan = M2('pv_fan', 0x3A3A3A);
+    for (let i = 0; i < Math.min(3, Math.max(1, Math.floor(L / 3.5))); i++) { const x = -L / 2 + 1.8 + i * 3.3; box(g, 2.6, 2.1, 1.1, x, 1.05 + 0.3, -2.4, ac); const c = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.04, 24), fan); c.rotation.x = Math.PI / 2; c.position.set(x - 0.3, 1.4, -1.83); g.add(c); box(g, 2.7, 0.3, 1.2, x, 0.15, -2.4, M2('pv_stand', 0x555555)); }
+    if (L > 6) { const tk = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 3.6, 28), M2('pv_tank', 0x2F3A2F, { roughness: 0.7 })); tk.position.set(L / 2 - 2, 1.8, -3.4); tk.castShadow = true; g.add(tk); }
+  }
+  const s = generic(it.cat || 'privacy', L, 0.5, H, it); s.position.set(0, y, z); g.add(s);
+  if (it.led) {   // the LED strip at the base: a warm line, and its wash up the screen at night
+    const lm = mat('c_led', 0xFFE2A8, { emissive: 0xFFC870, emissiveIntensity: 1.6 }); box(g, L - 0.2, 0.05, 0.08, 0, y + 0.06, z + 0.32, lm);
+    if (night) { const n = Math.min(8, Math.max(2, Math.round(L / 4))); for (let i = 0; i < n; i++) { const p = new THREE.PointLight(0xFFB86B, 6, 7, 1.6); p.position.set(-L / 2 + (i + 0.5) * L / n, y + 0.4, z + 0.7); g.add(p); } }
+  }
+  if (night && /JALI-BACKLIT|STAGGER/.test(String(it.cfgId || ''))) { const n = Math.min(8, Math.max(2, Math.round(L / 4))); for (let i = 0; i < n; i++) { const p = new THREE.PointLight(0xFFB86B, 5, 8, 1.6); p.position.set(-L / 2 + (i + 0.5) * L / n, y + H / 2, z + 1); g.add(p); } }
+  if (night) { const am = new THREE.PointLight(0xFFE6C8, 3, 30, 1.2); am.position.set(L / 2 + 4, 9, 8); g.add(am); }
+  sPerson(g, L / 2 + 2.6, Math.max(z0, z + 0.4) + 1.6, -0.35, pl === 'balcony' ? 0 : 0);
+  return { g, L, H: top + y, z0: Math.max(z0, z + 0.25), span: Math.max(L + 7, (top + y) * 1.5 + 4, 13) };
+}
 function cornerStudio(items, first, look) {
   const g = new THREE.Group(), GAP = 0.35, IN = 0.25, PT = 0.75, n = (items || []).length, nb = /-CW$/.test(((items || [])[0] || {}).pick || '') ? n : Math.ceil(n / 2);   // a corner quarter keeps its corner against the back wall
   let bx = IN, sz = 0, H = 0, D0 = 0;
@@ -1199,12 +1244,13 @@ export function preview(el, items, opts) {
     Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20, far: 80 }); scene.add(hemi, sun);
     const fl = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), mat('pv_floor', 0xD9CFC0, { roughness: 0.95 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; scene.add(fl);
     const wall = new THREE.Mesh(new THREE.BoxGeometry(120, 12, 0.5), mat('pv_wall', 0xE8E1D6)); wall.position.set(0, 6, -6); wall.receiveShadow = true; scene.add(wall);
-    PV = { el, renderer, scene, cam, controls, group: null, key: '', fl, wall };
+    PV = { el, renderer, scene, cam, controls, group: null, key: '', fl, wall, hemi, sun, env: scene.environment };
     const size = () => { const w = el.clientWidth || 600, h = el.clientHeight || 400; renderer.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); };
     PV.size = size; size(); try { PV.ro = new ResizeObserver(size); PV.ro.observe(el); } catch (e) {}
     const loop = () => { if (!PV || PV.renderer !== renderer) return; if (el.isConnected && el.offsetParent !== null) { controls.update(); renderer.render(scene, cam); } requestAnimationFrame(loop); }; loop();
   }
-  const key = JSON.stringify(items) + JSON.stringify((opts && opts.look) || ''); if (key === PV.key) return; const first = !PV.key; PV.key = key;
+  const key = JSON.stringify(items) + JSON.stringify((opts && opts.look) || '') + (opts && opts.night ? 'N' : '') + (opts && opts.place || ''); if (key === PV.key) return; const first = !PV.key; PV.key = key;
+  pvNight(!!(opts && opts.night));
   if (PV.group) PV.scene.remove(PV.group);
   const corner = opts && opts.studio === 'corner'; PV.fl.visible = PV.wall.visible = !corner; PV.scene.background = new THREE.Color(corner ? 0xF4F2EE : 0xF1ECE3);
   if (corner) return cornerStudio(items, first, opts.look);
@@ -1213,6 +1259,15 @@ export function preview(el, items, opts) {
     const B = fwStudio(items[0] || {}); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
     const lw = lookOn(B.g, opts.look, -Math.max(2, +(items[0] || {}).W || 8) / 2, 0), bsp = Math.max(B.span, lw ? lw + 4 : 0);
     const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'fw' + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * (lw ? nar : 1); /* 299: a phone sees the pieces at the sides too */ PV.controls.target.set(0, Math.min(B.H * .48, 5), 1); PV.cam.position.set(-sp * 0.22, B.H * .5 + sp * .14, sp * 1.25); PV.controls.update(); }
+    return;
+  }
+  if (opts && opts.studio === 'scr') {   // 300: a privacy screen / partition in its usual place (parapet, boundary wall, balcony, between pergola posts, by a pool, hiding AC units…)
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(opts.night ? 0x141B2B : 0xF4F2EE);
+    const B = scrStudio(items[0] || {}, opts); PV.group = B.g; PV.scene.add(B.g); if (opts.night) pvGlow(B.g);
+    const lw = lookOn(B.g, opts.look, -B.L / 2, B.z0), bsp = Math.max(B.span, lw ? lw + 4 : 0);
+    if (lw) { const lb = new THREE.Box3().setFromObject(B.g.children[B.g.children.length - 1]); B.g.children.forEach(c => { if (c.userData.person && isFinite(lb.max.x)) c.position.x = Math.max(c.position.x, lb.max.x + 1.4); }); }   // the person stands clear of the pieces
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'scr' + (opts.place || '') + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar, ty = Math.min(B.H * 0.5, 5);
+      PV.controls.target.set(0, ty, 1); const deep = /pergola|utility|balcony|pool/.test(opts.place || ''); PV.cam.position.set(-sp * (deep ? 0.62 : 0.3), ty + sp * (deep ? 0.38 : 0.22), sp * (deep ? 1.2 : 1.35)); PV.controls.update(); }
     return;
   }
   if (opts && opts.studio === 'bar') {   // 295: one bar frame with the design's look + the customer's picks, a 9 ft wall 3 ft behind it
