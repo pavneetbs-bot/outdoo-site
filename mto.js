@@ -629,8 +629,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=84').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=84'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=85').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=85'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1970,7 +1970,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=143').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=144').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2272,7 +2272,7 @@
   // ------------------------------------------------------------ pergolas: "Design it in 3D" — size, height, finish, colour, roof and layout on a live model
   var P3 = { st: 0, open: false, night: false };
   function isPg(id) { return /^MTO-PG-/.test(String(id || '')); }
-  function isProp(id) { var x = PRODS[id]; return /^MTO-/.test(String(id || '')) && !/^MTO-PL-\d/.test(String(id)) && !!(x && x.cz) && ['furniture'].indexOf(x.col) < 0; }   /* 309b: sculptures get the customiser too */   // 198: outrr's own make + install designs
+  function isProp(id) { var x = PRODS[id]; return (/^MTO-/.test(String(id || '')) || isFn(id)) && !/^MTO-PL-\d/.test(String(id)) && !!(x && x.cz) && (['furniture'].indexOf(x.col) < 0 || isFn(id)); }   /* 310: Made to Order furniture (S7-WPC / WPS) too */   /* 309b: sculptures get the customiser too */   // 198: outrr's own make + install designs
   function pgGrp(m, re) { return arr(m.groups).filter(function (g) { return re.test(g.name || ''); })[0] || null; }
   function pgOpts() {
     var x = PRODS[S.id], m = x.cz, o = S.o, gv = function (re) { var g = pgGrp(m, re); return g ? (o.groups || {})[g.name] || (arr(g.options)[0] || {}).name : ''; };
@@ -2585,11 +2585,12 @@
     { k: 'bench', t: 'Benches', col: 'furniture', re: /^MTO-BN-/, cat: 'bench' }
   ];
   // which categories each studio offers, and where a piece goes first [side, how many]
-  var LOOKSET = { pergola: ['planters', 'furniture', 'plants', 'lights', 'feature', 'partition', 'bar', 'food', 'swing'], fw: ['plants', 'planters', 'sculptures'],
+  var LOOKSET = { furn: ['planters', 'plants', 'lights'], pergola: ['planters', 'furniture', 'plants', 'lights', 'feature', 'partition', 'bar', 'food', 'swing'], fw: ['plants', 'planters', 'sculptures'],
     cabin: ['furniture', 'planters', 'plants', 'lights', 'feature', 'bar', 'swing'], bar: ['furniture', 'plants', 'planters', 'lights', 'food'], planter: ['plants', 'sculptures', 'furniture', 'lights'], screen: ['plants', 'planters', 'geyser', 'bench'], water: ['plants', 'planters', 'bench', 'sculptures'] };
-  var LK_SIDES = { pergola: ['under', 'sides', 'left', 'right', 'front', 'back'], fw: ['sides', 'left', 'right', 'front'], cabin: ['front', 'right'], bar: ['sides', 'left', 'right', 'front'], planter: ['front', 'right'], screen: ['sides', 'left', 'right', 'front'], water: ['sides', 'left', 'right', 'front'] };
+  var LK_SIDES = { furn: ['sides', 'left', 'right', 'front'], pergola: ['under', 'sides', 'left', 'right', 'front', 'back'], fw: ['sides', 'left', 'right', 'front'], cabin: ['front', 'right'], bar: ['sides', 'left', 'right', 'front'], planter: ['front', 'right'], screen: ['sides', 'left', 'right', 'front'], water: ['sides', 'left', 'right', 'front'] };
   var LK_SN = { under: 'Under it', sides: 'Both sides', left: 'Left', right: 'Right', front: 'In front', back: 'Behind' };
   var LK_DEF = {
+    furn: { planters: ['sides', 2], plants: ['right', 1], lights: ['sides', 2] },
     pergola: { furniture: ['under', 1], swing: ['under', 1], planters: ['sides', 2], plants: ['sides', 2], lights: ['sides', 2], feature: ['back', 1], partition: ['left', 1], bar: ['right', 1], food: ['right', 1] },
     fw: { plants: ['left', 1], planters: ['sides', 2], sculptures: ['right', 1] },
     cabin: { furniture: ['front', 1], planters: ['right', 2], plants: ['front', 2], lights: ['front', 2], feature: ['right', 1], bar: ['right', 1], swing: ['front', 1] },
@@ -2606,7 +2607,7 @@
     HM: function (n) { var k = Math.max(0.8, n / 5); return [9.8 * k + 0.2, 5.8 * k, 3.2]; }, RT: BN_FIX(6.94, 6.94, 1.5), TS: BN_FIX(6.96, 6.96, 1.5) };
   var LK_PL = ['OLIVE', 'BLACKFICUS', 'PACHIRA', 'ARECA', 'RHAPIS', 'FISHTAIL', 'BAMBOO', 'PHOENIX', 'LIVISTONA', 'CYCAS', 'FOXTAIL', 'TRAVELLER', 'BANANA', 'HIBISCUS', 'IXORA', 'MOGRA', 'CHANDNI', 'RAATKIRANI', 'TECOMA', 'KANER', 'ADENIUM', 'BIRDPARADISE', 'CROTON', 'CORDYLINE', 'SCHEFFLERA', 'SONGOFINDIA', 'KAMINI', 'DURANTA', 'FICUSPANDA', 'MORPANKHI', 'FOUNTAINGRASS', 'AGAVE', 'SNAKEPLANT', 'BOUGAINVILLEA', 'MADHUMALTI', 'CHAMPA'];
   function lookC(k) { return LOOKC.filter(function (c) { return c.k === k; })[0]; }
-  function lookHost(id) { id = id || (S && S.id); var x = PRODS[id] || {}; return isPg(id) ? 'pergola' : isFw(id) ? 'fw' : x.cz && x.cz.unit === 'cabin' ? 'cabin' : isBar(id) ? 'bar' : /^MTO-PL-[A-Z]/.test(String(id || '')) ? 'planter' : isScr(id) ? 'screen' : isWtr(id) ? 'water' : ''; }
+  function lookHost(id) { id = id || (S && S.id); var x = PRODS[id] || {}; return isPg(id) ? 'pergola' : isFn(id) ? 'furn' : isFw(id) ? 'fw' : x.cz && x.cz.unit === 'cabin' ? 'cabin' : isBar(id) ? 'bar' : /^MTO-PL-[A-Z]/.test(String(id || '')) ? 'planter' : isScr(id) ? 'screen' : isWtr(id) ? 'water' : ''; }
   function lookCats() { return (LOOKSET[lookHost()] || []).map(lookC).filter(Boolean); }
   function lookList(c) {   // the listed products of a category, one per variant group; orderable ones and the preferred ones first
     var seen = {}, L = Object.keys(PRODS).filter(function (id) { var x = PRODS[id]; if (!x || x.bun || x.bundle || x.col !== c.col || !x.n || id === (S && S.id)) return false; if (c.re && !c.re.test(id)) return false;
@@ -2821,6 +2822,7 @@
       G = { kind: 'water', L: L5, W: wi.d, o2: { wall: wall }, solid: [{ x: 0, z: 0, w: L5, d: wi.d }], walls: wall ? [{ x: -12, z: -0.4, w: L5 + 24, d: 0.4 }] : [], zmin: wall ? 0 : null }; }
     else if (h === 'screen') { var L6 = Math.min(60, num(o.w) || 8), pw = /parapet|boundary|face/.test(scrPlace(S.id, m, o));
       G = { kind: 'wall', L: L6, W: 0.6, o2: { wall: true, thin: true }, solid: [{ x: 0, z: 0, w: L6, d: 0.6 }], walls: pw ? [{ x: -12, z: -0.4, w: L6 + 24, d: 0.4 }] : [], zmin: pw ? 0 : null }; }
+    else if (h === 'furn') { var fs = fnSize(m); G = { kind: 'furn', L: fs.L, W: fs.W, o2: {}, solid: [{ x: 0, z: 0, w: fs.L, d: fs.W }], walls: [] }; }   // 310
     else if (h === 'planter') {   // the pieces along the corner's two walls (lookCorner / space3d cornerStudio)
       var its = lookPlanterIts(), GAP = 0.35, IN = 0.25, nb = /-CW$/.test(S.id) ? its.length : Math.ceil(its.length / 2), bx = IN, D0 = 0, sz = 0, sol = [];
       its.forEach(function (i) { D0 = Math.max(D0, i.d); });
@@ -3128,7 +3130,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, look: DS_SOLO && !S.site && lookArr().length ? lookNow() : null, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } lk2Sync(); return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=71').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=72').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -3468,13 +3470,13 @@
       else if (u === 'face') f.push('<label class="mto-pk"><span>Height (ft)</span><input inputmode="decimal" data-k="h" value="' + esc(o.h) + '" placeholder="' + 'Any size' + '"></label>');
       if (isScr(S.id) && DS_SOLO && /^MTO-PS-/.test(S.id) && /parapet|boundary/.test(scrPlace(S.id, m, o))) f.push('<div class="mto-pk" style="grid-column:1/-1"><span>Where it goes (to see it)</span><div class="cu-hch">' + [['parapet', 'Terrace parapet'], ['boundary', 'Boundary wall']].map(function (w) { return '<button type="button" data-cuw="' + w[0] + '" class="' + ((CU.where || 'parapet') === w[0] ? 'on' : '') + '">' + w[1] + '</button>'; }).join('') + '</div></div>');   // 300
     }
-    if (mats.length > 1 && P('look')) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (np ? '' : u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels || m.pcs ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, esc((m.labels && m.labels.material) || 'Finish')));
+    if (mats.length > 1 && (P('look') || part === 'fmat')) f.push(sel('data-pick="material"', mats.map(function (y) { return [y.name, y.name + (np ? '' : u === 'fixed' ? (+y.rate ? ' (+' + rs(y.rate) + ')' : '') : m.panels || m.pcs ? '' : ' — ' + rs(y.rate) + ' / ' + uw)]; }), mat && mat.name, esc((m.labels && m.labels.material) || 'Finish')));
     if (m.pcs && num(m.pcs.max) > 1 && P('size')) { var pc = num(o.pcs) || 1; f.push('<div class="mto-pk"><span>Pieces</span><div class="cu-pcs"><button type="button" data-cupcs="-1" aria-label="One less"' + (pc <= 1 ? ' disabled' : '') + '>−</button><b>' + pc + '</b><button type="button" data-cupcs="1" aria-label="One more"' + (pc >= num(m.pcs.max) ? ' disabled' : '') + '>+</button></div></div>'); }   // 199
-    var cols = P('look') ? arr(mat && mat.colours) : [];
+    var cols = P('look') || part === 'fcol' ? arr(mat && mat.colours) : [];
     var h = f.length ? '<div class="mto-pks">' + f.join('') + '</div>' : '';
     if (cols.length) h += '<div class="lb">' + esc((m.labels && m.labels.colour) || 'Colour') + ' · ' + esc(o.colour || '') + '</div><div class="pg3-ch">' + cols.map(function (c) { var bg = c.hex2 ? 'linear-gradient(135deg,' + c.hex + ' 50%,' + c.hex2 + ' 50%)' : c.hex || (c.img ? 'url(' + c.img + ') center/cover' : '');
       return bg ? '<button type="button" class="pg3-sw' + (c.name === o.colour ? ' on' : '') + '" title="' + esc(c.name) + '" aria-label="' + esc(c.name) + '" data-cuc="' + esc(c.name) + '" style="background:' + bg + '"></button>' : '<button type="button" class="' + (c.name === o.colour ? 'on' : '') + '" data-cuc="' + esc(c.name) + '">' + esc(c.name) + '</button>'; }).join('') + '</div>';
-    arr(m.groups).filter(function (g) { return g.name && arr(g.options).length && (part ? gStage(g) === part : true); }).forEach(function (g) {
+    arr(m.groups).filter(function (g) { return g.name && arr(g.options).length && (part === 'fcush' ? /cushion/i.test(g.name) : /^f(mat|col)$/.test(part || '') ? false : part ? gStage(g) === part : true); }).forEach(function (g) {
       h += '<div class="lb">' + esc(gLabel(g.name)) + '</div><div class="pg3-ch">' + arr(g.options).filter(function (y) { return y.name; }).map(function (y) { var pr = [+y.fixed ? (+y.fixed > 0 ? '+' : '−') + rs(Math.abs(y.fixed)) : '', +y.rate ? '+' + rs(y.rate) + '/' + uw : '', +y.rate_p ? '+' + rs(y.rate_p) + '/ft all round' : '', +y.rate_w ? '+' + rs(y.rate_w) + '/ft width' : ''].filter(Boolean).join(' ');
         return '<button type="button" class="' + (y.name === (o.groups || {})[g.name] ? 'on' : '') + '" data-cug="' + esc(g.name) + '" data-v="' + esc(y.name) + '">' + esc(String(y.name).split(' (')[0]) + (pr && !np ? ' · ' + pr : '') + '</button>'; }).join('') + '</div>'; });
     var adds = P('extras') ? arr(m.addons).filter(function (a) { return a.name; }) : [];
@@ -3517,6 +3519,12 @@
   function isFw(sku) { return /^MTO-FW-/.test(sku || ''); }
   function cuStages(x, m, o) {
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
+    if (isFn(S && S.id)) { var Lf = [], fmats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), fmat = fmats.filter(function (y) { return y.name === o.material; })[0] || fmats[0], cg = arr(m.groups).filter(function (g) { return /cushion/i.test(g.name || '') && arr(g.options).length; })[0];   // 310 (owner): no size step — frame material → frame colour → cushion fabric → complete the look
+      if (fmats.length > 1) Lf.push({ k: 'fmat', t: 'Frame material', sum: o.material || (fmat && fmat.name) || '' });
+      if (arr(fmat && fmat.colours).length) Lf.push({ k: 'fcol', t: 'Frame colour', sum: o.colour || '' });
+      if (cg) Lf.push({ k: 'fcush', t: 'Cushion fabric & colour', sum: String((o.groups || {})[cg.name] || '').split(' (')[0] });
+      if (!S.lkChild && LOOKSET[lookHost()]) Lf.push({ k: 'ctl', t: 'Complete the look', sum: lookSum() });
+      if (!Lf.length) Lf.push({ k: 'fmat', t: 'Frame', sum: '' }); return Lf; }
     var L = [{ k: 'size', t: m.unit === 'fixed' ? 'Size' : m.pcs && num(m.pcs.max) > 1 ? 'Size & pieces' : 'Size', sum: sizeTxt(m, o) }];
     if (mats.length > 1 || arr(mat && mat.colours).length) L.push({ k: 'look', t: (m.labels && m.labels.material) || 'Finish & colour', sum: [mats.length > 1 ? o.material : '', o.colour].filter(Boolean).join(' · ') });
     var gs = arr(m.groups).filter(function (g) { return g.name && arr(g.options).length; }), gsum = function (L2) { return L2.map(function (g) { return String((o.groups || {})[g.name] || '').split(' (')[0]; }).filter(function (v) { return v && !/^(No |None$|As designed|Artificial vertical garden)/.test(v); }).join(' · '); };
@@ -3574,9 +3582,11 @@
   // 199: designs that sit in the planner as one of its things (planters…): "See it in my space" puts the pieces on a plan — the one on this device, a saved one, or a new space
   var PCAT = { planters: 'planter', 'privacy-screens': 'privacy' };
   function isBar(sku) { return /^MTO-BR-/.test(sku || ''); }   // 295: bars get the bar studio
-  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku) || /^MTO-FW-/.test(sku || '') || isWtr(sku) || isBn(sku) || isRl(sku) || isGt(sku) || isAc(sku) || /^MTO-(GF|VG|DK|SC)-/.test(sku || ''); }
+  function cuHas3d(x, sku) { return !!PCAT[x.col] || isBar(sku) || /^MTO-FW-/.test(sku || '') || isWtr(sku) || isBn(sku) || isRl(sku) || isGt(sku) || isAc(sku) || isFn(sku) || /^MTO-(GF|VG|DK|SC)-/.test(sku || ''); }
   function isAc(id) { return /^MTO-AC-/.test(String(id || '')); }   /* 309: AC covers (ac3d.js) */
   function isGt(id) { return /^MTO-GT-/.test(String(id || '')); }   /* 309: gates (gate3d.js) */
+  function isFn(id) { var x = PRODS[id]; return /^S7-WP[CS]-/.test(String(id || '')) && !!(x && x.cz); }   /* 310: Made to Order furniture (furn3d.js) */
+  function fnSize(m) { var n = String(((arr(m && m.sizes)[0]) || {}).label || '').match(/[\d.]+/g) || [], f = function (v) { return Math.round(num(v) / 30.48 * 4) / 4; }; return /dia/i.test(String(((arr(m && m.sizes)[0]) || {}).label)) ? { L: f(n[0]), W: f(n[0]) } : { L: f(n[0]) || 2, W: f(n[1]) || 2 }; }
   function isRl(id) { return /^MTO-RL-/.test(String(id || '')); }   /* 309: railings (rail3d.js) */
   function isBn(id) { return /^MTO-BN-[A-Z]{2}$/.test(String(id || '')); }   /* 307: benches have their own 3D (bench3d.js) */
   function fwPlace(sku, x) { var t = String((x && x.sb) || ''); return /-FS$/.test(sku) || /garden|lawn/i.test(t) ? 'garden' : /entrance/i.test(t) ? 'entrance' : /caf|commercial/i.test(t) ? 'commercial' : /cabin|mumty/i.test(t) ? 'cabin' : 'terrace'; }
@@ -3621,11 +3631,12 @@
   function cu3dDraw0() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=94').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=95').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     if (isBn(S.id)) { try { CU3.m.preview(el, [{ code: S.id.slice(7), n: num(o.n) || seatLo(m) || 3 }], { studio: 'bench' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 307
     if (isFw(S.id)) { try { CU3.m.preview(el, [{ code: S.id.replace(/^MTO-/, ''), W: num(o.w) || 8, H: num(o.h) || 9, groups: o.groups || {}, place: fwPlace(S.id, x) }], { studio: 'fw', look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 296
     var mk9 = /^MTO-(GF|VG|DK)-/.exec(S.id); if (mk9) { try { CU3.m.preview(el, [{ sku: S.id, img: refPhoto(x), m: { materials: m.materials, groups: m.groups }, o: { l: o.l, w: o.w, h: o.h, material: o.material, colour: o.colour, groups: o.groups, addons: o.addons } }], { studio: mk9[1].toLowerCase(), look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309: graffiti / vertical gardens / decks (misc3d.js)
     if (/^MTO-SC-/.test(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, sizes: m.sizes }, o: { size: o.size, material: o.material, colour: o.colour } }], { studio: 'sc' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309b: sculptures (sculpt3d.js)
+    if (isFn(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, sizes: m.sizes, specs: m.specs }, o: { material: o.material, colour: o.colour, groups: o.groups } }], { studio: 'fn', look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 310: furniture (furn3d.js)
     if (isAc(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, sizes: m.sizes, pieces: m.pieces }, o: { size: o.size, material: o.material, colour: o.colour } }], { studio: 'ac' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309
     if (isGt(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups }, o: { w: o.w, h: o.h, material: o.material, colour: o.colour, groups: o.groups } }], { studio: 'gate' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309
     if (isRl(S.id)) { try { CU3.m.preview(el, [{ sku: S.id, m: { materials: m.materials, groups: m.groups }, o: { l: o.l, material: o.material, colour: o.colour, groups: o.groups, addons: o.addons } }], { studio: 'rail' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309
@@ -3882,7 +3893,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=94').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=95').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };

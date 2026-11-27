@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=84';
-import { pergolaModel } from './pergola3d.js?v=71';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=85';
+import { pergolaModel } from './pergola3d.js?v=72';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -15,6 +15,7 @@ import { railStudio, railSpec } from './rail3d.js?v=1';   // 309
 import { gateStudio, gateSpec } from './gate3d.js?v=1';   // 309
 import { acStudio, acSpec } from './ac3d.js?v=1';   // 309
 import { scStudio, scSpec } from './sculpt3d.js?v=1';   // 309b
+import { furnStudio, furnSpec } from './furn3d.js?v=1';   // 310
 import { graffitiStudio, graffitiSpec, vgStudio, vgSpec, deckStudio, deckSpec } from './misc3d.js?v=1';   // 309
 import { barStudio, barSpec } from './bar3d.js?v=9';   // 295: the bar studio
 import { fwStudio } from './fw3d.js?v=4';
@@ -1315,6 +1316,14 @@ export function preview(el, items, opts) {
     if (lw) { const lb = new THREE.Box3().setFromObject(B.g.children[B.g.children.length - 1]); B.g.children.forEach(c => { if (c.userData.person && isFinite(lb.max.x)) c.position.x = Math.max(c.position.x, lb.max.x + 1.4); }); }   // the person stands clear of the pieces
     const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'scr' + (opts.place || '') + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar, ty = Math.min(B.H * 0.5, 5);
       PV.controls.target.set(0, ty, 1); const deep = /pergola|utility|balcony|pool/.test(opts.place || ''); PV.cam.position.set(-sp * (deep ? 0.62 : 0.3), ty + sp * (deep ? 0.38 : 0.22), sp * (deep ? 1.2 : 1.35)); PV.controls.update(); }
+    return;
+  }
+  if (opts && opts.studio === 'fn') {   // 310: Made to Order furniture in a terrace corner
+    PV.fl.visible = PV.wall.visible = false; PV.scene.background = new THREE.Color(0xF4F2EE);
+    const it0 = items[0] || {}, B = furnStudio(furnSpec(it0.sku, it0.m || {}, it0.o || {})); if (PV.group) PV.scene.remove(PV.group); PV.group = B.g; PV.scene.add(B.g);
+    const lw = lookOn(B.g, opts.look, -B.L / 2, -B.D / 2), bsp = Math.max(B.span, lw ? lw + 4 : 0);
+    const nar = PV.cam.aspect < 1 ? Math.min(1.7, 1 / PV.cam.aspect) : 1, vk = 'fn' + it0.sku + Math.round(bsp) + (nar > 1 ? 'n' : ''); if (first || PV.vk !== vk) { PV.vk = vk; const sp = bsp * nar;
+      PV.controls.target.set(0, Math.min(B.H * 0.45, 1.3), -0.4); PV.cam.position.set(sp * 0.42, sp * 0.5 + 1.5, sp * 0.95); PV.controls.update(); }
     return;
   }
   if (opts && opts.studio === 'bench') {   // 307: an outrr bench at the customer's seats, on the studio floor
