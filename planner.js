@@ -106,7 +106,7 @@ async function cloudSave(extra) {
     if (S.ro || (S.sh && S.sh.role !== 'edit')) return;   // 224: view only / someone else is editing
     if (S.sh) { pl.id = S.sh.id; delete pl.name; }
     const r = assistTok() ? await anonRpc('sales_plan_save', { p_token: assistTok(), p: pl }) : S.sh ? await rpc('shared_plan_save', { p: pl }) : await rpc('plan_save', { p: pl });
-    if (r && r.id) { S.pid = r.id; if (!S.sh) S.pname = r.name; S.saveErr = ''; S.savedAt = Date.now(); S.dirty = false; save(); S.dirty = true; paintSaved(); if (first) ev('plan_save', {}); }
+    if (r && r.id) { S.pid = r.id; if (!S.sh) S.pname = r.name; S.saveErr = ''; S.savedAt = Date.now(); S.dirty = false; save(); S.dirty = true; paintSaved(); if (first) ev('plan_save', {});  markProp(); }
   } catch (e) { S.saveErr = String(e.message || e); paintSaved(); } finally { cloudBusy = false; }
 }
 function paintSaved() { const el = document.getElementById('plSv'); if (!el || !S) return;
@@ -1245,7 +1245,10 @@ async function propPaint() { const el = document.getElementById('ppRoot'); if (!
     if (a[0] === 'tab') { S.ptab = a[1]; propPaint(); } else if (a[0] === 'pdf') propPdf(plan, R, E); };
   el.onchange = ev => { const b = ev.target.closest('[data-pp]'); if (!b) return; const a = b.getAttribute('data-pp').split(':'); if (a[0] === 'add') { S.padd[a[1]] = b.checked; ev_('plan_prop_add', a[1]); propPaint(); } };
   const v = document.getElementById('ppv'); if (v) { try { S3.show(v, { creepers: crOn(), site: S.site, items: S.items, sel: null, cabinCfg, cabinLay, pergolaSku: 'MTO-PG-TW', noDrag: true, labels: false, ptags: PPM.tags(plan), theme: (S.su && S.su.theme) || 'natural', fmix: S.su && S.su.fmix }, { view: '3d', on: () => {} }); setTimeout(() => { try { S3.resize(); S3.home(); } catch (e) {} }, 80); } catch (e) {} }
-  if (!S._ppEv) { S._ppEv = 1; ev_('plan_proposal', E.lw ? 'lifewall' : 'outrr'); } }
+  if (!S._ppEv) { S._ppEv = 1; ev_('plan_proposal', E.lw ? 'lifewall' : 'outrr'); }
+  markProp(); }
+function markProp() { if (!S || !S._ppEv || !S.pid || S._ppSt === S.pid || S.sh) return; S._ppSt = S.pid;   // 250: proposal opened → the plan moves to the Proposal tab (only up from Conceptualisation)
+  (assistTok() ? anonRpc('plan_mark_proposal', { p_id: S.pid, p_token: assistTok() }) : rpc('plan_mark_proposal', { p_id: S.pid })).catch(() => { S._ppSt = null; }); }
 function ev_(k, r) { try { ev(k, { ref: r }); } catch (e) {} }
 function propPdf(plan, R, E) { let img = null; try { img = S3.snapshot(); } catch (e) {} const w = window.open('', '_blank'); if (!w) return;
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${(E.lw ? 'LifeWall' : 'outrr')} proposal — ${String(plan.name || (S.site.kind === 'ground' ? 'Lawn plan' : 'Terrace plan')).replace(/[<>]/g, '')}</title><style>body{margin:0;background:#fff}${PPM.CSS}@page{size:A4;margin:14mm}@media print{.pp{width:auto;min-height:0;margin:0;padding:0;border:0;box-shadow:none}}</style></head><body><div class="pp">${PPM.page(plan, R, E, { print: true, add: S.padd, img })}</div><script>setTimeout(function(){print()},400)<\/script></body></html>`); w.document.close(); ev_('plan_prop_pdf', E.lw ? 'lifewall' : 'outrr'); }

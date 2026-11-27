@@ -1174,7 +1174,7 @@
     window.buyNow = function () { if (S && S.pdp && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(); return _bn.apply(this, arguments); };
     window.addCart = function (id) { if (S && S.pdp && (!id || id === S.id) && PRODS[S.id] && PRODS[S.id].cz) return pdpOrder(true); return _ac.apply(this, arguments); };   // 190: into the cart
   }
-  function pdpOrder(add) { if (isPg(S.id) && !S.pgLegacy) return window.pg3Open(true); if (isProp(S.id) && PRODS[S.id].cz.unit !== 'cabin' && !S.pgLegacy) return window.cuOpen(true); if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); var c = document.getElementById('mtoCfg'), q = priceR(S.id, PRODS[S.id].cz, S.o, PCT); if (!q.ok || PRODS[S.id].oo === false) { if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return toast(PRODS[S.id].oo === false ? 'Coming soon — orders open soon' : q.error); } if (add) return addM(false); order(); }
+  function pdpOrder(add) { if (isPg(S.id) && !S.pgLegacy) return dsGate(function () { window.pg3Open(true); }); if (isProp(S.id) && PRODS[S.id].cz.unit !== 'cabin' && !S.pgLegacy) return dsGate(function () { window.cuOpen(true); }); if (!mtoOk() && PRODS[S.id].cz.unit !== 'cabin') return window.mtoUnlock(S.id); var c = document.getElementById('mtoCfg'), q = priceR(S.id, PRODS[S.id].cz, S.o, PCT); if (!q.ok || PRODS[S.id].oo === false) { if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); return toast(PRODS[S.id].oo === false ? 'Coming soon — orders open soon' : q.error); } if (add) return addM(false); order(); }
   // 160: the cabin builder on the product page — the 3D model takes the photo's place, a sticky bar carries the price and Next
   var CBV = [['3d', '3D'], ['cut', 'Roof off'], ['360', '360°'], ['inside', 'Inside'], ['top', 'Top'], ['plan', 'Plan'], ['front', 'Sides'], ['photos', 'Photos']];
   var FURN = [['lounge', 'Lounge'], ['office', 'Office'], ['cafe', 'Café'], ['stay', 'Stay'], ['none', 'No furniture']];
@@ -1325,7 +1325,7 @@
   function lakh(v) { return v >= 100000 ? '₹' + (v / 100000).toFixed(v >= 1000000 ? 1 : 2).replace(/\.?0+$/, '') + ' L' : rs(v); }
   function cbCtas() {
     var ct = document.querySelector('.ctas'); if (!ct) return; var b = ct.querySelector('.cbcta'); if (!b) { b = document.createElement('div'); b.className = 'cbcta'; ct.insertBefore(b, ct.firstChild); }
-    b.innerHTML = '<button type="button" class="cbc-main" onclick="cbStudio(true)">✦ Customise your cabin</button><button type="button" class="cbc-sec" onclick="cbPrices()">Check price</button>';
+    b.innerHTML = '<button type="button" class="cbc-main" onclick="mtoCustomise()">✦ Customise your cabin</button><button type="button" class="cbc-sec" onclick="cbPrices()">Check price</button>';
   }
   window.cbPrices = function () {
     var ids = Object.keys(PRODS).filter(function (i) { var z = PRODS[i]; return z.cz && z.cz.unit === 'cabin' && z.cz.cabin; });
@@ -1508,7 +1508,7 @@
       if (dc && tc && dc !== tc && tc.nextSibling !== dc) { window.mtoPdp.descHome = [dc, dc.parentNode, dc.nextSibling]; tc.parentNode.insertBefore(dc, tc.nextSibling); } dc && dc.classList.add('mto-desc'); }
     // the configurator card: right under the title card
     var first = document.querySelector('#pdp .pdp-info .pcard'), cfg = document.createElement('div'); cfg.id = 'mtoCfg'; cfg.className = 'pcard mto-pcfg';
-    if (isProp(id) && m.unit === 'cabin') { var pc = document.createElement('div'); pc.id = 'ppCard'; pc.className = 'pcard pp-card'; first.parentNode.insertBefore(pc, first.nextSibling); pc.innerHTML = cabCard(x, m); pc.addEventListener('click', function (e) { var t = e.target.closest('[data-act]'); if (t && t.getAttribute('data-act') === 'cab') window.cbStudio(true); }); first = pc; }
+    if (isProp(id) && m.unit === 'cabin') { var pc = document.createElement('div'); pc.id = 'ppCard'; pc.className = 'pcard pp-card'; first.parentNode.insertBefore(pc, first.nextSibling); pc.innerHTML = cabCard(x, m); pc.addEventListener('click', function (e) { var t = e.target.closest('[data-act]'); if (t && t.getAttribute('data-act') === 'cab') dsGate(function () { window.cbStudio(true); }); }); first = pc; }
     first.parentNode.insertBefore(cfg, first.nextSibling);
     if (isProp(id)) { if (m.unit !== 'cabin') cfg.classList.add('pp-card'); var dc2 = document.querySelector('#pdp .mto-desc'); if (dc2) cfg.parentNode.insertBefore(dc2, cfg.nextSibling); ppStick(true); }
     // details: the design's own specifications
@@ -1807,9 +1807,9 @@
     if (t.hasAttribute('data-img')) { S.img = +t.getAttribute('data-img'); return draw(); }
     if (t.hasAttribute('data-open')) { return window.mtoOpen(t.getAttribute('data-open')); }
     var a = t.getAttribute('data-act'); if (a === 'unlock') return window.mtoUnlock(S.id);   // 172
-    if (a === 'pg3') return window.pg3Open(true);
-    if (a === 'cu') return window.cuOpen(true);   // 198
-    if (a === 'cab') return window.cbStudio(true);
+    if (a === 'pg3') return dsGate(function () { window.pg3Open(true); });   // 250: your saved designs first
+    if (a === 'cu') return dsGate(function () { window.cuOpen(true); });   // 198
+    if (a === 'cab') return dsGate(function () { window.cbStudio(true); });
     if (a === 'close') { if (history.state && history.state.v === 'modal') return history.back(); return window.mtoClose(); }
     if (a === 'bulk') { window.mtoClose(); try { if (window.openBulk) return openBulk(S.id); } catch (er) {} return toast('Write to us on WhatsApp for a bulk quote'); }
     if (a === 'order') return order();
@@ -1957,7 +1957,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=129').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=130').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2424,7 +2424,7 @@
   function dsOn() { return !!(S && S.id && PRODS[S.id] && PRODS[S.id].cz && ((typeof P3 !== 'undefined' && P3.open) || CU.open || S.studio)); }
   function dsIn() { try { return !!(window.acToken && localStorage.getItem('outrr_session')); } catch (e) { return false; } }
   function dsSave(now) {
-    if (!dsOn() || !dsIn() || S.dsHold || S.lkChild) return;   // 299: a Complete the look piece being set up is not a design of its own var b; try { b = propBody(); } catch (e) { return; } delete b._q;
+    if (!dsOn() || !dsIn() || S.dsHold || S.lkChild) return;   /* 299: a Complete the look piece being set up is not a design of its own */ var b; try { b = propBody(); } catch (e) { return; } delete b._q;
     var key = JSON.stringify([S.id, S.did || '', b.cfg, b.name]); if (key === DSV.key && !now) return; clearTimeout(DSV.t);
     DSV.t = setTimeout(async function () { var id0 = S && S.id; try { var r = await authRpc('design_save', { p_id: S.did || null, p: b });
       if (r && r.id && S && S.id === id0) { DSV.key = key; var nw = !S.did; S.did = r.id; S.dname = r.name; S.dstage = r.stage || S.dstage || 'concept'; DSV.list = null; czSaveQuiet(); dsHead(); if (nw) toast('Saved to My designs'); } } catch (e) {} }, now ? 0 : 2200);
@@ -2477,9 +2477,49 @@
     if (p[0] === 'del') { if (!window.confirm('Delete "' + (z ? z.name : 'this design') + '"?')) return; var x = await authRpc('proposal_delete', { p_id: id }); if (x == null) return toast('Could not delete — try again');
       if (id === S.did) { S.did = null; S.dname = ''; S.dstage = 'concept'; try { var b = propBody(); DSV.key = JSON.stringify([S.id, '', b.cfg, b.name]); } catch (e) {} czSaveQuiet(); dsHead(); } return dsMy(); }
   }
+  // 250 (owner): "Customise" opens the list of your saved designs first (like the planner's plan list) — tabs by stage
+  // (Conceptualisation · Proposal · Transformation), this product's designs on top, the other products' in their own section, + A new design
+  var DSP = { go: null, tab: '' };
+  function dsGate(go) {
+    if (!S || !S.id || S.lkChild || S.fromPlan != null || !dsIn()) return go();
+    DSP.go = go; DSP.tab = ''; var ov = dspOv(); ov.innerHTML = '<div class="sp-hd"><b>Your designs</b><button type="button" data-dsp="x" aria-label="Close">✕</button></div><div class="sp-bd"><p class="sp-sub">Loading your designs…</p></div>'; ov.classList.add('open'); document.body.classList.add('sp-on');
+    var id0 = S.id; dsList(true).then(function (L) { if (!S || S.id !== id0 || !ov.classList.contains('open')) return; if (!L.length) { dspClose(); return go(); } dspPaint(); }, function () { dspClose(); go(); });
+  }
+  function dspOv() { propCss(); var ov = document.getElementById('dsPick'); if (!ov) { ov = document.createElement('div'); ov.id = 'dsPick'; ov.className = 'sp-ov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); document.body.appendChild(ov);
+    ov.addEventListener('click', function (e) { var b = e.target.closest('[data-dsp]'); if (b) dspAct(b.getAttribute('data-dsp')); }); } return ov; }
+  function dspClose() { var ov = document.getElementById('dsPick'); if (ov) ov.classList.remove('open'); if (!document.querySelector('.sp-ov.open')) document.body.classList.remove('sp-on'); }
+  function dspStage(z) { return z.stage || 'proposal'; }
+  function dspPaint() {
+    var ov = dspOv(), L = DSV.list || [], mine = L.filter(function (z) { return z.sku === S.id; }), oth = L.filter(function (z) { return z.sku !== S.id && PRODS[z.sku]; });
+    if (!DSP.tab) DSP.tab = dspStage(mine[0] || L[0] || {}); var tb = DSP.tab, nm = short(PRODS[S.id].n);
+    var row = function (z, other) { var on = z.id === S.did && !other, pr = z.price && z.price.total ? rs(z.price.total) : '', im = ''; try { im = window.frontImg ? window.frontImg(z.sku) : ''; } catch (e) {}
+      return '<div class="sp-row"><button type="button" data-dsp="o:' + z.id + '">' + (im ? '<img class="dsp-im" src="' + esc(im) + '" alt="" loading="lazy">' : '<i>' + (other ? '◇' : '✎') + '</i>') + '<span><b>' + esc(z.name) + '</b><small>' + esc([other ? short(PRODS[z.sku].n) : '', pr, 'saved ' + dsAgo(z.updated_at), on ? 'open now' : ''].filter(Boolean).join(' · ')) + '</small></span></button>' +
+        '<div class="sp-acts"><button type="button" data-dsp="ren:' + z.id + '">✎ Rename</button><button type="button" data-dsp="dup:' + z.id + '">⧉ Duplicate</button><button type="button" data-dsp="del:' + z.id + '">🗑 Delete</button></div></div>'; };
+    var m1 = mine.filter(function (z) { return dspStage(z) === tb; }), o1 = oth.filter(function (z) { return dspStage(z) === tb; }), tl = STG3.filter(function (z) { return z[0] === tb; })[0][1];
+    ov.innerHTML = '<div class="sp-hd"><b>Your designs</b><button type="button" data-dsp="x" aria-label="Close">✕</button></div><div class="sp-bd">' +
+      '<h2>Which design do you want to open?</h2><p class="sp-sub">Your saved designs, by stage. Open one as you left it, or start a new ' + esc(nm) + '.</p>' +
+      stTabs(STG3, L.filter(function (z) { return PRODS[z.sku]; }), tb, 'dsp', 'tab:') +
+      '<p class="dsp-h">' + esc(nm) + '</p><div class="sp-list">' + m1.map(function (z) { return row(z, false); }).join('') +
+      (m1.length ? '' : '<p class="sp-sub st-none">No ' + esc(nm) + ' designs in ' + esc(tl) + '.</p>') +
+      ('<button type="button" data-dsp="new" class="sp-new"><i>＋</i><span><b>A new design</b><small>Start ' + esc(nm) + ' afresh — your saved designs stay as they are</small></span></button>') + '</div>' +
+      (o1.length ? '<p class="dsp-h">Other designs</p><div class="sp-list">' + o1.map(function (z) { return row(z, true); }).join('') + '</div>' : '') +
+      '<p class="sp-sub" style="margin-top:18px">All your designs are also in My account → My designs.</p></div>';
+  }
+  async function dspAct(a) {
+    if (a === 'x') return dspClose();
+    if (a.indexOf('tab:') === 0) { DSP.tab = a.slice(4); return dspPaint(); }
+    if (a === 'new') { dspClose(); dsNew(); try { draw(); } catch (e) {} if (DSP.go) DSP.go(); dsSave(true); return; }
+    var p = a.split(':'), id = p[1], z = (DSV.list || []).filter(function (y) { return y.id === id; })[0]; if (!z) return;
+    if (p[0] === 'o') { dspClose(); if (z.sku !== S.id) return window.mtoOpenDesign(z); dsApply(z); try { draw(); } catch (e) {} if (DSP.go) DSP.go(); return; }
+    if (p[0] === 'ren') { var n = window.prompt('Name this design', z.name || ''); if (n == null || !n.trim()) return; var r = await authRpc('design_rename', { p_id: id, p_name: n.trim() }); if (r == null) return toast('Could not rename — try again');
+      z.name = n.trim().slice(0, 140); if (id === S.did) { S.dname = z.name; czSaveQuiet(); } return dspPaint(); }
+    if (p[0] === 'dup') { var d = await authRpc('design_duplicate', { p_id: id }); if (!d) return toast('Could not duplicate — you may have 100 designs'); toast('Copied as ' + d.name); await dsList(true); DSP.tab = 'concept'; return dspPaint(); }
+    if (p[0] === 'del') { if (!window.confirm('Delete "' + z.name + '"? This cannot be undone.')) return; var x = await authRpc('proposal_delete', { p_id: id }); if (x == null) return toast('Could not delete — try again');
+      if (id === S.did) { S.did = null; S.dname = ''; S.dstage = 'concept'; czSaveQuiet(); } var L = await dsList(true); if (!L.length) { dspClose(); return DSP.go && DSP.go(); } return dspPaint(); }
+  }
   window.mtoOpenDesign = function (r) {   // My account → My designs → Open: the product page, those choices, its customiser
     if (!r || !PRODS[r.sku]) return toast('This design is not on the store now'); try { openProduct(r.sku); } catch (e) { return; }
-    var n = 0; (function w() { if (!S || S.id !== r.sku || !S.pdp) { if (n++ < 80) return setTimeout(w, 100); return; } dsApply(r); draw(); window.mtoCustomise(); })();
+    var n = 0; (function w() { if (!S || S.id !== r.sku || !S.pdp) { if (n++ < 80) return setTimeout(w, 100); return; } dsApply(r); draw(); window.mtoCustomise(true); })();
   };
   // stages: [{k, t, sum}] · cur: index of the open one · body: its question (html) · go: the data attribute that opens a stage (data-<go>="k")
   function dsStages(stages, cur, body, go) {
@@ -3331,7 +3371,7 @@
     h += '<section class="pp-s pp-faq"><h2>Questions</h2>' + faqs.map(function (f) { return '<details><summary>' + esc(f.q) + '</summary><p>' + esc(f.a) + '</p></details>'; }).join('') + '</section>';
     return h + propSite(x, m, o) + '</div></div>';
   }
-  window.mtoCustomise = function () { if (!S || !PRODS[S.id]) return; if (isPg(S.id)) return window.pg3Open(true); if (PRODS[S.id].cz.unit === 'cabin') return window.cbStudio(true); if (isProp(S.id)) return window.cuOpen(true); };
+  window.mtoCustomise = function (skip) { if (!S || !PRODS[S.id]) return; if (skip !== true) return dsGate(function () { window.mtoCustomise(true); }); if (isPg(S.id)) return window.pg3Open(true); if (PRODS[S.id].cz.unit === 'cabin') return window.cbStudio(true); if (isProp(S.id)) return window.cuOpen(true); };
   // which space is it for? (16) — the plan open in this browser and the plans saved in the account; or a new space
   function projLoad() {
     var lp = null; try { lp = JSON.parse(localStorage.getItem('outrr_plan') || 'null'); } catch (e) {}
@@ -3361,18 +3401,25 @@
 
   // ------------------------------------------------------------ 199: before a designer (pergola / cabin) or the planner opens — a blank screen:
   // "Which space is this for?" (the plan open on this device + the plans saved in the account) → else "Where will it go? Lawn / Terrace"
+  // 250 (owner): saved plans / designs sorted into their stages as tabs — plans 5 (Design + BOQ by our team), customised designs 3
+  var STG5 = [['concept', 'Conceptualisation'], ['proposal', 'Proposal'], ['design', 'Design'], ['boq', 'BOQ'], ['transformation', 'Transformation']];
+  function stTabs(tabs, rows, cur, attr, pre) { return '<div class="st-tabs" role="tablist">' + tabs.map(function (z) { var n = rows.filter(function (r) { return (r.stage || 'concept') === z[0]; }).length;
+    return '<button type="button" role="tab" aria-selected="' + (z[0] === cur) + '" class="' + (z[0] === cur ? 'on' : '') + '" data-' + attr + '="' + pre + z[0] + '">' + z[1] + (n ? ' <em>' + n + '</em>' : '') + '</button>'; }).join('') + '</div>'; }
   window.mtoSpaceAsk = function (what, cb, opts) {
     propCss(); var d = document.getElementById('spAsk'); if (!d) { d = document.createElement('div'); d.id = 'spAsk'; d.className = 'sp-ov'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); document.body.appendChild(d); }
     var W = what === 'planner' ? 'your plan' : 'this ' + ({ privacy: 'privacy screen' }[what] || what), list = [], st = { step: 'load' };
+    var spTab = function () { if (!st.tab) st.tab = (list[0] && list[0].stage) || 'concept'; return st.tab; };   // 250: opens on the tab of the latest plan
     var close = function () { d.classList.remove('open'); document.body.classList.remove('sp-on'); };
     var paint = function () {
       var h = '<div class="sp-hd"><b>' + (what === 'planner' ? 'Plan your space' : what === 'cabin' ? 'Design your cabin' : what === 'pergola' ? 'Design your pergola' : 'See it in your space') + '</b><button type="button" data-sp="x" aria-label="Close">✕</button></div><div class="sp-bd">';
       if (st.step === 'w') h += twPaint();
       else if (st.step === 'src') h += srcPaint();
       else if (st.step === 'load') h += '<p class="sp-sub">Loading your plans…</p>';
-      else if (st.step === 'plans') h += '<h2>Which space is ' + esc(W) + ' for?</h2><p class="sp-sub">Pick one of your plans — ' + (what === 'planner' ? 'it opens as you left it' : 'it goes on that terrace / lawn, with the things around it') + '. Or start a new one, for another home or client.</p><div class="sp-list">' +
-        list.map(function (p, i) { return '<div class="sp-row"><button type="button" data-sp="p:' + i + '"><i>' + (p.kind === 'lawn' ? '🌳' : '🏙') + '</i><span><b>' + esc(p.name) + '</b><small>' + esc([p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace', p.size, p.n ? p.n + ' thing' + (p.n > 1 ? 's' : '') : '', p.local ? 'open on this device' : p.at ? 'saved ' + new Date(p.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')) + '</small></span></button>' + (p.local ? '' : '<div class="sp-acts"><button type="button" data-sp="pren:' + i + '">✎ Rename</button><button type="button" data-sp="pdup:' + i + '">⧉ Duplicate</button><button type="button" data-sp="pdel:' + i + '">🗑 Delete</button></div>') + '</div>'; }).join('') +   // 242: duplicate / delete a saved plan (own plans only — the server checks)
-        '<button type="button" data-sp="new" class="sp-new"><i>＋</i><span><b>A new space</b><small>Another home, a client’s site… — your plans stay saved</small></span></button></div>';
+      else if (st.step === 'plans') { var tb = spTab(); h += '<h2>Which space is ' + esc(W) + ' for?</h2><p class="sp-sub">Pick one of your plans — ' + (what === 'planner' ? 'it opens as you left it' : 'it goes on that terrace / lawn, with the things around it') + '. Or start a new one, for another home or client.</p>' +
+        stTabs(STG5, list, tb, 'sp', 'tab:') + '<div class="sp-list">' +
+        list.map(function (p, i) { if ((p.stage || 'concept') !== tb) return ''; return '<div class="sp-row"><button type="button" data-sp="p:' + i + '"><i>' + (p.kind === 'lawn' ? '🌳' : '🏙') + '</i><span><b>' + esc(p.name) + '</b><small>' + esc([p.kind === 'lawn' ? 'Lawn / garden' : 'Terrace', p.size, p.n ? p.n + ' thing' + (p.n > 1 ? 's' : '') : '', p.local ? 'open on this device' : p.at ? 'saved ' + new Date(p.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : ''].filter(Boolean).join(' · ')) + '</small></span></button>' + (p.local ? '' : '<div class="sp-acts"><button type="button" data-sp="pren:' + i + '">✎ Rename</button><button type="button" data-sp="pdup:' + i + '">⧉ Duplicate</button><button type="button" data-sp="pdel:' + i + '">🗑 Delete</button></div>') + '</div>'; }).join('') +   // 242: duplicate / delete a saved plan (own plans only — the server checks)
+        (list.some(function (p) { return (p.stage || 'concept') === tb; }) ? '' : '<p class="sp-sub st-none">No plans in ' + esc(STG5.filter(function (z) { return z[0] === tb; })[0][1]) + ' yet.</p>') +
+        ('<button type="button" data-sp="new" class="sp-new"><i>＋</i><span><b>A new space</b><small>Another home, a client’s site… — your plans stay saved</small></span></button>') + '</div>'; }
       else h += (list.length ? '<button type="button" class="sp-back" data-sp="back">← My plans</button>' : '') + '<h2>Where will ' + esc(W) + ' go?</h2><p class="sp-sub">We set up the space first' + (what === 'planner' ? '' : ', then you design ' + esc(W) + ' on it in 3D') + '.</p><div class="sp-kinds">' +
         '<button type="button" data-sp="k:ground"><i>🌳</i><b>Lawn / garden</b><small>Ground level — a lawn, garden, farmhouse or courtyard</small></button>' +
         '<button type="button" data-sp="tsrc"><i>🏙</i><b>Terrace / rooftop</b><small>Set its size, parapet, mumty, tanks and walls next</small></button></div>';
@@ -3776,13 +3823,14 @@
       if (k === 'x') return close();
       if (k === 'new') { st.step = 'kind'; return paint(); }
       if (k === 'back') { st.step = 'plans'; return paint(); }
+      if (k.indexOf('tab:') === 0) { st.tab = k.slice(4); return paint(); }   // 250
       if (k === 'tsrc') { st.step = 'src'; st.lmsg = ''; lqLoad(); return paint(); }
       if (k === 'src:own') return d._go('k:terrace');
       if (k === 'src:pdf') return lPick();
       if (k === 'src:back') { st.step = 'kind'; return paint(); }
       if (k.indexOf('p:') === 0) { var p = list[+k.slice(2)]; close(); return cb({ plan: p, had: true }); }
       if (k.indexOf('pren:') === 0) { var ri = +k.slice(5), rp = list[ri]; if (!rp || rp.local) return; var nn = prompt('Name this plan', rp.name || ''); if (!nn || !nn.trim()) return; nn = nn.trim().slice(0, 120); authRpc('plan_rename', { p_id: rp.id, p_name: nn }).then(function () { rp.name = nn; paint(); }, function (e) { alert((e && e.message) || 'Could not rename the plan'); }); return; }   // 273 (owner): own plans only (this list is my_plans)
-      if (k.indexOf('pdup:') === 0) { var pi = +k.slice(5), pp = list[pi]; if (!pp || pp.local) return; authRpc('plan_duplicate', { p_id: pp.id }).then(function (r) { if (r && r.id) { list.splice(pi + 1, 0, { id: r.id, name: r.name, size: pp.size, kind: pp.kind, n: pp.n, at: r.updated_at }); paint(); } else alert('Could not copy the plan — 50 plans is the limit'); }, function (e) { alert((e && e.message) || 'Could not copy the plan'); }); return; }
+      if (k.indexOf('pdup:') === 0) { var pi = +k.slice(5), pp = list[pi]; if (!pp || pp.local) return; authRpc('plan_duplicate', { p_id: pp.id }).then(function (r) { if (r && r.id) { list.splice(pi + 1, 0, { id: r.id, name: r.name, size: pp.size, kind: pp.kind, n: pp.n, at: r.updated_at, stage: 'concept' }); st.tab = 'concept'; paint(); } else alert('Could not copy the plan — 50 plans is the limit'); }, function (e) { alert((e && e.message) || 'Could not copy the plan'); }); return; }
       if (k.indexOf('pdel:') === 0) { var di = +k.slice(5), dp = list[di]; if (!dp || dp.local || !confirm('Delete "' + dp.name + '"? This cannot be undone.')) return; authRpc('plan_delete', { p_id: dp.id }).then(function (ok) { if (!ok) return alert('Could not delete the plan'); list.splice(di, 1); st.step = list.length ? 'plans' : 'kind'; paint(); }, function (e) { alert((e && e.message) || 'Could not delete the plan'); }); return; }
       if (k === 'k:terrace') { st.step = 'w'; st.q = 0; st.a = st.a || { pw: 30, pd: 60, plot: '200', shape: 'rect', la: 12, lb: 18, road: 'front', mpos: 'm-l', mw: 10, md: 16, door: 'right', lift: false, lw: 6, ld: 8, tanks: true, room: false, rw: 8, rd: 12, shaft: true, sw: 4, sd: 6, ac: false, acn: 2, rn: 1, sn: 1, high: {}, cuts: {}, par: '3' }; tmGet(); if (TMP) TMP.then(function () { if (st.step === 'w') paint(); }); return paint(); }
       if (k.indexOf('k:') === 0) { close(); return cb({ kind: k.slice(2), had: list.length > 0 }); }
@@ -3858,7 +3906,7 @@
     if (lp && lp.site && (its.length || (lp.site.kind === 'terrace' && arr(lp.site.blocks).length))) list.push({ local: true, id: lp.pid || 'local', name: lp.pname || 'The plan open on this device', size: lp.site.pw && lp.site.kind !== 'ground' ? lp.site.pw + ' × ' + lp.site.pd + ' ft' : '', kind: lp.site.kind === 'ground' ? 'lawn' : 'terrace', n: its.length });
     var fin = function () { st.step = list.length ? 'plans' : 'kind'; paint(); };
     if (!window.acToken || !localStorage.getItem('outrr_session')) return fin();
-    authRpc('my_plans').then(function (r) { arr(r).slice(0, 20).forEach(function (p) { if (list.some(function (z) { return z.id === p.id; })) return; list.push({ id: p.id, name: p.name, size: p.size || '', kind: p.kind, n: p.item_count || 0, at: p.updated_at }); }); fin(); }, fin);
+    authRpc('my_plans').then(function (r) { arr(r).slice(0, 60).forEach(function (p) { var o = list.filter(function (z) { return z.id === p.id; })[0]; if (o) { o.stage = p.stage; return; } list.push({ id: p.id, name: p.name, size: p.size || '', kind: p.kind, n: p.item_count || 0, at: p.updated_at, stage: p.stage || 'concept' }); }); fin(); }, fin);
   };
   async function spaceApply(r, lay) {   // the answer → this designer's site (and the plan it belongs to)
     S.spaceDone = true; S.pl = null; S.site = null; S.tsq = 0;
@@ -3912,6 +3960,8 @@
     '.tw-plw.tw-plw-shp{max-width:calc(100% - 64px);margin:26px auto 34px}.ar-pal .ico,.ar-ed .ico,.ar-list .ico,.pp-ar .ico{width:1.2em;height:1.2em;vertical-align:-.25em;color:#55634A}#mtoPT{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:100000;display:flex;gap:6px;max-width:94vw;overflow-x:auto;scrollbar-width:none;background:rgba(255,255,255,.96);padding:5px;border-radius:22px;box-shadow:0 4px 18px rgba(0,0,0,.15)}#mtoPT button{flex:none;border:0;background:none;border-radius:16px;padding:6px 12px;font:600 12.5px Inter,system-ui,sans-serif;cursor:pointer;color:#2E2E2E}#mtoPT button.on{background:#2E2E2E;color:#fff}.tw-shs{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:4;touch-action:none}.tw-shs text{pointer-events:none;font-family:Inter,system-ui,sans-serif}.tw-pl-dim .tw-b{opacity:.45;pointer-events:none}.tw-shp{margin-top:4px}.tw-shc .tw-pm{width:100%;display:flex;align-items:center;gap:6px}.tw-shc .tw-pm span{flex:1;font-size:13px}.tw-shc .tw-pm input{width:62px;text-align:center;border:1px solid #D6D2C7;border-radius:8px;padding:6px 4px;font-size:14px}.tw-shc .tw-pm small{color:#7A7268}.tw-shok{background:#C26445;color:#fff;border:0;border-radius:18px;padding:7px 16px;font-weight:700;cursor:pointer}.tw-shok[disabled]{opacity:.4}' +
     '.tw-pdf{background:#FBF3EC;border:1px solid #EBCDB9;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;margin:0 0 10px}.tw-pdf small{display:block;color:#7A7268;margin-top:4px}.tw-plw{position:relative}.tw-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;opacity:.45;pointer-events:none;z-index:3;mix-blend-mode:multiply;border-radius:6px}' +
     '.sp-busy{display:flex;flex-direction:column;align-items:center;gap:6px;padding:30px 10px;text-align:center}.sp-busy i{width:34px;height:34px;border-radius:50%;border:3px solid #E2D6C4;border-top-color:#C26445;animation:spin 0.9s linear infinite}.sp-busy small{color:#7A7268}@keyframes spin{to{transform:rotate(360deg)}}.sp-list button[disabled]{opacity:.55;cursor:not-allowed}' +
+    '.st-tabs{display:flex;gap:6px;overflow-x:auto;margin:0 0 14px;padding:2px 0 4px;scrollbar-width:none}.st-tabs::-webkit-scrollbar{display:none}.st-tabs button{flex:none;border:1.5px solid #E2D6C4;background:#fff;border-radius:999px;padding:8px 14px;font:600 13px inherit;font-family:inherit;color:#5A5248;cursor:pointer;white-space:nowrap}.st-tabs button.on{background:#2E2E2E;border-color:#2E2E2E;color:#fff}.st-tabs em{font-style:normal;font-size:11px;background:#F2EEE7;color:#5A5248;border-radius:999px;padding:1px 7px;margin-left:4px}.st-tabs button.on em{background:#fff3;color:#fff}.st-none{padding:10px 2px}' +
+    '.dsp-h{font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#7A7268;margin:16px 0 8px}.sp-list img.dsp-im{width:52px;height:52px;border-radius:10px;object-fit:cover;flex:none;background:#EEE5D8}' +
     '.sp-row{display:flex;flex-direction:column;gap:4px}.sp-row>button{width:100%}.sp-acts{display:flex;gap:8px;justify-content:flex-end;padding:0 6px}.sp-list .sp-acts button{border:0;background:none;padding:4px 6px;font-size:12.5px;color:#7A7268;border-radius:8px}.sp-list .sp-acts button:hover{color:#C26445}' +
     '.sp-list i,.sp-kinds i{font-style:normal;font-size:26px;flex:none}.sp-list b{display:block;font-size:15px}.sp-list small,.sp-kinds small{display:block;font-size:12.5px;color:#7A7268;margin-top:2px}.sp-new{border-style:dashed!important}' +
     '.sp-kinds{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sp-kinds button{flex-direction:column;align-items:flex-start;padding:22px 18px;min-height:170px}.sp-kinds i{font-size:40px}.sp-kinds b{font-size:18px;margin-top:6px}' +
