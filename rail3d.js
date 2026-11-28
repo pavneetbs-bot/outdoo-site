@@ -4,7 +4,7 @@
 // cast-iron balusters / floral panels, glass, laser-cut jali, cables, rods, wooden pickets / boards). Units: feet, y up;
 // the open side (outside) is +z, the balcony floor −z.
 import * as THREE from './vendor/three/three.module.min.js';
-import { studioFloor, person } from './studio3d.js?v=7';
+import { studioFloor, person } from './studio3d.js?v=9';
 
 const M = {}, T = {};
 const mt = (k, o) => M[k] || (M[k] = new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.6 }, o)));

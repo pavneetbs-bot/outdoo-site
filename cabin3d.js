@@ -5,7 +5,7 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { studioFloor, wall as sWall, person } from './studio3d.js?v=7';   // 283: the design studio setting
+import { studioFloor, wall as sWall, person } from './studio3d.js?v=9';   // 283: the design studio setting
 
 const SIDES = ['front', 'right', 'back', 'left'];
 let R = null;   // { renderer, scene, cam, ortho, controls, key, view, group, L, W, H, raf, el }
@@ -437,7 +437,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=155').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=159').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }

@@ -2,7 +2,7 @@
 // from their reference drawings, at the customer's number of seats (each seat ~2 ft). WPC slats, powder-coated MS frames,
 // cement-board boxes / planters, granite tops — the same look as the drawings. Units: feet, y up; the sitting side faces +z.
 import * as THREE from './vendor/three/three.module.min.js';
-import { studioFloor, wall as sWall, person } from './studio3d.js?v=7';
+import { studioFloor, wall as sWall, person } from './studio3d.js?v=9';
 import { plantModel } from './plants3d.js?v=4';
 
 const M = {};

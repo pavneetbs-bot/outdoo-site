@@ -5,7 +5,7 @@
 // quatrefoil, Mughal stars, paisley, peacocks, tree of life, arches, hexagons, leaves), louvres or WPC slats, or a green wall.
 // Units: feet, y up; the wall is behind (−z).
 import * as THREE from './vendor/three/three.module.min.js';
-import { studioFloor, wall as sWall, person } from './studio3d.js?v=7';
+import { studioFloor, wall as sWall, person } from './studio3d.js?v=9';
 import { plantModel } from './plants3d.js?v=4';
 
 const M = {};

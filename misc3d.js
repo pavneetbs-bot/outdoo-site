@@ -6,7 +6,7 @@
 //   Decks — WPC / IPE / thermo pine boards or interlocking tiles, L × W, at the picked height, straight / picture-frame /
 //   diagonal / herringbone, with LED edge, a step and fascia when picked.  Units: feet, y up; the viewer is at +z.
 import * as THREE from './vendor/three/three.module.min.js';
-import { studioFloor, wall as sWall, person } from './studio3d.js?v=7';
+import { studioFloor, wall as sWall, person } from './studio3d.js?v=9';
 import { plantModel } from './plants3d.js?v=4';
 
 const M = {}, T = {};

@@ -5,7 +5,7 @@
 // terrace gate between parapet walls / a stairs-room doorway, MS / WD = a main gate between boundary walls and pillars on a
 // driveway, with the matching wicket door and the top frame (portal) when picked. Units: feet, y up; the street side is +z.
 import * as THREE from './vendor/three/three.module.min.js';
-import { studioFloor, person } from './studio3d.js?v=7';
+import { studioFloor, person } from './studio3d.js?v=9';
 
 const M = {};
 const mt = (k, o) => M[k] || (M[k] = new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.7 }, o)));

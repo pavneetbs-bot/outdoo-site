@@ -4,7 +4,7 @@
 // forms read as one carved / cast piece. Units: feet, y up, the front faces +z.
 import * as THREE from './vendor/three/three.module.min.js';
 import { MarchingCubes } from './vendor/three/MarchingCubes.js?v=1';
-import { studioFloor, person } from './studio3d.js?v=7';
+import { studioFloor, person } from './studio3d.js?v=9';
 
 // ---- signed distances (unit space: content y 0…1)
 const L3 = (x, y, z) => Math.sqrt(x * x + y * y + z * z), cl = (v, a, b) => v < a ? a : v > b ? b : v;

@@ -10,6 +10,14 @@ const shade = (c, f) => { const [r, g, b] = hx(c); const k = v => Math.max(0, Ma
 // pat: the laying pattern · u / w / d: tile size (ft) · g: joint (ft) · pal: tile colours · v: shade spread · j: joint colour or 'grass'
 // m: surface (stone, trav, brick, clay, wood, lime, cement, glaze, terrazzo) · rot: the whole pattern turned (deg)
 export const SPECS = {
+  // 351 (owner's floor table): practical floors only — one recipe per material the customer picks on the Floor step
+  sant_kota: { pat: 'stack', w: 2, d: 2, g: 0.015, pal: ['#EEECE6', '#E8E5DE', '#F2F0EB', '#E4E1D9'], v: 0.03, j: '#D6D2C9', m: 'stone' },   // white kota stone 2 × 2
+  turk_terra: { pat: 'stack', w: 1, d: 1, g: 0.03, pal: ['#B9673F', '#B05F3A', '#C2714A', '#A95A36'], v: 0.06, j: '#D9C6AE', m: 'clay' },   // terracotta tiles 12″
+  turk_trav: { pat: 'french', u: 1, g: 0.02, pal: ['#E6D9C1', '#DED0B5', '#EADFCA', '#D8C9AC'], v: 0.05, j: '#CDBFA3', m: 'trav' },   // travertine, French pattern
+  trop_sand: { pat: 'french', u: 1, g: 0.04, pal: ['#C9B596', '#BFAA88', '#D1BE9F', '#B8A27F', '#C4AE8C'], v: 0.06, j: '#9C8C73', m: 'stone' },   // sandstone, mixed sizes
+  mod_warm: { pat: 'stack', w: 2, d: 4, g: 0.02, pal: ['#B8B2A7', '#B1AB9F', '#BEB8AD', '#ABA599'], v: 0.035, j: '#8F897F', m: 'cement' },   // 2 × 4 porcelain, warm grey
+  boho_brick: { pat: 'herring', w: 0.33, l: 0.75, rot: 45, g: 0.03, pal: ['#B8643F', '#AD5D3A', '#C26E48', '#A65434'], v: 0.07, j: '#D8C8AE', m: 'brick' },   // terracotta brick, herringbone
+  boho_bw: { pat: 'basket', w: 0.33, n: 3, g: 0.03, pal: ['#B8643F', '#AD5D3A', '#C26E48', '#A65434'], v: 0.07, j: '#D8C8AE', m: 'brick' },   // terracotta brick, basketweave (under the seating)
   // Tropical — mixed-size sandstone, grass in the joints of the paths, teak deck
   trop_field: { pat: 'french', u: 1, g: 0.05, pal: ['#9C9A94', '#8C8A84', '#A6A49E', '#83817B', '#96948E', '#7C7A75'], v: 0.07, j: '#6A6863', m: 'stone' },   // 292 (owner): Tropical = grey stone pavers
   trop_path: { pat: 'flag', n: 16, P: 6, g: 0.13, pal: ['#9A9892', '#8A8882', '#A8A6A0', '#7E7C77'], v: 0.08, j: '#6E6A62', m: 'stone' },   // 302 (owner): no grass in a path on the roof floor — rain water would sit in it; mortar joints, it drains

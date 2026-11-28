@@ -5,7 +5,7 @@
 // cushion fabric. Units: feet, y up; the sitting side faces +z. Setting: a terrace corner (grey tiles, parapets behind and
 // on the left, a person for scale).
 import * as THREE from './vendor/three/three.module.min.js';
-import { studioFloor, wall as sWall, person } from './studio3d.js?v=7';
+import { studioFloor, wall as sWall, person } from './studio3d.js?v=9';
 
 const CM = v => v / 30.48;
 const M = {}, mt = (k, o) => M[k] || (M[k] = new THREE.MeshStandardMaterial(Object.assign({ roughness: 0.7 }, o)));
