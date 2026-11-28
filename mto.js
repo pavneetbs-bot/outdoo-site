@@ -447,7 +447,7 @@
   var CB_FOOT = { toilet: [4, 6, 'Toilet'], wc: [4, 4, 'WC'], pantry: [6, 2, 'Pantry'], pdoor: [3, 0.6, 'Door'], gdoorp: [3, 0.6, 'Glass door'] };
   function cbPlaceable(it) { return it && ((it.unit === 'nos' && it.key in CB_FOOT) || it.unit === 'rft'); }
   function cbItem(c, k) { return arr(c.items).filter(function (x) { return x.key === k; })[0] || null; }
-  function cbIn(lay) { var t = cbWT(lay), op = arr((lay || {}).onPar), P = 0.75; return { l: op.indexOf('left') >= 0 ? Math.max(t, P) : t, r: op.indexOf('right') >= 0 ? Math.max(t, P) : t, b: op.indexOf('back') >= 0 ? Math.max(t, P) : t, f: t }; }   /* 328 (owner): on the parapet the cabin's back / left walls stand on it — inside, the 9″ parapet is the face rooms stop at */
+  function cbIn(lay) { var t = cbWT(lay); return { l: t, r: t, b: t, f: t }; }   /* 329 (owner): the cabin stands at the parapet's inner edge, so the inside faces are the walls themselves */
   function cbWT(lay) { return /75/.test(String((lay || {}).panel || '')) ? 0.246 : 0.164; }   /* 327 (owner): outer walls 50 mm (75 mm upgrade), in ft, inside the cabin's outer line */
   function cbIT(lay) { lay = lay || (S && S.o && S.o.layout) || {}; return lay.ip75 || num((lay.items || {}).ipanel75) > 0 ? 0.246 : 0.164; }   /* inside walls (partitions, toilet / WC walls) 50 mm, 75 mm upgrade */
   function cbRoomSides(c, lay, pl) {   /* 327: a toilet / WC has its own wall only where it doesn't stand against the cabin wall or a partition — there it shares that wall */
@@ -655,8 +655,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=111').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=111'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=112').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=112'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -1922,7 +1922,7 @@
     var c0p = m.cabin, rc = function (l2) { arr(l2.places).forEach(function (p) { cbClamp(c0p, l2, p); }); cbSync(c0p, l2); };
     if (!o.cpar) { var had = !!lay.onPar; if (lay.sill) delete lay.sill; if (lay.wide) delete lay.wide; if (had) { delete lay.onPar; rc(lay); } return; }
     var pj = lay.proj && arr(lay.proj.sides); if (pj && pj.some(function (sd) { return PS.indexOf(sd) >= 0; })) { var ns = pj.filter(function (sd) { return PS.indexOf(sd) < 0; }); if (!ns.length && m.cabin.proj && m.cabin.proj.required) ns = ['front']; lay.proj = Object.assign({}, lay.proj, { sides: ns }); }
-    var ga = (S.wz && S.wz.glass === 'all') || /GLASS/.test(S.id), l = window.mtoCabinFix(S.id, lay, { nodoor: PS, sill: { back: 2.4, left: 2.4 }, wide: ga ? PS : null }); if (l) o.layout = l; o.layout.onPar = PS.slice(); rc(o.layout);   /* 328: the cabin's back / left walls stand ON the parapet (2D + 3D) */
+    var ga = (S.wz && S.wz.glass === 'all') || /GLASS/.test(S.id), l = window.mtoCabinFix(S.id, lay, { nodoor: PS, sill: { back: 2.4, left: 2.4 }, wide: ga ? PS : null }); if (l) o.layout = l; o.layout.onPar = PS.slice(); rc(o.layout);   /* 328 / 329: back / left walls at the parapet's inner edge, touching it (2D + 3D) */
   }
   window.mtoCabinFix = function (id, lay, spec) {
     var x = PRODS[id], c = x && x.cz && x.cz.cabin; if (!c || !lay || !lay.walls) return null; var l = cbClone(lay), bay = num(c.bay) || 4;
@@ -2011,7 +2011,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=171').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=172').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -2883,8 +2883,8 @@
     var h = lookHost(), x = PRODS[S.id], m = x.cz, o = S.o, nm = short(x.n), G;
     if (h === 'pergola') { var q = pgOpts(), wl = /wall/i.test(String(q.layout || '')), L = +q.l || 12, W = +q.w || 10;
       G = { kind: 'pergola', L: L, W: W, o2: { wall: wl }, solid: [], soft: { x: 0, z: 0, w: L, d: W }, walls: wl ? [{ x: -5, z: -0.805, w: L + 10, d: 0.75, lab: 'Wall' }] : [], zmin: wl ? -0.05 : null }; }   /* 325: where pergola3d's studio wall stands (flush behind the pergola) */
-    else if (h === 'cabin') { var lay = o.layout || {}, L2 = num(lay.L) || 12, W2 = num(lay.W) || 10, cc = m.cabin || {}, psd = arr(lay.proj && lay.proj.sides), fl = !!(lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = arr(lay.onPar).length ? -0.75 : fl ? 0.3 : (psd.indexOf('back') >= 0 || psd.indexOf('left') >= 0 ? num(cc.proj && cc.proj.depth) || 1.5 : 0) + 1.25;   /* 314: the parapet behind + on the left, where the 3D studio has it (cabin3d studio) */
-      G = { kind: 'cabin', L: L2, W: W2, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L2, d: W2 }], walls: [{ x: -gp - 0.75, z: -gp - 0.75, w: L2 + gp + 12.75, d: 0.75, lab: 'Parapet · 3 ft' }, { x: -gp - 0.75, z: -gp - 0.75, w: 0.75, d: W2 + gp + 12.75, lab: 'Parapet · 3 ft' }], zmin: Math.max(-gp, gp < 0 ? 0.75 : -gp), xmin: Math.max(-gp, gp < 0 ? 0.75 : -gp) }; }
+    else if (h === 'cabin') { var lay = o.layout || {}, L2 = num(lay.L) || 12, W2 = num(lay.W) || 10, cc = m.cabin || {}, psd = arr(lay.proj && lay.proj.sides), fl = !!(lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = arr(lay.onPar).length ? 0 : fl ? 0.3 : (psd.indexOf('back') >= 0 || psd.indexOf('left') >= 0 ? num(cc.proj && cc.proj.depth) || 1.5 : 0) + 1.25;   /* 314: the parapet behind + on the left, where the 3D studio has it (cabin3d studio) */
+      G = { kind: 'cabin', L: L2, W: W2, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L2, d: W2 }], walls: [{ x: -gp - 0.75, z: -gp - 0.75, w: L2 + gp + 12.75, d: 0.75, lab: 'Parapet · 3 ft' }, { x: -gp - 0.75, z: -gp - 0.75, w: 0.75, d: W2 + gp + 12.75, lab: 'Parapet · 3 ft' }], zmin: -gp, xmin: -gp }; }
     else if (h === 'fw') { var L3 = num(o.w) || 8; G = { kind: 'wall', L: L3, W: 0.6, o2: { wall: true, thin: true }, solid: [{ x: 0, z: 0, w: L3, d: 0.6 }], walls: [{ x: -12, z: -0.4, w: L3 + 24, d: 0.4 }], zmin: 0 }; }
     else if (h === 'bar') { var L4 = num(o.l) || 8; G = { kind: 'bar', L: L4, W: 6, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L4, d: 2.4 }], walls: [{ x: -12, z: -3.3, w: L4 + 24, d: 0.3 }], zmin: -3 }; }
     else if (h === 'water') { var wi = wtrItem(x, m, o), wall = !/^MTO-TG-/.test(S.id) && !wi.wo.duo, L5 = wi.w + (wi.wo.greens ? 4.2 : 0);
@@ -3028,7 +3028,6 @@
   function lk2Cabin(ppf) {   // 305: the cabin on the 2D layout — every wall panel tappable (door, window, glass…), rooms / partitions / doors inside draggable
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, L = num(lay.L), W = num(lay.W), bay = num(c.bay) || 4, WT = cbWT(lay), TI = cbIT(lay), T = Math.max(WT, 3 / ppf), o = '', d0 = LK2.drag;   /* 327: walls drawn at their real 50 / 75 mm, inside the outer line */
     o += '<rect x="0" y="0" width="' + L + '" height="' + W + '" fill="#FFFDF9" stroke="#E2D6C4" stroke-width="1" vector-effect="non-scaling-stroke"/>';
-    arr(lay.onPar).forEach(function (sd) { var r = sd === 'back' ? [0, 0, L, 0.75] : sd === 'left' ? [0, 0, 0.75, W] : sd === 'right' ? [L - 0.75, 0, 0.75, W] : null; if (r) o += '<rect x="' + r[0] + '" y="' + r[1] + '" width="' + r[2] + '" height="' + r[3] + '" fill="url(#lk2h)" fill-opacity=".55" stroke="#8A8378" stroke-width="1" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });   /* 328: the parapet runs under the cabin's back / left walls */
     arr(lay.places).forEach(function (pl, n) { var it = cbItem(c, pl.key), d = cbDims(c, pl), id = 'P:' + n, on = S.psel === n, x = pl.x, y = pl.y, lab = CB_SHORT[pl.key] || (CB_FOOT[pl.key] || [0, 0, ''])[2] || (it ? it.name : '');
       if (d0 && d0.id === id) { x = d0.x; y = d0.z; } var w = Math.max(d[0], 0.25), dd = Math.max(d[1], 0.25), st = on ? '#C26445' : '#5E574E', sh;
       if (it && it.unit === 'rft') sh = '<rect x="' + x + '" y="' + y + '" width="' + (pl.rot === 90 ? Math.max(w, 2.5 / ppf) : w) + '" height="' + (pl.rot === 90 ? dd : Math.max(dd, 2.5 / ppf)) + '" fill="' + (pl.key === 'gpart' ? '#8EC3D6' : pl.key === 'fpart' ? '#B9CDD4' : '#B9B2A6') + '" stroke="' + st + '" stroke-width="' + (on ? 2.5 : 1) + '" vector-effect="non-scaling-stroke"/>';
@@ -3230,7 +3229,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, look: DS_SOLO && !S.site && lookArr().length ? lookNow() : null, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } lk2Sync(); return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=98').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=99').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -3731,7 +3730,7 @@
   function cu3dDraw0() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=121').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=122').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     if (isBn(S.id)) { try { CU3.m.preview(el, [{ code: S.id.slice(7), n: num(o.n) || seatLo(m) || 3 }], { studio: 'bench' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 307
     if (isFw(S.id)) { try { CU3.m.preview(el, [{ code: S.id.replace(/^MTO-/, ''), W: num(o.w) || 8, H: num(o.h) || 9, groups: o.groups || {}, place: fwPlace(S.id, x) }], { studio: 'fw', look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 296
     var mk9 = /^MTO-(GF|VG|DK)-/.exec(S.id); if (mk9) { try { CU3.m.preview(el, [{ sku: S.id, img: refPhoto(x), m: { materials: m.materials, groups: m.groups }, o: { l: o.l, w: o.w, h: o.h, material: o.material, colour: o.colour, groups: o.groups, addons: o.addons } }], { studio: mk9[1].toLowerCase(), look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309: graffiti / vertical gardens / decks (misc3d.js)
@@ -3993,7 +3992,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=121').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=122').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };

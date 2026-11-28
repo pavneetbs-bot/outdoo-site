@@ -111,7 +111,7 @@ function build(c, lay, opts) {
     let prevSolid = false, prevGl = false; const runs = [], wide = Array.isArray(lay.wide) && lay.wide.includes(side), gRuns = [];   // 269 (owner): a wide side = one long glass run with MS posts every ~10 ft
     for (let i = 0; i < ks.length;) {
       const k = ks[i], b = bayOf(c, k), sp = spanOf(c, k), a = i * bay, e = Math.min((i + sp) * bay, len), solid = !b || (!b.glass && !b.door);
-      const post = (u) => piece(wg, sf, u - 0.06, u + 0.06, S0, H, FM, T + 0.04);
+      const post = (u) => piece(wg, sf, u - 0.06, u + 0.06, 0, H, FM, T + 0.04);   // 329 (owner): MS posts run from the floor on every side, parapet sides too — the glass starts after the frame
       const hb = piece(hits, sf, a + 0.05, e - 0.05, 0, H, mat('hit'), 0.8); hb.userData = { bay: { side, i } }; hb.castShadow = false;
       const gl = !!(b && b.glass && !b.door); if (wide && gl) { const r0 = gRuns[gRuns.length - 1]; if (r0 && prevGl && r0[1] === a) r0[1] = e; else gRuns.push([a, e]); }
       if ((i === 0 || !(prevSolid && solid)) && !(wide && gl && prevGl && i > 0)) post(a);   // 188: no steel posts inside a run of solid wall — only at corners and beside doors / glass
@@ -141,8 +141,9 @@ function build(c, lay, opts) {
       }
       i += sp;
     }
-    piece(wg, sf, len - 0.06, len + 0.06, S0, H, FM, T + 0.04);
-    for (const [ga, ge] of gRuns) { const n = Math.ceil((ge - ga) / 10 - 0.01); for (let j = 1; j < n; j++) { const u = ga + (ge - ga) * j / n; piece(wg, sf, u - 0.08, u + 0.08, S0, H, FM, T + 0.06); } }
+    piece(wg, sf, len - 0.06, len + 0.06, 0, H, FM, T + 0.04);
+    if (S0) { piece(wg, sf, 0, len, 0, S0 - 0.02, WM, T); piece(wg, sf, -0.06, len + 0.06, S0 - 0.2, S0 + 0.12, FM, T + 0.08); }   // 329: on a parapet side a PUF knee wall up to the parapet top + an MS sill beam (the glass / wall profile sits on it)
+    for (const [ga, ge] of gRuns) { const n = Math.ceil((ge - ga) / 10 - 0.01); for (let j = 1; j < n; j++) { const u = ga + (ge - ga) * j / n; piece(wg, sf, u - 0.08, u + 0.08, 0, H, FM, T + 0.06); } }
     for (const r of runs) { const lb = label(r.t, Math.min(3.8, Math.max(2.8, r.e - r.a - 0.4))), [lx, lz] = sf.at((r.a + r.e) / 2, T / 2 + 0.16); lb.position.set(lx, 4.4, lz);
       lb.rotation.y = side === 'front' ? 0 : side === 'back' ? Math.PI : side === 'right' ? Math.PI / 2 : -Math.PI / 2; labels.add(lb); }
   }
@@ -188,7 +189,7 @@ function build(c, lay, opts) {
     else {   // toilet / WC room: frosted walls, WC + basin
       const x0 = p.x, z0 = p.y, x1 = p.x + w, z1 = p.y + d, wh = Math.min(7.5, H - 0.3);   // 327 (owner): PUF walls TI thick inside the room's footprint, only where it doesn't share the cabin wall or a partition
       const fw = (ax, az, bx, bz) => box(g, Math.max(bx - ax, 0.02), wh, Math.max(bz - az, 0.02), (ax + bx) / 2, wh / 2, (az + bz) / 2, mat('pufIn'));
-      const op = Array.isArray(lay.onPar) ? lay.onPar : [], IN = (k) => op.includes(k) ? Math.max(T, 0.75) : T, tol = 0.12, sd = { l: x0 > IN('left') + tol, r: x1 < L - IN('right') - tol, b: z0 > IN('back') + tol, f: z1 < W - T - tol };
+      const IN = () => T, tol = 0.12, sd = { l: x0 > IN('left') + tol, r: x1 < L - IN('right') - tol, b: z0 > IN('back') + tol, f: z1 < W - T - tol };
       for (const o of lay.places || []) { if (o === p || !/part$/.test(o.key)) continue; const ol = +o.len || 1, ox0 = o.x, oz0 = o.y, ox1 = o.rot === 90 ? o.x + TI : o.x + ol, oz1 = o.rot === 90 ? o.y + ol : o.y + TI;
         if (Math.min(z1, oz1) - Math.max(z0, oz0) > Math.min(d, 2) * 0.8) { if (Math.abs(ox1 - x0) < tol) sd.l = false; if (Math.abs(ox0 - x1) < tol) sd.r = false; }
         if (Math.min(x1, ox1) - Math.max(x0, ox0) > Math.min(w, 2) * 0.8) { if (Math.abs(oz1 - z0) < tol) sd.b = false; if (Math.abs(oz0 - z1) < tol) sd.f = false; } }
@@ -246,7 +247,7 @@ function build(c, lay, opts) {
 // 283 design studio: a terrace corner — grey 2 × 4 tiles, a 3 ft parapet behind and on the left (the cabin's usual spot),
 // a person in front for scale; the gap to the parapet leaves room for the projection on those sides
 function studio(g, L, W, lay, c) {
-  const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); const Y = -0.6, sd = lay && lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : [], pj = sd.includes('back') || sd.includes('left') ? +(c && c.proj && c.proj.depth || 1.5) : 0, fl = !!(lay && lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = lay && Array.isArray(lay.onPar) && lay.onPar.length ? -0.75 : fl ? 0.3 : pj + 1.25;   // 328 (owner): on the parapet the back / left walls stand on it (outer faces flush)   // 314: against the parapet = the plinth touches it
+  const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); const Y = -0.6, sd = lay && lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : [], pj = sd.includes('back') || sd.includes('left') ? +(c && c.proj && c.proj.depth || 1.5) : 0, fl = !!(lay && lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = lay && Array.isArray(lay.onPar) && lay.onPar.length ? 0 : fl ? 0.3 : pj + 1.25;   // 329 (owner): against the parapet = the cabin stands at its inner edge (touching)   // 314: against the parapet = the plinth touches it
   studioFloor(sg, -gp - 0.75, -gp - 0.75, L + gp + 14, W + gp + 14, Y);
   sWall(sg, -gp - 0.75, -gp - 0.375, L + 12, -gp - 0.375, 3, 0.75, Y);   // back
   sWall(sg, -gp - 0.375, -gp - 0.75, -gp - 0.375, W + 12, 3, 0.75, Y);   // left
@@ -429,7 +430,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=121').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=122').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
