@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=141';
-import { pergolaModel } from './pergola3d.js?v=128';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=142';
+import { pergolaModel } from './pergola3d.js?v=129';
 import { outline, sofaLayout } from './plan2d.js?v=37';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -1707,9 +1707,12 @@ function drawItems(items, H, P) {   // 193j: the plan's things as 3D holders (al
         const hb = new THREE.Mesh(new THREE.BoxGeometry(L, +it.h || 3, 0.8), new THREE.MeshBasicMaterial({ visible: false })); hb.position.y = (+it.h || 3) / 2; hb.userData.hit = i; p.add(hb);
         if (P.sel === i) { const ln = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(L + 0.2, (+it.h || 3) + 0.2, 0.6)), new THREE.LineBasicMaterial({ color: 0xC26445 })); ln.position.y = (+it.h || 3) / 2; p.add(ln); }
         if (!k && P.labels !== false) { const tg = tag(it.label || 'Privacy screen'); tg.position.y = (+it.h || 3) + 1.4; p.add(tg); }
-        if ((P.site || {}).light !== '') { const gm = glow(LENS), bk = mat('lt_blk', 0x1E1E1E, { roughness: 0.45, metalness: 0.4 }), hh = +it.h || 3; let n = 0;
+        const sLt = themeKey() === 'santorini' ? 'profile' : (P.site || {}).scrLite || 'oneway';   /* 349 (owner): Santorini = built-in profile light; others pick one-way / profile / none */
+        if ((P.site || {}).light !== '' && sLt !== 'none') { const gm = glow(LENS), bk = mat('lt_blk', 0x1E1E1E, { roughness: 0.45, metalness: 0.4 }), hh = +it.h || 3; let n = 0;
           const th = p.rotation.y, st = P.site || {}, mb = it.mode === 'tank' ? (st.blocks || []).find(b => b.type === 'mumty') : null, rx = mb ? mb.x + mb.w / 2 : (+st.pw || 30) / 2, rz = mb ? mb.z + mb.d / 2 : (+st.pd || 60) / 2, tw = Math.sin(th) * (rx - p.position.x) + Math.cos(th) * (rz - p.position.z) >= 0, sn = mb ? (tw ? -1 : 1) : (tw ? 1 : -1);   /* 263 (owner): on the stairs room the lights face out, away from the tanks */   // 258 (owner): the lights always on the terrace side of the screen   // 245: one-way lights fixed on the screen's top rail — a black housing, the warm lens facing down, a soft wash on the screen
-          for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4, n++) { const hs = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.34), bk); hs.position.set(u, hh - 0.02, 0.3 * sn); p.add(hs); const ln = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.2), gm); ln.position.set(u, hh - 0.11, 0.36 * sn); p.add(ln);
+          if (sLt === 'profile') { const pf = mat('pf_alu', 0xD9D4CB, { roughness: 0.5, metalness: 0.5 }), pr = new THREE.Mesh(new THREE.BoxGeometry(L - 0.3, 0.08, 0.1), pf); pr.position.set(0, hh - 0.16, 0.3 * sn); p.add(pr); const ls = new THREE.Mesh(new THREE.BoxGeometry(L - 0.4, 0.025, 0.06), gm); ls.position.set(0, hh - 0.21, 0.31 * sn); p.add(ls); const lb = new THREE.Mesh(new THREE.BoxGeometry(L - 0.4, 0.06, 0.03), gm); lb.position.set(0, 0.12, 0.3 * sn); p.add(lb);   /* an aluminium profile under the cap with a warm LED line + a base LED line */
+            for (let u = -L / 2 + 1.5; u < L / 2 - 0.3; u += 3) { const wsh = new THREE.Mesh(new THREE.PlaneGeometry(3.4, Math.min(3.2, hh + 0.2)), washMat()); wsh.position.set(u, hh - 0.2 - Math.min(3.2, hh + 0.2) / 2, 0.22 * sn); if (sn < 0) wsh.rotation.y = Math.PI; wsh.renderOrder = 3; wsh.visible = !!(R && R.night); if (R) (R.nl || (R.nl = [])).push(wsh); else wsh.visible = false; p.add(wsh); } }
+          else for (let u = -L / 2 + 2; u < L / 2 - 0.5; u += 4, n++) { const hs = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.34), bk); hs.position.set(u, hh - 0.02, 0.3 * sn); p.add(hs); const ln = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.02, 0.2), gm); ln.position.set(u, hh - 0.11, 0.36 * sn); p.add(ln);
             const wsh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, Math.min(3.2, hh + 0.2)), washMat()); wsh.position.set(u, hh - Math.min(3.2, hh + 0.2) / 2, 0.2 * sn); if (sn < 0) wsh.rotation.y = Math.PI; wsh.renderOrder = 3; wsh.visible = !!(R && R.night); if (R) (R.nl || (R.nl = [])).push(wsh); else wsh.visible = false; p.add(wsh); } } });   // 262 (owner: dark at night): a warm wash on the screen under every light — a glow, not a lamp, so it costs nothing
       return;
     }
