@@ -2511,8 +2511,7 @@
     if (S && S.lkChild) return '<div class="ds-life" hidden></div>';   // 299: a Complete the look piece is part of the design it is set up for
     var st = S.dstage || 'concept', i = STG3.map(function (z) { return z[0]; }).indexOf(st), sv = dsIn();
     return '<div class="ds-life"><button type="button" class="ds-nm" data-dsmy="1" title="My designs"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>' +
-      esc(sv ? (S.dname || 'New design') : 'Sign in to save this design') + '</span><em>' + (sv ? (S.did ? 'Saved' : 'Saving…') : '') + ' ▾</em></button>' +
-      '<div class="ds-lf">' + STG3.map(function (z, k) { return '<i class="' + (k < i ? 'd' : k === i ? 'c' : '') + '">' + z[1] + '</i>'; }).join('') + '</div></div>';
+      esc(sv ? (S.dname || 'New design') : 'Sign in to save this design') + '</span><em>' + (sv ? (S.did ? 'Saved' : 'Saving…') : '') + ' ▾</em></button></div>';   /* 326 (owner): no Conceptualisation / Proposal / Transformation strip in the designer's panel */
   }
   function dsHead() { [].slice.call(document.querySelectorAll('.ds-life')).forEach(function (el) { var d = document.createElement('div'); d.innerHTML = dsLife(); el.replaceWith(d.firstChild); }); }
   function dsRedraw() { try { if (typeof P3 !== 'undefined' && P3.open) { draw(); p3Draw(); } else if (CU.open) cuDraw(); else if (S.studio) draw(); } catch (e) {} }
