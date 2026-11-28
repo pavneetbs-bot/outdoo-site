@@ -130,7 +130,7 @@ function build(c, lay, opts) {
         piece(wg, sf, a, e, dh - 0.08, dh, FM, T + 0.06);
         for (let j = 0; j < leaves; j++) {
           const la = a + 0.08 + j * (e - a - 0.16) / leaves, le = a + 0.08 + (j + 1) * (e - a - 0.16) / leaves, off = k === 'slide' ? (j % 2 ? 0.06 : -0.06) : 0;
-          piece(wg, sf, la, le, 0.05, dh - 0.1, b.glass ? mat('glass') : mat('pufIn'), 0.12, off);
+          piece(wg, sf, la, le, 0.05, dh - 0.1, b.glass ? mat('glass') : mat('pufIn'), 0.12, off).userData.door = 1;   /* 349: themes find doors by this tag (a glass door the same height as the fixed glass looked like a window) */
           piece(wg, sf, la, la + 0.08, 0.05, dh - 0.1, FM, 0.16, off); piece(wg, sf, le - 0.08, le, 0.05, dh - 0.1, FM, 0.16, off);
           piece(wg, sf, la, le, 0.05, 0.15, FM, 0.16, off); piece(wg, sf, la, le, dh - 0.2, dh - 0.1, FM, 0.16, off);
         }
@@ -437,7 +437,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=148').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=150').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }

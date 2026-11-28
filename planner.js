@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=148';
+import * as S3 from './space3d.js?v=150';
 import * as P2 from './plan2d.js?v=36';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=4';
-import { cutHit, mumtyProj, mstGap, mstGeom } from './cabin3d.js?v=138';
+import { cutHit, mumtyProj, mstGap, mstGeom } from './cabin3d.js?v=140';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -593,7 +593,7 @@ function cabWalls(it) {
   it.cabTouch = touchC; const isH = /HYBRID/.test(it.sku || ''), solidLen = sd => (solid[sd] || []).reduce((a, r) => a + Math.max(0, Math.min(sideLen(sd), r[1]) - Math.max(0, r[0])), 0);
   const gSides = isH && it.gs ? ['front'].concat(['left', 'right', 'back'].sort((a, b) => (solidLen(a) - solidLen(b)) || (parD[b] - parD[a]))).slice(0, Math.max(1, Math.min(4, +it.gs))) : null;
   const winS = gSides ? Object.keys(LSN).filter(sd => !gSides.includes(sd) && parD[sd] < 8 && solidLen(sd) < sideLen(sd) * 0.5) : null;
-  const lay = window.mtoCabinFix(it.sku, base2, { solid, doors: it.ldoors || [], glass: gSides, win: winS, join: (it.joinDoor || []).filter(sd => touchC.includes(sd)), wide: /GLASS/.test(it.sku || '') ? Object.keys(LSN).filter(sd => parD[sd] < 8 && solidLen(sd) < sideLen(sd) * 0.5) : null, nodoor: Object.keys(parOn).filter(sd => !t.rail), sill: (o => { Object.keys(parOn).forEach(sd => { if (!t.rail) o[sd] = Math.max(0, (+t.par || 3) - 0.6); }); return o; })({}) }); if (lay) { it.layout = lay; it.lsku = it.sku; }   // 302 (owner): a side on the low parapet rests on it (wall / glass from its top, no door)
+  const lay = window.mtoCabinFix(it.sku, base2, { solid, doors: it.ldoors || [], glass: gSides, win: winS, join: (it.joinDoor || []).filter(sd => touchC.includes(sd)), wide: /GLASS/.test(it.sku || '') ? Object.keys(LSN).filter(sd => parD[sd] < 8 && solidLen(sd) < sideLen(sd) * 0.5) : null, nodoor: Object.keys(parOn).filter(sd => !t.rail), sill: (o => { Object.keys(parOn).forEach(sd => { if (!t.rail) o[sd] = Math.max(0, (+t.par || 3) - 0.6); }); return o; })({}) }); if (lay) { lay.pgj = Object.keys(pgTouch); lay.touch = [...new Set(Object.keys(pgTouch).concat(touchC, Object.keys(parOn), Object.keys(solid).filter(sd => solidLen(sd) >= sideLen(sd) * 0.5)))]; /* 349: the sides against a pergola / cabin / wall / parapet — themes leave cornices, bay windows and knee walls off them */ it.layout = lay; it.lsku = it.sku; }   // 302 (owner): a side on the low parapet rests on it (wall / glass from its top, no door)
   { const e0 = it.ex || e, bc = (o => [Cw[0] + o[0], Cw[1] + o[1]])(rotV([(e0.l - e0.r) / 2, (e0.b - e0.f) / 2], rot)); cabinFoot(it); const e1 = it.ex, o1 = rotV([(e1.l - e1.r) / 2, (e1.b - e1.f) / 2], rot), f1 = foot(it);
     it.x = Math.round((bc[0] - o1[0] - f1[0] / 2) * 1000) / 1000; it.z = Math.round((bc[1] - o1[1] - f1[1] / 2) * 1000) / 1000; }
   { const R1 = rectI(it); drop.filter(sd => !pgTouch[sd]).forEach(sd => { const ws = cabWorld(sd, rot), xs = ws === 'left' || ws === 'right', edge = ws === 'left' ? R1.x : ws === 'right' ? R1.x + R1.w : ws === 'back' ? R1.z : R1.z + R1.d, u0 = xs ? R1.z : R1.x, u1 = xs ? R1.z + R1.d : R1.x + R1.w;   // 268 (owner): a side whose projection was dropped against a wall moves up flush to it — no gap
