@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=135';
-import { pergolaModel } from './pergola3d.js?v=122';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=136';
+import { pergolaModel } from './pergola3d.js?v=123';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -450,14 +450,13 @@ function santCabin(g) {   // 296 → 337 (owner's Santorini refs 27 Nov): a Cycl
       const dm = new THREE.Mesh(new THREE.SphereGeometry(r * 1.04, 28, 14, 0, 7, 0, Math.PI / 2), bl); dm.position.set(dx, top + 1.2, dz); dm.castShadow = true; ar.add(dm); const fn = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.7, 8), lw); fn.position.set(dx, top + 1.2 + r * 1.04 + 0.3, dz); ar.add(fn);
       const cn = new THREE.Mesh(new THREE.TorusGeometry(r, 0.08, 6, 28), lw); cn.rotation.x = Math.PI / 2; cn.position.set(dx, top + 1.22, dz); ar.add(cn); } }
   g.add(ar); }
-function tropCabin(g) {   /* 292 → 346 (owner, Tropical one by one): grey textured walls + dark-wood frames, then A = Bali villa — dark timber battens on every open solid wall, a grey stone plinth band, a deep dark-timber fascia, the projection rafters dark wood under clear polycarbonate, potted ferns + lanterns at the front corners; B (`__tcb = 'hut'`) = a thatched hip roof over the cabin (+ fringe), bamboo cladding on the solid walls, thatch on the projection */
+function tropCabin(g) {   /* 292 → 346 (owner picked A 28 Nov): grey textured walls + dark-wood frames, then A = Bali villa — dark timber battens on every open solid wall, a grey stone plinth band, a deep dark-timber fascia, the projection rafters dark wood under clear polycarbonate, potted ferns + lanterns at the front corners; B (`__tcb = 'hut'`) = a thatched hip roof over the cabin (+ fringe), bamboo cladding on the solid walls, thatch on the projection */
   const gt = greyTex(), dw = mat('c_tcab_dw', 0x4A3020, { roughness: 0.75 }), dk = mat('c_t_top', 0x3E2818, { roughness: 0.6 }), gs = mat('c_t_plinth', 0x7C7A74, { roughness: 1 }), HUT = globalThis.__tcb === 'hut';
   g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex(); if (c === 0xF2F0EB || c === 0x6E6C68) o.material = gt; else if (c === 0xE4E1DA || c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537 || c === 0x2B2B2B) o.material = dw; });
-  if (!globalThis.__tcnew) return;   /* 346 in progress: the new Tropical cabin shows only with this test flag until the owner picks */
   g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3(), V0 = new THREE.Vector3(), V1 = new THREE.Vector3(), all = new THREE.Box3(), ad = new THREE.Group();
   const pjG = g.getObjectByName('proj'), inPj = o => { for (let q = o; q; q = q.parent) if (q === pjG) return true; return false; }; g.traverse(o => { if (o.isMesh && o.visible && !inPj(o)) all.union(new THREE.Box3().setFromObject(o).applyMatrix4(inv)); }); const top = all.max.y, cx = (all.min.x + all.max.x) / 2, cz = (all.min.z + all.max.z) / 2, W = all.max.x - all.min.x, D = all.max.z - all.min.z;
-  const bb = [mat('c_t_bam1', 0xB89A5E, { roughness: 0.7 }), mat('c_t_bam2', 0xA4864E, { roughness: 0.7 })];
-  g.traverse(o => { if (!o.isMesh || o.material !== gt || inPj(o) || (o.userData && o.userData.par)) return; B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const vx = V0.x < 0.45, vz = V0.z < 0.45; if (!(vx ^ vz) || V0.y < 3) return; const L = vx ? V0.z : V0.x;
+  const bb = [mat('c_t_bam1', 0xB89A5E, { roughness: 0.7 }), mat('c_t_bam2', 0xA4864E, { roughness: 0.7 })], GB = []; g.traverse(o => { if (o.isMesh && o.visible && o.material && o.material.transparent && !inPj(o)) GB.push(new THREE.Box3().setFromObject(o).applyMatrix4(inv).expandByScalar(0.15)); });   /* windows / glass: no battens over them */
+  g.traverse(o => { if (!o.isMesh || o.material !== gt || inPj(o) || (o.userData && o.userData.par)) return; B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const vx = V0.x < 0.45, vz = V0.z < 0.45; if (!(vx ^ vz) || V0.y < 3) return; if (GB.some(q => q.intersectsBox(B))) return; const L = vx ? V0.z : V0.x;
     const outX = vx && (Math.abs(V1.x - all.min.x) < 0.5 || Math.abs(V1.x - all.max.x) < 0.5), outZ = vz && (Math.abs(V1.z - all.min.z) < 0.5 || Math.abs(V1.z - all.max.z) < 0.5); if (!outX && !outZ) return;
     const sg = vx ? Math.sign(V1.x - cx) : Math.sign(V1.z - cz), off = (vx ? V0.x : V0.z) / 2 + 0.06, sp = HUT ? 0.21 : 0.42, n = Math.max(1, Math.floor((L - 0.1) / sp));
     for (let k = 0; k < n; k++) { const u = -L / 2 + (k + 0.5) * L / n; let m; if (HUT) { m = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, V0.y, 7), bb[k % 2]); } else m = new THREE.Mesh(new THREE.BoxGeometry(vx ? 0.08 : 0.16, V0.y, vx ? 0.16 : 0.08), dk); m.position.set(vx ? V1.x + sg * off : V1.x + u, V1.y, vx ? V1.z + u : V1.z + sg * off); m.castShadow = true; ad.add(m); } });
@@ -465,7 +464,7 @@ function tropCabin(g) {   /* 292 → 346 (owner, Tropical one by one): grey text
   { const ring = (y, h, t, m) => { [[W + 2 * t, t, cx, all.min.z - t / 2], [W + 2 * t, t, cx, all.max.z + t / 2]].forEach(([a, b2, x, z]) => box(ad, a, h, b2, x, y, z, m)); [[t, D, all.min.x - t / 2, cz], [t, D, all.max.x + t / 2, cz]].forEach(([a, b2, x, z]) => box(ad, a, h, b2, x, y, z, m)); };
     ring(all.min.y + 0.3, 0.6, 0.18, gs);
     if (!HUT) ring(top - 0.3, 0.65, 0.2, dk);
-    else { const ov = 1.6, rh = Math.max(3, Math.min(W, D) * 0.45), hr = new THREE.Mesh(new THREE.CylinderGeometry(0.35, Math.SQRT2 / 2, 1, 4, 1, false, Math.PI / 4), thatchMat()); hr.scale.set(W + 2 * ov, rh, D + 2 * ov); hr.position.set(cx, top + rh / 2 - 0.15, cz); hr.castShadow = true; ad.add(hr);
+    else { const ov = 1.6, rh = Math.max(4, Math.min(W, D) * 0.6), hr = new THREE.Mesh(new THREE.CylinderGeometry(0.12, Math.SQRT2 / 2, 1, 4, 1, false, Math.PI / 4), thatchMat(true)); hr.scale.set(W + 2 * ov, rh, D + 2 * ov); hr.position.set(cx, top + rh / 2 - 0.15, cz); hr.castShadow = true; ad.add(hr);
       const fr = thatchMat(true); [[W + 2 * ov, 0.12, cx, all.min.z - ov], [W + 2 * ov, 0.12, cx, all.max.z + ov]].forEach(([a, b2, x, z]) => box(ad, a, 0.45, b2, x, top - 0.35, z, fr)); [[0.12, D + 2 * ov, all.min.x - ov, cz], [0.12, D + 2 * ov, all.max.x + ov, cz]].forEach(([a, b2, x, z]) => box(ad, a, 0.45, b2, x, top - 0.35, z, fr));
       const fn = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1, 8), dk); fn.position.set(cx, top + rh + 0.3, cz); ad.add(fn); } }
   { const fz = all.max.z + 0.9; [all.min.x - 0.6, all.max.x + 0.6].forEach((x, i) => { const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.42, 1.3, 14), gs); pot.position.set(x, all.min.y + 0.65, fz); ad.add(pot); bgvSpray(ad, 101 + i, (put, rnd) => { for (let j = 0; j < 360; j++) { const a = rnd() * Math.PI * 2, u = Math.sqrt(rnd()); put(x + Math.cos(a) * u * 0.95, all.min.y + 1.35 + rnd() * 1.4 - u * u * 0.5, fz + Math.sin(a) * u * 0.95, true); } });
