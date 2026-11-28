@@ -356,9 +356,12 @@
     /* 313: the options are a sheet over the 3D with a handle, like the other studios */
     'body.cb-studio{--cbs3d:58dvh}body.cb-studio .ctas{z-index:903!important}'+
     '.cbs-z{max-height:calc(100% - 78px);flex-wrap:wrap-reverse;align-content:flex-start}.cbs-z button{width:36px;height:36px;font-size:17px}'+
-    /* 313d: the list is a native scroller over the 3D — a see-through gap as tall as the 3D, then the white sheet (background scrolls with it) */
-    'body.cb-studio #mtoCfg{top:var(--cbsh)!important;bottom:74px;z-index:902;pointer-events:none;border:0!important;border-radius:0!important;box-shadow:none!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:calc(var(--cbs3d) - 14px) 14px 44px!important;background:linear-gradient(to bottom,transparent calc(var(--cbs3d) - 14px + 12px),#fff 0) local!important}'+
-    'body.cb-studio #mtoCfg>*{pointer-events:auto}body.cb-studio #mtoCfg .ds-hdl{display:flex;position:relative;z-index:3;background:#fff;margin:0 -14px 4px;width:calc(100% + 28px);border-radius:18px 18px 0 0;box-shadow:0 -6px 18px rgba(0,0,0,.08);border-top:1px solid #E2D6C4}}'+
+    /* 313e (owner: "pergola / planner jaisa smooth"): same build as the pergola studio — one scroller #cbsBd (header → footer), the 3D sticky at its top,
+       the options below it; a swipe on the options scrolls the whole thing natively, the white sheet sliding up over the 3D */
+    '#cbsBd{position:fixed;top:var(--cbsh);left:0;right:0;bottom:74px;overflow-y:auto;overflow-x:hidden;z-index:901;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#F4EFE7}'+
+    '#cbsBd #cbStage{position:sticky!important;top:0!important;left:auto;right:auto;width:100%;height:var(--cbs3d)!important;z-index:1}'+
+    '#cbsBd #mtoCfg{position:relative!important;top:auto!important;bottom:auto!important;left:auto!important;right:auto!important;width:auto!important;height:auto!important;overflow:visible!important;z-index:2;margin:-14px 0 0!important;background:#fff!important;border:0!important;border-top:1px solid #E2D6C4!important;border-radius:18px 18px 0 0!important;box-shadow:0 -6px 18px rgba(0,0,0,.08)!important;padding:0 14px 44px!important;min-height:calc(100% - var(--cbs3d) + 14px);box-sizing:border-box}'+
+    '#cbsBd #mtoCfg .ds-hdl{display:flex;position:relative;margin:0 -14px 4px;width:calc(100% + 28px)}}'+
     'body.cb-studio .cb-sheet{z-index:950}body.cb-studio .cb-avg{z-index:960}'+
     'body.cb-studio .pdp-cab .pdp-grid>div:first-child{position:static!important}body.cb-studio .ctas{z-index:902!important}body.cb-studio .ctas{background:none!important;box-shadow:none!important;border:0!important;padding:0!important}body.cb-studio .ctas .cbcta{display:none!important}body.cb-studio #nearPill,body.cb-studio .wafab{display:none!important}'+
     'body.cb-studio .pdp-info{position:static!important;top:auto!important}'+   /* a sticky column makes its own layer and hid the options under the studio */
@@ -1386,14 +1389,14 @@
         if (pz[0] >= (num(c0.L && c0.L.min) || 8) && pz[0] <= (num(c0.L && c0.L.max) || 40) && pz[1] >= (num(c0.W && c0.W.min) || 8) && pz[1] <= (num(c0.W && c0.W.max) || 20)) { S.o.layout.L = pz[0]; S.o.layout.W = pz[1]; wzBuild(c0, S.o.layout, S.wz); } }
       S.studio = true; if (!S.siteDone) { S.siteEd = true; S.sel3 = null; S.psel = null; } el.classList.add('open'); document.body.classList.add('cb-studio');
       try { history.pushState({ v: 'modal' }, '', location.pathname + location.search); } catch (e) {}
-      draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0;
+      draw(); var cf = document.getElementById('mtoCfg'); if (cf) cf.scrollTop = 0; cbsWrap(true);
       setTimeout(function () { try { window.Cabin3D && window.Cabin3D.resize(); } catch (er) {} }, 80);
       try { if (window.otrack) otrack('customise_start', { sku: S.id }); } catch (e) {}
     } else {
       if (!el || !el.classList.contains('open')) return;
       if (on !== null && history.state && history.state.v === 'modal') return history.back();   // back closes it (popstate → closeModals)
       if (S.fromPlan != null) { S.fromPlan = null; setTimeout(function () { if (window.outrrPlan) window.outrrPlan({ reload: true }); }, 150); }   // 193g: closed without saving — back to the plan as it was
-      el.classList.remove('open'); document.body.classList.remove('cb-studio', 'cbs-big'); S.studio = false; S.big = false; if (S.pan) { S.pan = false; try { window.Cabin3D.panMode(false); } catch (er) {} } S.v3 = null; draw(); window.scrollTo(0, 0);
+      cbsWrap(false); el.classList.remove('open'); document.body.classList.remove('cb-studio', 'cbs-big'); S.studio = false; S.big = false; if (S.pan) { S.pan = false; try { window.Cabin3D.panMode(false); } catch (er) {} } S.v3 = null; draw(); window.scrollTo(0, 0);
     }
   };
   function cbsGroup(el) {   // studio panel: a label and what it labels stay together in one column
@@ -1497,7 +1500,7 @@
   window.mtoShowParts = function () { if (mtoFull.args) mtoFull.apply(null, mtoFull.args); };
   window.mtoPdpReset = function () {
     try { var mf = document.getElementById('mtoFull'), rl = document.getElementById('pdRevList'); if (rl && mtoFull.home && rl.parentNode !== mtoFull.home) mtoFull.home.insertBefore(rl, mtoFull.home.firstChild); if (mf) mf.remove(); var pp = document.getElementById('pdp'); if (pp) pp.classList.remove('pdp-mtofull'); } catch (e) {}
-    try { var sd = document.getElementById('cbStudio'); if (sd) sd.classList.remove('open'); document.body.classList.remove('cb-studio', 'cbs-big'); var cc = document.querySelector('.ctas .cbcta'); if (cc) cc.remove(); var cm = document.getElementById('cmpSec'); if (cm) cm.style.display = ''; } catch (e) {}
+    try { cbsWrap(false); var sd = document.getElementById('cbStudio'); if (sd) sd.classList.remove('open'); document.body.classList.remove('cb-studio', 'cbs-big'); var cc = document.querySelector('.ctas .cbcta'); if (cc) cc.remove(); var cm = document.getElementById('cmpSec'); if (cm) cm.style.display = ''; } catch (e) {}
     if (S) { S.studio = false; S.big = false; }
     var p = document.getElementById('pdp'); if (p) p.classList.remove('pdp-mto', 'pdp-cab'); document.body.classList.remove('pdp-mto-on', 'pdp-cab-on');
     ['cbStage', 'cbSheet'].forEach(function (k) { var e = document.getElementById(k); if (e) e.remove(); }); var cb = document.querySelector('.ctas .cbbar'); if (cb) cb.remove();
@@ -2431,11 +2434,20 @@
   var DS_ULH = 58, CB_ULH = 58;
   // 313d (owner: "planner jaisa smooth"): like the planner — the options list is one native scroller whose top is a see-through gap the height
   // of the 3D, so a swipe scrolls the white sheet up over the 3D with the phone's own momentum; the handle sets the 3D height live (pointer capture).
+  var CBSW = null;
+  function cbsWrap(on) {   // 313e: phones — #cbStage + #mtoCfg go into one scroller while the studio is open, back where they were when it closes
+    if (on) { if (innerWidth >= 900 || CBSW) return; var st = document.getElementById('cbStage'), cf = document.getElementById('mtoCfg'); if (!st || !cf) return;
+      var bd = document.createElement('div'); bd.id = 'cbsBd'; CBSW = { st: st, cf: cf, sp: st.parentNode, sn: st.nextSibling, cp: cf.parentNode, cn: cf.nextSibling, bd: bd };
+      document.body.appendChild(bd); bd.appendChild(st); bd.appendChild(cf); bd.scrollTop = 0; return; }
+    if (!CBSW) return; var W = CBSW; CBSW = null;
+    try { if (W.sp) W.sp.insertBefore(W.st, W.sn && W.sn.parentNode === W.sp ? W.sn : null); if (W.cp) W.cp.insertBefore(W.cf, W.cn && W.cn.parentNode === W.cp ? W.cn : null); } catch (e) {}
+    W.bd.remove();
+  }
   function cbSheetDrag(e) {
     e.preventDefault(); var hd = e.target.closest('.ds-hdl'), B = document.body, H = innerHeight / 100, hdr = parseFloat(getComputedStyle(B).getPropertyValue('--cbsh')) || 96, mx = Math.max(30, (innerHeight - hdr - 74 - 150) / H);
     var y0 = e.clientY, h0 = CB_ULH, moved = false, set = function (v) { CB_ULH = Math.max(26, Math.min(mx, v)); B.style.setProperty('--cbs3d', CB_ULH + 'dvh'); }, fit = function () { try { window.dispatchEvent(new Event('resize')); } catch (x) {} };
     try { hd.setPointerCapture(e.pointerId); } catch (x) {}
-    var c = document.getElementById('mtoCfg'); if (c) c.scrollTop = 0;
+    var c = document.getElementById('cbsBd'); if (c) c.scrollTop = 0;
     hd.onpointermove = function (ev) { var d = (ev.clientY - y0) / H; if (Math.abs(d) > 1.5) moved = true; if (moved) set(h0 + d); };
     hd.onpointerup = hd.onpointercancel = function () { hd.onpointermove = hd.onpointerup = hd.onpointercancel = null; if (!moved) set(CB_ULH >= mx - 4 ? 36 : mx); fit(); setTimeout(fit, 120); };
   }
