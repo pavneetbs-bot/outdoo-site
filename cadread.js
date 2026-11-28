@@ -88,7 +88,16 @@ async function wallOutline(pg, vp, pj, mmPx) {
     while (qh < qt) { const k = q[qh++], x = k % w; n++; for (const nb of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]) if (nb >= 0 && nb < w * h && In[nb] && !lab[nb]) { lab[nb] = id; q[qt++] = nb; } }
     if (n > bestN) { bestN = n; best = id; } }
   if (!best || bestN < w * h * 0.01) return null;
-  return simplify(traceOut((x, y) => x >= 0 && y >= 0 && x < w && y < h && lab[y * w + x] === best, w, h), R).map(p => [p[0] / S, p[1] / S]); }
+  const out = simplify(traceOut((x, y) => x >= 0 && y >= 0 && x < w && y < h && lab[y * w + x] === best, w, h), R).map(p => [p[0] / S, p[1] / S]);
+  // closed rooms inside the roof (walls all round, doors ≤ ~1.1 m): the open floor (not wall, gaps sealed) splits into pieces — the biggest is the terrace, the rest are rooms
+  const fl = new Int32Array(w * h), rooms = [], px2 = (mpx / 304.8) ** 2; let fid = 0, bigN = 0; const comps = [];
+  for (let k0 = 0; k0 < w * h; k0++) { if (lab[k0] !== best || G[k0] || fl[k0]) continue; fid++; let n = 0, x0 = w, y0 = h, x1 = 0, y1 = 0; qh = qt = 0; q[qt++] = k0; fl[k0] = fid;
+    while (qh < qt) { const k = q[qh++], x = k % w, y = (k / w) | 0; n++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (const nb of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]) if (nb >= 0 && nb < w * h && lab[nb] === best && !G[nb] && !fl[nb]) { fl[nb] = fid; q[qt++] = nb; } }
+    comps.push({ n, b: [x0, y0, x1 + 1, y1 + 1] }); if (n > bigN) bigN = n; }
+  const wt = rg + R(230);   // back out to the walls' outer face
+  comps.forEach(c => { const sq = c.n * px2; if (c.n === bigN || sq < 20 || sq > 700 || c.n > bigN * 0.35) return; rooms.push([(c.b[0] - wt) / S, (c.b[1] - wt) / S, (c.b[2] + wt) / S, (c.b[3] + wt) / S]); });
+  out.rooms = rooms; return out; }
 // the outer edge of a pixel shape (pixel corners), walking with the shape on the right
 function traceOut(at, w, h) { let sx = -1, sy = -1;
   for (let k = 0; k < w * h && sx < 0; k++) if (at(k % w, (k / w) | 0)) { sx = k % w; sy = (k / w) | 0; } if (sx < 0) return [];
@@ -144,8 +153,8 @@ export async function prep(u8, pj, pageNo) {
     cx.beginPath(); cx.moveTo(gx, 0); cx.lineTo(gx, c.height); cx.moveTo(0, gy); cx.lineTo(c.width, gy); cx.stroke(); if (!(p % 10)) { cx.fillStyle = 'rgba(0,110,220,.85)'; cx.fillText(String(p), gx + 2, 13); cx.fillText(String(p), 2, gy - 2); } }
   const img = c.toDataURL('image/jpeg', 0.85).split(',')[1], pct = (x, y) => [+((x - box[0]) / bw * 100).toFixed(1), +((y - box[1]) / bh * 100).toFixed(1)];
   const labels = words.filter(w => /[A-Za-z]{3,}/.test(w.s) && w.x >= box[0] && w.x <= box[2] && w.y >= box[1] && w.y <= box[3]).slice(0, 160).map(w => { const p = pct(w.x + w.w / 2, w.y + w.h / 2); return { t: w.s.slice(0, 40), x: p[0], y: p[1] }; });
-  let wall = null; try { if (sc) wall = await wallOutline(pg, vp, pj, sc.mmPx); } catch (e) { wall = null; }
-  return { page, img, labels, box, wall, mmPx: sc ? sc.mmPx : null, dimsUsed: sc ? sc.n : 0, lines: L, W: vp.width, H: vp.height, bgFrac: null };
+  let wall = null, rooms = []; try { if (sc) { wall = await wallOutline(pg, vp, pj, sc.mmPx); rooms = (wall && wall.rooms) || []; } } catch (e) { wall = null; }
+  return { page, img, labels, box, wall, rooms, mmPx: sc ? sc.mmPx : null, dimsUsed: sc ? sc.n : 0, lines: L, W: vp.width, H: vp.height, bgFrac: null };
 }
 
 // Claude's boxes (% of the picture) → feet from the roof's top-left, each edge pulled onto the nearest drawn line
@@ -171,6 +180,9 @@ export function toFeet(R, P) {
   const blocks = (R.blocks || []).filter(b => Array.isArray(b.box) && b.box.length === 4).map(b => { const q = rect(b.box); let x = ft(q[0] - ox), y = ft(q[1] - oy), w = ft(q[2] - q[0]), d = ft(q[3] - q[1]);
       x = Math.max(0, Math.min(W - 1, x)); y = Math.max(0, Math.min(D - 1, y)); w = Math.max(1, Math.min(W - x, w)); d = Math.max(1, Math.min(D - y, d));
       return { type: b.type, x, y, w, d, door: b.door || null, h: +b.h_ft || null }; }).filter(b => b.w >= 1 && b.d >= 1);
+  if (WL && P.mmPx) (P.rooms || []).forEach(rb => { let x = ft(rb[0] - ox), y = ft(rb[1] - oy), w = ft(rb[2] - rb[0]), d = ft(rb[3] - rb[1]);   // 345: rooms found in the drawing's walls that Claude didn't name
+    const ov = b => Math.max(0, Math.min(x + w, b.x + b.w) - Math.max(x, b.x)) * Math.max(0, Math.min(y + d, b.y + b.d) - Math.max(y, b.y)); if (blocks.some(b => ov(b) > 0.3 * Math.min(w * d, b.w * b.d))) return;
+    x = Math.max(0, x); y = Math.max(0, y); w = Math.min(W - x, w); d = Math.min(D - y, d); if (w >= 3 && d >= 3) blocks.push({ type: 'room', x, y, w, d, door: null, h: null, found: true }); });
   let outline = null;
   if (WL && P.mmPx) { const i12 = v => Math.round(v * fpx * 12) / 12; outline = WL.map(q => [i12(q[0] - ox), i12(q[1] - oy)]);
     // a stairs room / room / lift on the roof's edge (open on the outside in the drawing) stays part of the roof
