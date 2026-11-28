@@ -121,7 +121,7 @@ function build(c, lay, opts) {
         if (b && b.door) { const kind = k === 'slide' ? 'slide' : k === 'fold' ? 'fold' : sp > 1 || k === 'double' || k === 'pdouble' ? 'swing2' : 'swing', dep = kind === 'slide' || kind === 'fold' ? 1.6 : Math.min(e - a - 0.2, 3.2);
           const fs = floorSym(kind, e - a - 0.2, dep), [fx, fz] = sf.at((a + e) / 2, -dep / 2 - 0.2); fs.position.set(fx, 0.08, fz); fs.rotation.y = side === 'front' ? 0 : side === 'back' ? Math.PI : side === 'right' ? Math.PI / 2 : -Math.PI / 2; labels.add(fs); } }
       if (!b || (!b.glass && !b.door)) {
-        piece(wg, sf, a, e, S0, H, WM, T); if (S0) piece(wg, sf, a, e, S0, S0 + 0.12, FM, T + 0.02);
+        piece(wg, sf, a, e, 0, H, WM, T);   // 330 (owner): a solid panel on a parapet side runs floor to roof — one seamless wall inside, no black strip
         if (k === 'window') { const w0 = S0 ? S0 + 0.35 : 3, ww = S0 ? 0.1 : 0.18; piece(wg, sf, a + (e - a) * ww, e - (e - a) * ww, w0, 6.4, mat('glass'), T + 0.06, 0.01); piece(wg, sf, a + (e - a) * ww, e - (e - a) * ww, w0 - 0.06, w0, FM, T + 0.1); piece(wg, sf, a + (e - a) * ww, e - (e - a) * ww, 6.4, 6.46, FM, T + 0.1); piece(wg, sf, (a + e) / 2 - 0.03, (a + e) / 2 + 0.03, w0, 6.4, FM, T + 0.1); }   // 302: on the parapet a big window from just above it
         if (k === 'vent') piece(wg, sf, a + (e - a) * 0.3, e - (e - a) * 0.3, 6.6, 7.5, mat('glass'), T + 0.06);
       } else if (b.door) {
@@ -142,7 +142,7 @@ function build(c, lay, opts) {
       i += sp;
     }
     piece(wg, sf, len - 0.06, len + 0.06, 0, H, FM, T + 0.04);
-    if (S0) { piece(wg, sf, 0, len, 0, S0 - 0.02, WM, T); piece(wg, sf, -0.06, len + 0.06, S0 - 0.2, S0 + 0.12, FM, T + 0.08); }   // 329: on a parapet side a PUF knee wall up to the parapet top + an MS sill beam (the glass / wall profile sits on it)
+    if (S0) { let i2 = 0; while (i2 < ks.length) { const k2 = ks[i2], b2 = bayOf(c, k2), sp2 = spanOf(c, k2), a2 = i2 * bay, e2 = Math.min((i2 + sp2) * bay, len); if (b2 && (b2.glass || b2.door)) { piece(wg, sf, a2, e2, 0, S0, WM, T); piece(wg, sf, a2, e2, S0 - 0.12, S0, FM, T + 0.04); } i2 += sp2; } }   // 329 / 330: under a glass bay on a parapet side a PUF knee wall + the MS profile the glass sits on (only there — solid walls stay seamless)
     for (const [ga, ge] of gRuns) { const n = Math.ceil((ge - ga) / 10 - 0.01); for (let j = 1; j < n; j++) { const u = ga + (ge - ga) * j / n; piece(wg, sf, u - 0.08, u + 0.08, 0, H, FM, T + 0.06); } }
     for (const r of runs) { const lb = label(r.t, Math.min(3.8, Math.max(2.8, r.e - r.a - 0.4))), [lx, lz] = sf.at((r.a + r.e) / 2, T / 2 + 0.16); lb.position.set(lx, 4.4, lz);
       lb.rotation.y = side === 'front' ? 0 : side === 'back' ? Math.PI : side === 'right' ? Math.PI / 2 : -Math.PI / 2; labels.add(lb); }
@@ -430,7 +430,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=122').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=123').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
