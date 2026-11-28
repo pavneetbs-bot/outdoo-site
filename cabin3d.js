@@ -114,7 +114,7 @@ function build(c, lay, opts) {
       const post = (u) => piece(wg, sf, u - 0.06, u + 0.06, S0, H, FM, T + 0.04);   // 332 (owner: "pattiyan kyu"): on a parapet side the post starts at the sill — below it the knee wall hides it   // 329 (owner): MS posts run from the floor on every side, parapet sides too — the glass starts after the frame
       const hb = piece(hits, sf, a + 0.05, e - 0.05, 0, H, mat('hit'), 0.8); hb.userData = { bay: { side, i } }; hb.castShadow = false;
       const gl = !!(b && b.glass && !b.door); if (wide && gl) { const r0 = gRuns[gRuns.length - 1]; if (r0 && prevGl && r0[1] === a) r0[1] = e; else gRuns.push([a, e]); }
-      if ((i === 0 || !(prevSolid && solid)) && !(wide && gl && prevGl && i > 0)) post(a);   // 188: no steel posts inside a run of solid wall — only at corners and beside doors / glass
+      if ((i === 0 ? !solid : !(prevSolid && solid)) && !(wide && gl && prevGl && i > 0)) post(a);   // 333 (owner): no black post on a solid wall, not even at the corner — only beside doors / glass   // 188: no steel posts inside a run of solid wall — only at corners and beside doors / glass
       prevSolid = solid; prevGl = gl;
       { const lt = BAY_LABEL[k] || (b && b.name) || 'Wall', run = runs[runs.length - 1];   // one label per run of the same kind (not one per panel)
         if (run && run.t === lt && run.e === a && !(b && b.door)) run.e = e; else runs.push({ t: lt, a, e });
@@ -141,7 +141,7 @@ function build(c, lay, opts) {
       }
       i += sp;
     }
-    piece(wg, sf, len - 0.06, len + 0.06, 0, H, FM, T + 0.04);
+    if (!prevSolid) piece(wg, sf, len - 0.06, len + 0.06, S0, H, FM, T + 0.04);   // 333: end post only when the last bay is glass / a door
     if (S0) { let i2 = 0; while (i2 < ks.length) { const k2 = ks[i2], b2 = bayOf(c, k2), sp2 = spanOf(c, k2), a2 = i2 * bay, e2 = Math.min((i2 + sp2) * bay, len); if (b2 && (b2.glass || b2.door)) { piece(wg, sf, a2, e2, 0, S0, WM, T); piece(wg, sf, a2, e2, S0 - 0.06, S0 + 0.04, FM, T * 0.4, T * 0.3);   /* 332: the glass profile sits on the outer half only — inside the knee wall runs up clean */ } i2 += sp2; } }   // 329 / 330: under a glass bay on a parapet side a PUF knee wall + the MS profile the glass sits on (only there — solid walls stay seamless)
     for (const [ga, ge] of gRuns) { const n = Math.ceil((ge - ga) / 10 - 0.01); for (let j = 1; j < n; j++) { const u = ga + (ge - ga) * j / n; piece(wg, sf, u - 0.08, u + 0.08, 0, H, FM, T + 0.06); } }
     for (const r of runs) { const lb = label(r.t, Math.min(3.8, Math.max(2.8, r.e - r.a - 0.4))), [lx, lz] = sf.at((r.a + r.e) / 2, T / 2 + 0.16); lb.position.set(lx, 4.4, lz);
@@ -432,7 +432,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=127').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=128').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
