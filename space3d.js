@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=125';
-import { pergolaModel } from './pergola3d.js?v=112';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=126';
+import { pergolaModel } from './pergola3d.js?v=113';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -360,15 +360,20 @@ function plateTex() { if (WTX._pl) return WTX._pl; const c = document.createElem
   x.fillStyle = '#1F4FA8'; for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; x.beginPath(); x.ellipse(64 + Math.cos(a) * 22, 64 + Math.sin(a) * 22, 5, 11, a + Math.PI / 2, 0, 7); x.fill(); } x.beginPath(); x.arc(64, 64, 8, 0, 7); x.fill();
   const t = new THREE.CanvasTexture(c); if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return (WTX._pl = t); }
 function plates(g, cx, cy, z, sc) { const m = M.c_s_plate || (M.c_s_plate = new THREE.MeshStandardMaterial({ map: plateTex(), roughness: 0.25, transparent: true, alphaTest: 0.5 })); [[0, 0.9, 0.62], [-0.85, 0.3, 0.42], [0.85, 0.35, 0.5], [0, -0.35, 0.46], [-0.6, -0.75, 0.32], [0.7, -0.7, 0.36], [-0.55, 1.35, 0.28]].forEach(([dx, dy, r]) => { const p = new THREE.Mesh(new THREE.CircleGeometry(r * sc, 24), m); p.position.set(cx + dx * sc * 1.1, cy + dy * sc * 1.1, z); g.add(p); }); }
+function fishMat() {   // 337c: bamboo knitted in a fishbone (herringbone) pattern — thin pale canes, two directions per band
+  if (M.c_s_fish) return M.c_s_fish; const N = 256, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'); x.fillStyle = '#6B5638'; x.fillRect(0, 0, N, N); let sd = 11; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  for (let b = 0; b < 2; b++) { x.save(); x.beginPath(); x.rect(b * N / 2, 0, N / 2, N); x.clip(); x.translate(b * N / 2 + N / 4, N / 2); x.rotate(b ? -0.6 : 0.6); for (let k = -24; k < 24; k++) { const v = 185 + Math.round(r() * 40); x.fillStyle = `rgb(${v},${v - 22},${v - 70})`; x.fillRect(-N, k * 12, 2 * N, 9); x.fillStyle = 'rgba(90,60,25,0.55)'; for (let n = -N; n < N; n += 50 + r() * 40) x.fillRect(n, k * 12, 3, 9); } x.restore(); }
+  x.fillStyle = '#4A3A24'; x.fillRect(N / 2 - 3, 0, 6, N); x.fillRect(N - 3, 0, 6, N);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return (M.c_s_fish = new THREE.MeshStandardMaterial({ map: t, roughness: 0.95 })); }
 function santCabin(g) {   // 296 → 337 (owner's Santorini refs 27 Nov): a Cycladic cube — all white lime (roof too) with a soft rounded parapet on top, deep white arches over every glass bay; A = arches trimmed in azulejo tiles + blue door / frames, B (`__scv = 'dome'`) = blue rims + a blue dome
   const lw = sLime(), bl = sBlue(), DOME = globalThis.__scv === 'dome'; const gl = []; g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color) return; const c = o.material.color.getHex(); if (c === 0xBFDCE6 && o.material.opacity < 0.34) { gl.push(o); return; } if (o.material.map) return;
     if (c === 0xF2F0EB || c === 0x6E6C68 || c === 0xE4E1DA || c === 0x5A564F) o.material = lw; else if (c === 0x2B2B2B || c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = bl; });
   g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3(), V0 = new THREE.Vector3(), V1 = new THREE.Vector3(), ar = new THREE.Group(), all = new THREE.Box3();
   const pjG = g.getObjectByName('proj'), inPj = o => { for (let q = o; q; q = q.parent) if (q === pjG) return true; return false; }; g.traverse(o => { if (o.isMesh && !inPj(o)) all.union(new THREE.Box3().setFromObject(o).applyMatrix4(inv)); }); const top = all.max.y;   /* the body + roof, without the projection */
   g.traverse(o => { if (!o.isMesh || o.material !== bl || inPj(o)) return; B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); if ((V0.x > 2.5 && V0.z > 2.5) || (B.max.y > top - 1.3 && V0.y < 1.2 && Math.max(V0.x, V0.z) > 2)) o.material = lw; });   /* roof slab, fascia, projection = white */
-  { const pj = g.getObjectByName('proj'); if (pj) { const tm = mat('c_s_tim', 0x7A5E45, { roughness: 0.95 }), rd = reedMat(), add = [];   /* 337b (owner: "projection natural jaisa"): the projection = raw timber poles + a reed-cane mat on top, like an island porch */
+  { const pj = g.getObjectByName('proj'); if (pj) { const SJ = globalThis.__sjv || 'blue', tm = SJ === 'blue' ? sBlue() : mat('c_s_tim', 0x7A5E45, { roughness: 0.95 }), rd = SJ === 'fish' ? fishMat() : reedMat(), add = [];   /* owner picked blue (28 Nov); __sjv 'nat' = raw timber + reed, 'fish' = fishbone bamboo */   /* 337b (owner: "projection natural jaisa"): the projection = raw timber poles + a reed-cane mat on top, like an island porch */
     pj.children.slice().forEach(m => { if (!m.isMesh || m.geometry.type !== 'BoxGeometry') return; B.setFromObject(m).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const d = [V0.x, V0.y, V0.z], mx = Math.max(...d), srt = d.slice().sort((p, q) => p - q);
-      if (V0.y < 0.12 && V0.x > 1 && V0.z > 1) { m.material = rd; m.scale.y *= 2.5; return; }   /* the top sheet → reed */
+      if (V0.y < 0.12 && V0.x > 1 && V0.z > 1) { m.material = rd; m.scale.y *= 2.5; if (SJ === 'fish') { m.geometry = m.geometry.clone(); const uv = m.geometry.attributes.uv, sx = V0.x / 2.6, sz = V0.z / 2.6; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * sx, uv.getY(i) * sz); } return; }   /* the top sheet → reed */
       if (mx < 0.6) return; const r = Math.max(0.07, Math.min(0.24, srt[1] * 0.45)), c = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.08, mx, 10), tm); if (mx === V0.x) c.rotation.z = Math.PI / 2; else if (mx === V0.z) c.rotation.x = Math.PI / 2; c.position.copy(V1); c.castShadow = true; add.push(c); m.visible = false; });
     add.forEach(c => pj.add(c)); } }
   const rimM = DOME ? bl : (() => { const m = azMat().clone(); m.map = azTex(); return m; })(), az = (geo) => { if (DOME) return geo; const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2, uv.getY(i) * 2); return geo; };
