@@ -188,7 +188,7 @@ function build(c, lay, opts) {
     else {   // toilet / WC room: frosted walls, WC + basin
       const x0 = p.x, z0 = p.y, x1 = p.x + w, z1 = p.y + d, wh = Math.min(7.5, H - 0.3);   // 327 (owner): PUF walls TI thick inside the room's footprint, only where it doesn't share the cabin wall or a partition
       const fw = (ax, az, bx, bz) => box(g, Math.max(bx - ax, 0.02), wh, Math.max(bz - az, 0.02), (ax + bx) / 2, wh / 2, (az + bz) / 2, mat('pufIn'));
-      const tol = 0.12, sd = { l: x0 > T + tol, r: x1 < L - T - tol, b: z0 > T + tol, f: z1 < W - T - tol };
+      const op = Array.isArray(lay.onPar) ? lay.onPar : [], IN = (k) => op.includes(k) ? Math.max(T, 0.75) : T, tol = 0.12, sd = { l: x0 > IN('left') + tol, r: x1 < L - IN('right') - tol, b: z0 > IN('back') + tol, f: z1 < W - T - tol };
       for (const o of lay.places || []) { if (o === p || !/part$/.test(o.key)) continue; const ol = +o.len || 1, ox0 = o.x, oz0 = o.y, ox1 = o.rot === 90 ? o.x + TI : o.x + ol, oz1 = o.rot === 90 ? o.y + ol : o.y + TI;
         if (Math.min(z1, oz1) - Math.max(z0, oz0) > Math.min(d, 2) * 0.8) { if (Math.abs(ox1 - x0) < tol) sd.l = false; if (Math.abs(ox0 - x1) < tol) sd.r = false; }
         if (Math.min(x1, ox1) - Math.max(x0, ox0) > Math.min(w, 2) * 0.8) { if (Math.abs(oz1 - z0) < tol) sd.b = false; if (Math.abs(oz0 - z1) < tol) sd.f = false; } }
@@ -246,7 +246,7 @@ function build(c, lay, opts) {
 // 283 design studio: a terrace corner — grey 2 × 4 tiles, a 3 ft parapet behind and on the left (the cabin's usual spot),
 // a person in front for scale; the gap to the parapet leaves room for the projection on those sides
 function studio(g, L, W, lay, c) {
-  const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); const Y = -0.6, sd = lay && lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : [], pj = sd.includes('back') || sd.includes('left') ? +(c && c.proj && c.proj.depth || 1.5) : 0, fl = !!(lay && lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = fl ? 0.3 : pj + 1.25;   // 314: against the parapet = the plinth touches it
+  const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); const Y = -0.6, sd = lay && lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : [], pj = sd.includes('back') || sd.includes('left') ? +(c && c.proj && c.proj.depth || 1.5) : 0, fl = !!(lay && lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = lay && Array.isArray(lay.onPar) && lay.onPar.length ? -0.75 : fl ? 0.3 : pj + 1.25;   // 328 (owner): on the parapet the back / left walls stand on it (outer faces flush)   // 314: against the parapet = the plinth touches it
   studioFloor(sg, -gp - 0.75, -gp - 0.75, L + gp + 14, W + gp + 14, Y);
   sWall(sg, -gp - 0.75, -gp - 0.375, L + 12, -gp - 0.375, 3, 0.75, Y);   // back
   sWall(sg, -gp - 0.375, -gp - 0.75, -gp - 0.375, W + 12, 3, 0.75, Y);   // left
@@ -429,7 +429,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=120').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=121').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
