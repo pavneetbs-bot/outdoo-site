@@ -5,9 +5,9 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=140';
-import { pergolaModel } from './pergola3d.js?v=127';
-import { outline, sofaLayout } from './plan2d.js?v=36';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=141';
+import { pergolaModel } from './pergola3d.js?v=128';
+import { outline, sofaLayout } from './plan2d.js?v=37';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
 import { studioFloor, wall as sWall, person as sPerson } from './studio3d.js?v=7';   // 294: the design studio setting (planters)
@@ -158,7 +158,7 @@ let HALO = null; function haloMat(col) { const k = col || 'w'; HALO = HALO || {}
   const rgb = k === 'b' ? '170,215,255' : '255,186,112'; gr.addColorStop(0, `rgba(${rgb},.55)`); gr.addColorStop(0.35, `rgba(${rgb},.25)`); gr.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = gr; x.fillRect(0, 0, 128, 128);
   const t = new THREE.CanvasTexture(c); return (HALO[k] = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); }
 function nightOnly(o, par) { o.visible = !!(R && R.night); o.userData.nightOnly = 1; if (R) (R.nl || (R.nl = [])).push(o); par.add(o); return o; }
-const DECK_H = 5 / 12, deckTop = o => Math.max(DECK_H, +(o && o.lvl) || 0);
+const DECK_H = 5 / 12, deckTop = o => o && o.ef ? Math.max(0, +o.lvl || 0) : Math.max(DECK_H, +(o && o.lvl) || 0);   /* 347: an existing elevated floor stands at its own height; a sunken one = 0 */
 const deckUnder = (it, P) => (P.items || []).some(o => o.cat === 'deck' && Math.abs(+o.x - +it.x) < 0.7 && Math.abs(+o.z - +it.z) < 0.7);   // 262: the deck item is drawn instead (same boards, same height as the cabin floor)
 let ROPE_TX = null; const ROPE_M = {};
 function ropeMat(pw, ph) {   // 261: woven rope (vertical cords with gaps) as a cut-out texture, repeated ~7 cords a foot
@@ -1131,6 +1131,11 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     cyl(g, 0.5, 0.7, 2.6, 0, 1.3, 0, K.stone); cyl(g, 1.2, 0.9, 0.35, 0, 2.7, 0, K.stone); cyl(g, 1.0, 1.0, 0.06, 0, 2.86, 0, K.water); cyl(g, 0.25, 0.35, 1, 0, 3.3, 0, K.stone);
   } else if (cat === 'sculpture') {
     box(g, w * 0.7, 1.4, d * 0.7, 0, 0.7, 0, K.stone); const k = new THREE.Mesh(new THREE.TorusKnotGeometry(Math.min(w, d) * 0.28, Math.min(w, d) * 0.08, 80, 12), mat('c_bronze', 0x8C6A3F, { metalness: 0.7, roughness: 0.35 })); k.position.y = 1.4 + Math.min(w, d) * 0.5; k.castShadow = true; g.add(k);
+  } else if (cat === 'deck' && it.ef) {   /* 347 (owner): an existing elevated / sunken floor — plain stone slab, a step on its front when it is high; sunken = a darker floor with a kerb drop shown round it */
+    const lv = +it.lvl || 0, sl = mat('c_efl', 0xC9C2B6, { roughness: 0.9 }), ed = mat('c_efle', 0x9E968A, { roughness: 0.9 });
+    if (lv > 0) { box(g, w, lv, d, 0, lv / 2, 0, sl); box(g, w + 0.04, 0.05, d + 0.04, 0, lv - 0.02, 0, ed, false); if (lv > 0.65) box(g, Math.min(w, 4), lv / 2, 1, 0, lv / 4, d / 2 + 0.5, sl); }
+    else { box(g, w, 0.03, d, 0, 0.015, 0, mat('c_efls', 0x8F877B, { roughness: 0.95 }), false); const t = 0.18, kh = Math.min(0.5, -lv);
+      [[w, t, 0, -d / 2 + t / 2], [w, t, 0, d / 2 - t / 2], [t, d, -w / 2 + t / 2, 0], [t, d, w / 2 - t / 2, 0]].forEach(([a1, b1, x1, z1]) => box(g, a1, kh, b1, x1, kh / 2, z1, ed)); }
   } else if (cat === 'deck') {
     const lv = deckTop(it), n = Math.max(1, Math.round(d / 0.5)); box(g, w, lv - 0.12, d, 0, (lv - 0.12) / 2, 0, K.wood2);   // 259: joined to a cabin → at the cabin floor's level, with a skirting; 268 (owner): every deck stands 5 in (0.42 ft)
     for (let i = 0; i < n; i++) box(g, w, 0.12, d / n - 0.04, 0, lv - 0.06, -d / 2 + d * (i + 0.5) / n, i % 2 ? K.wood : K.wood2, false);   /* 262: a raised deck's top = the cabin floor (0.6 ft) exactly */

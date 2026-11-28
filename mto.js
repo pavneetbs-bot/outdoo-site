@@ -655,8 +655,8 @@
     try { var cv = document.createElement('canvas'); if (!(cv.getContext('webgl2') || cv.getContext('webgl'))) { C3.st = -1; return; } } catch (er) { C3.st = -1; return; }
     C3.st = 1;
     var ready = function () { C3.st = window.Cabin3D ? 2 : -1; if (S && S.pdp && document.getElementById('cbStage')) cbStage(); mount3d(); };   // 3D ready: show its views, furniture and edit bar
-    try { new Function('u', 'return import(u)')('/cabin3d.js?v=140').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
-    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=140'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
+    try { new Function('u', 'return import(u)')('/cabin3d.js?v=141').then(ready, function () { C3.st = -1; }); }   // dynamic import: not touched by the page's <head> changes
+    catch (er) { var sc = document.createElement('script'); sc.type = 'module'; sc.src = '/cabin3d.js?v=141'; sc.onload = ready; sc.onerror = function () { C3.st = -1; }; document.body.appendChild(sc); }
   }
   function wzIso(c, lay, small) {   // a 3D-looking sketch of the layout (front + right side), like the drawings
     var L = num(lay.L), W = num(lay.W), H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = num(c.bay) || 4, C = 0.866, Sn = 0.5;
@@ -799,7 +799,7 @@
   // 202: the terrace one kind of question at a time — Quick: Space → Road → Staircase room; Detailed: Space → Roads → Boundary wall → Corners → On the roof
   // 216: closest real terraces (as built) for the answers so far, fitted live — terrace-match.js (same as the planner)
   var TMM = null, TMP = null;
-  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=36').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
+  var P2M = null; function p2Get(cb) { if (P2M) return P2M; new Function('u', 'return import(u)')('/plan2d.js?v=37').then(function (m) { P2M = m; if (cb) cb(); }, function () {}); return null; }   // 234: the 2D plan / CAD dimensions
   function tmGet() { if (!TMP) TMP = new Function('u', 'return import(u)')('/terrace-match.js?v=5').then(function (m) { return m.load().then(function () { TMM = m; }); }).catch(function () {}); return TMM; }
   function tsTpl() {
     var t = S.site, M = tmGet(), btn = function (attr, isOn, txt) { return '<button type="button" ' + attr + ' class="' + (isOn ? 'on' : '') + '" aria-pressed="' + !!isOn + '">' + txt + '</button>'; };
@@ -2011,7 +2011,7 @@
   };
   // 193j: things around the cabin / pergola in the designers — the planner's own things and rules (planner.js api) on a plan { site, items }; the design itself is the item marked _me
   var AR = { m: null, st: 0 };
-  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=203').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
+  function arLoad() { if (AR.st) return; AR.st = 1; try { new Function('u', 'return import(u)')('/planner.js?v=204').then(function (m) { AR.m = m.api; AR.st = 2; if (S) { draw(); arRe(); } }, function () { AR.st = -1; }); } catch (e) { AR.st = -1; } }
   function arRe() { try { if (S && isPg(S.id)) p3Draw(); else mount3d(); } catch (e) {} }
   function arOn() { return !!(S && S.site && S.site.kind === 'terrace' && S.o && (isPg(S.id) || (S.studio && PRODS[S.id] && PRODS[S.id].cz.unit === 'cabin'))); }
   function arPlan() {
@@ -3228,7 +3228,7 @@
       window.Pergola3D.show(document.getElementById('pg3St'), S.id, q, { night: P3.night, site: tsOpts(), deck: S.o.deck ? deckSize() : false, studio: DS_SOLO && !S.site, look: DS_SOLO && !S.site && lookArr().length ? lookNow() : null, furn: DS_SOLO || (S.site && S.site.kind === 'terrace') ? '' : S.o.furn === 'lounge' ? 'sofa' : S.o.furn || '' }); window.Pergola3D.resize(); } catch (e) { if (window.console) console.warn(e); } lk2Sync(); return; }
     if (P3.st !== 0) return; P3.st = 1;
     var ready = function () { P3.st = window.Pergola3D ? 2 : -1; p3Draw(); };
-    try { new Function('u', 'return import(u)')('/pergola3d.js?v=127').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
+    try { new Function('u', 'return import(u)')('/pergola3d.js?v=128').then(ready, function () { P3.st = -1; }); } catch (e) { P3.st = -1; }
   }
   window.pg3Open = function (on) {
     if (!S || !isPg(S.id)) return; p3Css(); var ov = document.getElementById('pg3');
@@ -3729,7 +3729,7 @@
   function cu3dDraw0() {   // 199b: the design in 3D at the customer's size, finish colour, pieces and light (space3d preview)
     var el = document.getElementById('cu3d'); if (!el || !S) return; var x = PRODS[S.id], m = x.cz, o = S.o, cp = document.getElementById('cuCap');
     if (cp) cp.textContent = [sizeTxt(m, o), o.colour, o.material && arr(m.materials).length > 1 ? o.material : ''].filter(Boolean).join(' · ') || short(x.n);   // the caption follows typing too
-    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=150').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
+    if (!CU3.m) { if (!CU3.st) { CU3.st = 1; new Function('u', 'return import(u)')('/space3d.js?v=151').then(function (mm) { CU3.m = mm; cu3dDraw(); }, function () { CU3.st = -1; var st3 = document.querySelector('#cuOv .cu-st'); if (st3) st3.classList.add('photo'); }); } return; }
     if (isBn(S.id)) { try { CU3.m.preview(el, [{ code: S.id.slice(7), n: num(o.n) || seatLo(m) || 3 }], { studio: 'bench' }); } catch (e) { if (window.console) console.warn(e); } return; }   // 307
     if (isFw(S.id)) { try { CU3.m.preview(el, [{ code: S.id.replace(/^MTO-/, ''), W: num(o.w) || 8, H: num(o.h) || 9, groups: o.groups || {}, place: fwPlace(S.id, x) }], { studio: 'fw', look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 296
     var mk9 = /^MTO-(GF|VG|DK)-/.exec(S.id); if (mk9) { try { CU3.m.preview(el, [{ sku: S.id, img: refPhoto(x), m: { materials: m.materials, groups: m.groups }, o: { l: o.l, w: o.w, h: o.h, material: o.material, colour: o.colour, groups: o.groups, addons: o.addons } }], { studio: mk9[1].toLowerCase(), look: lookNow() }); } catch (e) { if (window.console) console.warn(e); } return; }   // 309: graffiti / vertical gardens / decks (misc3d.js)
@@ -3991,7 +3991,7 @@
       return t;
     };
     var tw3d = function () { var el = d.querySelector('#tw3d'); if (!el) return; var go = function (mm) { try { if (!st.site) st.site = twSite(); var first = el.dataset.on !== '1'; el.dataset.on = '1'; mm.show(el, { site: st.site, items: [], measure: !!st.meas }, { view: st.meas ? 'top' : '3d', place: false, on: twEv }); setTimeout(function () { try { mm.resize(); if (first) mm.home(); } catch (e) {} }, 60); } catch (e) {} };
-      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=150').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
+      if (d._s3) return go(d._s3); new Function('u', 'return import(u)')('/space3d.js?v=151').then(function (mm) { d._s3 = mm; go(mm); }, function () {}); };
     var twSum = function () {   // 222: every answer under the 3D, each with Change
       var a = st.a, S0 = st.site, tc = function (ty) { if (!S0) return ty === 'lift' ? (a.lift ? a.lw + ' × ' + a.ld + ' ft' : '') : ty === 'room' ? (a.room ? (a.rn || 1) + ' × (' + a.rw + ' × ' + a.rd + ' ft)' : '') : (a.shaft ? (a.sn || 1) + ' × (' + a.sw + ' × ' + a.sd + ' ft)' : '');
         return S0.blocks.filter(function (o) { return o.type === ty; }).map(function (o) { return o.w + ' × ' + o.d + ' ft'; }).join(', '); };
@@ -4319,7 +4319,7 @@
       try { var buf = await f.arrayBuffer(), u8 = new Uint8Array(buf), bin = ''; for (var i = 0; i < u8.length; i += 0x8000) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
         var A = window.OUTRR_SUPA || {}, tk = (window.acToken && await window.acToken()) || A.anon, CR = null, PP = null;
         try { var PB = window.PDFJS_BASE || 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/', imp = new Function('u', 'return import(u)'), pj = await imp(PB + 'pdf.min.mjs'); pj.GlobalWorkerOptions.workerSrc = PB + 'pdf.worker.min.mjs';   // 287: read the drawing's own lines + dimensions here (exact scale), send a gridded picture
-          CR = await imp(location.origin + '/cadread.js?v=3'); PP = await CR.prep(u8, pj, 1); if (!PP || !PP.mmPx) PP = null; } catch (e0) { PP = null; }
+          CR = await imp(location.origin + '/cadread.js?v=4'); PP = await CR.prep(u8, pj, 1); if (!PP || !PP.mmPx) PP = null; } catch (e0) { PP = null; }
         var r = await fetch(A.url + '/functions/v1/layouts', { method: 'POST', headers: { apikey: A.anon, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'read', name: f.name, pdf: btoa(bin), img: PP ? PP.img : undefined, labels: PP ? PP.labels : undefined, token: window.ASSIST && window.ASSIST.token || null }) });
         var j = await r.json().catch(function () { return {}; });
         if (r.ok && j.reading && j.id) {   // 248: the drawing is read in the background — ask every 3 s (up to 4 min)
@@ -4339,13 +4339,13 @@
       var dir = function (sd) { var v = { top: [0, -1], bottom: [0, 1], left: [-1, 0], right: [1, 0] }[sd]; if (!v) return ''; var n = R === 'top' ? [-v[0], -v[1]] : R === 'left' ? [v[1], -v[0]] : R === 'right' ? [-v[1], v[0]] : v; return n[1] < 0 ? 'back' : n[1] > 0 ? 'front' : n[0] < 0 ? 'left' : 'right'; };
       var H = { mumty: 9, lift: 11, room: 9, shaft: 3, ac: 2.5 }, TY = { stairs: 'mumty', lift: 'lift', room: 'room', toilet: 'room', shaft: 'shaft', tank: 'room', ac: 'ac', penthouse: 'room', column: 'shaft', counter: 'room' }, r2 = function (v) { return Math.round(v * 2) / 2; };
       var B = (L.blocks || []).map(function (b) { var q = tr(+b.x, +b.y, +b.w, +b.d), ty = TY[b.type] || 'room', w = Math.max(1, Math.min(pw - 2 * P, r2(q[2]))), dd = Math.max(1, Math.min(pd - 2 * P, r2(q[3])));
-        return { id: 'b' + Math.random().toString(36).slice(2, 8), type: ty, w: w, d: dd, h: +b.h || (b.type === 'tank' ? 6 : b.type === 'penthouse' ? 10 : b.type === 'column' ? 1.6 : b.type === 'counter' ? 3 : H[ty]), name: { tank: 'Water tank', column: 'Column', counter: 'Counter', toilet: 'Toilet' }[b.type] || undefined, pent: b.type === 'penthouse' || undefined, x: Math.max(P, Math.min(pw - P - w, r2(q[0]))), z: Math.max(P, Math.min(pd - P - dd, r2(q[1]))), side: 'free', door: dir(b.door) || '' }; });
+        return { id: 'b' + Math.random().toString(36).slice(2, 8), type: ty, w: w, d: dd, h: +b.h || (b.type === 'tank' ? 6 : b.type === 'penthouse' ? 10 : b.type === 'column' ? 1.6 : b.type === 'counter' ? 3 : H[ty]), name: ({ tank: 'Water tank', column: 'Column', counter: 'Counter', toilet: 'Toilet' }[b.type] || (b.lvl_mm ? (b.lvl_mm < 0 ? 'Sunken area' : 'Raised room') : '')) + (b.lvl_mm ? ' ' + (b.lvl_mm > 0 ? '+' : '−') + Math.round(Math.abs(b.lvl_mm) / 25.4) + '″' : '') || undefined, lvl_in: b.lvl_mm ? Math.round(b.lvl_mm / 25.4) : undefined, pent: b.type === 'penthouse' || undefined, x: Math.max(P, Math.min(pw - P - w, r2(q[0]))), z: Math.max(P, Math.min(pd - P - dd, r2(q[1]))), side: 'free', door: dir(b.door) || '' }; });
       B.forEach(function (q) { var Lf = q.x <= P + 0.3, Rt = q.x + q.w >= pw - P - 0.3, Bk = q.z <= P + 0.3, F = q.z + q.d >= pd - P - 0.3; if (q.type === 'ac') { q.side = Lf ? 'left' : Rt ? 'right' : Bk ? 'back' : 'front'; return; } q.side = (Lf || Rt) && !Bk && !F ? (Lf ? 'left' : 'right') : Bk && !Lf && !Rt ? 'back' : F && !Lf && !Rt ? 'front' : 'free'; });
       var cuts = {}; (L.cuts || []).forEach(function (c) { var pt = { tl: [0, 0], tr: [W, 0], bl: [0, D], br: [W, D] }[c.corner]; if (!pt) return; var q = tr(pt[0], pt[1], 0, 0), k = (q[1] < pd / 2 ? 'b' : 'f') + (q[0] < pw / 2 ? 'l' : 'r'); cuts[k] = { type: c.type === 'slant' ? 'slant' : 'notch', a: r2(r90 ? +c.b : +c.a), b: r2(r90 ? +c.a : +c.b) }; });
       var OL = null; if (Array.isArray(L.outline) && L.outline.length >= 4) { OL = olNorm(L.outline.map(function (q) { var o = tr(+q[0], +q[1], 0, 0); return [Math.max(0, Math.min(pw, o[0])), Math.max(0, Math.min(pd, o[1]))]; }));   // 244: the drawing's whole outline, turned like the blocks
         var plain = OL.length === 4 && OL.every(function (q) { return (q[0] < 0.6 || q[0] > pw - 0.6) && (q[1] < 0.6 || q[1] > pd - 0.6); }); if (plain || olArea(OL) < 40) OL = null; else { OL = olGet({ outline: OL }); cuts = {}; } }
       var r2nd = dir(L.plot.road2), N = dir({ up: 'top', down: 'bottom', left: 'left', right: 'right' }[L.plot.north]);
-      return { kind: 'terrace', plot: '', pw: r2(pw), pd: r2(pd), par: +L.plot.parapet_ft >= 4 ? 4 : 3, rail: false, corner: r2nd === 'left' ? 'left' : r2nd === 'right' ? 'right' : '', road_front: true, road_back: r2nd === 'back', high: {}, tanks: !!L.tanks, blocks: B, cuts: cuts, outline: OL || undefined, start: 'pdf', layout: { id: id, proposed: L.proposed || [], north: N || '' } }; };
+      return { kind: 'terrace', plot: '', pw: r2(pw), pd: r2(pd), par: +L.plot.parapet_ft >= 4 ? 4 : 3, rail: false, corner: r2nd === 'left' ? 'left' : r2nd === 'right' ? 'right' : '', road_front: true, road_back: r2nd === 'back', high: {}, tanks: !!L.tanks, blocks: B, cuts: cuts, outline: OL || undefined, start: 'pdf', layout: { id: id, proposed: L.proposed || [], north: N || '', levels: (L.levels || []).map(function (v) { var q = tr(+v.x, +v.y, +v.w, +v.d); return { x: Math.max(P, r2(q[0])), z: Math.max(P, r2(q[1])), w: Math.max(2, Math.min(pw - 2 * P, r2(q[2]))), d: Math.max(2, Math.min(pd - 2 * P, r2(q[3]))), in: Math.round(+v.mm / 25.4) }; }).filter(function (v) { return v.in; }) } }; };   /* 347: raised / sunken floors from the drawing → 'Already built' elevated floors */
     var lBg = function (u8, L) {   // the drawing behind the plan (pdf.js in the browser): the roof cut out and turned like the plan
       if (!L.plot.box) return; var PB = window.PDFJS_BASE || 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/'; new Function('u', 'return import(u)')(PB + 'pdf.min.mjs').then(async function (pj) {
         pj.GlobalWorkerOptions.workerSrc = PB + 'pdf.worker.min.mjs';

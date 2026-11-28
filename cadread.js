@@ -183,6 +183,15 @@ export function toFeet(R, P) {
   if (WL && P.mmPx) (P.rooms || []).forEach(rb => { let x = ft(rb[0] - ox), y = ft(rb[1] - oy), w = ft(rb[2] - rb[0]), d = ft(rb[3] - rb[1]);   // 345: rooms found in the drawing's walls that Claude didn't name
     const ov = b => Math.max(0, Math.min(x + w, b.x + b.w) - Math.max(x, b.x)) * Math.max(0, Math.min(y + d, b.y + b.d) - Math.max(y, b.y)); if (blocks.some(b => ov(b) > 0.3 * Math.min(w * d, b.w * b.d))) return;
     x = Math.max(0, x); y = Math.max(0, y); w = Math.min(W - x, w); d = Math.min(D - y, d); if (w >= 3 && d >= 3) blocks.push({ type: 'room', x, y, w, d, door: null, h: null, found: true }); });
+  // 347 (owner): floor levels — areas marked LVL+350MM / LVL-420MM. Claude gives the area, the drawing's own LVL text gives / checks the number;
+  // a level that is a walled block (a sunken room / area) goes on that block, the rest are raised / sunken floors; the main floor = 0
+  const LT = (P.labels || []).map(l => { const m = /LVL\s*([+\-−]?)\s*(\d{1,4}(?:\.\d+)?)\s*(MM|M)?/i.exec(l.t || ''); if (!m) return null; let v = +m[2]; if (/^M$/i.test(m[3] || '') || v < 5 && /\./.test(m[2])) v *= 1000; return { mm: (m[1] === '-' || m[1] === '−' ? -1 : 1) * v, x: ft(X(+l.x) - ox), y: ft(Y(+l.y) - oy) }; }).filter(Boolean);
+  let levels = (Array.isArray(R.levels) ? R.levels : []).filter(v => Array.isArray(v.box) && v.box.length === 4 && isFinite(+v.mm)).map(v => { const q = rect(v.box); let x = Math.max(0, ft(q[0] - ox)), y = Math.max(0, ft(q[1] - oy)), w = Math.min(W - x, ft(q[2] - q[0])), d = Math.min(D - y, ft(q[3] - q[1]));
+    const lb = LT.find(l => l.x >= x && l.x <= x + w && l.y >= y && l.y <= y + d); return { x, y, w, d, mm: lb ? lb.mm : Math.round(+v.mm) }; }).filter(v => v.w >= 2 && v.d >= 2);
+  const big = levels.find(v => v.w * v.d > 0.55 * W * D); if (big) { const b0 = big.mm; levels = levels.filter(v => v !== big).map(v => Object.assign(v, { mm: v.mm - b0 })); LT.forEach(l => { l.mm -= b0; }); }
+  blocks.forEach(b => { if (!/room|toilet|penthouse/.test(b.type)) return; const lb = LT.find(l => l.x >= b.x && l.x <= b.x + b.w && l.y >= b.y && l.y <= b.y + b.d); if (lb && lb.mm) b.lvl_mm = lb.mm; });
+  for (let i = blocks.length - 1; i >= 0; i--) { const b = blocks[i]; if (b.type === 'room' && b.lvl_mm) { blocks.splice(i, 1); if (!levels.some(v => Math.abs(v.x - b.x) < 2 && Math.abs(v.y - b.y) < 2)) levels.push({ x: b.x, y: b.y, w: b.w, d: b.d, mm: b.lvl_mm }); } }   /* a walled area marked LVL is a lower / higher part of the open roof, not a room with a roof on it */
+  levels = levels.filter(v => { const k = blocks.find(b => Math.max(0, Math.min(v.x + v.w, b.x + b.w) - Math.max(v.x, b.x)) * Math.max(0, Math.min(v.y + v.d, b.y + b.d) - Math.max(v.y, b.y)) > 0.5 * Math.min(v.w * v.d, b.w * b.d)); if (k) { if (v.mm && k.lvl_mm == null) k.lvl_mm = v.mm; return false; } return Math.abs(v.mm) >= 20; }).slice(0, 8);
   let outline = null;
   if (WL && P.mmPx) { const i12 = v => Math.round(v * fpx * 12) / 12; outline = WL.map(q => [i12(q[0] - ox), i12(q[1] - oy)]);
     // a stairs room / room / lift on the roof's edge (open on the outside in the drawing) stays part of the roof
@@ -192,5 +201,5 @@ export function toFeet(R, P) {
       if (U.length >= 4) outline = U.map(q => [Math.round(q[0] / G * 12) / 12, Math.round(q[1] / G * 12) / 12]); } }
   else if (Array.isArray(R.outline) && R.outline.length >= 4) { outline = R.outline.map(p => [ft(snap(X(+p[0]), 'v', Y(+p[1]) - tol, Y(+p[1]) + tol) - ox), ft(snap(Y(+p[1]), 'h', X(+p[0]) - tol, X(+p[0]) + tol) - oy)]).map(p => [Math.max(0, Math.min(W, p[0])), Math.max(0, Math.min(D, p[1]))]); }
   return { ok: true, page: P.page, plot: { w_ft: W, d_ft: D, box: [pr[0] / P.W, pr[1] / P.H, pr[2] / P.W, pr[3] / P.H].map(v => +v.toFixed(4)), road: R.plot.road || 'bottom', road2: R.plot.road2 || null, north: R.plot.north || null, parapet_ft: +R.plot.parapet_ft || null },
-    outline, traced: !!(WL && P.mmPx), cuts: [], blocks, tanks: !!R.tanks_on_stairs, proposed: R.proposed || [], scale: P.mmPx ? 'dimensions' : 'read' };
+    outline, traced: !!(WL && P.mmPx), cuts: [], blocks, levels, tanks: !!R.tanks_on_stairs, proposed: R.proposed || [], scale: P.mmPx ? 'dimensions' : 'read' };
 }
