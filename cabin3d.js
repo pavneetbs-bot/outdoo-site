@@ -147,7 +147,7 @@ function build(c, lay, opts) {
     for (const r of runs) { const lb = label(r.t, Math.min(3.8, Math.max(2.8, r.e - r.a - 0.4))), [lx, lz] = sf.at((r.a + r.e) / 2, T / 2 + 0.16); lb.position.set(lx, 4.4, lz);
       lb.rotation.y = side === 'front' ? 0 : side === 'back' ? Math.PI : side === 'right' ? Math.PI / 2 : -Math.PI / 2; labels.add(lb); }
     { const [ox, oz] = sf0.at(0, 0), [ix, iz] = sf0.at(0, -1), fi = Math.abs(ix - ox) > Math.abs(iz - oz) ? (ix > ox ? 0 : 1) : (iz > oz ? 4 : 5), PM = mat('puf');   // 331 (owner): the wall finish / shade is outside only — the face looking into the cabin stays plain PUF
-      wg.children.forEach(o => { if (!o.isMesh || o.material !== WM) return; o.userData.inF = fi; if (WM !== PM) o.material = [0, 1, 2, 3, 4, 5].map(i => i === fi ? PM : WM); }); }
+      wg.children.forEach(o => { if (!o.isMesh || o.material !== WM) return; o.userData.inF = fi; if (S0) o.userData.par = 1; if (WM !== PM) o.material = [0, 1, 2, 3, 4, 5].map(i => i === fi ? PM : WM); }); }
   }
   // roof (+ lights on the ceiling: always included) and false ceiling
   const roof = new THREE.Group(); roof.name = 'roof'; g.add(roof);
@@ -432,7 +432,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=128').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=131').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }

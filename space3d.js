@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=118';
-import { pergolaModel } from './pergola3d.js?v=105';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=121';
+import { pergolaModel } from './pergola3d.js?v=108';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -397,11 +397,13 @@ function mFinMat(k, bg, fg, cov, rp) {   // 322: vertical fins — bg panel with
 const TEAKF = ['#A06C46', '#8A5B3B', '#6A452C'], BLKF = ['#2E2E2E', '#3A3A3A', '#1C1C1C'];
 // 331 (owner: "andar fluted panel / dark kyu, andar ka theme nahi bola"): a cabin theme dresses only the OUTSIDE — every outer wall keeps its plain inside face, and theme decor added inside the cabin is taken out
 function themeOut(g, fn) {
+  const orig = new Map(); g.traverse(o => { if (o.isMesh && o.userData.par) orig.set(o, o.material); });   /* 334 (owner): a wall against the parapet stays plain — the theme dresses only the open sides */
   const was = new Map(), pre = new Set(), inF = new Map(); g.updateMatrixWorld(true); g.traverse(o => { pre.add(o); if (!o.isMesh) return; if (o.userData.inF != null) { inF.set(o, o.userData.inF); if (Array.isArray(o.material)) { const a = o.material; o.material = a[o.userData.inF ^ 1]; was.set(o, a[o.userData.inF]); return; } } was.set(o, o.material); });   /* cabin3d marks each wall's inside face (inF); a finished wall comes as [6 materials] — the theme sees its outside one */
   fn(g); g.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), bx = o => new THREE.Box3().setFromObject(o).applyMatrix4(inv), W = [], body = new THREE.Box3();
   g.traverse(o => { if (o.isMesh && inF.has(o) && !Array.isArray(o.material)) { const f = inF.get(o), out = o.material; o.material = [0, 1, 2, 3, 4, 5].map(i => i === f ? was.get(o) : out); } });   /* outer walls cabin3d marked: inside face back to plain */
   g.traverse(o => { if (!o.isMesh || !pre.has(o) || inF.has(o) || o.material === was.get(o) || Array.isArray(o.material) || !o.geometry || o.geometry.type !== 'BoxGeometry') return; const b = bx(o), sx = b.max.x - b.min.x, sz = b.max.z - b.min.z, sy = b.max.y - b.min.y; if (sy < 1 || Math.min(sx, sz) > 0.5 || Math.max(sx, sz) < 0.3) return; W.push([o, b, sx < sz ? 'x' : 'z']); body.union(b); });
+  orig.forEach((m, o) => { o.material = m; });
   inF.forEach((f, o) => body.union(bx(o))); if (body.isEmpty()) return; const C = body.getCenter(new THREE.Vector3());
   W.forEach(([o, b, ax]) => { const inner = was.get(o), mid = (b.min[ax] + b.max[ax]) / 2, inward = C[ax] > mid ? 1 : -1;   /* the face that looks into the cabin */
     if (Math.abs(C[ax] - mid) < 0.3) return;   /* a wall through the middle (a partition) — leave it */
@@ -1084,7 +1086,7 @@ function pgO(it) {   // 193g: the pergola as set up in its designer (finish, col
   return { l: it.w, w: it.d, height: String(+it.h || 8), colour: c.colour || 'Black', material: c.material, cover: gv(/roof|cover/i), layout: gv(/layout/i) };
 }
 function model(it, P) {   // the inner model, footprint w × d from (0, 0) to (w, d)
-  if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { let c0 = P.cabinCfg(it), l0 = P.cabinLay(it); if (themeKey() === 'tropical') { c0 = Object.assign({}, c0, { shades: [{ name: 'TropGrey', hex: '#6E6C68' }].concat(c0.shades || []) }); l0 = Object.assign({}, l0, { wall_fin: { front: { shade: 'TropGrey' }, back: { shade: 'TropGrey' }, right: { shade: 'TropGrey' }, left: { fin: 'wpc' } } }); }   // 292: tropical cabin = grey textured walls + a dark-wood clad side
+  if (it.cat === 'cabin' && P.cabinCfg && P.cabinCfg(it)) { let c0 = P.cabinCfg(it), l0 = P.cabinLay(it); if (themeKey() === 'tropical') { c0 = Object.assign({}, c0, { shades: [{ name: 'TropGrey', hex: '#6E6C68' }].concat(c0.shades || []) }); { const sl = l0.sill || {}, wf = {}; [['front', { shade: 'TropGrey' }], ['back', { shade: 'TropGrey' }], ['right', { shade: 'TropGrey' }], ['left', { fin: 'wpc' }]].forEach(([k, v]) => { if (!(+sl[k] > 0)) wf[k] = v; else wf[k] = Object.assign({}, (P.cabinLay(it).wall_fin || {})[k] || {}, { shade: (((P.cabinLay(it).wall_fin || {})[k] || {}).shade) || ((P.cabinCfg(it).shades || [])[0] || {}).name || 'none' }); }); l0 = Object.assign({}, l0, { wall_fin: wf }); } }   /* 334: walls on the parapet keep their plain shade */   // 292: tropical cabin = grey textured walls + a dark-wood clad side
     const b = cabinModel(c0, l0); { const lb = b.g.getObjectByName('labels'); if (lb) lb.visible = false; } { const tk = themeKey(), fn = { tropical: tropCabin, turkish: turCabin, santorini: santCabin, modern: modCabin, boho: bohoCabin }[tk]; if (fn) themeOut(b.g, fn); } const h = new THREE.Group(); b.g.position.y = 0.6; h.add(b.g); return h; }   // 253: no "Wall / Swing door" tags in the plan
   if (it.cat === 'pergola' && !it.cfgId && !it.pick && !P.fullPergola) {   // 245 (owner): in the plan a light, simple pergola — 4 slim posts, a frame, thin rafters; the chosen design shows in full
     const h = new THREE.Group(), y0 = it.deck ? 0.6 : 0, H = (+it.h || 8), w = +it.w, d = +it.d, TW = themeKey() === 'tropical', fm = (THEMES[THEME] || {}).pot != null ? mat('c_pgs_' + THEME, THEMES[THEME].frame, { metalness: THEMES[THEME].metal ? 0.55 : TW ? 0.02 : 0.3, roughness: TW ? 0.8 : 0.5 }) : mat('c_pgs', 0x2F2F2F, { metalness: 0.35, roughness: 0.5 }), sp = Math.max(w, d) > 16 ? 3 : 2;   // 274: the theme's frame
