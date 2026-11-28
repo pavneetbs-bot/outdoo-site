@@ -91,7 +91,7 @@ function bayOf(c, k) { return (c.bays || []).find(b => b.key === k) || null; }
 function spanOf(c, k) { const b = bayOf(c, k); return b ? Math.max(Math.trunc(+b.span || 1), 1) : 1; }
 
 function build(c, lay, opts) {
-  const g = new THREE.Group(), L = +lay.L, W = +lay.W, H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = +(c.bay || 4), FM = frameMat(lay), T = 0.25, DH = lay.full_doors ? H : 8;
+  const g = new THREE.Group(), L = +lay.L, W = +lay.W, H = /^10/.test(lay.height || '') ? 10 : 8.5, bay = +(c.bay || 4), FM = frameMat(lay), T = /75/.test(String(lay.panel || '')) ? 0.246 : 0.164, TI = lay.ip75 || +((lay.items || {}).ipanel75) > 0 ? 0.246 : 0.164, DH = lay.full_doors ? H : 8;   // 327 (owner): PUF walls 50 mm (75 mm upgrade) inside the outer line; inside walls TI
   const tracks = Math.max(2, parseInt(lay.tracks || '2', 10) || 2);
   if (opts && opts.bare) {} else if (opts && opts.site && opts.site.kind === 'terrace') terrace(g, L, W, opts.site); else if (opts && opts.studio) { studio(g, L, W, lay, c); if (opts.look && opts.look.items && opts.look.items.length) { const lg = new THREE.Group(); lg.position.y = -0.6; g.add(lg); aroundOn(lg, { around: opts.look.items, nolab: true }, 0); } } else site(g, L, W);   // 299: Complete the look round the cabin   // 192: bare = the cabin alone (space planner)
   box(g, L + 0.6, 0.6, W + 0.6, L / 2, -0.3, W / 2, mat('deck')).userData.under = 1;
@@ -105,7 +105,7 @@ function build(c, lay, opts) {
   const wallOf = {};
   for (const side of SIDES) {
     const wg = new THREE.Group(); wg.name = 'wall-' + side; walls.add(wg); wallOf[side] = wg;
-    const ks = (lay.walls || {})[side] || [], len = side === 'front' || side === 'back' ? L : W, sf = sideFrame(side, L, W);
+    const ks = (lay.walls || {})[side] || [], len = side === 'front' || side === 'back' ? L : W, sf0 = sideFrame(side, L, W), sf = { at: (u, o) => sf0.at(u, o - T / 2), along: sf0.along };   // 327: the wall stands inside the cabin's outer line
     const sh = shadeHex(c, lay, side), WM = sh === 'wpc' ? mat('wpc') : sh ? mat(sh) : mat('puf');   // 188: wall finish / shade
     const S0 = Math.max(0, +((lay.sill || {})[side]) || 0);   // 302 (owner): a side on the parapet rests on it — frame, glass and wall start at the parapet top
     let prevSolid = false, prevGl = false; const runs = [], wide = Array.isArray(lay.wide) && lay.wide.includes(side), gRuns = [];   // 269 (owner): a wide side = one long glass run with MS posts every ~10 ft
@@ -177,8 +177,8 @@ function build(c, lay, opts) {
     const pgp = new THREE.Group(); pgp.userData = { pl: n }; placesG.add(pgp); const g0 = g; { const g = pgp;   // eslint-disable-line no-shadow
     if (it.unit === 'rft') {
       const m = p.key === 'gpart' ? mat('glass') : p.key === 'fpart' ? mat('frost') : mat('pufIn'), len = +p.len || 1;
-      if (p.rot === 90) box(g, 0.2, H, len, p.x + 0.1, H / 2, p.y + len / 2, m); else box(g, len, H, 0.2, p.x + len / 2, H / 2, p.y + 0.1, m);
-      if (p.rot === 90) box(g, 0.2, 0.1, len, p.x + 0.1, H - 0.05, p.y + len / 2, FM); else box(g, len, 0.1, 0.2, p.x + len / 2, H - 0.05, p.y + 0.1, FM);
+      if (p.rot === 90) box(g, TI, H, len, p.x + TI / 2, H / 2, p.y + len / 2, m); else box(g, len, H, TI, p.x + len / 2, H / 2, p.y + TI / 2, m);
+      if (p.rot === 90) box(g, TI + 0.02, 0.1, len, p.x + TI / 2, H - 0.05, p.y + len / 2, FM); else box(g, len, 0.1, TI + 0.02, p.x + len / 2, H - 0.05, p.y + TI / 2, FM);
       return;
     }
     const f0 = FOOT[p.key]; if (!f0) return; const f = [+p.w || f0[0], +p.d || f0[1]];   // 188: rooms can be bigger
@@ -186,9 +186,14 @@ function build(c, lay, opts) {
     if (p.key === 'pantry') { box(g, w, 3, d, cx, 1.5, cz, mat('counter')); box(g, w, 0.1, d, cx, 3.05, cz, mat('white')); box(g, 1.4, 0.15, 1, cx, 3.1, cz, mat('steel')); }
     else if (p.key === 'pdoor' || p.key === 'gdoorp') box(g, w, 7, d, cx, 3.5, cz, p.key === 'gdoorp' ? mat('glass') : mat(0xD9D4CB));
     else {   // toilet / WC room: frosted walls, WC + basin
-      const fw = (x0, z0, x1, z1) => box(g, Math.max(Math.abs(x1 - x0), 0.15), 7.5, Math.max(Math.abs(z1 - z0), 0.15), (x0 + x1) / 2, 3.75, (z0 + z1) / 2, mat('frost'));
-      const x0 = p.x, z0 = p.y, x1 = p.x + w, z1 = p.y + d;
-      if (x0 > 0.3) fw(x0, z0, x0, z1); if (x1 < L - 0.3) fw(x1, z0, x1, z1); if (z0 > 0.3) fw(x0, z0, x1, z0); if (z1 < W - 0.3) fw(x0, z1, x1 - 2.4, z1);
+      const x0 = p.x, z0 = p.y, x1 = p.x + w, z1 = p.y + d, wh = Math.min(7.5, H - 0.3);   // 327 (owner): PUF walls TI thick inside the room's footprint, only where it doesn't share the cabin wall or a partition
+      const fw = (ax, az, bx, bz) => box(g, Math.max(bx - ax, 0.02), wh, Math.max(bz - az, 0.02), (ax + bx) / 2, wh / 2, (az + bz) / 2, mat('pufIn'));
+      const tol = 0.12, sd = { l: x0 > T + tol, r: x1 < L - T - tol, b: z0 > T + tol, f: z1 < W - T - tol };
+      for (const o of lay.places || []) { if (o === p || !/part$/.test(o.key)) continue; const ol = +o.len || 1, ox0 = o.x, oz0 = o.y, ox1 = o.rot === 90 ? o.x + TI : o.x + ol, oz1 = o.rot === 90 ? o.y + ol : o.y + TI;
+        if (Math.min(z1, oz1) - Math.max(z0, oz0) > Math.min(d, 2) * 0.8) { if (Math.abs(ox1 - x0) < tol) sd.l = false; if (Math.abs(ox0 - x1) < tol) sd.r = false; }
+        if (Math.min(x1, ox1) - Math.max(x0, ox0) > Math.min(w, 2) * 0.8) { if (Math.abs(oz1 - z0) < tol) sd.b = false; if (Math.abs(oz0 - z1) < tol) sd.f = false; } }
+      const dg = Math.min(2.4, w * 0.6);
+      if (sd.l) fw(x0, z0, x0 + TI, z1); if (sd.r) fw(x1 - TI, z0, x1, z1); if (sd.b) fw(x0, z0, x1, z0 + TI); if (sd.f) { fw(x0, z1 - TI, x1 - dg, z1); box(g, dg, 0.6, TI, x1 - dg / 2, wh - 0.3, z1 - TI / 2, mat('pufIn')); box(g, dg - 0.2, 6.6, 0.12, x1 - dg / 2, 3.35, z1 - TI / 2, mat(0xD9D4CB)); }
       box(g, 1.2, 1.4, 1.8, x0 + 0.9, 0.7, z0 + 1.2, mat('white')); box(g, 1.6, 0.4, 1.2, x1 - 1.0, 2.8, z0 + 0.8, mat('white'));
     }
     void g0; }
@@ -424,7 +429,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=119').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=120').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
