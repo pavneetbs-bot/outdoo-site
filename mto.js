@@ -2861,16 +2861,16 @@
   function lookGeo() {   // the design's footprint and what stands round it (walls), for the 2D and the clash rules
     var h = lookHost(), x = PRODS[S.id], m = x.cz, o = S.o, nm = short(x.n), G;
     if (h === 'pergola') { var q = pgOpts(), wl = /wall/i.test(String(q.layout || '')), L = +q.l || 12, W = +q.w || 10;
-      G = { kind: 'pergola', L: L, W: W, o2: { wall: wl }, solid: [], soft: { x: 0, z: 0, w: L, d: W }, walls: wl ? [{ x: -12, z: -1.35, w: L + 24, d: 0.3 }] : [], zmin: wl ? -1.05 : null }; }
+      G = { kind: 'pergola', L: L, W: W, o2: { wall: wl }, solid: [], soft: { x: 0, z: 0, w: L, d: W }, walls: wl ? [{ x: -5, z: -0.805, w: L + 10, d: 0.75, lab: 'Wall' }] : [], zmin: wl ? -0.05 : null }; }   /* 325: where pergola3d's studio wall stands (flush behind the pergola) */
     else if (h === 'cabin') { var lay = o.layout || {}, L2 = num(lay.L) || 12, W2 = num(lay.W) || 10, cc = m.cabin || {}, psd = arr(lay.proj && lay.proj.sides), fl = !!(lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = fl ? 0.3 : (psd.indexOf('back') >= 0 || psd.indexOf('left') >= 0 ? num(cc.proj && cc.proj.depth) || 1.5 : 0) + 1.25;   /* 314: the parapet behind + on the left, where the 3D studio has it (cabin3d studio) */
-      G = { kind: 'cabin', L: L2, W: W2, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L2, d: W2 }], walls: [{ x: -gp - 0.75, z: -gp - 0.75, w: L2 + gp + 12.75, d: 0.75, lab: 'Parapet' }, { x: -gp - 0.75, z: -gp - 0.75, w: 0.75, d: W2 + gp + 12.75, lab: 'Parapet' }], zmin: -gp, xmin: -gp }; }
+      G = { kind: 'cabin', L: L2, W: W2, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L2, d: W2 }], walls: [{ x: -gp - 0.75, z: -gp - 0.75, w: L2 + gp + 12.75, d: 0.75, lab: 'Parapet · 3 ft' }, { x: -gp - 0.75, z: -gp - 0.75, w: 0.75, d: W2 + gp + 12.75, lab: 'Parapet · 3 ft' }], zmin: -gp, xmin: -gp }; }
     else if (h === 'fw') { var L3 = num(o.w) || 8; G = { kind: 'wall', L: L3, W: 0.6, o2: { wall: true, thin: true }, solid: [{ x: 0, z: 0, w: L3, d: 0.6 }], walls: [{ x: -12, z: -0.4, w: L3 + 24, d: 0.4 }], zmin: 0 }; }
     else if (h === 'bar') { var L4 = num(o.l) || 8; G = { kind: 'bar', L: L4, W: 6, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L4, d: 2.4 }], walls: [{ x: -12, z: -3.3, w: L4 + 24, d: 0.3 }], zmin: -3 }; }
     else if (h === 'water') { var wi = wtrItem(x, m, o), wall = !/^MTO-TG-/.test(S.id) && !wi.wo.duo, L5 = wi.w + (wi.wo.greens ? 4.2 : 0);
       G = { kind: 'water', L: L5, W: wi.d, o2: { wall: wall }, solid: [{ x: 0, z: 0, w: L5, d: wi.d }], walls: wall ? [{ x: -12, z: -0.4, w: L5 + 24, d: 0.4 }] : [], zmin: wall ? 0 : null }; }
     else if (h === 'screen') { var L6 = Math.min(60, num(o.w) || 8), pw = /parapet|boundary|face/.test(scrPlace(S.id, m, o));
       G = { kind: 'wall', L: L6, W: 0.6, o2: { wall: true, thin: true }, solid: [{ x: 0, z: 0, w: L6, d: 0.6 }], walls: pw ? [{ x: -12, z: -0.4, w: L6 + 24, d: 0.4 }] : [], zmin: pw ? 0 : null }; }
-    else if (h === 'furn') { var fs = fnSize(m), gb = /-T$/.test(S.id) || /table/i.test(x.n) ? 2.2 : 1.3; G = { kind: 'furn', L: fs.L, W: fs.W, o2: {}, solid: [{ x: 0, z: 0, w: fs.L, d: fs.W }], walls: [{ x: -3.35, z: -gb - 0.75, w: Math.max(fs.L + 9, 13) + 0.75, d: 0.75, lab: 'Parapet' }, { x: -3.35, z: -gb, w: 0.75, d: Math.max(fs.W + 8, 11), lab: 'Parapet' }], zmin: -gb, xmin: -2.6 }; }   /* 314: furn3d furnStudio's corner */   // 310
+    else if (h === 'furn') { var fs = fnSize(m), gb = /-T$/.test(S.id) || /table/i.test(x.n) ? 2.2 : 1.3; G = { kind: 'furn', L: fs.L, W: fs.W, o2: {}, solid: [{ x: 0, z: 0, w: fs.L, d: fs.W }], walls: [{ x: -3.35, z: -gb - 0.75, w: Math.max(fs.L + 9, 13) + 0.75, d: 0.75, lab: 'Parapet · 3 ft' }, { x: -3.35, z: -gb, w: 0.75, d: Math.max(fs.W + 8, 11), lab: 'Parapet · 3 ft' }], zmin: -gb, xmin: -2.6 }; }   /* 314: furn3d furnStudio's corner */   // 310
     else if (h === 'planter') {   // the pieces along the corner's two walls (lookCorner / space3d cornerStudio)
       var its = lookPlanterIts(), GAP = 0.35, IN = 0.25, nb = /-CW$/.test(S.id) ? its.length : Math.ceil(its.length / 2), bx = IN, D0 = 0, sz = 0, sol = [];
       its.forEach(function (i) { D0 = Math.max(D0, i.d); });
@@ -2963,7 +2963,7 @@
     h += '<rect x="' + (V.x - 50) + '" y="' + (V.z - 50) + '" width="' + (V.w + 100) + '" height="' + (V.h + 100) + '" fill="#FAF8F4"/><rect x="' + (V.x - 50) + '" y="' + (V.z - 50) + '" width="' + (V.w + 100) + '" height="' + (V.h + 100) + '" fill="url(#lk2g)"/>';
     G.walls.forEach(function (w) { h += '<rect x="' + w.x + '" y="' + w.z + '" width="' + w.w + '" height="' + w.d + '" fill="url(#lk2h)" stroke="#5E574E" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     G.walls.forEach(function (w) { if (!w.lab) return; var fz = 10 / ppf, hz = w.w >= w.d, cx = hz ? Math.max(w.x, V.x) + 4 : w.x - fz * 0.5, cz = hz ? w.z - fz * 0.5 : Math.max(w.z, V.z) + 4;   /* 314 */
-      h += '<text x="' + cx + '" y="' + cz + '" font-size="' + fz + '" fill="#5E574E" font-weight="700"' + (hz ? '' : ' transform="rotate(90 ' + cx + ' ' + cz + ')"') + '>' + esc(w.lab) + ' · 3 ft</text>'; });
+      h += '<text x="' + cx + '" y="' + cz + '" font-size="' + fz + '" fill="#5E574E" font-weight="700"' + (hz ? '' : ' transform="rotate(90 ' + cx + ' ' + cz + ')"') + '>' + esc(w.lab) + '</text>'; });
     if (G.kind === 'cabin') h += lk2Cabin(ppf);
     else if (G.kind === 'pergola') { h += '<rect x="0" y="0" width="' + G.L + '" height="' + G.W + '" fill="rgba(46,46,46,.06)" stroke="#2E2E2E" stroke-width="2" vector-effect="non-scaling-stroke"/>';
       for (var rx = 1.2; rx < G.L - 0.3; rx += 1.2) h += '<path d="M' + rx + ' 0V' + G.W + '" stroke="#2E2E2E" stroke-opacity=".14" stroke-width="1" vector-effect="non-scaling-stroke"/>';
