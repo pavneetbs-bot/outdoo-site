@@ -953,6 +953,7 @@
       h += wzCards(WZ_SIZES.map(function (z) { return [z[0], z[0], z[1] + ' × ' + z[2] + ' ft · ' + z[3]]; }), (WZ_SIZES.filter(function (z) { return z[1] === num(lay.L) && z[2] === num(lay.W); })[0] || [''])[0], 'data-wzsize',
         function (z) { var zz = WZ_SIZES.filter(function (y) { return y[0] === z[0]; })[0]; return wzTry(c, lay, function (l2) { l2.L = zz[1]; l2.W = zz[2]; wzBuild(c, l2, w); }); });
       var stp = function (key, lbl, lo, hi2) { return '<div class="wz-row" style="cursor:default"><span><b>' + lbl + '</b><small>' + lo + '–' + hi2 + ' ft · now ' + fi(lay[key]) + '</small></span><span class="wz-stp"><button type="button" class="wz-pm" data-cstep="' + key + ':-1" aria-label="' + lbl + ' less"' + (num(lay[key]) <= lo ? ' disabled' : '') + '>−</button><input type="number" inputmode="numeric" min="' + lo + '" max="' + hi2 + '" step="1" data-cdim="' + key + '" value="' + num(lay[key]) + '" aria-label="' + lbl + ' in feet"><button type="button" class="wz-pm" data-cstep="' + key + ':1" aria-label="' + lbl + ' more"' + (num(lay[key]) >= hi2 ? ' disabled' : '') + '>+</button></span></div>'; };
+      if (DS_SOLO && S.studio && !S.site) h += '<p class="wz-lbl">Where it stands</p><div class="wz-tabs"><button type="button" data-cbpar="1" class="' + (o.cpar ? 'on' : '') + '">Against the parapet</button><button type="button" data-cbpar="0" class="' + (o.cpar ? '' : 'on') + '">Away from the parapet</button></div><p class="wz-sub" style="margin-top:4px">' + (o.cpar ? 'Back and left walls stand on the 3 ft parapet — glass and walls start at its top, no door on those sides, no projection there' : 'A walkway is left between the cabin and the parapet') + '</p>';   /* 314 */
       h += '<p class="wz-lbl">Exact size</p>' + stp('L', 'Length', num(c.L && c.L.min) || 8, num(c.L && c.L.max) || 40) + stp('W', 'Width', num(c.W && c.W.min) || 8, num(c.W && c.W.max) || 20);
     } else if (st === 0) {
       h += wzCards(WZ_GLASS, w.glass, 'data-wzglass', function (g) { return wzTry(c, lay, function (l2) { wzBuild(c, l2, withW({ glass: g[0] })); }); },
@@ -961,7 +962,7 @@
     } else if (st === 2) {
       h += wzCards(WZ_DOORS, w.door, 'data-wzdoor', function (d) { return wzTry(c, lay, function (l2) { wzBuild(c, l2, withW({ door: d[0] })); if (!l2.walls[w.side].some(function (k) { var b = cbBay(c, k); return b && b.door && cbSpan(c, k) === cbSpan(c, wzDoorKey(c, d[0], true)); })) l2.L = -1; }); },
         function (d) { var l2 = cbClone(lay); l2.L = 12; l2.W = 10; wzBuild(c, l2, withW({ door: d[0], side: 'front', windows: 0, rooms: false, toilet: false, wc: false, pantry: false })); return mini(l2); });
-      h += '<p class="wz-lbl">Which wall?</p><div class="wz-tabs">' + WZ_SIDES.map(function (sd) { return '<button type="button" data-wzdside="' + sd[0] + '" class="' + (sd[0] === w.side ? 'on' : '') + '">' + sd[1] + '</button>'; }).join('') + '</div>';
+      h += '<p class="wz-lbl">Which wall?</p><div class="wz-tabs">' + WZ_SIDES.map(function (sd) { return '<button type="button" data-wzdside="' + sd[0] + '" class="' + (sd[0] === w.side ? 'on' : '') + '"' + (o.cpar && DS_SOLO && S.studio && (sd[0] === 'back' || sd[0] === 'left') ? ' disabled title="On the parapet — no door here"' : '') + '>' + sd[1] + '</button>'; }).join('') + '</div>';
       // 188: doors on more walls
       h += '<p class="wz-lbl">More doors</p>';
       arr(w.more).forEach(function (md, mi) {
@@ -1057,6 +1058,7 @@
   function cqMore() { return S && S.studio && !S.siteEd && S.wz && !S.wz.adv && S.wz.step < 6 && S.cqSt === S.wz.step && (S.cqN || 0) > 1 && (S.cq || 0) < S.cqN - 1; }
   function wzClick(t) {   // returns true when it handled the click
     var c = PRODS[S.id].cz.cabin, lay = S.o.layout, w = S.wz, k;
+    if ((k = t.getAttribute('data-cbpar')) != null) { S.o.cpar = k === '1'; S.v3 = null; return true; }   /* 314: against the parapet / away from it */
     if ((k = t.getAttribute('data-wzgo')) != null) { if (S.studio && +k > Math.max(w.max || 0, w.step)) return true; if (S.siteEd) { S.siteEd = false; S.siteDone = true; } w.step = +k; w.adv = false; S.psel = null; S.v3 = null; return true; }
     if ((k = t.getAttribute('data-wzv')) != null) { S.v3 = k; return true; }
     if ((k = t.getAttribute('data-wztpl')) != null) { var tp = arr(c.templates).filter(function (x) { return x.code === k; })[0]; if (tp) { var keep = { step: w.step }; S.o.layout = lay = cbClone(tp.layout); cbDefaults(c, lay); S.wz = wzRead(c, lay); S.wz.step = keep.step; S.wz.adv = false; S.tpl = k; S.v3 = '3d'; S.sel3 = null; S.psel = null; if (S.pdp) S.furn = furnGuess(PRODS[S.id]); } return true; }
@@ -1634,6 +1636,7 @@
 
   function draw() {
     if (S.lkChild) { if (CU.open) cuDraw(); return; }   // 299: a Complete the look piece's own customiser — never the product page under it
+    if (PRODS[S.id] && PRODS[S.id].cz && PRODS[S.id].cz.unit === 'cabin') cbParFix(PRODS[S.id].cz, S.o);   /* 314 */
     if (S.pdp) return drawPdp();   // 159: Made to Order on the regular product page
     var x = PRODS[S.id], m = x.cz, o = S.o, u = m.unit, uw = UW(u), imgs = gal(S.id);
     var mats = arr(m.materials).filter(function (y) { return String(y.name || '').trim(); }), mat = mats.filter(function (y) { return y.name === o.material; })[0] || mats[0];
@@ -1806,7 +1809,7 @@
   }
   function onClick(e) {
     var lt = e.target.closest && e.target.closest('[data-lko],[data-lkr],[data-lkn],[data-lks],[data-lke]'); if (lt && S && !S.lkChild && lookClick(lt)) return;   // 299: Complete the look in the cabin studio
-    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit],[data-pl],[data-dragpl],[data-pact],[data-wzgo],[data-wzadv],[data-wzside],[data-wp],[data-wzpiece],[data-wzsize],[data-wzglass],[data-wzdoor],[data-wzdside],[data-wzwin],[data-cchk],[data-wzv],[data-cstep],[data-wztrk],[data-wzpj],[data-wzpd],[data-wzpt],[data-wzpu],[data-wzgut],[data-wztpl],[data-ts],[data-wzmadd],[data-wzmd],[data-wzms],[data-wzmx],[data-wzdl],[data-wzws],[data-wzwf],[data-wzsh],[data-wzshall]'); if (!t || !S) return;
+    var t = e.target.closest('[data-act],[data-size],[data-col],[data-img],[data-open],[data-n],[data-bay],[data-bk],[data-cch],[data-cit],[data-pl],[data-dragpl],[data-pact],[data-wzgo],[data-wzadv],[data-wzside],[data-wp],[data-wzpiece],[data-wzsize],[data-wzglass],[data-wzdoor],[data-wzdside],[data-wzwin],[data-cchk],[data-wzv],[data-cstep],[data-wztrk],[data-wzpj],[data-wzpd],[data-wzpt],[data-wzpu],[data-wzgut],[data-wztpl],[data-ts],[data-wzmadd],[data-wzmd],[data-wzms],[data-wzmx],[data-wzdl],[data-wzws],[data-wzwf],[data-wzsh],[data-wzshall],[data-cbpar]'); if (!t || !S) return;
     if (t.hasAttribute('data-ts')) { if (tsClick(t)) draw(); return; }
     var cz0 = (PRODS[S.id] || {}).cz;   // 156: cabin builder
     if (t.getAttribute && t.getAttribute('data-dragged')) { t.removeAttribute('data-dragged'); return; }
@@ -1892,6 +1895,14 @@
   };
   // 259 (owner): a cabin side against a wall is solid (no glass / door there, even an all-glass cabin); doors on the sides asked for
   // spec.solid = { side: [[a, e] ft along that side — front / back from the left end, left / right from the front end]] }, spec.doors = [sides]
+  /* 314 (owner): cabin studio "Against the parapet" — like the planner (302): the back + left sides rest on the 3 ft parapet (sill 2.4 ft above the
+     cabin floor, no door there, no projection there; an all-glass cabin = one long glass run). Away = as before. Runs on every draw, after any change. */
+  function cbParFix(m, o) {
+    var lay = o.layout; if (!lay || !lay.walls || !DS_SOLO || !S.studio || S.site) return; var PS = ['back', 'left'];
+    if (!o.cpar) { if (lay.sill) delete lay.sill; if (lay.wide) delete lay.wide; return; }
+    var pj = lay.proj && arr(lay.proj.sides); if (pj && pj.some(function (sd) { return PS.indexOf(sd) >= 0; })) { var ns = pj.filter(function (sd) { return PS.indexOf(sd) < 0; }); if (!ns.length && m.cabin.proj && m.cabin.proj.required) ns = ['front']; lay.proj = Object.assign({}, lay.proj, { sides: ns }); }
+    var ga = (S.wz && S.wz.glass === 'all') || /GLASS/.test(S.id), l = window.mtoCabinFix(S.id, lay, { nodoor: PS, sill: { back: 2.4, left: 2.4 }, wide: ga ? PS : null }); if (l) o.layout = l;
+  }
   window.mtoCabinFix = function (id, lay, spec) {
     var x = PRODS[id], c = x && x.cz && x.cz.cabin; if (!c || !lay || !lay.walls) return null; var l = cbClone(lay), bay = num(c.bay) || 4;
     var sol = cbBay(c, 'puf') ? 'puf' : (arr(c.bays).filter(function (b) { return b.solid && !b.door; })[0] || arr(c.bays).filter(function (b) { return !b.door; })[0] || {}).key; if (!sol) return null;   // 302: an all-glass cabin has no solid bay — its glass stands in (it used to return nothing, so no wide run / parapet sill)
@@ -2851,14 +2862,15 @@
     var h = lookHost(), x = PRODS[S.id], m = x.cz, o = S.o, nm = short(x.n), G;
     if (h === 'pergola') { var q = pgOpts(), wl = /wall/i.test(String(q.layout || '')), L = +q.l || 12, W = +q.w || 10;
       G = { kind: 'pergola', L: L, W: W, o2: { wall: wl }, solid: [], soft: { x: 0, z: 0, w: L, d: W }, walls: wl ? [{ x: -12, z: -1.35, w: L + 24, d: 0.3 }] : [], zmin: wl ? -1.05 : null }; }
-    else if (h === 'cabin') { var lay = o.layout || {}, L2 = num(lay.L) || 12, W2 = num(lay.W) || 10; G = { kind: 'cabin', L: L2, W: W2, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L2, d: W2 }], walls: [] }; }
+    else if (h === 'cabin') { var lay = o.layout || {}, L2 = num(lay.L) || 12, W2 = num(lay.W) || 10, cc = m.cabin || {}, psd = arr(lay.proj && lay.proj.sides), fl = !!(lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = fl ? 0.3 : (psd.indexOf('back') >= 0 || psd.indexOf('left') >= 0 ? num(cc.proj && cc.proj.depth) || 1.5 : 0) + 1.25;   /* 314: the parapet behind + on the left, where the 3D studio has it (cabin3d studio) */
+      G = { kind: 'cabin', L: L2, W: W2, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L2, d: W2 }], walls: [{ x: -gp - 0.75, z: -gp - 0.75, w: L2 + gp + 12.75, d: 0.75, lab: 'Parapet' }, { x: -gp - 0.75, z: -gp - 0.75, w: 0.75, d: W2 + gp + 12.75, lab: 'Parapet' }], zmin: -gp, xmin: -gp }; }
     else if (h === 'fw') { var L3 = num(o.w) || 8; G = { kind: 'wall', L: L3, W: 0.6, o2: { wall: true, thin: true }, solid: [{ x: 0, z: 0, w: L3, d: 0.6 }], walls: [{ x: -12, z: -0.4, w: L3 + 24, d: 0.4 }], zmin: 0 }; }
     else if (h === 'bar') { var L4 = num(o.l) || 8; G = { kind: 'bar', L: L4, W: 6, o2: { wall: true }, solid: [{ x: 0, z: 0, w: L4, d: 2.4 }], walls: [{ x: -12, z: -3.3, w: L4 + 24, d: 0.3 }], zmin: -3 }; }
     else if (h === 'water') { var wi = wtrItem(x, m, o), wall = !/^MTO-TG-/.test(S.id) && !wi.wo.duo, L5 = wi.w + (wi.wo.greens ? 4.2 : 0);
       G = { kind: 'water', L: L5, W: wi.d, o2: { wall: wall }, solid: [{ x: 0, z: 0, w: L5, d: wi.d }], walls: wall ? [{ x: -12, z: -0.4, w: L5 + 24, d: 0.4 }] : [], zmin: wall ? 0 : null }; }
     else if (h === 'screen') { var L6 = Math.min(60, num(o.w) || 8), pw = /parapet|boundary|face/.test(scrPlace(S.id, m, o));
       G = { kind: 'wall', L: L6, W: 0.6, o2: { wall: true, thin: true }, solid: [{ x: 0, z: 0, w: L6, d: 0.6 }], walls: pw ? [{ x: -12, z: -0.4, w: L6 + 24, d: 0.4 }] : [], zmin: pw ? 0 : null }; }
-    else if (h === 'furn') { var fs = fnSize(m); G = { kind: 'furn', L: fs.L, W: fs.W, o2: {}, solid: [{ x: 0, z: 0, w: fs.L, d: fs.W }], walls: [] }; }   // 310
+    else if (h === 'furn') { var fs = fnSize(m), gb = /-T$/.test(S.id) || /table/i.test(x.n) ? 2.2 : 1.3; G = { kind: 'furn', L: fs.L, W: fs.W, o2: {}, solid: [{ x: 0, z: 0, w: fs.L, d: fs.W }], walls: [{ x: -3.35, z: -gb - 0.75, w: Math.max(fs.L + 9, 13) + 0.75, d: 0.75, lab: 'Parapet' }, { x: -3.35, z: -gb, w: 0.75, d: Math.max(fs.W + 8, 11), lab: 'Parapet' }], zmin: -gb, xmin: -2.6 }; }   /* 314: furn3d furnStudio's corner */   // 310
     else if (h === 'planter') {   // the pieces along the corner's two walls (lookCorner / space3d cornerStudio)
       var its = lookPlanterIts(), GAP = 0.35, IN = 0.25, nb = /-CW$/.test(S.id) ? its.length : Math.ceil(its.length / 2), bx = IN, D0 = 0, sz = 0, sol = [];
       its.forEach(function (i) { D0 = Math.max(D0, i.d); });
@@ -2919,7 +2931,7 @@
   function lk2Say(t) { LK2.msg = t; var m = document.querySelector('.lk2-msg'); if (m) { m.textContent = t; m.classList.toggle('on', !!t); clearTimeout(LK2.mt); LK2.mt = setTimeout(function () { LK2.msg = ''; m.classList.remove('on'); }, 2600); } }
   function lk2View(R, cw, ch) {   // the part of the plan on screen (feet): everything + 2.5 ft, at the zoom and pan
     var G = R.G, x0 = -1.5, z0 = -1.5, x1 = G.L + 1.5, z1 = G.W + 1.5;
-    G.walls.forEach(function (w) { z0 = Math.min(z0, w.z - 0.8); }); R.items.forEach(function (i) { var r = lkR(i); x0 = Math.min(x0, r.x); z0 = Math.min(z0, r.z); x1 = Math.max(x1, r.x + r.w); z1 = Math.max(z1, r.z + r.d); });
+    G.walls.forEach(function (w) { z0 = Math.min(z0, w.z - 0.8); x0 = Math.min(x0, w.x - 0.8); }); R.items.forEach(function (i) { var r = lkR(i); x0 = Math.min(x0, r.x); z0 = Math.min(z0, r.z); x1 = Math.max(x1, r.x + r.w); z1 = Math.max(z1, r.z + r.d); });
     x0 -= 1.5; z0 -= 1.5; x1 += 1.5; z1 += 1.5; var top = 56, bot = LK2.sel ? (LK2.sz ? 190 : 120) : 62, ah = Math.max(80, ch - top - bot), bw = x1 - x0, bh = z1 - z0, a = cw / ah;   // fit it between the top buttons and the toolbar
     if (bw / bh < a) bw = bh * a; else bh = bw / a; var f = bh / ah;
     if (!LK2.base || !LK2.drag && !LK2.dg) LK2.base = { cx: (x0 + x1) / 2, cz: (z0 + z1) / 2 + (bot - top) / 2 * f, bw: bw, bh: ch * f };
@@ -2950,6 +2962,8 @@
     h += '<defs><pattern id="lk2g" width="1" height="1" patternUnits="userSpaceOnUse"><path d="M1 0H0V1" fill="none" stroke="#E4DFD6" stroke-width="' + sw(0.6) + '"/></pattern><pattern id="lk2h" width="0.6" height="0.6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V0.6" stroke="#8A8378" stroke-width="' + sw(1) + '"/></pattern></defs>';
     h += '<rect x="' + (V.x - 50) + '" y="' + (V.z - 50) + '" width="' + (V.w + 100) + '" height="' + (V.h + 100) + '" fill="#FAF8F4"/><rect x="' + (V.x - 50) + '" y="' + (V.z - 50) + '" width="' + (V.w + 100) + '" height="' + (V.h + 100) + '" fill="url(#lk2g)"/>';
     G.walls.forEach(function (w) { h += '<rect x="' + w.x + '" y="' + w.z + '" width="' + w.w + '" height="' + w.d + '" fill="url(#lk2h)" stroke="#5E574E" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
+    G.walls.forEach(function (w) { if (!w.lab) return; var fz = 10 / ppf, hz = w.w >= w.d, cx = hz ? Math.max(w.x, V.x) + 4 : w.x - fz * 0.5, cz = hz ? w.z - fz * 0.5 : Math.max(w.z, V.z) + 4;   /* 314 */
+      h += '<text x="' + cx + '" y="' + cz + '" font-size="' + fz + '" fill="#5E574E" font-weight="700"' + (hz ? '' : ' transform="rotate(90 ' + cx + ' ' + cz + ')"') + '>' + esc(w.lab) + ' · 3 ft</text>'; });
     if (G.kind === 'cabin') h += lk2Cabin(ppf);
     else if (G.kind === 'pergola') { h += '<rect x="0" y="0" width="' + G.L + '" height="' + G.W + '" fill="rgba(46,46,46,.06)" stroke="#2E2E2E" stroke-width="2" vector-effect="non-scaling-stroke"/>';
       for (var rx = 1.2; rx < G.L - 0.3; rx += 1.2) h += '<path d="M' + rx + ' 0V' + G.W + '" stroke="#2E2E2E" stroke-opacity=".14" stroke-width="1" vector-effect="non-scaling-stroke"/>';

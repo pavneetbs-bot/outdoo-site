@@ -241,7 +241,7 @@ function build(c, lay, opts) {
 // 283 design studio: a terrace corner — grey 2 × 4 tiles, a 3 ft parapet behind and on the left (the cabin's usual spot),
 // a person in front for scale; the gap to the parapet leaves room for the projection on those sides
 function studio(g, L, W, lay, c) {
-  const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); const Y = -0.6, sd = lay && lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : [], pj = sd.includes('back') || sd.includes('left') ? +(c && c.proj && c.proj.depth || 1.5) : 0, gp = pj + 1.25;
+  const sg = new THREE.Group(); sg.name = 'site'; g.add(sg); const Y = -0.6, sd = lay && lay.proj && Array.isArray(lay.proj.sides) ? lay.proj.sides : [], pj = sd.includes('back') || sd.includes('left') ? +(c && c.proj && c.proj.depth || 1.5) : 0, fl = !!(lay && lay.sill && (lay.sill.back != null || lay.sill.left != null)), gp = fl ? 0.3 : pj + 1.25;   // 314: against the parapet = the plinth touches it
   studioFloor(sg, -gp - 0.75, -gp - 0.75, L + gp + 14, W + gp + 14, Y);
   sWall(sg, -gp - 0.75, -gp - 0.375, L + 12, -gp - 0.375, 3, 0.75, Y);   // back
   sWall(sg, -gp - 0.375, -gp - 0.75, -gp - 0.375, W + 12, 3, 0.75, Y);   // left
