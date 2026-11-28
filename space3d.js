@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=123';
-import { pergolaModel } from './pergola3d.js?v=110';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=124';
+import { pergolaModel } from './pergola3d.js?v=111';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -360,14 +360,25 @@ function plateTex() { if (WTX._pl) return WTX._pl; const c = document.createElem
   x.fillStyle = '#1F4FA8'; for (let k = 0; k < 8; k++) { const a = k / 8 * 6.283; x.beginPath(); x.ellipse(64 + Math.cos(a) * 22, 64 + Math.sin(a) * 22, 5, 11, a + Math.PI / 2, 0, 7); x.fill(); } x.beginPath(); x.arc(64, 64, 8, 0, 7); x.fill();
   const t = new THREE.CanvasTexture(c); if ('colorSpace' in t) t.colorSpace = THREE.SRGBColorSpace; return (WTX._pl = t); }
 function plates(g, cx, cy, z, sc) { const m = M.c_s_plate || (M.c_s_plate = new THREE.MeshStandardMaterial({ map: plateTex(), roughness: 0.25, transparent: true, alphaTest: 0.5 })); [[0, 0.9, 0.62], [-0.85, 0.3, 0.42], [0.85, 0.35, 0.5], [0, -0.35, 0.46], [-0.6, -0.75, 0.32], [0.7, -0.7, 0.36], [-0.55, 1.35, 0.28]].forEach(([dx, dy, r]) => { const p = new THREE.Mesh(new THREE.CircleGeometry(r * sc, 24), m); p.position.set(cx + dx * sc * 1.1, cy + dy * sc * 1.1, z); g.add(p); }); }
-function santCabin(g) {   // 296 (owner, Santorini guide): white lime walls + roof edge, Aegean-blue frames / doors, a round arch over every glass bay
-  const lw = sLime(), bl = sBlue(); const gl = []; g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color) return; const c = o.material.color.getHex(); if (c === 0xBFDCE6 && o.material.opacity < 0.34) { gl.push(o); return; } if (o.material.map) return;
+function santCabin(g) {   // 296 → 337 (owner's Santorini refs 27 Nov): a Cycladic cube — all white lime (roof too) with a soft rounded parapet on top, deep white arches over every glass bay; A = arches trimmed in azulejo tiles + blue door / frames, B (`__scv = 'dome'`) = blue rims + a blue dome
+  const lw = sLime(), bl = sBlue(), DOME = globalThis.__scv === 'dome'; const gl = []; g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color) return; const c = o.material.color.getHex(); if (c === 0xBFDCE6 && o.material.opacity < 0.34) { gl.push(o); return; } if (o.material.map) return;
     if (c === 0xF2F0EB || c === 0x6E6C68 || c === 0xE4E1DA || c === 0x5A564F) o.material = lw; else if (c === 0x2B2B2B || c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = bl; });
-  g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3(), V0 = new THREE.Vector3(), V1 = new THREE.Vector3(), ar = new THREE.Group();
-  gl.forEach(o => { B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const vx = V0.x < 0.3, vz = V0.z < 0.3; if (!(vx || vz) || V0.y < 4.5) return; const w = vx ? V0.z : V0.x, h = V0.y; if (w < 1.6) return;
-    const a = w / 2 - 0.25, c0 = Math.max(a * 0.4, h - a - 0.3), sh = khWall(w, h, a, c0, a + 0.001), geo = new THREE.ShapeGeometry(sh, 20);
-    [-1, 1].forEach(sg => { const m = new THREE.Mesh(geo, lw); const t = (vx ? V0.x : V0.z) / 2 + 0.03; if (vx) { m.rotation.y = Math.PI / 2; m.position.set(V1.x + sg * t, B.min.y, V1.z); } else m.position.set(V1.x, B.min.y, V1.z + sg * t); ar.add(m);
-      const rim = new THREE.Mesh(new THREE.ShapeGeometry(khRim(a, c0, a + 0.001, 0.12), 20), bl); rim.position.copy(m.position); rim.rotation.copy(m.rotation); if (vx) rim.position.x += sg * 0.01; else rim.position.z += sg * 0.01; ar.add(rim); }); });
+  g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3(), V0 = new THREE.Vector3(), V1 = new THREE.Vector3(), ar = new THREE.Group(), all = new THREE.Box3();
+  g.traverse(o => { if (o.isMesh) all.union(new THREE.Box3().setFromObject(o).applyMatrix4(inv)); }); const top = all.max.y;
+  g.traverse(o => { if (!o.isMesh || o.material !== bl) return; B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); if ((V0.x > 2.5 && V0.z > 2.5) || (B.max.y > top - 1.3 && V0.y < 1.2 && Math.max(V0.x, V0.z) > 2)) o.material = lw; });   /* roof slab, fascia, projection = white */
+  const rimM = DOME ? bl : (() => { const m = azMat().clone(); m.map = azTex(); return m; })(), az = (geo) => { if (DOME) return geo; const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2, uv.getY(i) * 2); return geo; };
+  gl.forEach(o => { B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const vx = V0.x < 0.3, vz = V0.z < 0.3; if (!(vx || vz) || V0.y < 4.5) return; const W0 = vx ? V0.z : V0.x, h = V0.y; if (W0 < 1.6) return; const nS = Math.max(1, Math.round(W0 / 5)), w = W0 / nS, C0 = V1.clone();   /* a long all-glass run = a row of ~5 ft arches */
+   for (let si = 0; si < nS; si++) { const off = -W0 / 2 + (si + 0.5) * w; V1.copy(C0); if (vx) V1.z += off; else V1.x += off;
+    const a = w / 2 - 0.3, c0 = Math.max(a * 0.4, h - a - 0.35), D = 0.28, geo = new THREE.ExtrudeGeometry(khWall(w, h, a, c0, a + 0.001), { depth: D, bevelEnabled: false, curveSegments: 20 }), rt = DOME ? 0.13 : 0.3;
+    [-1, 1].forEach(sg => { const m = new THREE.Mesh(geo, lw); m.castShadow = true; const t = (vx ? V0.x : V0.z) / 2 + 0.02 + (sg > 0 ? 0 : D); if (vx) { m.rotation.y = Math.PI / 2; m.position.set(V1.x + sg * t, B.min.y, V1.z); } else m.position.set(V1.x, B.min.y, V1.z + sg * t); ar.add(m);
+      if (sg < 0) return; const rim = new THREE.Mesh(az(new THREE.ShapeGeometry(khRim(a, c0, a + 0.001, rt), 20)), rimM); rim.position.copy(m.position); rim.rotation.copy(m.rotation); const f = D + 0.01; if (vx) rim.position.x += f; else rim.position.z += f; ar.add(rim); if (!DOME) { const br = new THREE.Mesh(new THREE.ShapeGeometry(khRim(a - 0.1, c0, a - 0.1, 0.1), 20), bl); br.position.copy(rim.position); br.rotation.copy(rim.rotation); if (vx) br.position.x += 0.005; else br.position.z += 0.005; ar.add(br); }   /* A: a slim blue frame just inside the tiles */
+      const sill = new THREE.Mesh(new THREE.BoxGeometry(vx ? 0.4 : w, 0.12, vx ? w : 0.4), lw); sill.position.set(V1.x + (vx ? sg * (t + 0.1) : 0), B.min.y - 0.02, V1.z + (vx ? 0 : sg * (t + 0.1))); ar.add(sill); }); } });
+  { const P = 0.32, H = 0.75, x0 = all.min.x + P / 2, x1 = all.max.x - P / 2, z0 = all.min.z + P / 2, z1 = all.max.z - P / 2, run = (L, x, z, rx) => { const bx = new THREE.Mesh(new THREE.BoxGeometry(rx ? P : L + P, H, rx ? L + P : P), lw); bx.position.set(x, top + H / 2, z); bx.castShadow = true; ar.add(bx);
+      const cy = new THREE.Mesh(new THREE.CylinderGeometry(P / 2, P / 2, L + P, 12), lw); if (rx) cy.rotation.x = Math.PI / 2; else cy.rotation.z = Math.PI / 2; cy.position.set(x, top + H, z); ar.add(cy); };   /* a soft rounded parapet round the roof */
+    run(x1 - x0, (x0 + x1) / 2, z0, false); run(x1 - x0, (x0 + x1) / 2, z1, false); run(z1 - z0, x0, (z0 + z1) / 2, true); run(z1 - z0, x1, (z0 + z1) / 2, true);
+    if (DOME) { const r = Math.min(3, Math.min(x1 - x0, z1 - z0) * 0.22), dx = x1 - r - 1, dz = z0 + r + 1, dr = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1.2, 28), lw); dr.position.set(dx, top + 0.6, dz); ar.add(dr);
+      const dm = new THREE.Mesh(new THREE.SphereGeometry(r * 1.04, 28, 14, 0, 7, 0, Math.PI / 2), bl); dm.position.set(dx, top + 1.2, dz); dm.castShadow = true; ar.add(dm); const fn = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.08, 0.7, 8), lw); fn.position.set(dx, top + 1.2 + r * 1.04 + 0.3, dz); ar.add(fn);
+      const cn = new THREE.Mesh(new THREE.TorusGeometry(r, 0.08, 6, 28), lw); cn.rotation.x = Math.PI / 2; cn.position.set(dx, top + 1.22, dz); ar.add(cn); } }
   g.add(ar); }
 function tropCabin(g) {   // 292 (owner, Tropical guide): the cabin's outer walls grey textured, its roof edge / projection dark wood
   const gt = greyTex(), dw = mat('c_tcab_dw', 0x4A3020, { roughness: 0.75 }); g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex(); if (c === 0xF2F0EB || c === 0x6E6C68) o.material = gt; else if (c === 0xE4E1DA || c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537 || c === 0x2B2B2B) o.material = dw; }); }
