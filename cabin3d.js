@@ -345,9 +345,14 @@ function drawPlot(tg, t) {
     const sh = new THREE.Shape(); OL.forEach(([x, z], i) => i ? sh.lineTo(x, z) : sh.moveTo(x, z)); sh.closePath();
     const prism = (depth, top, m, cast) => { const g = new THREE.ExtrudeGeometry(sh, { depth, bevelEnabled: false }); g.rotateX(Math.PI / 2); const me = new THREE.Mesh(g, m); me.position.y = top; me.castShadow = !!cast; me.receiveShadow = true; me.userData.under = 1; tg.add(me); return me; };
     prism(0.5, Y, tile); prism(BH, Y - 0.5, plaster);
-    OL.forEach((p0, i) => { const p1 = OL[(i + 1) % OL.length], dx = p1[0] - p0[0], dz = p1[1] - p0[1], L = Math.hypot(dx, dz); if (L < 0.05) return;
-      const nx = -dz / L, nz = dx / L, ang = -Math.atan2(dz, dx), mx = (p0[0] + p1[0]) / 2 + nx * PT / 2, mz = (p0[1] + p1[1]) / 2 + nz * PT / 2;
-      box(tg, L + PT, par, PT, mx, Y + par / 2, mz, wallm).rotation.y = ang; box(tg, L + PT + cw, ct, PT + cw, mx, Y + par + ct / 2, mz, cop).rotation.y = ang; });
+    /* 345 (owner): the parapet is one ring round the outline, mitred at every corner — the old per-wall boxes ran PT / 2 past each end and stuck out at inner corners */
+    const Q = OL.filter((q, i) => Math.hypot(q[0] - OL[(i + 1) % OL.length][0], q[1] - OL[(i + 1) % OL.length][1]) > 0.05), nq = Q.length;
+    const nrm = i => { const a = Q[i], b = Q[(i + 1) % nq], L = Math.hypot(b[0] - a[0], b[1] - a[1]); return [-(b[1] - a[1]) / L, (b[0] - a[0]) / L]; };
+    const sar = A => A.reduce((s0, q, i) => s0 + q[0] * A[(i + 1) % A.length][1] - A[(i + 1) % A.length][0] * q[1], 0), SG = Math.abs(sar(Q.map((q, i) => { const n0 = nrm((i - 1 + nq) % nq), n1 = nrm(i); return [q[0] + (n0[0] + n1[0]), q[1] + (n0[1] + n1[1])]; }))) > Math.abs(sar(Q)) ? -1 : 1;   /* off(+d) = d ft inward (the parapet stands inside the outline, like the planner's PAR) */
+    const off = dd => (dd *= SG, 0) || Q.map((q, i) => { const n0 = nrm((i - 1 + nq) % nq), n1 = nrm(i), dt = n0[0] * n1[0] + n0[1] * n1[1], k = dd / Math.max(0.25, 1 + dt); return [q[0] + (n0[0] + n1[0]) * k, q[1] + (n0[1] + n1[1]) * k]; });
+    const ring = (o, inn, top, depth, m) => { const shp = new THREE.Shape(); o.forEach(([x, z], i) => i ? shp.lineTo(x, z) : shp.moveTo(x, z)); shp.closePath(); const hl = new THREE.Path(); inn.slice().reverse().forEach(([x, z], i) => i ? hl.lineTo(x, z) : hl.moveTo(x, z)); hl.closePath(); shp.holes.push(hl);
+      const gg = new THREE.ExtrudeGeometry(shp, { depth, bevelEnabled: false }); gg.rotateX(Math.PI / 2); const me = new THREE.Mesh(gg, m); me.position.y = top; me.castShadow = true; me.receiveShadow = true; tg.add(me); return me; };
+    if (nq >= 3) { ring(Q, off(PT), Y + par, par, wallm); ring(off(-cw / 2), off(PT + cw / 2), Y + par + ct, ct, cop); }
   }
   for (let f = 0; f < 4; f++) { const yb = Y - 0.5 - 10 * f - 5.5; box(tg, pw * 0.7, 4, 0.1, pw / 2, yb, pd + 0.05, win, false); box(tg, pw, 0.4, 3, pw / 2, yb - 2.6, pd + 1.5, side2, false); }
   const gy = Y - 0.5 - BH; const gr = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), P('t_gnd', 0xA9A296)); gr.rotation.x = -Math.PI / 2; gr.position.set(pw / 2, gy, pd / 2); tg.add(gr);
@@ -432,7 +437,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=147').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=148').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
