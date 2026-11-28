@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=132';
-import { pergolaModel } from './pergola3d.js?v=119';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=133';
+import { pergolaModel } from './pergola3d.js?v=120';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -53,7 +53,8 @@ const W_FIN = [[/zellige/i, 'zellige'], [/stacked stone/i, 'stack'], [/granite/i
 export function wFin(name) { const r = W_FIN.find(p => p[0].test(String(name || ''))); return r ? r[1] : ''; }
 function waterLib(g, w, d, code, K, wo) {
   wo = wo || {};
-  if (themeKey() === 'modern') K = Object.assign({}, K, { stone: mChar() });   // 298: Modern — charcoal basin under the dark ledge stone
+  if (themeKey() === 'modern') K = Object.assign({}, K, { stone: mChar() });
+  if (themeKey() === 'tropical') K = Object.assign({}, K, { stone: mat('c_t_basin', 0x5E5C57, { roughness: 1 }) });   // 344: dark grey stone basin   // 298: Modern — charcoal basin under the dark ledge stone
   if (themeKey() === 'santorini') azPlane(g, w - 0.1, 0.7, 0, 0.42, d / 2 + 0.02);   // 296: Santorini — a blue-white tile band on the basin front
   let [fin0, kind, ex] = WLIB[code]; if (wo.fin) fin0 = wo.fin; const fin = !['glass', 'green', 'mirror'].includes(fin0) && themeKey() === 'tropical' ? 'tstone' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'turkish' ? 'marble' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'santorini' ? 'slime' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'modern' ? 'ledge' : !['glass', 'mirror'].includes(fin0) && themeKey() === 'boho' ? 'blime' : fin0,   /* 294: Turkish = beige zellige */ FM = finMat(fin),   /* 292: tropical = rough grey stone face */ sheet = wo.anim ? wSheetA() : mat('c_wsheet2', 0xCFEFF8, { transparent: true, opacity: 0.42, roughness: 0.05, metalness: 0.05, emissive: 0x2E6F86, emissiveIntensity: 0.2, side: THREE.DoubleSide, depthWrite: false }), wat = mat('c_wpool', 0x5FA9C4, { roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.85 }), ss = mat('c_wss', 0xC9CED2, { metalness: 0.9, roughness: 0.25 }), led = mat('c_wled', 0xFFE2B0, { emissive: 0xFFB866, emissiveIntensity: 1.6 });
   if (wo.anim) pvAnim(tm => { if (sheet.map) sheet.map.offset.y = (tm * 0.9) % 1; });   // 301: the water runs down
@@ -68,6 +69,28 @@ function waterLib(g, w, d, code, K, wo) {
   const bd = code.startsWith('WC') ? 2 : 1.5, FH = wo.H ? Math.max(3, Math.min(14, +wo.H)) : 7.5, kH = FH / 7.5, ft = 0.8, fz = -d / 2 + ft / 2, bz = fz + ft / 2 + bd / 2;   // face 10 × 6 ft on an 18 in basin; the basin in front
   const trough = z0 => { box(g, w, 1.3, bd, 0, 0.65, z0, K.stone); const rm = 0.25; box(g, w + 0.1, 0.35, rm, 0, 1.47, z0 + bd / 2 - rm / 2 + 0.05, K.stone); box(g, w + 0.1, 0.35, rm, 0, 1.47, z0 - bd / 2 + rm / 2 - 0.05, K.stone); [-1, 1].forEach(a => box(g, rm, 0.35, bd, a * (w / 2 - rm / 2 + 0.05), 1.47, z0, K.stone));   // 263: an open basin — the water and pebbles show
     box(g, w - 0.5, 0.03, bd - 0.5, 0, 1.45, z0, wat); if (themeKey() !== 'modern') pebbles(w - 0.6, bd - 0.6, 1.47, z0); box(g, w - 0.6, 0.04, 0.06, 0, 1.5, z0 + bd / 2 - 0.3, led); };
+  if (themeKey() === 'tropical' && !['glass', 'mirror'].includes(fin0)) {   /* 344 (owner picked A 28 Nov): A = Bali wall fountain — rough grey stone wall in a dark-timber frame + cap, a river-stone panel, a bamboo spout pouring into the basin, ferns at both ends, moss; B (`__twv = 'rock'`) = a natural rock cascade — stacked boulders and slate ledges, water spilling down three steps into a pebble pool, ferns tucked in */
+    const dw = mat('c_t_dw', 0x4A3020, { roughness: 0.75 }), wsm = mat('c_tk_water', 0xBFE3EE, { transparent: true, opacity: 0.6, roughness: 0.05 }), RK = globalThis.__twv === 'rock', zF = fz + ft / 2, bb = [mat('c_t_bam1', 0xB89A5E, { roughness: 0.7 }), mat('c_t_bam2', 0xA4864E, { roughness: 0.7 })];
+    const ferns = (x, y, z, r, n, sd) => bgvSpray(g, sd, (put, rnd) => { for (let j = 0; j < n; j++) { const a = rnd() * Math.PI * 2, u = Math.sqrt(rnd()); put(x + Math.cos(a) * u * r, y + rnd() * r * 1.1 - u * u * r * 0.4, z + Math.sin(a) * u * r * 0.7, true); } });
+    if (!RK) {
+      box(g, w, FH, ft, 0, FH / 2, fz, finMat('tstone')); [-1, 1].forEach(sg => box(g, 0.4, FH + 0.1, ft + 0.2, sg * (w / 2 + 0.2), (FH + 0.1) / 2, fz, dw)); box(g, w + 1.0, 0.28, ft + 0.45, 0, FH + 0.24, fz + 0.05, dw); box(g, w + 0.8, 0.12, 0.12, 0, FH - 0.05, zF + 0.12, dw);
+      const pw = Math.min(w - 1.2, Math.max(2, w * 0.5)), ph = FH - 2.4; box(g, pw, ph, 0.06, 0, 1.6 + ph / 2, zF + 0.03, riverMat()); [[pw + 0.2, 0.12, 0, 1.6 + ph + 0.06], [pw + 0.2, 0.12, 0, 1.6 - 0.06]].forEach(([a, b, x, y]) => box(g, a, b, 0.14, x, y, zF + 0.07, dw)); [-1, 1].forEach(sg => box(g, 0.12, ph + 0.24, 0.14, sg * (pw / 2 + 0.04), 1.6 + ph / 2, zF + 0.07, dw));
+      const sy = Math.min(4.2, 1.6 + ph * 0.55), sp = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 1.3, 10), bb[0]); sp.rotation.x = Math.PI / 2 - 0.12; sp.position.set(0, sy, zF + 0.65); sp.castShadow = true; g.add(sp); [0.25, 0.8].forEach(o => { const n0 = new THREE.Mesh(new THREE.TorusGeometry(0.112, 0.016, 4, 10), bb[1]); n0.position.set(0, sy - o * 0.12, zF + o + 0.05); g.add(n0); }); box(g, 0.28, 0.5, 0.28, 0, sy - 0.1, zF + 0.1, dw);   /* bamboo spout on a timber block */
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.06, sy - 1.45, 8), wsm); st.position.set(0, (sy + 1.45) / 2 - 0.05, zF + 1.28); g.add(st); const gl = new THREE.Sprite(haloMat()); gl.scale.set(1.2, sy - 1, 1); gl.position.set(0, (sy + 1.45) / 2, zF + 1.2); nightOnly(gl, g);
+      trough(bz); box(g, w + 0.3, 0.14, 0.32, 0, 1.68, bz + bd / 2 - 0.05, dw);
+      const mo = mat('c_t_moss', 0x4E6B2E, { roughness: 1 }); for (let i = 0; i < 9; i++) { const m0 = new THREE.Mesh(new THREE.SphereGeometry(0.22 + (i % 3) * 0.08, 8, 5), mo); m0.scale.set(1.4, 0.35, 0.5); m0.position.set(-w / 2 + 0.3 + ((i * 0.618) % 1) * (w - 0.6), 0.2 + ((i * 0.37) % 1) * 1.1, zF + 0.04); g.add(m0); }
+      [-1, 1].forEach(sg => ferns(sg * (w / 2 + 0.9), 0.25, bz - 0.2, 0.85, 420, sg > 0 ? 41 : 43));
+    } else {
+      const rk = [mat('c_t_rock1', 0x55534E, { roughness: 1 }), mat('c_t_rock2', 0x46443F, { roughness: 1 }), mat('c_t_rock3', 0x67645D, { roughness: 1 })], sl = mat('c_t_slate', 0x3F3E3B, { roughness: 0.7 });
+      let sd = 77; const r = () => (sd = (sd * 16807) % 2147483647) / 2147483647, rock = (x, y, z, s) => { const m0 = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), rk[Math.floor(r() * 3)]); m0.scale.set(1.2 + r() * 0.5, 0.65 + r() * 0.35, 0.9); m0.rotation.set(r(), r() * 3, r() * 0.5); m0.position.set(x, y, z); m0.castShadow = m0.receiveShadow = true; g.add(m0); };
+      const TH = Math.min(FH, 6.5), steps = [[TH, w * 0.38], [TH * 0.66, w * 0.52], [TH * 0.36, w * 0.68]];
+      for (let y = 0.4; y < TH + 0.3; y += 0.75) { const span = w * (0.95 - 0.35 * (y / TH)); for (let x = -span / 2; x <= span / 2; x += 0.9) rock(x + (r() - 0.5) * 0.3, y, fz - 0.1 + (r() - 0.5) * 0.3, 0.5 + r() * 0.25); }   /* boulder wall */
+      steps.forEach(([y, sw2], k) => { const lz = fz + 0.5 + k * 0.35; box(g, sw2 * 0.55, 0.18, 0.9, 0, y - 0.1, lz, sl); const ld = y - (k < 2 ? steps[k + 1][0] : 1.45); const sh2 = new THREE.Mesh(new THREE.PlaneGeometry(sw2 * 0.5, ld), wsm); sh2.position.set(0, y - 0.2 - ld / 2, lz + 0.46); g.add(sh2); [-1, 1].forEach(sg => rock(sg * (sw2 * 0.3 + 0.35), y - 0.1, lz, 0.45 + r() * 0.2)); });
+      const gl = new THREE.Sprite(haloMat()); gl.scale.set(w * 0.4, TH, 1); gl.position.set(0, TH / 2 + 0.6, fz + 1.4); nightOnly(gl, g);
+      trough(bz); for (let x = -w / 2; x <= w / 2; x += 0.8) rock(x, 1.45, bz + bd / 2, 0.32 + r() * 0.12);
+      [[-0.32, TH * 0.82], [0.3, TH * 0.55], [-0.36, TH * 0.3], [0.4, TH * 0.95]].forEach(([fx, y], k) => ferns(fx * w, y, fz + 0.3, 0.6, 220, 61 + k)); [-1, 1].forEach(sg => ferns(sg * (w / 2 + 0.7), 0.3, bz, 0.8, 360, sg > 0 ? 71 : 73));
+    }
+    return; }
   if (kind === 'rain' && fin === 'green') { [-1, 1].forEach(a => { const c0 = box(g, 2, FH, ft, a * (w / 2 - 1), FH / 2, fz, finMat('green')); }); box(g, w, 0.3, 0.7, 0, FH - 0.15, fz + 0.3, ss); }
   else { const face = box(g, w, FH, ft, 0, FH / 2, fz, FM); if (fin === 'glass') { box(g, w, 0.25, ft + 0.2, 0, 0.12, fz, ss); box(g, w, 0.2, ft + 0.3, 0, FH, fz, ss); } }
   trough(bz); if (code === 'WW-DUO' || wo.duo) trough(fz - ft / 2 - bd / 2);
@@ -962,6 +985,16 @@ export function generic(cat, w, d, h, it) {   // centred on (0, 0), on the floor
     const ch = mChar(), tk = mTeak(), z0 = -d * 0.05, D = d * 0.9, fz = z0 + D / 2; box(g, w - 0.3, 0.35, D - 0.3, 0, 0.175, z0 - 0.1, ch); box(g, w, 2.55, D, 0, 1.625, z0, mWW());
     const nd = Math.max(2, Math.round(w / 1.8)), dw = (w - 0.3) / nd; for (let k = 0; k < nd; k++) { const cx = -w / 2 + 0.15 + (k + 0.5) * dw; box(g, dw - 0.06, 2.2, 0.05, cx, 1.55, fz + 0.025, tk); box(g, dw - 0.25, 0.05, 0.03, cx, 2.6, fz + 0.06, ch); }
     box(g, w + 0.25, 0.16, d + 0.05, 0, 2.98, 0.02, mat('c_m_stone', 0xD9D4CB, { roughness: 0.35 })); box(g, w - 0.2, 0.03, 0.05, 0, 2.86, fz + 0.06, mLed(), false);
+  } else if (cat === 'counter' && themeKey() === 'tropical') {   /* 344 (owner picked A 28 Nov): A = dark-wood counter on a grey stone plinth, woven cane doors in dark frames, a bamboo pole edge under a thick dark top, a banana leaf pot at the end; B (`__tcv = 'stone'`) = rough river-stone body, dark-wood slatted doors, a grey stone top, a planted trough at the end */
+    const dw = mat('c_t_dw', 0x4A3020, { roughness: 0.75 }), dk = mat('c_t_top', 0x3E2818, { roughness: 0.6 }), gs = mat('c_t_plinth', 0x7C7A74, { roughness: 1 }), RS = globalThis.__tcv === 'stone', z0 = -d * 0.05, D = d * 0.9, fz = z0 + D / 2;
+    box(g, w - 0.2, 0.4, D - 0.2, 0, 0.2, z0 - 0.08, gs); box(g, w, 2.5, D, 0, 1.65, z0, RS ? riverMat() : dw);
+    const nd = Math.max(2, Math.round(w / 1.8)), dW = (w - 0.4) / nd; for (let k = 0; k < nd; k++) { const cx = -w / 2 + 0.2 + (k + 0.5) * dW, pw = dW - 0.14, ph = 1.95;
+      if (!RS) { const p0 = new THREE.Mesh(new THREE.PlaneGeometry(pw - 0.24, ph - 0.24), caneMat()); p0.position.set(cx, 1.6, fz + 0.03); g.add(p0); [[pw, 0.12, 0, ph / 2 - 0.06], [pw, 0.12, 0, -ph / 2 + 0.06]].forEach(([a, b, x, y]) => box(g, a, b, 0.06, cx + x, 1.6 + y, fz + 0.04, dk)); [-1, 1].forEach(e => box(g, 0.12, ph, 0.06, cx + e * (pw / 2 - 0.06), 1.6, fz + 0.04, dk)); }
+      else { box(g, pw, ph, 0.06, cx, 1.6, fz + 0.03, dw); for (let y = 0.75; y < 2.55; y += 0.22) box(g, pw - 0.06, 0.15, 0.04, cx, y, fz + 0.07, dk, false); }
+      box(g, 0.05, 0.55, 0.05, cx + (k % 2 ? -1 : 1) * (pw / 2 - 0.18), 1.75, fz + 0.1, mat('c_t_brz', 0x2A231C, { metalness: 0.5, roughness: 0.5 })); }
+    if (!RS) { box(g, w + 0.3, 0.22, d + 0.08, 0, 3.0, 0.02, dk); const bm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, w + 0.1, 10), mat('c_t_bam1', 0xB89A5E, { roughness: 0.7 })); bm.rotation.z = Math.PI / 2; bm.position.set(0, 2.8, d / 2 - 0.02); g.add(bm);
+      const px = w / 2 + 0.7, pot = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.32, 1.2, 14), mat('c_t_pot', 0x6E6B66, { roughness: 0.9 })); pot.position.set(px, 0.6, 0); g.add(pot); bgvSpray(g, 53, (put, rnd) => { for (let j = 0; j < 520; j++) { const a = rnd() * Math.PI * 2, u = Math.sqrt(rnd()); put(px + Math.cos(a) * u * 0.9, 1.3 + rnd() * 1.6 - u * u * 0.5, Math.sin(a) * u * 0.9, true); } }); }
+    else { box(g, w + 0.25, 0.2, d + 0.05, 0, 3.0, 0.02, mat('c_t_gtop', 0x8C8A84, { roughness: 0.6 })); box(g, w - 0.3, 0.03, 0.05, 0, 2.86, fz + 0.08, mat('c_cove', 0xFFD9A0, { emissive: 0xFFB15E, emissiveIntensity: 1.4 }), false); pbox(g, 1.4, D, w / 2 + 0.75, z0, 2.4, dw); }
   } else if (cat === 'counter' && themeKey() === 'santorini') {   // 339: Cycladic built-in counter — lime body (rounded front corners), A = blue Greek plank doors with batten lines + black ring pulls, an open arch at one end with terracotta jars; B (`__scv2 = 'open'`) = open arched cubbies with cane baskets + jars; azulejo strip under a thick top (A lime, B oak), recessed plinth
     const lw = plasterMat(), bl = sBlue(), OP = globalThis.__scv2 === 'open', D = d * 0.9, z0 = -d * 0.05, fz = z0 + D / 2, TOP = 2.85, ir = mat('c_iron', 0x1E1E1E, { metalness: 0.6, roughness: 0.5 }), ter = mat('c_terra', 0xB8653F, { roughness: 0.9 });
     box(g, w - 0.3, 0.35, D - 0.3, 0, 0.175, z0 - 0.1, lw); box(g, w - 0.5, 2.25, D, 0, 1.47, z0, lw); [-1, 1].forEach(sg => { const cr = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 2.25, 16), lw); cr.position.set(sg * (w / 2 - 0.25), 1.47, fz - 0.25); g.add(cr); box(g, 0.5, 2.25, D - 0.25, sg * (w / 2 - 0.25), 1.47, z0 - 0.125, lw); });
