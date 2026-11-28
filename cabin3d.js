@@ -418,7 +418,7 @@ function drawPlot(tg, t) {
       else { box(bg, 0.06, 7, 3, dz2 === 'left' ? x0 - 0.04 : x0 + bk.w + 0.04, Y + 3.5, z, ms, false); box(bg, 0.07, 6.7, 2.7, dz2 === 'left' ? x0 - 0.05 : x0 + bk.w + 0.05, Y + 3.45, z, dm, false); }
       return; }
     box(bg, bk.w, h, bk.d, x, Y + h / 2, z, wallm);
-    if (bk.type === 'mumty' || bk.type === 'room') { const e = mumtyProj(t, bk), G = bk.type === 'mumty' ? mstGap(t, bk) : null, yS = Y + h + 0.17;   // 285 (owner): a built room has the same chajja (none where it joins the stairs room); a temp room none   // 266 (owner): the stairs up come through a proper opening in the chajja
+    if (bk.type === 'mumty' || bk.type === 'room') { const e = mumtyProj(t, bk), G = bk.type === 'mumty' ? mstGap(t, bk) : null, yS = Y + h + 0.17; mumtyCols(t, bk).forEach(c => box(bg, c.w, h + 0.02, c.d, c.x + c.w / 2 - (+bk.x + +bk.w / 2) + x, Y + h / 2, c.z + c.d / 2 - (+bk.z + +bk.d / 2) + z, side2));   /* 349e: RCC columns under a deep chajja */   // 285 (owner): a built room has the same chajja (none where it joins the stairs room); a temp room none   // 266 (owner): the stairs up come through a proper opening in the chajja
       if (!G) box(bg, bk.w + e.l + e.r, 0.35, bk.d + e.b + e.f, x + (e.r - e.l) / 2, yS, z + (e.f - e.b) / 2, side2);
       else { const k = { left: 'l', right: 'r', back: 'b', front: 'f' }[G.sd], e2 = Object.assign({}, e, { [k]: 0 }), X0 = +bk.x - e.l, X1 = +bk.x + +bk.w + e.r, Z0 = +bk.z - e.b, Z1 = +bk.z + +bk.d + e.f, xs = G.sd === 'left' || G.sd === 'right';
         box(bg, bk.w + e2.l + e2.r, 0.35, bk.d + e2.b + e2.f, x + (e2.r - e2.l) / 2, yS, z + (e2.f - e2.b) / 2, side2);
@@ -437,7 +437,7 @@ function drawPlot(tg, t) {
 // 193j: things around the cabin (sofa, planters, a pergola…) drawn by space3d's own models, loaded the first time they're needed
 let AROUND = null, AROUND_LOADING = false;
 function aroundOn(tg, t, y) {
-  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=152').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
+  if (!AROUND) { if (!AROUND_LOADING) { AROUND_LOADING = true; import('./space3d.js?v=155').then(m => { AROUND = m.itemsGroup; if (R.last) { R.key = ''; show(...R.last); } }).catch(() => {}); } return; }
   try { const r = AROUND(t.around, { sel: t.asel != null ? t.asel : null, labels: !t.nolab }); r.g.position.y = y; tg.add(r.g); } catch (e) { if (window.console) console.warn(e); }
 }
 function itemAt(hits) { const h = hits[0]; if (!h) return null; let o = h.object, hd = null; while (o) { if (hd == null && o.userData && o.userData.it != null) hd = o; if (o.name === 'planitems') return hd; o = o.parent; } return null; }
@@ -770,4 +770,17 @@ export function mumtyProj(t, bk) { const E = 0.75, P2 = 2, o = { l: P2, r: P2, b
   const ov = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0) > 0.5, X0 = +bk.x, X1 = +bk.x + +bk.w, Z0 = +bk.z, Z1 = +bk.z + +bk.d;
   B.filter(b => b.type !== 'shaft' && b.type !== 'ac').forEach(b => { const x0 = +b.x, x1 = x0 + +b.w, z0 = +b.z, z1 = z0 + +b.d;
     if (Math.abs(x1 - X0) < 0.7 && ov(z0, z1, Z0, Z1)) o.l = 0; if (Math.abs(x0 - X1) < 0.7 && ov(z0, z1, Z0, Z1)) o.r = 0; if (Math.abs(z1 - Z0) < 0.7 && ov(x0, x1, X0, X1)) o.b = 0; if (Math.abs(z0 - Z1) < 0.7 && ov(x0, x1, X0, X1)) o.f = 0; });
-  o.l = Math.max(0.3, Math.min(o.l || 0.3, X0 - E)); o.r = Math.max(0.3, Math.min(o.r || 0.3, (+t.pw || 30) - E - X1)); o.b = Math.max(0.3, Math.min(o.b || 0.3, Z0 - E)); o.f = Math.max(0.3, Math.min(o.f || 0.3, (+t.pd || 60) - E - Z1)); return o; }
+  const J = { l: !o.l, r: !o.r, b: !o.b, f: !o.f }, lim = { l: X0 - E, r: (+t.pw || 30) - E - X1, b: Z0 - E, f: (+t.pd || 60) - E - Z1 };
+  o.l = Math.max(0.3, Math.min(o.l || 0.3, X0 - E)); o.r = Math.max(0.3, Math.min(o.r || 0.3, (+t.pw || 30) - E - X1)); o.b = Math.max(0.3, Math.min(o.b || 0.3, Z0 - E)); o.f = Math.max(0.3, Math.min(o.f || 0.3, (+t.pd || 60) - E - Z1));
+  const pj = bk.pj || {}; ['l', 'r', 'b', 'f'].forEach(k => { if (pj[k] != null && !J[k]) o[k] = Math.max(0, Math.min(+pj[k] || 0, 15, Math.max(0, lim[k]))); });   /* 349e (owner): each side of the chajja set by hand, 0–15 ft (an RCC semi-covered area) */
+  return o; }
+export function mumtyCols(t, bk) {   /* 349e (owner): a projection over 4 ft stands on RCC columns (9 in) at its outer corners and every ≤ 12 ft along its edge */
+  const e = mumtyProj(t, bk), C = 0.75, h = C / 2, X0 = +bk.x - e.l, X1 = +bk.x + +bk.w + e.r, Z0 = +bk.z - e.b, Z1 = +bk.z + +bk.d + e.f, out = [];
+  const add = (x, z) => { if (!out.some(p => Math.abs(p.x - x) < 1 && Math.abs(p.z - z) < 1)) out.push({ x, z, w: C, d: C }); };
+  const line = (ax, az, bx, bz) => { const L = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(L / 12)); for (let k = 0; k <= n; k++) add(ax + (bx - ax) * k / n, az + (bz - az) * k / n); };
+  const wx0 = +bk.x, wx1 = +bk.x + +bk.w, wz0 = +bk.z, wz1 = +bk.z + +bk.d;
+  if (e.f > 4) line(Math.max(X0 + h, e.l > 4 ? X0 + h : wx0 + h), Z1 - h, Math.min(X1 - h, e.r > 4 ? X1 - h : wx1 - h), Z1 - h);
+  if (e.b > 4) line(Math.max(X0 + h, e.l > 4 ? X0 + h : wx0 + h), Z0 + h, Math.min(X1 - h, e.r > 4 ? X1 - h : wx1 - h), Z0 + h);
+  if (e.l > 4) line(X0 + h, Math.max(Z0 + h, e.b > 4 ? Z0 + h : wz0 + h), X0 + h, Math.min(Z1 - h, e.f > 4 ? Z1 - h : wz1 - h));
+  if (e.r > 4) line(X1 - h, Math.max(Z0 + h, e.b > 4 ? Z0 + h : wz0 + h), X1 - h, Math.min(Z1 - h, e.f > 4 ? Z1 - h : wz1 - h));
+  return out.filter(p => !(p.x > wx0 - h && p.x < wx1 + h && p.z > wz0 - h && p.z < wz1 + h)).map(p => ({ x: p.x - h, z: p.z - h, w: C, d: C })); }

@@ -181,6 +181,7 @@ export function svg(t, opts) { const U = 'u' + (++SVGN);   // 276c: own pattern 
   // parapet screens
   items.forEach((it, i) => { if (it && it.segs) h += `<g data-it="${i}" class="${gcl(i)}">` + it.segs.map(g => `<path d="M${g.x0} ${g.z0}L${g.x1} ${g.z1}" stroke="${GR.includes(i) ? '#C26445' : '#8B6A43'}" stroke-width="${s * 0.55}" stroke-linecap="round"/>`).join('') + '</g>'; });
   // roof structures
+  (t.rcc || []).forEach(r => { h += `<rect x="${r.x}" y="${r.z}" width="${r.w}" height="${r.d}" fill="rgba(120,110,95,0.10)" stroke="#8A8072" stroke-width="${s * 0.09}" stroke-dasharray="${s * 0.5} ${s * 0.3}"/>` + (r.cols || []).map(c => `<rect x="${c.x}" y="${c.z}" width="${c.w}" height="${c.d}" fill="#7A7266"/>`).join(''); });   /* 349e: the stairs room's chajja (dashed) + its RCC columns */
   (t.blocks || []).forEach((b, i) => { const on = sel.k === 'blk' && sel.i === i; let lab = Math.max(s * 0.9, Math.min(s * 1.7, Math.min(b.w, b.d) * 0.32));
     h += `<g data-blk="${i}"><rect x="${b.x}" y="${b.z}" width="${b.w}" height="${b.d}" rx="0.2" fill="${b.type === 'ac' ? '#BFD9E6' : b.type === 'shaft' ? '#9C958A' : b.type === 'mumty' ? '#CFC7BA' : b.type === 'troom' ? '#DCE9DF' : '#D6D2C7'}" stroke="${on ? '#C26445' : '#6F665A'}" stroke-width="${on ? s * 0.3 : s * 0.12}"${b.type === 'troom' ? ` stroke-dasharray="${s * 0.6} ${s * 0.4}"` : ''}/>`;
     if (b.type === 'mumty' || b.type === 'room' || b.type === 'lift' || b.type === 'troom') { const dr = b.door || 'front', dw = Math.min(3, (dr === 'front' || dr === 'back' ? b.w : b.d) * 0.5);

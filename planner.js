@@ -4,10 +4,10 @@
 // Rules: nothing goes over the parapet / boundary, nothing sits on another thing or on a block (decking is a floor: things
 // stand on it); railings / gates snap to the edge, wall-type things to the parapet or a block when near. Blocks on the roof
 // move only in step 1. Undo / redo. Saved in this browser (localStorage outrr_plan). Phase 2: pick the real design per item + cart.
-import * as S3 from './space3d.js?v=152';
-import * as P2 from './plan2d.js?v=37';
+import * as S3 from './space3d.js?v=155';
+import * as P2 from './plan2d.js?v=38';
 import { PLANT_LIGHT, plantSpread } from './plants3d.js?v=4';
-import { cutHit, mumtyProj, mstGap, mstGeom } from './cabin3d.js?v=142';
+import { cutHit, mumtyProj, mumtyCols, mstGap, mstGeom } from './cabin3d.js?v=145';
 import * as TM from './terrace-match.js?v=5';
 
 const KEY = 'outrr_plan', PAR = 0.75;
@@ -146,7 +146,8 @@ function clashes(it, i) {   // what it would sit on
   if (!inside(r)) return 'edge';
   const wk = CAT[it.cat] && CAT[it.cat].kind === 'wall';   // 268 (owner): a wall panel may stand on the door's wall beside the door — only the door opening itself stays clear
   if (!fl && !it.old && !DZOK.has(it.cat) && doorZones(it.hand || S._hand ? 3 : 0).some(z => hit(r, wk ? (z.w === 5 ? { x: z.x + 0.8, z: z.z, w: 3.4, d: z.d } : { x: z.x, z: z.z + 0.8, w: z.w, d: 3.4 }) : z))) return 'door';
-  if ((S.site.kind === 'terrace' ? S.site.blocks : []).some(b => hit(r, b) && !(b.type === 'shaft' && OVSH.has(it.cat)))) return 'block';   // 258 (owner): a deck, pergola or cabin can go over a shaft
+  if ((S.site.kind === 'terrace' ? S.site.blocks : []).some(b => hit(r, b) && !(b.type === 'shaft' && OVSH.has(it.cat)))) return 'block';
+  if (!fl && (S.site.rcc || []).some(R => (R.cols || []).some(c => hit(r, c)))) return 'block';   /* 349e: the chajja's RCC columns */   // 258 (owner): a deck, pergola or cabin can go over a shaft
   const under = (a, b) => (UMB.has(a.cat) && !UMB.has(b.cat) && b.cat !== 'cabin') || (UMB.has(b.cat) && !UMB.has(a.cat) && a.cat !== 'cabin');   // 203: seating, a bar, planters… can stand under a pergola
   const elR = (S.su && S.su.on && SUQ[S.su.q] === 'eplan') || S._igDec;   // 302: S._igDec = a big piece being dropped — furniture / plants make way after   // 266: round 2 — the hidden decor makes way later (decorFit)
   if (S.items.some((o, j) => j !== i && !att(o) && !(elR && isDecor(o)) && CAT[o.cat] && CAT[o.cat].kind !== 'floor' && (!fl || o.cat === 'cabin') && !under(it, o) && hit(r, rectI(o)))) return 'item';
@@ -1078,7 +1079,8 @@ function suPlan() { const su = S.su, t = S.site, rd = ['front'].concat(t.road_ba
   const el = SUQ[su.q] === 'eplan';   // 266 (owner): round 2 shows only the big pieces
   const bv = befView(SUQ[su.q]); if (bv) return P2.svg(bv.site, { items: S.items.map(o => o.old ? o : null), measure: !!su.meas, sel: S.sel != null && S.items[S.sel] && S.items[S.sel].old ? { k: 'it', i: S.sel } : null, grp: S.sel != null ? grpOf(S.sel) : null, wl: S.sel != null && S.suSz ? S.sel : null, north: su.north, road: rd });
   return P2.svg(t, { items: el ? S.items.map(o => isDecor(o) ? null : o) : S.items, measure: !!su.meas, sel: S.sel != null ? { k: 'it', i: S.sel } : null, grp: S.sel != null ? grpOf(S.sel) : null, wl: S.sel != null && S.suSz ? S.sel : null, wlab: S.sel != null && S.suSz && S.items[S.sel] && S.items[S.sel].cat === 'cabin' ? (L => ['L ' + (+L.L || 12) + "'", 'W ' + (+L.W || 10) + "'"])(cabinLay(S.items[S.sel])) : null, north: su.north, road: rd }); }
-function suPaint() { try { fl0Show(); } catch (e) {} if (S.magic) return; try { const su0 = S.su; if (su0 && su0.on && SUQ.indexOf(SUQ[su0.q]) <= SUQ.indexOf('b3d')) { if (su0.oldDirty) suOld(su0.oldPlaced); suExShow(befQ()); } suGone(!befQ()); } catch (e) { console.error(e); }
+function rccSync() { const t = S.site; if (!t) return; const R = []; (t.blocks || []).forEach(b => { if (b.type !== 'mumty' || !b.pj) return; try { const e = mumtyProj(t, b); if (Math.max(e.l, e.r, e.b, e.f) <= 2.01) return; R.push({ x: +b.x - e.l, z: +b.z - e.b, w: +b.w + e.l + e.r, d: +b.d + e.b + e.f, cols: mumtyCols(t, b) }); } catch (er) {} }); if (R.length) t.rcc = R; else delete t.rcc; }   /* 349e */
+function suPaint() { try { rccSync(); fl0Show(); } catch (e) {} if (S.magic) return; try { const su0 = S.su; if (su0 && su0.on && SUQ.indexOf(SUQ[su0.q]) <= SUQ.indexOf('b3d')) { if (su0.oldDirty) suOld(su0.oldPlaced); suExShow(befQ()); } suGone(!befQ()); } catch (e) { console.error(e); }
   const su = S.su, q = SUQ[su.q], B = S.bsel || {}, terr = S.site.kind === 'terrace', chip = (k, on, tx) => `<button type="button" data-su="${k}" class="${on ? 'on' : ''}" aria-pressed="${!!on}">${tx}</button>`;
   const big = (k, on, e, t, sm) => chip(k, on, `<i>${e}</i><b>${t}</b>${sm ? `<small>${sm}</small>` : ''}`), next = (tx, dis) => `<div class="pl-subar"><button type="button" class="pl-go" data-su="next"${dis ? ' disabled' : ''}>${su.addK ? 'Add it to my plan →' : su.edK ? 'Save changes ✓' : tx || 'Next →'}</button></div>`;
   const P2Q = ['asbuilt', 'base', 'eplan', 'plan'].includes(q) && !su.addK && !su.edK;
@@ -1157,6 +1159,7 @@ function suPaint() { try { fl0Show(); } catch (e) {} if (S.magic) return; try { 
     if (bl.some(b => b.type === 'mumty') && S.site.tanks !== false) h += '<p class="pl-h">Is there a screen round the water tanks now?</p><div class="pl-subig">' + big('thas:0', su.tankHas === false, P2.ico('none'), 'No screen') + big('thas:1', su.tankHas === true, P2.ico('check'), 'Yes, there is one') + '</div>' + (su.tankHas == null ? '' : '<p class="pl-h">' + (su.tankHas ? 'Keep it or put a new one?' : 'Want a screen round them?') + '</p><div class="pl-subig">' + (su.tankHas ? chip('tw:0', !(su.wantX || {}).tank, 'Keep it') + chip('tw:1', !!(su.wantX || {}).tank, 'New screen') : chip('tw:1', !!(su.wantX || {}).tank, 'Yes, add one') + chip('tw:0', !(su.wantX || {}).tank, 'No')) + '</div>');   // 278   // 268 (owner): only what stands here; a new one is asked with the elements
     cut('tank');
     if (bl.some(b => b.type === 'mumty')) h += '<p class="pl-h">The staircase room</p><div class="pl-subig">' + big('stairs:keep', su.stairs === 'keep', P2.ico('check'), 'Keep as is') + big('stairs:door', su.stairs === 'door', P2.ico('door'), 'New door') + big('stairs:refurb', su.stairs === 'refurb', P2.ico('brush'), 'Refurbish', 'door, cladding, paint') + '</div>';
+    if (bl.some(b => b.type === 'mumty')) { const SD = [['f', 'Towards the road'], ['b', 'Back'], ['l', 'Left'], ['r', 'Right']]; S.site.blocks.forEach((b, bi) => { if (b.type !== 'mumty') return; let e = { l: 0, r: 0, b: 0, f: 0 }; try { e = mumtyProj(S.site, b); } catch (er) {} h += '<p class="pl-h">Roof projection (chajja)' + (bl.filter(z => z.type === 'mumty').length > 1 ? ' · stairs room ' + (bi + 1) : '') + '</p><p class="pl-sm" style="margin:-2px 0 6px;color:#8A8278">How far its roof slab sticks out on each side. Over 4 ft we add RCC columns.</p>' + SD.map(([k, lb]) => '<div class="pl-szr" style="display:flex;align-items:center;gap:8px;margin:4px 0"><span style="flex:1">' + lb + '</span>' + chip('mpj:' + bi + ':' + k + ':-12', false, '−1′') + chip('mpj:' + bi + ':' + k + ':-3', false, '−3″') + '<b style="min-width:56px;text-align:center">' + (v => /′/.test(v) ? v : v + '′')(fiL(e[k])) + '</b>' + chip('mpj:' + bi + ':' + k + ':3', false, '+3″') + chip('mpj:' + bi + ':' + k + ':12', false, '+1′') + '</div>').join('').replace(/data-su="mpj/g, 'style="padding:6px 9px;font-size:13px;min-width:0;min-height:34px" data-su="mpj'); }); }   /* 349e (owner): each side of the stairs-room chajja 0–15 ft in 3 in steps */
     cut('mumty');   // 284 (owner): one small topic per screen
     if (bl.some(b => b.type === 'mumty')) { const m = su.mst || {}, has = m.has && m.has !== 'none', door = geo().door;   // 263 / 268 (owner): what stands there now, asked like the stairs room; a new one is picked with the main elements
       h += '<p class="pl-h">Stairs up to the stairs-room roof (for the tanks)</p><div class="pl-subig">' + MST.map(z => big('mst:has:' + z[0], (m.has || 'none') === z[0], P2.ico(z[0] === 'none' ? 'none' : 'stairs'), z[0] === 'none' ? 'None' : z[1])).join('') + '</div>';
@@ -1611,7 +1614,8 @@ function suClick0(e) { const b = e.target.closest('[data-su]'); if (!b || b.disa
     case 'flmore': S.flMore = true; break;
     case 'fe': feAct(a); break;   // 305
     case 'grass': su.grass = a[1] === '1'; themeApply(su.thm || 'fusion'); ev('plan_grass', { ref: a[1] }); break;
-    case 'scrl': su.scrLite = a[1]; S.site.scrLite = a[1]; save(); draw(true); break;   // 349
+    case 'scrl': su.scrLite = a[1]; S.site.scrLite = a[1]; save(); break;   // 349
+    case 'mpj': { const b = (S.site.blocks || [])[+a[1]]; if (!b) break; let e = { l: 0, r: 0, b: 0, f: 0 }; try { e = mumtyProj(S.site, b); } catch (er) {} b.pj = Object.assign({ l: e.l, r: e.r, b: e.b, f: e.f }, b.pj || {}); b.pj[a[2]] = Math.max(0, Math.min(15, Math.round(((+b.pj[a[2]] || 0) + +a[3] / 12) * 4) / 4)); rccSync(); save(); break; }   // 349e (owner): the chajja in 3 in steps
     case 'path': su.path = a[1] === '1' ? true : false; themeApply(su.thm || 'fusion'); ev('plan_path', { ref: a[1] }); break;   // 349   // 276e
     case 'flact': su.flAct = a[1]; su.rm = su.rm || {}; su.rm.floor0 = a[1] === 'change'; if (a[1] === 'change') { if (su.flr === 'keep') su.flr = null; } else su.flr = 'keep'; su.dirty = true; fl0Show(); try { suWorks(); } catch (e) {} break;   // 273
     case 'cop': { const c = su.cop = su.cop || {}; c[a[1]] = a[2] || ''; if (a[1] === 'has' && a[2] === 'none') c.act = null; su.dirty = true; try { suWorks(); } catch (e) {} break; }
@@ -2399,7 +2403,7 @@ const SUV = 253;   // 253: a setup made before the placement fixes is set up aga
 function suMig() { const su = S.su; if (!su || su.cv === SUV) return false; su.cv = SUV; if (!(su.q >= SUQ.indexOf('eplan') || su.done) || !S.items.some(o => !o.old)) return false;
   if (!S.bsel || !Object.keys(S.bsel).length) { const B = {}; S.items.forEach(o => { if (!o.old && CAT[o.cat] && !att(o) && o.cat !== 'pathway') B[o.cat] = (B[o.cat] || 0) + 1; }); if (S.items.some(o => o.cat === 'privacy' && o.mode === 'par')) B.privacy = 1; if (S.items.some(o => o.cat === 'accover')) B.accover = 1; S.bsel = B; }
   try { suCompose(su.decorDone ? 'all' : 'el'); } catch (e) { return false; } return true; }
-function draw(rec) { if (QUIET) return; if (S.su && (S.su.thm === 'minimal' || S.su.thm === 'contemporary')) { try { themeApply(S.su.thm === 'minimal' ? 'modern' : 'fusion', true); } catch (e) {} }   /* 300: Contemporary → Fusion */   /* 297: Minimal dropped */ if (suMig()) return;
+function draw(rec) { if (QUIET) return; try { rccSync(); } catch (e) {} if (S.su && (S.su.thm === 'minimal' || S.su.thm === 'contemporary')) { try { themeApply(S.su.thm === 'minimal' ? 'modern' : 'fusion', true); } catch (e) {} }   /* 300: Contemporary → Fusion */   /* 297: Minimal dropped */ if (suMig()) return;
   if (QUIET) return;
   if (S.items) { S.items.forEach((it, i) => { if (att(it)) attach(it, i); }); S.items = S.items.filter(it => it.mode !== 'ac' || it.box); S.items.forEach((it, i) => { if (it.cat === 'pergola') pergolaAttach(it, i); }); if (S.sel != null && !S.items[S.sel]) S.sel = null; }
   if (rec !== false) hist(); save();
