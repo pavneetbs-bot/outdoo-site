@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=124';
-import { pergolaModel } from './pergola3d.js?v=111';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=125';
+import { pergolaModel } from './pergola3d.js?v=112';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -364,8 +364,13 @@ function santCabin(g) {   // 296 → 337 (owner's Santorini refs 27 Nov): a Cycl
   const lw = sLime(), bl = sBlue(), DOME = globalThis.__scv === 'dome'; const gl = []; g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color) return; const c = o.material.color.getHex(); if (c === 0xBFDCE6 && o.material.opacity < 0.34) { gl.push(o); return; } if (o.material.map) return;
     if (c === 0xF2F0EB || c === 0x6E6C68 || c === 0xE4E1DA || c === 0x5A564F) o.material = lw; else if (c === 0x2B2B2B || c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = bl; });
   g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3(), V0 = new THREE.Vector3(), V1 = new THREE.Vector3(), ar = new THREE.Group(), all = new THREE.Box3();
-  g.traverse(o => { if (o.isMesh) all.union(new THREE.Box3().setFromObject(o).applyMatrix4(inv)); }); const top = all.max.y;
-  g.traverse(o => { if (!o.isMesh || o.material !== bl) return; B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); if ((V0.x > 2.5 && V0.z > 2.5) || (B.max.y > top - 1.3 && V0.y < 1.2 && Math.max(V0.x, V0.z) > 2)) o.material = lw; });   /* roof slab, fascia, projection = white */
+  const pjG = g.getObjectByName('proj'), inPj = o => { for (let q = o; q; q = q.parent) if (q === pjG) return true; return false; }; g.traverse(o => { if (o.isMesh && !inPj(o)) all.union(new THREE.Box3().setFromObject(o).applyMatrix4(inv)); }); const top = all.max.y;   /* the body + roof, without the projection */
+  g.traverse(o => { if (!o.isMesh || o.material !== bl || inPj(o)) return; B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); if ((V0.x > 2.5 && V0.z > 2.5) || (B.max.y > top - 1.3 && V0.y < 1.2 && Math.max(V0.x, V0.z) > 2)) o.material = lw; });   /* roof slab, fascia, projection = white */
+  { const pj = g.getObjectByName('proj'); if (pj) { const tm = mat('c_s_tim', 0x7A5E45, { roughness: 0.95 }), rd = reedMat(), add = [];   /* 337b (owner: "projection natural jaisa"): the projection = raw timber poles + a reed-cane mat on top, like an island porch */
+    pj.children.slice().forEach(m => { if (!m.isMesh || m.geometry.type !== 'BoxGeometry') return; B.setFromObject(m).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const d = [V0.x, V0.y, V0.z], mx = Math.max(...d), srt = d.slice().sort((p, q) => p - q);
+      if (V0.y < 0.12 && V0.x > 1 && V0.z > 1) { m.material = rd; m.scale.y *= 2.5; return; }   /* the top sheet → reed */
+      if (mx < 0.6) return; const r = Math.max(0.07, Math.min(0.24, srt[1] * 0.45)), c = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.08, mx, 10), tm); if (mx === V0.x) c.rotation.z = Math.PI / 2; else if (mx === V0.z) c.rotation.x = Math.PI / 2; c.position.copy(V1); c.castShadow = true; add.push(c); m.visible = false; });
+    add.forEach(c => pj.add(c)); } }
   const rimM = DOME ? bl : (() => { const m = azMat().clone(); m.map = azTex(); return m; })(), az = (geo) => { if (DOME) return geo; const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 2, uv.getY(i) * 2); return geo; };
   gl.forEach(o => { B.setFromObject(o).applyMatrix4(inv); B.getSize(V0); B.getCenter(V1); const vx = V0.x < 0.3, vz = V0.z < 0.3; if (!(vx || vz) || V0.y < 4.5) return; const W0 = vx ? V0.z : V0.x, h = V0.y; if (W0 < 1.6) return; const nS = Math.max(1, Math.round(W0 / 5)), w = W0 / nS, C0 = V1.clone();   /* a long all-glass run = a row of ~5 ft arches */
    for (let si = 0; si < nS; si++) { const off = -W0 / 2 + (si + 0.5) * w; V1.copy(C0); if (vx) V1.z += off; else V1.x += off;
