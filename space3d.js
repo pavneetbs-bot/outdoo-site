@@ -5,8 +5,8 @@
 import * as THREE from './vendor/three/three.module.min.js';
 import { OrbitControls } from './vendor/three/OrbitControls.js';
 import { RoomEnvironment } from './vendor/three/RoomEnvironment.js';
-import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=98';
-import { pergolaModel } from './pergola3d.js?v=85';
+import { cabinModel, plotModel, mumtyProj } from './cabin3d.js?v=99';
+import { pergolaModel } from './pergola3d.js?v=86';
 import { outline, sofaLayout } from './plan2d.js?v=36';
 import { plantModel } from './plants3d.js?v=4';
 import { layCanvas, layPeriod, layRot, SPECS as LSPEC } from './floorlay.js?v=10';
@@ -381,9 +381,9 @@ function upLight(g, x, z, zf, H) {   // 298: a black up-light at the foot of a w
   box(g, 0.22, 0.14, 0.22, x, 0.07, z, mChar(), false); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 10), mLed()); l.position.set(x, 0.15, z); g.add(l);
   const s = new THREE.Sprite(haloMat()); s.scale.set(1.2, Math.min(H, 4), 1); s.position.set(x, Math.min(H, 4) / 2 + 0.1, zf); nightOnly(s, g); }
 function modCabin(g) {   // 298 → 318 (owner: 'black box + glass'): charcoal fluted solid walls, charcoal roof + fascia + plinth, black frames, big glass, teak only on doors, a warm cove line round the roof edge
-  const sl = teakLouvMat(), ch = mChar(), ww = mat('c_m_roof', 0x2C2C2C, { roughness: 0.6, metalness: 0.2 }), tk = mTeak();   /* 320 (owner): dark cabin — teak louvres on the solid walls, charcoal roof / fascia / frames / plinth */ g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex();
+  const sl = charFluteMat(), ch = mChar(), ww = mat('c_m_roof', 0x2C2C2C, { roughness: 0.6, metalness: 0.2 }), tk = mTeak();   /* 321 (owner picked the 318 black box again): charcoal fluted walls, charcoal roof / fascia / frames / plinth */ g.traverse(o => { if (!o.isMesh || !o.material || !o.material.color || o.material.map) return; const c = o.material.color.getHex();
     const lu = ((c >> 16) & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + (c & 255) * 0.11, em = o.material.emissive && o.material.emissive.getHex();   /* 318: any light opaque wall shade (the wall finish / shade colours too) → charcoal flutes; the inside stays light */
-    if (c === 0xE4E1DA) o.material = ww; else if (c === 0xF7F5F0) o.material = ch; else if (c === 0xF2F0EB || c === 0x6E6C68 || (!o.material.transparent && !em && lu > 200 && ![0xF7F5F0, 0xDCD5C6, 0xFFFFFF].includes(c))) o.material = sl; else if (c === 0x5A564F) o.material = ch; else if (c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = tk; });
+    if (c === 0xE4E1DA) o.material = ww; else if (c === 0xF2F0EB || c === 0x6E6C68 || (!o.material.transparent && !em && lu > 200 && ![0xF7F5F0, 0xDCD5C6, 0xFFFFFF].includes(c))) o.material = sl; else if (c === 0x5A564F) o.material = ch; else if (c === 0x9C7650 || c === 0x8B5A2B || c === 0x7A5537) o.material = tk; });
   g.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(g.matrixWorld).invert(), B = new THREE.Box3().setFromObject(g).applyMatrix4(inv); let top = -1e9; g.traverse(o => { if (o.isMesh && o.material === ww) { const b = new THREE.Box3().setFromObject(o).applyMatrix4(inv); if (b.max.y > top) top = b.max.y; } }); if (top < 0) top = B.max.y;
   const y = top - 0.45, L = mLed(), cv = new THREE.Group(); cv.name = 'm_cove'; [[B.max.x - B.min.x, (B.min.x + B.max.x) / 2, B.min.z - 0.02, 0], [B.max.x - B.min.x, (B.min.x + B.max.x) / 2, B.max.z + 0.02, 0], [B.max.z - B.min.z, B.min.x - 0.02, (B.min.z + B.max.z) / 2, 1], [B.max.z - B.min.z, B.max.x + 0.02, (B.min.z + B.max.z) / 2, 1]].forEach(([len, x, z, r]) => { const m = new THREE.Mesh(new THREE.BoxGeometry(r ? 0.05 : len - 0.3, 0.05, r ? len - 0.3 : 0.05), L); m.position.set(x, y, z); cv.add(m); });
   g.add(cv); }
